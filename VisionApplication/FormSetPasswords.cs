@@ -1,0 +1,339 @@
+using System;
+using System.Drawing;
+using System.Collections;
+using System.ComponentModel;
+using System.Windows.Forms;
+using CommonCls;
+namespace VisionApplication
+{
+  /// <summary>
+  /// Summary description for FormSetPasswords.
+  /// </summary>
+  public class FormSetPasswords : System.Windows.Forms.Form
+  {
+    private System.Windows.Forms.Button button_Cancel;
+    private System.Windows.Forms.TextBox textBox_SupervisorPassword;
+    private System.Windows.Forms.TextBox textBox_SupervisorConfirm;
+    private System.Windows.Forms.TextBox textBox_AdministratorConfirm;
+    private System.Windows.Forms.TextBox textBox_AdministratorPassword;
+    /// <summary>
+    /// Required designer variable.
+    /// </summary>
+    private System.ComponentModel.Container components = null;
+    private System.Windows.Forms.Button button_OK;
+    private System.Windows.Forms.GroupBox groupBox_Supervisor;
+    private System.Windows.Forms.Label label_ConfirmPassword1;
+    private System.Windows.Forms.Label label_Password1;
+    private System.Windows.Forms.GroupBox groupBox_Administrator;
+    private System.Windows.Forms.Label label_ConfirmPassword2;
+    private System.Windows.Forms.Label label_Password2;
+        private GroupBox groupBox1;
+        private TextBox textBox_OperaterPasswordConfirm;
+        private TextBox textBox_OperaterPassword;
+        private Label label1;
+        private Label label2;
+        private Protect mPasswordFile;
+
+    public FormSetPasswords(Protect file)
+    {
+      //
+      // Required for Windows Form Designer support
+      //
+      InitializeComponent();
+
+      mPasswordFile = file;
+    }
+
+    /// <summary>
+    /// Clean up any resources being used.
+    /// </summary>
+    protected override void Dispose( bool disposing )
+    {
+      if( disposing )
+      {
+        if(components != null)
+        {
+          components.Dispose();
+        }
+      }
+      base.Dispose( disposing );
+    }
+
+    #region Windows Form Designer generated code
+    /// <summary>
+    /// Required method for Designer support - do not modify
+    /// the contents of this method with the code editor.
+    /// </summary>
+    private void InitializeComponent()
+    {
+            this.button_OK = new System.Windows.Forms.Button();
+            this.button_Cancel = new System.Windows.Forms.Button();
+            this.groupBox_Supervisor = new System.Windows.Forms.GroupBox();
+            this.textBox_SupervisorConfirm = new System.Windows.Forms.TextBox();
+            this.textBox_SupervisorPassword = new System.Windows.Forms.TextBox();
+            this.label_ConfirmPassword1 = new System.Windows.Forms.Label();
+            this.label_Password1 = new System.Windows.Forms.Label();
+            this.groupBox_Administrator = new System.Windows.Forms.GroupBox();
+            this.textBox_AdministratorConfirm = new System.Windows.Forms.TextBox();
+            this.textBox_AdministratorPassword = new System.Windows.Forms.TextBox();
+            this.label_ConfirmPassword2 = new System.Windows.Forms.Label();
+            this.label_Password2 = new System.Windows.Forms.Label();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.textBox_OperaterPasswordConfirm = new System.Windows.Forms.TextBox();
+            this.textBox_OperaterPassword = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.groupBox_Supervisor.SuspendLayout();
+            this.groupBox_Administrator.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.SuspendLayout();
+            // 
+            // button_OK
+            // 
+            this.button_OK.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.button_OK.Location = new System.Drawing.Point(277, 404);
+            this.button_OK.Name = "button_OK";
+            this.button_OK.Size = new System.Drawing.Size(106, 25);
+            this.button_OK.TabIndex = 2;
+            this.button_OK.Text = "确定";
+            this.button_OK.Click += new System.EventHandler(this.button_Ok_Click);
+            // 
+            // button_Cancel
+            // 
+            this.button_Cancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.button_Cancel.Location = new System.Drawing.Point(389, 404);
+            this.button_Cancel.Name = "button_Cancel";
+            this.button_Cancel.Size = new System.Drawing.Size(106, 25);
+            this.button_Cancel.TabIndex = 3;
+            this.button_Cancel.Text = "取消";
+            // 
+            // groupBox_Supervisor
+            // 
+            this.groupBox_Supervisor.Controls.Add(this.textBox_SupervisorConfirm);
+            this.groupBox_Supervisor.Controls.Add(this.textBox_SupervisorPassword);
+            this.groupBox_Supervisor.Controls.Add(this.label_ConfirmPassword1);
+            this.groupBox_Supervisor.Controls.Add(this.label_Password1);
+            this.groupBox_Supervisor.Location = new System.Drawing.Point(19, 12);
+            this.groupBox_Supervisor.Name = "groupBox_Supervisor";
+            this.groupBox_Supervisor.Size = new System.Drawing.Size(480, 112);
+            this.groupBox_Supervisor.TabIndex = 0;
+            this.groupBox_Supervisor.TabStop = false;
+            this.groupBox_Supervisor.Text = "主管";
+            // 
+            // textBox_SupervisorConfirm
+            // 
+            this.textBox_SupervisorConfirm.Location = new System.Drawing.Point(182, 69);
+            this.textBox_SupervisorConfirm.Name = "textBox_SupervisorConfirm";
+            this.textBox_SupervisorConfirm.PasswordChar = '*';
+            this.textBox_SupervisorConfirm.Size = new System.Drawing.Size(269, 21);
+            this.textBox_SupervisorConfirm.TabIndex = 1;
+            this.textBox_SupervisorConfirm.Text = "textBox2";
+            this.textBox_SupervisorConfirm.TextChanged += new System.EventHandler(this.textBox_Password_TextChanged);
+            // 
+            // textBox_SupervisorPassword
+            // 
+            this.textBox_SupervisorPassword.Location = new System.Drawing.Point(182, 34);
+            this.textBox_SupervisorPassword.Name = "textBox_SupervisorPassword";
+            this.textBox_SupervisorPassword.PasswordChar = '*';
+            this.textBox_SupervisorPassword.Size = new System.Drawing.Size(269, 21);
+            this.textBox_SupervisorPassword.TabIndex = 0;
+            this.textBox_SupervisorPassword.Text = "textBox1";
+            this.textBox_SupervisorPassword.TextChanged += new System.EventHandler(this.textBox_Password_TextChanged);
+            // 
+            // label_ConfirmPassword1
+            // 
+            this.label_ConfirmPassword1.Location = new System.Drawing.Point(29, 69);
+            this.label_ConfirmPassword1.Name = "label_ConfirmPassword1";
+            this.label_ConfirmPassword1.Size = new System.Drawing.Size(80, 21);
+            this.label_ConfirmPassword1.TabIndex = 1;
+            this.label_ConfirmPassword1.Text = "密码确认：";
+            // 
+            // label_Password1
+            // 
+            this.label_Password1.Location = new System.Drawing.Point(29, 34);
+            this.label_Password1.Name = "label_Password1";
+            this.label_Password1.Size = new System.Drawing.Size(80, 18);
+            this.label_Password1.TabIndex = 0;
+            this.label_Password1.Text = "密码:";
+            // 
+            // groupBox_Administrator
+            // 
+            this.groupBox_Administrator.Controls.Add(this.textBox_AdministratorConfirm);
+            this.groupBox_Administrator.Controls.Add(this.textBox_AdministratorPassword);
+            this.groupBox_Administrator.Controls.Add(this.label_ConfirmPassword2);
+            this.groupBox_Administrator.Controls.Add(this.label_Password2);
+            this.groupBox_Administrator.Location = new System.Drawing.Point(19, 130);
+            this.groupBox_Administrator.Name = "groupBox_Administrator";
+            this.groupBox_Administrator.Size = new System.Drawing.Size(480, 112);
+            this.groupBox_Administrator.TabIndex = 1;
+            this.groupBox_Administrator.TabStop = false;
+            this.groupBox_Administrator.Text = "管理员";
+            // 
+            // textBox_AdministratorConfirm
+            // 
+            this.textBox_AdministratorConfirm.Location = new System.Drawing.Point(182, 69);
+            this.textBox_AdministratorConfirm.Name = "textBox_AdministratorConfirm";
+            this.textBox_AdministratorConfirm.PasswordChar = '*';
+            this.textBox_AdministratorConfirm.Size = new System.Drawing.Size(269, 21);
+            this.textBox_AdministratorConfirm.TabIndex = 1;
+            this.textBox_AdministratorConfirm.Text = "textbox2";
+            this.textBox_AdministratorConfirm.TextChanged += new System.EventHandler(this.textBox_Password_TextChanged);
+            // 
+            // textBox_AdministratorPassword
+            // 
+            this.textBox_AdministratorPassword.Location = new System.Drawing.Point(182, 34);
+            this.textBox_AdministratorPassword.Name = "textBox_AdministratorPassword";
+            this.textBox_AdministratorPassword.PasswordChar = '*';
+            this.textBox_AdministratorPassword.Size = new System.Drawing.Size(269, 21);
+            this.textBox_AdministratorPassword.TabIndex = 0;
+            this.textBox_AdministratorPassword.Text = "textBox1";
+            this.textBox_AdministratorPassword.TextChanged += new System.EventHandler(this.textBox_Password_TextChanged);
+            // 
+            // label_ConfirmPassword2
+            // 
+            this.label_ConfirmPassword2.Location = new System.Drawing.Point(29, 69);
+            this.label_ConfirmPassword2.Name = "label_ConfirmPassword2";
+            this.label_ConfirmPassword2.Size = new System.Drawing.Size(80, 21);
+            this.label_ConfirmPassword2.TabIndex = 1;
+            this.label_ConfirmPassword2.Text = "密码确认:";
+            // 
+            // label_Password2
+            // 
+            this.label_Password2.Location = new System.Drawing.Point(29, 34);
+            this.label_Password2.Name = "label_Password2";
+            this.label_Password2.Size = new System.Drawing.Size(88, 18);
+            this.label_Password2.TabIndex = 0;
+            this.label_Password2.Text = "密码:";
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.textBox_OperaterPasswordConfirm);
+            this.groupBox1.Controls.Add(this.textBox_OperaterPassword);
+            this.groupBox1.Controls.Add(this.label1);
+            this.groupBox1.Controls.Add(this.label2);
+            this.groupBox1.Location = new System.Drawing.Point(19, 259);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(480, 112);
+            this.groupBox1.TabIndex = 1;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "运维员";
+            // 
+            // textBox_OperaterPasswordConfirm
+            // 
+            this.textBox_OperaterPasswordConfirm.Location = new System.Drawing.Point(182, 69);
+            this.textBox_OperaterPasswordConfirm.Name = "textBox_OperaterPasswordConfirm";
+            this.textBox_OperaterPasswordConfirm.PasswordChar = '*';
+            this.textBox_OperaterPasswordConfirm.Size = new System.Drawing.Size(269, 21);
+            this.textBox_OperaterPasswordConfirm.TabIndex = 1;
+            this.textBox_OperaterPasswordConfirm.Text = "textbox2";
+            this.textBox_OperaterPasswordConfirm.TextChanged += new System.EventHandler(this.textBox_Password_TextChanged);
+            // 
+            // textBox_OperaterPassword
+            // 
+            this.textBox_OperaterPassword.Location = new System.Drawing.Point(182, 34);
+            this.textBox_OperaterPassword.Name = "textBox_OperaterPassword";
+            this.textBox_OperaterPassword.PasswordChar = '*';
+            this.textBox_OperaterPassword.Size = new System.Drawing.Size(269, 21);
+            this.textBox_OperaterPassword.TabIndex = 0;
+            this.textBox_OperaterPassword.Text = "textBox1";
+            this.textBox_OperaterPassword.TextChanged += new System.EventHandler(this.textBox_Password_TextChanged);
+            // 
+            // label1
+            // 
+            this.label1.Location = new System.Drawing.Point(29, 69);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(80, 21);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "密码确认:";
+            // 
+            // label2
+            // 
+            this.label2.Location = new System.Drawing.Point(29, 34);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(88, 18);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "密码:";
+            // 
+            // FormSetPasswords
+            // 
+            this.AcceptButton = this.button_OK;
+            this.AutoScaleBaseSize = new System.Drawing.Size(6, 14);
+            this.CancelButton = this.button_Cancel;
+            this.ClientSize = new System.Drawing.Size(507, 441);
+            this.Controls.Add(this.groupBox_Supervisor);
+            this.Controls.Add(this.button_Cancel);
+            this.Controls.Add(this.button_OK);
+            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.groupBox_Administrator);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FormSetPasswords";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Set Passwords";
+            this.Load += new System.EventHandler(this.FormSetPasswords_Load);
+            this.groupBox_Supervisor.ResumeLayout(false);
+            this.groupBox_Supervisor.PerformLayout();
+            this.groupBox_Administrator.ResumeLayout(false);
+            this.groupBox_Administrator.PerformLayout();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.ResumeLayout(false);
+
+    }
+    #endregion
+
+    private void FormSetPasswords_Load(object sender, System.EventArgs e)
+    {
+       
+
+      this.textBox_SupervisorPassword.Text = mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Supervisor);
+      this.textBox_SupervisorConfirm.Text = this.textBox_SupervisorPassword.Text;
+
+      this.textBox_AdministratorPassword.Text = mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Administrator);
+      this.textBox_AdministratorConfirm.Text = this.textBox_AdministratorPassword.Text;
+
+      this.textBox_OperaterPassword.Text = mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Administrator);
+      this.textBox_OperaterPasswordConfirm.Text = this.textBox_OperaterPassword.Text;
+
+            EnableOk();
+    }
+
+    private void EnableOk()
+    {
+      // enable ok button based on dialog contents
+      bool en = false;
+
+      // confirms must match and passwords must not be empty
+      if (this.textBox_AdministratorConfirm.Text == this.textBox_AdministratorPassword.Text &&
+        this.textBox_SupervisorConfirm.Text == this.textBox_SupervisorPassword.Text &&
+        this.textBox_OperaterPasswordConfirm.Text == this.textBox_OperaterPassword.Text &&
+        this.textBox_AdministratorPassword.Text != "" &&
+        this.textBox_SupervisorPassword.Text != "" && this.textBox_OperaterPasswordConfirm.Text!="")
+      {
+        // password must have changed
+        if (this.textBox_AdministratorPassword.Text != mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Administrator) ||
+          this.textBox_SupervisorPassword.Text != mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Supervisor) ||
+          this.textBox_OperaterPassword.Text != mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Operator)
+          )
+          en = true;
+      }
+
+      button_OK.Enabled = en;
+    }
+
+    private void textBox_Password_TextChanged(object sender, System.EventArgs e)
+    {
+      EnableOk();
+    }
+
+    private void button_Ok_Click(object sender, System.EventArgs e)
+    {
+      mPasswordFile.SetPasswordForAccessLevel(AccessLevel.Supervisor, this.textBox_SupervisorPassword.Text);
+      mPasswordFile.SetPasswordForAccessLevel(AccessLevel.Administrator, this.textBox_AdministratorPassword.Text);
+      mPasswordFile.SetPasswordForAccessLevel(AccessLevel.Operator, this.textBox_OperaterPassword.Text); 
+            // writes a password file only if needed  textBox_OperaterPassword
+       mPasswordFile.WritePasswordFile();
+    }
+  }
+}

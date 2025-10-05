@@ -1,0 +1,28 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "convertService";
+
+package convertImage;
+
+service ConvertService {
+
+  rpc classification (image) returns (cls_result);
+  rpc detection (image) returns (det_result);
+  rpc init(set) returns (set_result);
+}
+
+message image{
+  string inputimage = 1;
+}
+message cls_result{
+  string cls_img=1;
+}
+message det_result{
+  string det_img=1;
+}
+message set{
+  float threshold=1;
+}
+message set_result{
+  float setted=1;
+}
