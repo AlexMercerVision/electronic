@@ -2499,9 +2499,9 @@ namespace VisionApplication
                                         vpWin.bMainTaskFinished = false;
                                         //2024年7月13日
                                         vpWin._bContRun = true;
-                                     //   contThread = new Thread(RunContinuousThread);
-                                        contThread = new Thread(RunCont);
-                                       
+                                        contThread = new Thread(RunContinuousThread);
+                                        //  contThread = new Thread(RunCont);
+
                                         contThread.Start();
                                         operLog.iEventStatus = 0;
                                     }
@@ -3127,18 +3127,6 @@ namespace VisionApplication
             vpWin.ResetStatisticsForAllJobsClick();
             UpdateStatisticsForJob(0);
         }
-
-
-
-        private void toolBt_CleanHistory_Click(object sender, EventArgs e)
-        {
-            if (MessageBox.Show("确定要删除历史记录吗", "提醒", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            {
-                vpWin.ClearHistoryQueues(sender, e);
-            }
-        }
-
-
 
         private void SetShowType(int iShowType)
         {

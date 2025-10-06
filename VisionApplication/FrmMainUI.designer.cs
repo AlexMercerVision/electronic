@@ -1526,7 +1526,7 @@ namespace VisionApplication
             this.toolBt_CleanHistory.Text = "toolStripButton3";
             this.toolBt_CleanHistory.ToolTipText = "清除";
             this.toolBt_CleanHistory.Visible = false;
-            this.toolBt_CleanHistory.Click += new System.EventHandler(this.toolBt_CleanHistory_Click);
+      //      this.toolBt_CleanHistory.Click += new System.EventHandler(this.toolBt_CleanHistory_Click);
             // 
             // toolBtSta_UseFX
             // 

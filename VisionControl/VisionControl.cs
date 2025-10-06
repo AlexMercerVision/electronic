@@ -51,8 +51,8 @@ namespace VisionControl
         // Queue lengths, for the "all results" and "failing results" queues.
         // To disable the "failing results" queue, set its length to 1.  Queues must always be a least 1 element
         // in length, to hold the current result.
-        private const int AllQueueLength = 16;
-        private const int FailureQueueLength = 16;
+        private const int AllQueueLength = 1;       //2025年10月6日  将缓存数量从16改为1
+        private const int FailureQueueLength = 1;  //2025年10月6日  将缓存数量从16改为1
 
         private PasswordFile mCurrentPasswordFile;
         private string mLoadedVppFilename;
@@ -74,7 +74,7 @@ namespace VisionControl
         //  private bool mInitError = false;
         private bool mStarted = false;
         private bool mIsClosing = false;
-        public int iReject = 0;
+        
         // resource support for localization
         private Hashtable mResultTextHash;
         #endregion
@@ -132,7 +132,7 @@ namespace VisionControl
         /// file).  The event is fired by the job thread itself, so any subscribers must handle this
         /// event in a timely manner.
         /// </summary>
-        public event VisionControlUserResultAvailableEventHandler VisionControlUserResultAvailable = null;
+        private event VisionControlUserResultAvailableEventHandler VisionControlUserResultAvailable = null;
 
         /// <summary>
         /// Clears all results from the result history queues of all jobs.
@@ -189,7 +189,7 @@ namespace VisionControl
          * check in the same directory as the vpp file, using the full path supplied when the
          * application was generated.  Then look in the same directory as the executable.
          */
-
+        //如果路径不存在，则在当前执行目录下寻找VPP文件
         private string ResolveVppFilename()
         {
             string fname = mVppFilename;
@@ -511,6 +511,7 @@ namespace VisionControl
         #region Runtime implementation 
           //回调
           //结果可用回调
+
         private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
         {
             HandleUserResults();
@@ -521,8 +522,7 @@ namespace VisionControl
             start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
             cost_milliseconds = (int)start2end_time.TotalMilliseconds;
         }
-
-       
+               
         //任务运行回调
         private void Job_Running(object sender, CogJobActionEventArgs e)
         {
@@ -1211,7 +1211,7 @@ namespace VisionControl
         //**20220416  开放单次运行接口
         #region
         //   CDL_Predict cdl_Predict = new CDL_Predict();
-
+        public int iReject = 0;
         const int maxCameraNum = 5;
         ImgAcqFIFO acqFIFO = new ImgAcqFIFO();
         Thread contThread = null;
@@ -1423,7 +1423,7 @@ namespace VisionControl
             cost_milliseconds = (int)start2end_time.TotalMilliseconds;
             bRunOneTimeFinished = 2;*/
 
-            return true;
+           // return true;
 
             if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
                 return false;
