@@ -507,23 +507,12 @@ namespace VisionControl
             }
         }
         #endregion
-         
+
         #region Runtime implementation 
-          //回调
-          //结果可用回调
+        //回调
+        //结果可用回调
 
-        private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
-        {
-            HandleUserResults();
-            RunOneTimeFinished();
-            //  mJM_stop_User();
-
-            infer_end_time = new TimeSpan(DateTime.Now.Ticks);
-            start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
-            cost_milliseconds = (int)start2end_time.TotalMilliseconds;
-        }
-               
-        //任务运行回调
+        //任务运行回调，单次运行每个job被回调1次
         private void Job_Running(object sender, CogJobActionEventArgs e)
         {
             // handles:
@@ -563,7 +552,42 @@ namespace VisionControl
             }
             catch { }
         }
-        //任务运行结束回调
+
+        //任务运行结果可用时回调，单次运行每个job被回调1次
+        private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
+        {
+            HandleUserResults();
+            RunOneTimeFinished();
+            //  mJM_stop_User();
+
+            infer_end_time = new TimeSpan(DateTime.Now.Ticks);
+            start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
+            cost_milliseconds = (int)start2end_time.TotalMilliseconds;
+        }
+
+        //任务运行 时回调，单次运行每个job被回调1次
+        private void cogJobResultHistory_CurrentItemChanged(object sender, System.EventArgs e)
+        {
+            bool newResultForSelectedJob = false;
+
+            int jobIndex = FindResultHistoryIndex(sender);
+            if (jobIndex < 0)
+                return;
+
+            if (jobIndex == mSelectedJob)
+                newResultForSelectedJob = true;
+
+            UpdateGUIForJob(jobIndex);
+
+            // if there is a new result for the selected job, update the gui now
+            if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
+            {
+                UpdateGUIForSelectedJob(false);
+                UpdateGuiIfNeeded();   //st**20220726 
+            }
+        }
+
+        //任务运行结束回调， 单次运行被回调1次
         private void mJM_Stopped(object sender, CogJobManagerActionEventArgs e)
         {
             // handles:
@@ -615,32 +639,12 @@ namespace VisionControl
 
 
         }
- 
-        private void cogJobResultHistory_CurrentItemChanged(object sender, System.EventArgs e)
-        {
-            bool newResultForSelectedJob = false;
-
-            int jobIndex = FindResultHistoryIndex(sender);
-            if (jobIndex < 0)
-                return;
-
-            if (jobIndex == mSelectedJob)
-                newResultForSelectedJob = true;
-
-            UpdateGUIForJob(jobIndex);
-
-            // if there is a new result for the selected job, update the gui now
-            if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
-            {
-                UpdateGUIForSelectedJob(false);
-                UpdateGuiIfNeeded();   //st**20220726 
-            }
-        }
-      
+       
+        //单次运行，单个任务该函数被回调3次，但IO使能状态如果不发生改变，则没有执行函数体
         private void mJM_ChangedHandler(object sender, CogChangedEventArgs e)
         {
             if ((e.StateFlags & CogJobManager.SfIOEnable) != 0)
-            {
+            {// 在线IO使能改变一次，则满足if条件一次
                 lock (mMinimumGuiPeriodTimer)
                 {
                     mMinimumGuiUpdateNeeded = true;
@@ -648,7 +652,7 @@ namespace VisionControl
             }
         }
 
-        //溢出回调
+        //溢出回调，正常情况下不被调用
         private void Job_ImageQueueOverflowed(object sender, CogJobActionEventArgs e)
         {
             // sets gui "error occurred" icon for given job to "on"
@@ -664,7 +668,7 @@ namespace VisionControl
             catch { }
         }
 
-        //未执行
+        //停止实时预览时回调，本程序已经去掉VP自带实时预览，该函数不被执行
         private void mJM_JobStopped(object sender, CogJobActionEventArgs e)
         {
             if (e.Action == CogActionConstants.StoppedContinuous ||
