@@ -263,6 +263,11 @@ namespace VisionApplication
                     strVPPFile = @".\VPP\" + Path.GetFileName(cup.p_Paf.strVPPFilePath);
                     rts.initStatus.bVPPFileExist = true;
                 }
+                else if(File.Exists(@".\" + Path.GetFileName(cup.p_Paf.strVPPFilePath)))
+                {
+                    strVPPFile = @".\VPP\" + Path.GetFileName(cup.p_Paf.strVPPFilePath);
+                    rts.initStatus.bVPPFileExist = true;
+                }
                 else
                     rts.initStatus.bVPPFileExist = false;
             }
@@ -2494,7 +2499,9 @@ namespace VisionApplication
                                         vpWin.bMainTaskFinished = false;
                                         //2024年7月13日
                                         vpWin._bContRun = true;
-                                        contThread = new Thread(RunContinuousThread);
+                                     //   contThread = new Thread(RunContinuousThread);
+                                        contThread = new Thread(RunCont);
+                                       
                                         contThread.Start();
                                         operLog.iEventStatus = 0;
                                     }
@@ -5433,10 +5440,10 @@ namespace VisionApplication
                 }
                 else*/
                 //st 非触发模式，启用线程循环采集图像并检测
-                {
+                /*{
                     contThread = new Thread(RunContinuousThread);
                     contThread.Start();
-                }
+                }*/
             }
             else
             {

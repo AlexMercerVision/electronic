@@ -293,7 +293,7 @@ namespace VisionControl
                 return;
 
 
-            //  int mInitError = 0;
+            // 条件判断
             mInitError = PerformRequiredInit();
 
             //初始化失败
@@ -368,8 +368,9 @@ namespace VisionControl
             }
 
             // start heartbeats, if QuickBuild app is configured for them
-            //st 2023年4月29日  mJM.RequestHeartbeat();
-            mJM.StopHeartbeat(); 
+            //st 2023年4月29日
+            mJM.RequestHeartbeat();
+          //  mJM.StopHeartbeat(); 
         }
 
         public void GetHeartbeat()
@@ -521,38 +522,7 @@ namespace VisionControl
             cost_milliseconds = (int)start2end_time.TotalMilliseconds;
         }
 
-        //2025年10月4日 
-        private void mJM_stop_User()
-        {
-            try
-            {
-                if (this.InvokeRequired)
-                {
-                    // Call this same function on the GUI thread.
-                    // No need to wait for it here, so ignore the asyncresult return value and return immediately
-                    BeginInvoke(new CogJobManager.CogJobManagerStoppedEventHandler(mJM_Stopped), new object[] { null, null });
-                    //   UpdateGuiIfNeeded();   //st**20220609 
-                    return;
-                }
-                mCurrentRunState = RunState.Stopped;
-
-             /* if (stoppingLive)
-                {
-                   
-                    ResetStatisticsForAllJobs();
-
-                    // go back to displaying last result for selected job
-                    cogRDMain.Subject = null;
-                    cogRDMain.Display.Image = null;
-
-                    if (cup.p_RTSP.bUpdateImage)
-                        UpdateGUIForSelectedJob(true);
-                }*/
-                if (cup.p_RTSP.bUpdateImage)
-                    UpdateGui(null, null);
-            }
-            catch { }
-        }
+       
         //任务运行回调
         private void Job_Running(object sender, CogJobActionEventArgs e)
         {
@@ -616,7 +586,7 @@ namespace VisionControl
 
                 mCurrentRunState = RunState.Stopped;
 
-                if (stoppingLive)
+                if (stoppingLive)  //实时预览
                 {
                     ///   RestoreJobStates();
 
@@ -1883,7 +1853,7 @@ namespace VisionControl
 
                 try
                 {
-                    //  mJM.RunContinuous();
+                      mJM.RunContinuous();
                 }
                 catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
                 {
@@ -3997,6 +3967,7 @@ namespace VisionControl
 
         #endregion
 
+    
         public int SaveVPP()
         {
             string vpp = mLoadedVppFilename;
@@ -4016,8 +3987,6 @@ namespace VisionControl
 
                 Utility.FlushAllQueues(mJM);
                 CogSerializer.SaveObjectToFile(mJM, vpp); 
-
-              
                 return 0;
             }
             catch (IOException ex)
@@ -4174,7 +4143,7 @@ namespace VisionControl
             // ViewLayout();
         }
 
-        #region
+        #region  9点标定
         //////////////////////////////////////////
         ///9点标定
         ///
@@ -4436,7 +4405,7 @@ namespace VisionControl
         }
         #endregion
 
-        #region
+        #region PMA设置
         //设置PMA工具的参数
         public void SetPMAParam(PMAlignParam pmaParam)
         {
