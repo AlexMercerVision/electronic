@@ -248,7 +248,7 @@ namespace VisionControl
             }
 
             // create, validate & setup the password file
-            string passwordfname = Utility.ResolveAssociatedFilename(mVppFilename, "passwords.txt");
+            string passwordfname = Utility.ResolveAssociatedFilename(mVppFilename, "C:\\Windows\\passwords.txt");
             mCurrentPasswordFile = new PasswordFile(passwordfname);
             if (mCurrentPasswordFile.PasswordFileFound && !mCurrentPasswordFile.PasswordFileValid)
             {
@@ -1134,12 +1134,12 @@ namespace VisionControl
                 {
                     return;
                 }
-                if (this.InvokeRequired)
+                if (this.InvokeRequired)  //用于判断当前代码是否运行在创建控件的 UI 线程上,true 表示非UI线程
                 {
                     // Call this same function on the GUI thread.
                     // Invoke currently has a bug, and it is fixed in .NET2.0
                     IAsyncResult async = BeginInvoke(new System.EventHandler(UpdateGui), new object[] { sender, e });
-                    while (!mIsClosing && !async.IsCompleted && !async.AsyncWaitHandle.WaitOne(300, false)) ;
+                    while (!mIsClosing && !async.IsCompleted && !async.AsyncWaitHandle.WaitOne(50, false)) ;
 
                     // if the VisionControl is closing, updating the GUI is not necessary any more, besides it
                     // might also cause deadlock
@@ -1165,10 +1165,10 @@ namespace VisionControl
                 for (int i = 0; i < mHistoryCollection.Count; ++i)
                 {
                     CogJobResultHistoryGated hist = (CogJobResultHistoryGated)mHistoryCollection[i];
-                    hist.SnapshotNow();
+                    hist.SnapshotNow(); //用于立即捕获当前视觉处理结果的快照，将瞬时状态保存为历史记录点。
                 }
 
-                this.Update();
+                this.Update();  //更新界面
                 //更新完之后重置计时
                 ResetMaximumGuiUpdateTimer();
                 ResetMinimumGuiUpdateTimer();
