@@ -248,7 +248,7 @@ namespace VisionControl
             }
 
             // create, validate & setup the password file
-            string passwordfname = Utility.ResolveAssociatedFilename(mVppFilename, "C:\\Windows\\passwords.txt");
+            string passwordfname = Utility.ResolveAssociatedFilename(mVppFilename, "passwords.txt");
             mCurrentPasswordFile = new PasswordFile(passwordfname);
             if (mCurrentPasswordFile.PasswordFileFound && !mCurrentPasswordFile.PasswordFileValid)
             {
@@ -576,14 +576,14 @@ namespace VisionControl
 
             if (jobIndex == mSelectedJob)
                 newResultForSelectedJob = true;
-
-            UpdateGUIForJob(jobIndex);
+            //2025年10月7日 屏蔽该更新
+            //UpdateGUIForJob(jobIndex);
 
             // if there is a new result for the selected job, update the gui now
             if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
             {
-                UpdateGUIForSelectedJob(false);
-                UpdateGuiIfNeeded();   //st**20220726 
+                UpdateGUIForSelectedJob(false);  //更新CogRDMain
+                UpdateGuiIfNeeded();             //CogRDMain、CogRDSub1、 CogRDSub2 显示相应记录
             }
         }
 
@@ -864,7 +864,7 @@ namespace VisionControl
                 return (CogBlobResultCollection)formatter.Deserialize(stream);
             }
         }
-
+        //更新主显示框中的图像记录
         private void UpdateGUIForSelectedJob(bool newSelectedJob)
         {
             // update the image and result bar to reflect the currently selected item of the
@@ -897,7 +897,7 @@ namespace VisionControl
                     cogRDMain.Subject = null;
             }
 
-            //st** 获取记录清单
+            //st** 获取记录清单，此处需要优化，与上面有重复性操作
             if (cup.p_SRN.strName == null)
             {
                 cup.p_SRN.count = Utility.PickSubRecordsName(result, _updateDisplayStrings, ref cup.p_SRN.strName);
@@ -996,7 +996,7 @@ namespace VisionControl
                 catch
                 { }
 
-                UpdateGui(null, null);
+                
             }
         }
         Thread SaveImageResultThread;
@@ -1030,27 +1030,27 @@ namespace VisionControl
                 {
                     cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
                     cogRDMain.Display.BackColor = Color.Black;
-                    cogRDMain.Display.Fit(true);
+                    /*cogRDMain.Display.Fit(true);*/
                 }
                 else if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null)
                 {
                     cogRDMainUser.Record=cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
-                    cogRDMainUser.BackColor = Color.Black;
-                    cogRDMainUser.Fit(true);
+                   cogRDMainUser.BackColor = Color.Black;
+                   /*  cogRDMainUser.Fit(true);*/
                 }
                 if (cup.p_CD.bListProcess[1] && strSubRecordsName[1] != null)
                 {
                     cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
                                                                                           //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    cogRDSub1.BackColor = Color.Black;
-                    cogRDSub1.Fit(true);
+                    /*cogRDSub1.BackColor = Color.Black;
+                    cogRDSub1.Fit(true);*/
                 }
                 if (cup.p_CD.bListProcess[2] && strSubRecordsName[2] != null)
                 {
                     cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
                                                                                           //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    cogRDSub2.BackColor = Color.Black;
-                    cogRDSub2.Fit(true);
+                    /*cogRDSub2.BackColor = Color.Black;
+                    cogRDSub2.Fit(true);*/
                 }
                 /*if (cup.p_CD.bListProcess[3] && strSubRecordsName[3] != null)
                 {
@@ -1066,12 +1066,12 @@ namespace VisionControl
                     cogRDSub4.BackColor = Color.Black;
                     cogRDSub4.Fit(true);
                 }*/
-                AnaInferRes(2);
-                picSub1.Invalidate();
+                /*AnaInferRes(2);
+                picSub1.Invalidate();*/
             }
             catch
             { };
-
+        //    UpdateGui(null, null);
         }
 
         private void mMinimumGuiPeriodTimer_Elapsed(object obj)

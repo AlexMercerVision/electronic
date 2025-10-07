@@ -42,6 +42,7 @@ namespace VisionApplication
     public partial class FrmMainUI : Form  
     {
         Frm_Welcome fw;
+        
         Protect mPasswordFile = new Protect("C:\\Windows\\authentication.txt");
 
         //用户参数
@@ -585,6 +586,8 @@ namespace VisionApplication
         //日期验证
         private void DateVerify(int iModelRole)
         {
+
+          
             int iDateVer = mPasswordFile.DateVerify(iModelRole);
 
             if (iDateVer == 1)
@@ -2005,6 +2008,11 @@ namespace VisionApplication
         //授权验证
         private void RoleCheck()
         {
+            if (!File.Exists("C:\\Windows\\authentication.txt"))
+            {
+                File.Copy("authentication.txt", "C:\\Windows\\authentication.txt", true);
+                mPasswordFile = new Protect("C:\\Windows\\authentication.txt");
+            }
             string strMAC = mPasswordFile.GetMacAddress();
             string strEnableMAC = mPasswordFile.GetCID();
 
