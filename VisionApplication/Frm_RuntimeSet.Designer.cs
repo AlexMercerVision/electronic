@@ -180,6 +180,7 @@ namespace VisionApplication
             this.groupBox12 = new System.Windows.Forms.GroupBox();
             this.chkUpdateImage = new System.Windows.Forms.CheckBox();
             this.chkUpdateRecord = new System.Windows.Forms.CheckBox();
+            this.chkSaveRes = new System.Windows.Forms.CheckBox();
             this.chkUpdateIO = new System.Windows.Forms.CheckBox();
             this.chkUpdateLog = new System.Windows.Forms.CheckBox();
             this.tabIO = new System.Windows.Forms.TabPage();
@@ -321,7 +322,14 @@ namespace VisionApplication
             this.btCancle = new System.Windows.Forms.Button();
             this.btUpdateParamFile = new System.Windows.Forms.Button();
             this.btOK = new System.Windows.Forms.Button();
-            this.chkSaveRes = new System.Windows.Forms.CheckBox();
+            this.chkOkOut = new System.Windows.Forms.CheckBox();
+            this.chkNgOut = new System.Windows.Forms.CheckBox();
+            this.cmbIOTimeDelay = new System.Windows.Forms.ComboBox();
+            this.label95 = new System.Windows.Forms.Label();
+            this.label96 = new System.Windows.Forms.Label();
+            this.cmbRunTimeOut = new System.Windows.Forms.ComboBox();
+            this.label97 = new System.Windows.Forms.Label();
+            this.label98 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabLine.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).BeginInit();
@@ -1934,8 +1942,11 @@ namespace VisionApplication
             // 
             // groupBox14
             // 
+            this.groupBox14.Controls.Add(this.cmbRunTimeOut);
             this.groupBox14.Controls.Add(this.chkConnCam);
+            this.groupBox14.Controls.Add(this.label97);
             this.groupBox14.Controls.Add(this.chkConnSerial);
+            this.groupBox14.Controls.Add(this.label98);
             this.groupBox14.Controls.Add(this.chkRunVPP);
             this.groupBox14.Controls.Add(this.chkConnMotionCard);
             this.groupBox14.Controls.Add(this.chkConnJCZ);
@@ -2037,6 +2048,17 @@ namespace VisionApplication
             this.chkUpdateRecord.UseVisualStyleBackColor = true;
             this.chkUpdateRecord.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
             // 
+            // chkSaveRes
+            // 
+            this.chkSaveRes.AutoSize = true;
+            this.chkSaveRes.Location = new System.Drawing.Point(27, 153);
+            this.chkSaveRes.Name = "chkSaveRes";
+            this.chkSaveRes.Size = new System.Drawing.Size(72, 16);
+            this.chkSaveRes.TabIndex = 4;
+            this.chkSaveRes.Text = "保存结果";
+            this.chkSaveRes.UseVisualStyleBackColor = true;
+            this.chkSaveRes.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
+            // 
             // chkUpdateIO
             // 
             this.chkUpdateIO.AutoSize = true;
@@ -2062,6 +2084,10 @@ namespace VisionApplication
             // tabIO
             // 
             this.tabIO.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
+            this.tabIO.Controls.Add(this.cmbIOTimeDelay);
+            this.tabIO.Controls.Add(this.label95);
+            this.tabIO.Controls.Add(this.chkNgOut);
+            this.tabIO.Controls.Add(this.chkOkOut);
             this.tabIO.Controls.Add(this.cmbNgOut);
             this.tabIO.Controls.Add(this.cmbOkOut);
             this.tabIO.Controls.Add(this.cmbEndDetTrig);
@@ -2069,6 +2095,7 @@ namespace VisionApplication
             this.tabIO.Controls.Add(this.cmbDetTrig);
             this.tabIO.Controls.Add(this.cmbAcqTrig);
             this.tabIO.Controls.Add(this.label92);
+            this.tabIO.Controls.Add(this.label96);
             this.tabIO.Controls.Add(this.label94);
             this.tabIO.Controls.Add(this.label90);
             this.tabIO.Controls.Add(this.label91);
@@ -2093,7 +2120,7 @@ namespace VisionApplication
             "Out6",
             "Out7",
             "Out8"});
-            this.cmbNgOut.Location = new System.Drawing.Point(419, 87);
+            this.cmbNgOut.Location = new System.Drawing.Point(414, 83);
             this.cmbNgOut.Name = "cmbNgOut";
             this.cmbNgOut.Size = new System.Drawing.Size(121, 20);
             this.cmbNgOut.TabIndex = 1;
@@ -2111,7 +2138,7 @@ namespace VisionApplication
             "Out6",
             "Out7",
             "Out8"});
-            this.cmbOkOut.Location = new System.Drawing.Point(419, 37);
+            this.cmbOkOut.Location = new System.Drawing.Point(414, 33);
             this.cmbOkOut.Name = "cmbOkOut";
             this.cmbOkOut.Size = new System.Drawing.Size(121, 20);
             this.cmbOkOut.TabIndex = 1;
@@ -2129,7 +2156,7 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbEndDetTrig.Location = new System.Drawing.Point(112, 187);
+            this.cmbEndDetTrig.Location = new System.Drawing.Point(83, 188);
             this.cmbEndDetTrig.Name = "cmbEndDetTrig";
             this.cmbEndDetTrig.Size = new System.Drawing.Size(121, 20);
             this.cmbEndDetTrig.TabIndex = 1;
@@ -2147,7 +2174,7 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbEndAcqTrig.Location = new System.Drawing.Point(112, 138);
+            this.cmbEndAcqTrig.Location = new System.Drawing.Point(83, 139);
             this.cmbEndAcqTrig.Name = "cmbEndAcqTrig";
             this.cmbEndAcqTrig.Size = new System.Drawing.Size(121, 20);
             this.cmbEndAcqTrig.TabIndex = 1;
@@ -2165,7 +2192,7 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbDetTrig.Location = new System.Drawing.Point(112, 82);
+            this.cmbDetTrig.Location = new System.Drawing.Point(83, 83);
             this.cmbDetTrig.Name = "cmbDetTrig";
             this.cmbDetTrig.Size = new System.Drawing.Size(121, 20);
             this.cmbDetTrig.TabIndex = 1;
@@ -2183,7 +2210,7 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbAcqTrig.Location = new System.Drawing.Point(112, 37);
+            this.cmbAcqTrig.Location = new System.Drawing.Point(83, 38);
             this.cmbAcqTrig.Name = "cmbAcqTrig";
             this.cmbAcqTrig.Size = new System.Drawing.Size(121, 20);
             this.cmbAcqTrig.TabIndex = 1;
@@ -2191,60 +2218,60 @@ namespace VisionApplication
             // label92
             // 
             this.label92.AutoSize = true;
-            this.label92.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label92.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label92.Location = new System.Drawing.Point(24, 191);
             this.label92.Name = "label92";
-            this.label92.Size = new System.Drawing.Size(72, 16);
+            this.label92.Size = new System.Drawing.Size(53, 12);
             this.label92.TabIndex = 0;
             this.label92.Text = "检测结束";
             // 
             // label94
             // 
             this.label94.AutoSize = true;
-            this.label94.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label94.Location = new System.Drawing.Point(331, 86);
+            this.label94.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label94.Location = new System.Drawing.Point(347, 87);
             this.label94.Name = "label94";
-            this.label94.Size = new System.Drawing.Size(56, 16);
+            this.label94.Size = new System.Drawing.Size(41, 12);
             this.label94.TabIndex = 0;
             this.label94.Text = "NG输出";
             // 
             // label90
             // 
             this.label90.AutoSize = true;
-            this.label90.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label90.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label90.Location = new System.Drawing.Point(24, 86);
             this.label90.Name = "label90";
-            this.label90.Size = new System.Drawing.Size(72, 16);
+            this.label90.Size = new System.Drawing.Size(53, 12);
             this.label90.TabIndex = 0;
             this.label90.Text = "检测触发";
             // 
             // label91
             // 
             this.label91.AutoSize = true;
-            this.label91.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label91.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label91.Location = new System.Drawing.Point(24, 142);
             this.label91.Name = "label91";
-            this.label91.Size = new System.Drawing.Size(72, 16);
+            this.label91.Size = new System.Drawing.Size(53, 12);
             this.label91.TabIndex = 0;
             this.label91.Text = "采集结束";
             // 
             // label93
             // 
             this.label93.AutoSize = true;
-            this.label93.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label93.Location = new System.Drawing.Point(331, 37);
+            this.label93.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label93.Location = new System.Drawing.Point(347, 38);
             this.label93.Name = "label93";
-            this.label93.Size = new System.Drawing.Size(56, 16);
+            this.label93.Size = new System.Drawing.Size(41, 12);
             this.label93.TabIndex = 0;
             this.label93.Text = "OK输出";
             // 
             // label89
             // 
             this.label89.AutoSize = true;
-            this.label89.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label89.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label89.Location = new System.Drawing.Point(24, 37);
             this.label89.Name = "label89";
-            this.label89.Size = new System.Drawing.Size(72, 16);
+            this.label89.Size = new System.Drawing.Size(53, 12);
             this.label89.TabIndex = 0;
             this.label89.Text = "采集触发";
             // 
@@ -3790,16 +3817,92 @@ namespace VisionApplication
             this.btOK.UseVisualStyleBackColor = false;
             this.btOK.Click += new System.EventHandler(this.btOK_Click);
             // 
-            // chkSaveRes
+            // chkOkOut
             // 
-            this.chkSaveRes.AutoSize = true;
-            this.chkSaveRes.Location = new System.Drawing.Point(27, 153);
-            this.chkSaveRes.Name = "chkSaveRes";
-            this.chkSaveRes.Size = new System.Drawing.Size(72, 16);
-            this.chkSaveRes.TabIndex = 4;
-            this.chkSaveRes.Text = "保存结果";
-            this.chkSaveRes.UseVisualStyleBackColor = true;
-            this.chkSaveRes.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
+            this.chkOkOut.AutoSize = true;
+            this.chkOkOut.Location = new System.Drawing.Point(586, 41);
+            this.chkOkOut.Name = "chkOkOut";
+            this.chkOkOut.Size = new System.Drawing.Size(72, 16);
+            this.chkOkOut.TabIndex = 2;
+            this.chkOkOut.Text = "OK时输出";
+            this.chkOkOut.UseVisualStyleBackColor = true;
+            this.chkOkOut.Visible = false;
+            // 
+            // chkNgOut
+            // 
+            this.chkNgOut.AutoSize = true;
+            this.chkNgOut.Location = new System.Drawing.Point(586, 89);
+            this.chkNgOut.Name = "chkNgOut";
+            this.chkNgOut.Size = new System.Drawing.Size(72, 16);
+            this.chkNgOut.TabIndex = 2;
+            this.chkNgOut.Text = "NG时输出";
+            this.chkNgOut.UseVisualStyleBackColor = true;
+            this.chkNgOut.Visible = false;
+            // 
+            // cmbIOTimeDelay
+            // 
+            this.cmbIOTimeDelay.FormattingEnabled = true;
+            this.cmbIOTimeDelay.Items.AddRange(new object[] {
+            "20",
+            "40",
+            "60",
+            "80",
+            "100"});
+            this.cmbIOTimeDelay.Location = new System.Drawing.Point(414, 139);
+            this.cmbIOTimeDelay.Name = "cmbIOTimeDelay";
+            this.cmbIOTimeDelay.Size = new System.Drawing.Size(98, 20);
+            this.cmbIOTimeDelay.TabIndex = 4;
+            // 
+            // label95
+            // 
+            this.label95.AutoSize = true;
+            this.label95.Location = new System.Drawing.Point(518, 142);
+            this.label95.Name = "label95";
+            this.label95.Size = new System.Drawing.Size(17, 12);
+            this.label95.TabIndex = 3;
+            this.label95.Text = "ms";
+            // 
+            // label96
+            // 
+            this.label96.AutoSize = true;
+            this.label96.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label96.Location = new System.Drawing.Point(331, 142);
+            this.label96.Name = "label96";
+            this.label96.Size = new System.Drawing.Size(53, 12);
+            this.label96.TabIndex = 0;
+            this.label96.Text = "脉冲时长";
+            // 
+            // cmbRunTimeOut
+            // 
+            this.cmbRunTimeOut.FormattingEnabled = true;
+            this.cmbRunTimeOut.Items.AddRange(new object[] {
+            "500",
+            "1000",
+            "1500",
+            "2000"});
+            this.cmbRunTimeOut.Location = new System.Drawing.Point(78, 227);
+            this.cmbRunTimeOut.Name = "cmbRunTimeOut";
+            this.cmbRunTimeOut.Size = new System.Drawing.Size(69, 20);
+            this.cmbRunTimeOut.TabIndex = 11;
+            // 
+            // label97
+            // 
+            this.label97.AutoSize = true;
+            this.label97.Location = new System.Drawing.Point(154, 230);
+            this.label97.Name = "label97";
+            this.label97.Size = new System.Drawing.Size(17, 12);
+            this.label97.TabIndex = 10;
+            this.label97.Text = "ms";
+            // 
+            // label98
+            // 
+            this.label98.AutoSize = true;
+            this.label98.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label98.Location = new System.Drawing.Point(19, 230);
+            this.label98.Name = "label98";
+            this.label98.Size = new System.Drawing.Size(53, 12);
+            this.label98.TabIndex = 9;
+            this.label98.Text = "运行超时";
             // 
             // Frm_RuntimeSet
             // 
@@ -4172,5 +4275,13 @@ namespace VisionApplication
         private System.Windows.Forms.CheckBox chkUpdateIO;
         private System.Windows.Forms.CheckBox chkUpdateLog;
         private System.Windows.Forms.CheckBox chkSaveRes;
+        private System.Windows.Forms.CheckBox chkNgOut;
+        private System.Windows.Forms.CheckBox chkOkOut;
+        private System.Windows.Forms.ComboBox cmbRunTimeOut;
+        private System.Windows.Forms.Label label97;
+        private System.Windows.Forms.Label label98;
+        private System.Windows.Forms.ComboBox cmbIOTimeDelay;
+        private System.Windows.Forms.Label label95;
+        private System.Windows.Forms.Label label96;
     }
 }

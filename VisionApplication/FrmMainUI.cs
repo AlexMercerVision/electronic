@@ -162,7 +162,8 @@ namespace VisionApplication
         //更新VP记录，在VP模块发生改变时需要手动更新一次VP图片记录
         private void InitSubRecordsList()
         {
-            runandupdate();
+            UpdateThread = new Thread(RunAndUpdateThread);
+            UpdateThread.Start(); 
         }
 
         //保存用户参数
@@ -296,7 +297,7 @@ namespace VisionApplication
                         this.vpWin.TabIndex = 2;
 
                         //2025年8月26日
-                        vpWin.GetAlignRegion(ref alImParam);
+                     //   vpWin.GetAlignRegion(ref alImParam);
                     }
                     else
                     {
@@ -431,7 +432,7 @@ namespace VisionApplication
             }
             AddLog();
         }
-
+        //工程拷贝后可能存在盘符不一致情况，修改路径盘符
         private void ReplaceDrive()
         {
             string tmppath;
@@ -1754,29 +1755,7 @@ namespace VisionApplication
  pmaRes = vpWin._PMARes;
             rts.iEventStatus = iEventStatus;
             //st 2022年11月2日 结果反馈
-            switch(rts.onLS.iFeedbackType)                  //启用了结果自动反馈
-            {
-                case 1:
-                    if (vpWin._iResCode == 0)                //按实际结果反馈
-                        csd.SendResult(sPortCy, true,0);
-                    else
-                        csd.SendResult(sPortCy, false, dr.xbType);
-                    break;
-                case 2:                                           //固定反馈OK
-           
-                    csd.SendResult(sPortCy, true,0);
-                    break;
-                case 3:                                            //固定反馈NG
-                    csd.SendResult(sPortCy, false,1);
-                    break;
-                case 6:                                            //固定反馈NG
-                    csd.SendResult(sPortCy, false, 2);
-                    break;
-                case 0:         //不反馈，等待手动
-                    break;
-                    //   csd.SendResult(sPortCy, true);  //st 2023年1月3日 
-                    *//**//*
-            }
+       
             strResInfo.iInd = iFileIndex;
             strResInfo.strTime = acqFIFO.strTime;
             strResInfo.strResCode = vpWin._iResCode.ToString();
@@ -1794,7 +1773,25 @@ namespace VisionApplication
 
 
         }
-
+        //2025年10月7日  执行一次运算输出IO信号
+        private void ExeIOOut()
+        {
+            switch (rts.onLS.iFeedbackType)                  //启用了结果自动反馈
+            {
+                case 1:
+                    csd.SendResultToIO(sPortCy, pmaRes.bOk, cup.p_IOPP);
+                    break;
+                case 2:                                           //固定反馈OK
+                    csd.SendResultToIO(sPortCy, true, cup.p_IOPP); 
+                    break;
+                case 3:
+                    csd.SendResultToIO(sPortCy, false, cup.p_IOPP); //固定反馈NG 
+                    break; 
+                case 0:         //不反馈，等待手动
+                    break;
+                    
+            }
+        }
         private void menuTask_Clear_Click(object sender, EventArgs e)
         {
             strOrder = "清除";
@@ -3676,7 +3673,7 @@ namespace VisionApplication
             operLog.strOperEvent = "OK反馈";
             strOrder = "Ok";
             //  csd.SendResult(sPortCy, true);
-            if (csd.SendResult(sPortCy, true, 0))
+            if (csd.SendResultToIO(sPortCy, true, cup.p_IOPP))
             {
                 operLog.iEventStatus = 0;
             }
@@ -3697,7 +3694,7 @@ namespace VisionApplication
         {
             operLog.strOperEvent = "NG反馈";
             strOrder = "NG凹口";
-            if (csd.SendResult(sPortCy, false, 1))
+            if (csd.SendResultToIO(sPortCy, false, cup.p_IOPP))
             {
                 operLog.iEventStatus = 0;
             }
@@ -3710,7 +3707,7 @@ namespace VisionApplication
         {
             operLog.strOperEvent = "NG反馈";
             strOrder = "NG平口";
-            if (csd.SendResult(sPortCy, false, 2))
+            if (csd.SendResultToIO(sPortCy, false, cup.p_IOPP))
             {
                 operLog.iEventStatus = 0;
             }
@@ -5146,7 +5143,7 @@ namespace VisionApplication
                         if (rts.onLS.iFeedbackType == 5)          //不作检测，直接反馈OK
                         {
                             Thread.Sleep(800);
-                            csd.SendResult(sPortCy, true, 0);
+                            csd.SendResultToIO(sPortCy, true, cup.p_IOPP);
                         }
                         else                                      //执行检测
                         {
@@ -5401,12 +5398,7 @@ namespace VisionApplication
 
 
         }
-
-        private void runandupdate()
-        {
-            UpdateThread = new Thread(RunAndUpdateThread);
-            UpdateThread.Start();
-        }
+      
 
         public bool RunTrigModeInit()
         {
@@ -5662,7 +5654,7 @@ namespace VisionApplication
         }
 
 
-
+        //运行一次，产生新的图像列表
         public void RunAndUpdateThread()
         {
             try
@@ -5679,7 +5671,7 @@ namespace VisionApplication
                         }
                     }
                 }
-                Thread.Sleep(40);
+                Thread.Sleep(10);
                 vpWin.UpdateSubRecordsList();
                 vpWin.bChkSubrecord = true;
                 cup = vpWin._cup;
@@ -5712,12 +5704,15 @@ namespace VisionApplication
                   AddLog();*/
                 if (vpWin.RunOneTime())
                 {
-                    while (vpWin._bRunOneTimeFinished != 2)
+                    int count = 0;
+                    int maxTimes = cup.p_RTSP.runTimeOut / 10;
+                    while (vpWin._bRunOneTimeFinished != 2 && count< maxTimes)
                     {
                         Thread.Sleep(10);
+                        count++;
                     }
-                  
-                    pmaRes = vpWin._PMARes;
+                    vpWin._bRunOneTimeFinished = 2;  //强制结束
+                      pmaRes = vpWin._PMARes;
                   /*  if (rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
                         LaserMarkAfterVisionDet(); */ //2025年6月12日，检测完毕后启动激光标刻
                     /* operLog.iEventStatus = 0;
@@ -5763,26 +5758,38 @@ namespace VisionApplication
             if (cup.p_RTSP.bUpdateRecord)
             {                
                 AnaEvent();
-                AddEventLog(iEventStatus);
+                //AddEventLog(iEventStatus);  //已取消颜色显示
+            }
+            if(cup.p_RTSP.bUpdateIO)  //启用IO输出
+            {
+                if((pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||
+                    (!pmaRes.bOk && cup.p_IOPP.NGOut!= 0) )
+                ExeIOOut();
             }
         }
+
+        delegateUIUpdate updateUItmp ; //将委托实例化
         public void RunContinuousThread()
         {
-
+            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
             while (vpWin._bContRun)
             {
                 if (vpWin.RunOneTime())
                 {
-                    while (vpWin._bRunOneTimeFinished != 2)
+                    int count = 0;
+                    int maxTimes = cup.p_RTSP.runTimeOut / 5;
+                    while (vpWin._bRunOneTimeFinished != 2 && count < maxTimes)
                     {
                         Thread.Sleep(5);
+                        count++;
                     }
+                    vpWin._bRunOneTimeFinished = 2;  //强制结束
+                    pmaRes = vpWin._PMARes;
+
                     if (this.InvokeRequired)
                     {
-                        delegateUIUpdate updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
                         this.Invoke(updateUItmp, null);
                         //    Invoke(new EventHandler(ClearHistoryQueues), new object[] { sender, e });
-
                     }
                     /*if(!cup.p_VPPRTP.bAcqFromCam && !cup.p_VPPRTP.bAcqFromIDB)
                      {

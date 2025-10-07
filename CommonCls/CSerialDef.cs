@@ -258,22 +258,8 @@ namespace CommonCls
             // lblOrderStatus.Text = "命令发送失败";
             sPort.Write(xorCheck(sb.ToString()));
         }
-        //异或校验
-        private string xorCheck(string str)
-        {
-            //获取s应字节数组
-            byte[] b = Encoding.ASCII.GetBytes(str);
-            // xorResult 存放校验结注意：初值首元素值
-            byte xorResult = b[0];
-            // 求xor校验注意：XOR运算第二元素始
-            for (int i = 1; i < b.Length; i++)
-            {
-                xorResult ^= b[i];
-            } 
-           
-          return str + xorResult.ToString("X");
-            
-        }
+   
+      
         //四通道同步控制命令
         public string turnONArb(string channel, int indent)
         {
@@ -511,6 +497,24 @@ namespace CommonCls
         //光源设置和测试界面使用
 
 
+
+        //异或校验
+        private string xorCheck(string str)
+        {
+            //获取s应字节数组
+            byte[] b = Encoding.ASCII.GetBytes(str);
+            // xorResult 存放校验结注意：初值首元素值
+            byte xorResult = b[0];
+            // 求xor校验注意：XOR运算第二元素始
+            for (int i = 1; i < b.Length; i++)
+            {
+                xorResult ^= b[i];
+            }
+
+            return str + xorResult.ToString("X");
+
+        }
+
         private string HexToString(byte[] hexByte)
         {
             //以%分割字符串，并去掉空字符
@@ -671,6 +675,74 @@ namespace CommonCls
                 return false;
             }
             return true;
+        }
+
+        //检测结果发送
+        //01:子站地址
+        //0f:指令号，0x0f=十进制 15，写多路 DO
+        //00 00:从哪一路开始写，00 00=Y1 开始写
+        //00 01:要写多少路，十六进制 0x0001=十进制 1，写 1 路
+        //01:后面要写入的数据字节数,0x01=十进制 1，写入 1 字节数据
+        //01:写入的数据，0x01 换算成二进制 00000001 = Y8-Y7-Y6-Y5-Y4-Y3-Y2-Y1 输出状态，ON=0，OFF=1
+        //ef 57:CRC 校验
+        public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
+        {
+
+            ClearOutput(sPort);
+      //      Thread.Sleep(50);
+            Byte[] returnBytes = { 1, 16, 0, 0, 0, 8, 1, 1, 63, 85 };
+            if (sPort == null || !sPort.IsOpen)
+                return false;
+            try
+            {
+                int ioPort = 1;
+                if (bOk)
+                {
+                     ioPort =  ioParam.OkOut; 
+                }
+                else
+                {
+                      ioPort = ioParam.NGOut; 
+                }
+                returnBytes[7] =(Byte)(1 << ioPort);
+                CalculateCRC(ref returnBytes);
+                 
+                sPort.Write(returnBytes, 0, 10);
+
+                Thread.Sleep(ioParam.IOTimeDelay);
+                ClearOutput(sPort);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+        //计算CRC校验码
+        private  void CalculateCRC(ref byte[] data)
+        {
+            ushort crc = 0xFFFF;
+            const ushort polynomial = 0xA001; // MODBUS标准多项式
+
+            for(int j=0;j<8;j++)
+            {
+                crc ^= data[j];
+                for (int i = 0; i < 8; i++)
+                {
+                    if ((crc & 0x0001) != 0)
+                    {
+                        crc = (ushort)((crc >> 1) ^ polynomial);
+                    }
+                    else
+                    {
+                        crc >>= 1;
+                    }
+                }
+            }
+            data[8] =(Byte)(crc & 0xFF);
+            data[9] = (Byte)(crc >> 8);
+         
         }
 
         public bool SendResultBack(SerialPort sPort, bool bOk, int bType,ref string hexString)

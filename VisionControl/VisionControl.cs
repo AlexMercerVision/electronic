@@ -2213,7 +2213,7 @@ namespace VisionControl
 
 
         #region
-
+        //更新Record清单
         public bool UpdateSubRecordsList()
         {
 

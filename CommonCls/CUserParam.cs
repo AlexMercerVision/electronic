@@ -388,10 +388,11 @@ namespace CommonCls
         public int defIn2;                  //
         public int defIn3;                  //
         public int defIn4;                  //
-        public int defOut1;                  // 
+        public int IOTimeDelay;             // 输出脉冲时长
         public int defOut2;                  //
         public int defOut3;                  //
         public int defOut4;                  //
+
     }
 
     [Serializable]
@@ -418,7 +419,9 @@ namespace CommonCls
                      
         public bool bUpdateDef2;                        
         public bool bUpdateDef3;                        
-        public bool bUpdateDef4;                    
+        public bool bUpdateDef4;
+
+        public int runTimeOut;              //VP单次运行超时
     }
 
     [Serializable]
@@ -813,6 +816,7 @@ namespace CommonCls
         {
             p_IOPP.OkOut = 1;
             p_IOPP.NGOut = 2;
+            p_IOPP.IOTimeDelay = 100;
         }
 
         public void InitRTSParam()
@@ -826,6 +830,7 @@ namespace CommonCls
             p_RTSP.bUpdateRecord = true;
             p_RTSP.bUpdateLog = true;
             p_RTSP.bUpdateIO = true;
+            p_RTSP.runTimeOut = 1000;  //1000ms运行超时
         }
     }
 
@@ -1202,6 +1207,11 @@ namespace CommonCls
             if (cup.p_Paf.ManuMarkPath == null || cup.p_Paf.ManuMarkPath == "")
                 cup.p_Paf.ManuMarkPath = @"..\..\EZDModel";
             SaveUserParam(cup);
+
+            if (cup.p_RTSP.runTimeOut == 0)
+                cup.p_RTSP.runTimeOut = 1000;
+            if (cup.p_IOPP.IOTimeDelay == 0)
+                cup.p_IOPP.IOTimeDelay = 100;
 
         }
         public bool ReadUserParam(string strUserParam, ref CUserParam cup)

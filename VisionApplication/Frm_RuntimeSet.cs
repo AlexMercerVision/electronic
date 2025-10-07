@@ -791,6 +791,7 @@ namespace VisionApplication
                 cup.p_IOPP.EndDetTrig = cmbEndDetTrig.SelectedIndex;
                 cup.p_IOPP.OkOut = cmbOkOut.SelectedIndex;
                 cup.p_IOPP.NGOut = cmbNgOut.SelectedIndex;
+                cup.p_IOPP.IOTimeDelay =Int32.Parse( cmbIOTimeDelay.Text);
             }
             catch(Exception ex)
             {
@@ -809,6 +810,7 @@ namespace VisionApplication
                 cup.p_VPPRTP.bRemarkResult = chkRemarkResult.Checked;
                 cup.p_VPPRTP.bRemarkArea = chkRemarkArea.Checked;
                 cup.p_VPPRTP.bUseWeakCrack = chkUseWeakCrack.Checked;
+              
             }
             catch (Exception ex)
             {
@@ -1033,6 +1035,7 @@ namespace VisionApplication
                 cup.p_RTSP.bUpdateLog = chkUpdateLog.Checked;
                 cup.p_RTSP.bUpdateIO = chkUpdateIO.Checked;
                 cup.p_RTSP.bSaveRes = chkSaveRes.Checked;
+                cup.p_RTSP.runTimeOut = Int32.Parse(cmbRunTimeOut.Text);
 
             }
             catch (Exception ex)
@@ -1384,6 +1387,8 @@ namespace VisionApplication
                 cmbEndDetTrig.SelectedIndex = cup.p_IOPP.EndDetTrig;
                 cmbOkOut.SelectedIndex = cup.p_IOPP.OkOut;
                 cmbNgOut.SelectedIndex = cup.p_IOPP.NGOut;
+
+                cmbIOTimeDelay.Text = cup.p_IOPP.IOTimeDelay.ToString();
             }
             catch (Exception ex)
             {
@@ -1408,6 +1413,8 @@ namespace VisionApplication
                 chkUpdateLog.Checked = cup.p_RTSP.bUpdateLog;
                 chkUpdateIO.Checked = cup.p_RTSP.bUpdateIO;
                 chkSaveRes.Checked = cup.p_RTSP.bSaveRes;
+
+                cmbRunTimeOut.Text = cup.p_RTSP.runTimeOut.ToString();
 
             }
             catch (Exception ex)
