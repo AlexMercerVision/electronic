@@ -577,7 +577,7 @@ namespace VisionControl
             if (jobIndex == mSelectedJob)
                 newResultForSelectedJob = true;
             //2025年10月7日 屏蔽该更新
-            //UpdateGUIForJob(jobIndex);
+             UpdateGUIForJob(jobIndex);
 
             // if there is a new result for the selected job, update the gui now
             if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
