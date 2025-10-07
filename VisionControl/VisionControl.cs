@@ -4178,58 +4178,81 @@ namespace VisionControl
                 }
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message.ToString());
                 return false;
             }
-           
-           // calib_NP2NP.Calibration.
+
+
+            // calib_NP2NP.Calibration.
         }
         //设置VP9点标定工具中的坐标数据
         public void SetCalibPoint(double[] dCoor)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-            int nP = dCoor.Length / 4;
-            calib_NP2NP.Calibration.NumPoints = nP;
-            //  calib_NP2NP.Calibration.
-            for (int i = 0; i < nP; i++)
+            try
             {
-                //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
-                calib_NP2NP.Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
-                calib_NP2NP.Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
+                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                int nP = dCoor.Length / 4;
+                calib_NP2NP.Calibration.NumPoints = nP;
+                //  calib_NP2NP.Calibration.
+                for (int i = 0; i < nP; i++)
+                {
+                    //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
+                    calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
+                    calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
+                    calib_NP2NP.Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
+                    calib_NP2NP.Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
             }
         }
 
         //设置blob分析模板参数
         public void SetCalibBlobParam(calibBlobParam cbp)
         {
-            CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-            cbt.RunParams.SegmentationParams.Polarity = cbp.bPolarity ? CogBlobSegmentationPolarityConstants.LightBlobs : CogBlobSegmentationPolarityConstants.DarkBlobs;
-            cbt.RunParams.SegmentationParams.Mode = cbp.iSegType == 0 ? CogBlobSegmentationModeConstants.HardFixedThreshold : CogBlobSegmentationModeConstants.HardDynamicThreshold;
-            cbt.RunParams.SegmentationParams.HardFixedThreshold = cbp.iThre;
-            cbt.RunParams.RunTimeMeasures[0].Measure = CogBlobMeasureConstants.Area;
-            cbt.RunParams.RunTimeMeasures[0].FilterMode = CogBlobFilterModeConstants.IncludeBlobsInRange;
-            cbt.RunParams.RunTimeMeasures[0].FilterRangeLow = cbp.iAreaMin;
-            cbt.RunParams.RunTimeMeasures[0].FilterRangeHigh = cbp.iAreaMax;
+            try
+            {
+                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                cbt.RunParams.SegmentationParams.Polarity = cbp.bPolarity ? CogBlobSegmentationPolarityConstants.LightBlobs : CogBlobSegmentationPolarityConstants.DarkBlobs;
+                cbt.RunParams.SegmentationParams.Mode = cbp.iSegType == 0 ? CogBlobSegmentationModeConstants.HardFixedThreshold : CogBlobSegmentationModeConstants.HardDynamicThreshold;
+                cbt.RunParams.SegmentationParams.HardFixedThreshold = cbp.iThre;
+                cbt.RunParams.RunTimeMeasures[0].Measure = CogBlobMeasureConstants.Area;
+                cbt.RunParams.RunTimeMeasures[0].FilterMode = CogBlobFilterModeConstants.IncludeBlobsInRange;
+                cbt.RunParams.RunTimeMeasures[0].FilterRangeLow = cbp.iAreaMin;
+                cbt.RunParams.RunTimeMeasures[0].FilterRangeHigh = cbp.iAreaMax;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
         }
         //获取blob分析模板参数
         public void GetCalibBlobParam(ref calibBlobParam cbp)
-        { 
-            CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-            cbp.bPolarity = cbt.RunParams.SegmentationParams.Polarity == CogBlobSegmentationPolarityConstants.LightBlobs? true:false;
-            cbp.iSegType = cbt.RunParams.SegmentationParams.Mode == CogBlobSegmentationModeConstants.HardFixedThreshold ? 0 : 1;
-            cbp.iThre= cbt.RunParams.SegmentationParams.HardFixedThreshold ;
-            cbp.iAreaMin = (int)cbt.RunParams.RunTimeMeasures[0].FilterRangeLow;
-            cbp.iAreaMax = (int)cbt.RunParams.RunTimeMeasures[0].FilterRangeHigh; 
+        {
+            try
+            {
+                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                cbp.bPolarity = cbt.RunParams.SegmentationParams.Polarity == CogBlobSegmentationPolarityConstants.LightBlobs ? true : false;
+                cbp.iSegType = cbt.RunParams.SegmentationParams.Mode == CogBlobSegmentationModeConstants.HardFixedThreshold ? 0 : 1;
+                cbp.iThre = cbt.RunParams.SegmentationParams.HardFixedThreshold;
+                cbp.iAreaMin = (int)cbt.RunParams.RunTimeMeasures[0].FilterRangeLow;
+                cbp.iAreaMax = (int)cbt.RunParams.RunTimeMeasures[0].FilterRangeHigh;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
         }
         public bool Get9PointCalibRes(ref CalibRes calibRes)
         {
             CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             try
-            {                
-              //  CalibRes calibRes = new CalibRes();
+            {
+                //  CalibRes calibRes = new CalibRes();
                 calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
                 calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
                 CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
@@ -4242,8 +4265,9 @@ namespace VisionControl
                 calibRes.dSkew = calibrationTransform.Skew;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message.ToString());
                 return false;
             }
         }
@@ -4253,7 +4277,7 @@ namespace VisionControl
             CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoor.Length / 4;
             calib_NP2NP.Calibration.NumPoints = nP;
-          //  calib_NP2NP.Calibration.
+            //  calib_NP2NP.Calibration.
             for (int i = 0; i < nP; i++)
             {
                 //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
@@ -4278,29 +4302,28 @@ namespace VisionControl
                 calibRes.dSkew = calibrationTransform.Skew;
                 return calibRes;
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message.ToString());
                 return new CalibRes();
             }
-            
 
-            
         }
 
-       
-        
+
+
         //使用VP9点标定工具进行9点标定，图像坐标与激光坐标分开传入
-        public CalibRes _9PointCalib2(double[] dCoorIm,double[] dCoorLaser)
+        public CalibRes _9PointCalib2(double[] dCoorIm, double[] dCoorLaser)
         {
             CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoorIm.Length / 2;
-            calib_NP2NP.Calibration.NumPoints = nP; 
+            calib_NP2NP.Calibration.NumPoints = nP;
             for (int i = 0; i < nP; i++)
-            { 
+            {
                 calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoorIm[i * 2]);
                 calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorIm[i * 2 + 1]);
                 calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoorLaser[i * 2]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorLaser[i * 2 + 1]);                 
+                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorLaser[i * 2 + 1]);
             }
 
             calib_NP2NP.Calibration.Calibrate();
@@ -4318,65 +4341,82 @@ namespace VisionControl
         }
 
 
-       
+
         //设置图像并执行blob分析
         public void SetCalibBlobImage(CogImage8Grey calibIm)
         {
-            CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-            cbt.InputImage = calibIm;
-            ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage= calibIm;
-            mJM.Job(1).Run();
-            Thread.Sleep(500);
-          //  calibIm.Run();
+            try
+            {
+
+                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                cbt.InputImage = calibIm;
+                ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
+                mJM.Job(1).Run();
+                Thread.Sleep(500);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+            //  calibIm.Run();
         }
 
         //获取9点标定  特征点坐标
         List<double> listCoord = new List<double>();
-        public bool GetCalibBlobCoord(int row,int col,ref double[] dCoor)
+        public bool GetCalibBlobCoord(int row, int col, ref double[] dCoor)
         {
-            CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-            int pointNum = row * col;
-            int count= cbt.Results.GetBlobs().Count;
-            if (count != pointNum)
-                return false;
-            else
+            try
             {
-               // double[,] dCoord = new double[9, 2];
-                listCoord = (mJM.Job(1).VisionTool as CogToolGroup).GetScriptTerminalData("Coord") as List<double>;
-                if (listCoord == null || listCoord.Count/2 != pointNum)
-                    return false;
-                if (dCoor == null || dCoor.Length != count * 2)
-                {
-                    dCoor = new double[count * 2];
-                }
-                for (int i = 0; i < count; i++)
-                {
-                    dCoor[i * 2] = listCoord[i * 2];
-                    dCoor[i * 2+1] = listCoord[i * 2+1];
-                    // dCoor[i * 2] = cbt.Results.GetBlobs()[i].CenterOfMassX;
-                    //  dCoor[i * 2+1] = cbt.Results.GetBlobs()[i].CenterOfMassY;
-                }
 
-                _2DCoordSort(row, col, dCoor);  //二维数组排序
+                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                int pointNum = row * col;
+                int count = cbt.Results.GetBlobs().Count;
+                if (count != pointNum)
+                    return false;
+                else
+                {
+                    // double[,] dCoord = new double[9, 2];
+                    listCoord = (mJM.Job(1).VisionTool as CogToolGroup).GetScriptTerminalData("Coord") as List<double>;
+                    if (listCoord == null || listCoord.Count / 2 != pointNum)
+                        return false;
+                    if (dCoor == null || dCoor.Length != count * 2)
+                    {
+                        dCoor = new double[count * 2];
+                    }
+                    for (int i = 0; i < count; i++)
+                    {
+                        dCoor[i * 2] = listCoord[i * 2];
+                        dCoor[i * 2 + 1] = listCoord[i * 2 + 1];
+                        // dCoor[i * 2] = cbt.Results.GetBlobs()[i].CenterOfMassX;
+                        //  dCoor[i * 2+1] = cbt.Results.GetBlobs()[i].CenterOfMassY;
+                    }
+
+                    _2DCoordSort(row, col, dCoor);  //二维数组排序
+                }
+                return true;
             }
-            return true;
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+                return false;
+            }
         }
         //二维数组排序
-        private void _2DCoordSort(int row,int col ,double[] dCoor)
+        private void _2DCoordSort(int row, int col, double[] dCoor)
         {
             int count = row * col;
             //先按照Y坐标排序
-            for(int i=0;i<count;i++)
+            for (int i = 0; i < count; i++)
             {
-                for(int j=i+1;j<count;j++)
+                for (int j = i + 1; j < count; j++)
                 {
-                    if(dCoor[2*j+1]<dCoor[2*i+1])
+                    if (dCoor[2 * j + 1] < dCoor[2 * i + 1])
                     {
                         double tmpX = dCoor[2 * i];
-                        double tmpY = dCoor[2 * i+1];
+                        double tmpY = dCoor[2 * i + 1];
 
                         dCoor[2 * i] = dCoor[2 * j];
-                        dCoor[2 * i+1] = dCoor[2 * j+1];
+                        dCoor[2 * i + 1] = dCoor[2 * j + 1];
 
                         dCoor[2 * j] = tmpX;
                         dCoor[2 * j + 1] = tmpY;
@@ -4387,7 +4427,7 @@ namespace VisionControl
             //再每行按照X坐标排序
             for (int r = 0; r < row; r++)
             {
-                for (int i = col*r; i < col * (r+1); i++)
+                for (int i = col * r; i < col * (r + 1); i++)
                 {
                     for (int j = i + 1; j < col * (r + 1); j++)
                     {
@@ -4409,60 +4449,67 @@ namespace VisionControl
         }
         #endregion
 
-        #region PMA设置
+        #region
         //设置PMA工具的参数
         public void SetPMAParam(PMAlignParam pmaParam)
         {
-            //设置训练参数
-            CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-            pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
-            pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
-            pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
-            pma.Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
-            pma.Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
-            pma.Pattern.IgnorePolarity = pmaParam.TrainPolarity;
-            switch(pmaParam.TrainAlg)
+            try
             {
-                case 0:
-                    pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
-                    break;
-                case 1:
-                    pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
-                    break;
-                case 2:
-                    pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
-                    break;
-            }
-            //设置运行参数
+                //设置训练参数
+                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
+                pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
+                pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
+                pma.Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
+                pma.Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
+                pma.Pattern.IgnorePolarity = pmaParam.TrainPolarity;
+                switch (pmaParam.TrainAlg)
+                {
+                    case 0:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
+                        break;
+                    case 1:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
+                        break;
+                    case 2:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
+                        break;
+                }
+                //设置运行参数
 
-            switch (pmaParam.RunAlg)
-            {
-                case 0:
-                    pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
-                    break;
-                case 1:
-                    pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
-                    break;
-                case 2:
-                    pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
-                    break;
+                switch (pmaParam.RunAlg)
+                {
+                    case 0:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
+                        break;
+                    case 1:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
+                        break;
+                    case 2:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
+                        break;
+                }
+                pma.RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
+                pma.RunParams.ScoreUsingClutter = pmaParam.RunArt;
+                pma.RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
+                pma.RunParams.ContrastThreshold = pmaParam.RunConstractThre;
+                pma.RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
+                pma.RunParams.AcceptThreshold = pmaParam.RunScoreThre;
+                if (pmaParam.RunEnableAngle)
+                {
+                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
+                }
+                else
+                {
+                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
+                }
+                pma.RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
+                pma.RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
             }
-            pma.RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
-            pma.RunParams.ScoreUsingClutter = pmaParam.RunArt;
-            pma.RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
-            pma.RunParams.ContrastThreshold = pmaParam.RunConstractThre;
-            pma.RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
-            pma.RunParams.AcceptThreshold = pmaParam.RunScoreThre;
-            if(pmaParam.RunEnableAngle)
+            catch (Exception ex)
             {
-                pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
+                MessageBox.Show(ex.Message.ToString());
             }
-            else
-            {
-                pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
-            }
-            pma.RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
-            pma.RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
         }
         public void GetAlignRegion(ref AlignImParam alImParam)
         {
@@ -4483,44 +4530,51 @@ namespace VisionControl
                 mImageFile.Append(cogIm);
                 mImageFile.Close();
             }
-            catch
+            catch (Exception ex)
             {
-
+                MessageBox.Show(ex.Message.ToString());
             }
 
         }
         public void GetPMAParam(ref PMAlignParam pmaParam)
         {
             //获取训练参数
-            CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-            pmaParam.TrainAutoGrun = pma.Pattern.GrainLimitAutoSelect;
-            pmaParam.TrainCoarse = pma.Pattern.GrainLimitCoarse ;
-            pmaParam.TrainFine = pma.Pattern.GrainLimitFine;
-            pmaParam.TrainEdgeThre = pma.Pattern.EdgeThreshold;
-            pmaParam.TrainAutoEdgeThre = pma.Pattern.AutoEdgeThresholdEnabled;
-            pmaParam.TrainPolarity= pma.Pattern.IgnorePolarity;
-            pmaParam.TrainAlg =(int) pma.Pattern.TrainAlgorithm;
-            if (pmaParam.TrainAlg > 2 || pmaParam.TrainAlg < 0)
-                pmaParam.TrainAlg = 2;
+            try
+            {
+                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pmaParam.TrainAutoGrun = pma.Pattern.GrainLimitAutoSelect;
+                pmaParam.TrainCoarse = pma.Pattern.GrainLimitCoarse;
+                pmaParam.TrainFine = pma.Pattern.GrainLimitFine;
+                pmaParam.TrainEdgeThre = pma.Pattern.EdgeThreshold;
+                pmaParam.TrainAutoEdgeThre = pma.Pattern.AutoEdgeThresholdEnabled;
+                pmaParam.TrainPolarity = pma.Pattern.IgnorePolarity;
+                pmaParam.TrainAlg = (int)pma.Pattern.TrainAlgorithm;
+                if (pmaParam.TrainAlg > 2 || pmaParam.TrainAlg < 0)
+                    pmaParam.TrainAlg = 2;
 
-            //获取运行参数
-            pmaParam.RunAlg = (int)pma.RunParams.RunAlgorithm;
-            if (pmaParam.RunAlg > 2 || pmaParam.RunAlg < 0)
-                pmaParam.RunAlg = 2;
- 
-            pmaParam.RunAutoEdgeThre= pma.RunParams.AutoEdgeThresholdEnabled;
-            pmaParam.RunArt= pma.RunParams.ScoreUsingClutter;
-            pmaParam.RunEdgeThre= pma.RunParams.EdgeThreshold;
-            pmaParam.RunConstractThre= pma.RunParams.ContrastThreshold;
-            pmaParam.RunSearchNum= pma.RunParams.ApproximateNumberToFind;
-            pmaParam.RunScoreThre= pma.RunParams.AcceptThreshold;
+                //获取运行参数
+                pmaParam.RunAlg = (int)pma.RunParams.RunAlgorithm;
+                if (pmaParam.RunAlg > 2 || pmaParam.RunAlg < 0)
+                    pmaParam.RunAlg = 2;
 
-            if (pma.RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
-                pmaParam.RunEnableAngle = true;
-            else
-                pmaParam.RunEnableAngle = false;
-            pmaParam.RunAngleD = pma.RunParams.ZoneAngle.Low * 180 / Math.PI;
-            pmaParam.RunAngleU = pma.RunParams.ZoneAngle.High * 180 / Math.PI; 
+                pmaParam.RunAutoEdgeThre = pma.RunParams.AutoEdgeThresholdEnabled;
+                pmaParam.RunArt = pma.RunParams.ScoreUsingClutter;
+                pmaParam.RunEdgeThre = pma.RunParams.EdgeThreshold;
+                pmaParam.RunConstractThre = pma.RunParams.ContrastThreshold;
+                pmaParam.RunSearchNum = pma.RunParams.ApproximateNumberToFind;
+                pmaParam.RunScoreThre = pma.RunParams.AcceptThreshold;
+
+                if (pma.RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
+                    pmaParam.RunEnableAngle = true;
+                else
+                    pmaParam.RunEnableAngle = false;
+                pmaParam.RunAngleD = pma.RunParams.ZoneAngle.Low * 180 / Math.PI;
+                pmaParam.RunAngleU = pma.RunParams.ZoneAngle.High * 180 / Math.PI;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
         }
 
         #endregion
