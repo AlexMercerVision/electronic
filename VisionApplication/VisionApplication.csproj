@@ -197,6 +197,9 @@
     <Compile Include="FrmMainUI.designer.cs">
       <DependentUpon>FrmMainUI.cs</DependentUpon>
     </Compile>
+    <Compile Include="FrmMainUIExtention.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Frm_RuntimeSet.cs">
       <SubType>Form</SubType>
     </Compile>

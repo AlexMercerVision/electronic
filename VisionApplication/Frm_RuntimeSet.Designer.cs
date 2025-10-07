@@ -2269,7 +2269,7 @@ namespace VisionApplication
             // 
             this.label89.AutoSize = true;
             this.label89.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label89.Location = new System.Drawing.Point(24, 37);
+            this.label89.Location = new System.Drawing.Point(24, 40);
             this.label89.Name = "label89";
             this.label89.Size = new System.Drawing.Size(53, 12);
             this.label89.TabIndex = 0;
