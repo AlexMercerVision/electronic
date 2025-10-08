@@ -77,7 +77,7 @@ namespace VisionApplication
         Thread contThread = null, oneTimeThread = null;     //连续执行与单次执行线程
         Thread UpdateThread = null;                         //更新VP记录清单线程
         Thread fxRestThread = null;
-        private delegate void UpdateUI();                   // 声明委托，用于更新界面
+     //   private delegate void UpdateUI();                   // 声明委托，用于更新界面
         Thread UIStartThread = null;                        //启动界面线程 
         Thread hikGrabThread = null;                        //图像采集线程
         Thread LaserMarkThread = null;
@@ -159,13 +159,7 @@ namespace VisionApplication
 
 
 
-        //更新VP记录，在VP模块发生改变时需要手动更新一次VP图片记录
-        private void InitSubRecordsList()
-        {
-            UpdateThread = new Thread(RunAndUpdateThread);
-            UpdateThread.Start(); 
-        }
-
+      
         //保存用户参数
         private void SaveUserParam()
         {
@@ -2268,6 +2262,9 @@ namespace VisionApplication
         //    bool bTaskFinish = true;
         bool bPMAEdit = false;
         int iTmpType = 0;
+
+
+        
         CogPMAlignEditV2 pmaV2 = new CogPMAlignEditV2();
         private void btFun_Click(object sender, EventArgs e)
         {
@@ -2289,134 +2286,13 @@ namespace VisionApplication
                 {
                     case "btFunAcqOneImage":    //采集单帧图像
                         {
-                            if (!bRunCondiction(0))
-                                return;
-                           
-                            vpWin._iTaskType = 0;
-                            rts.iTaskType = vpWin._iTaskType;
-                            iAcquisitionsTimes++;
-                            bool bRet = false;
-
-                            vpWin.bMainTaskFinished = false;
-                            if (cup.p_VPPRTP.bAcqFromCam)  //实时采集
-                            {
-                                rts.dtLastAcq = DateTime.Now;
-                                bRet = vpWin.PreViewOneImage(cup.p_VPPRTP.iXBType);
-                                if (!bRet)
-                                {
-                                    operLog.strOperEvent = "采集图像";
-                                    operLog.strFailReason = "采集单帧图像";
-                                    operLog.strFailReason = "采集异常错误";
-                                }
-
-                            }
-                            else if (!bSingleFrameModel)  //回放模式
-                            {
-
-                                iFileIndex = iNextFileIndex;
-
-                                iFileIndex = iFileIndex % iFileGroupLen;
-                                vpWin.iFileIndex = iFileIndex;
-                                if (!bCrackPlayback)
-                                    iNextFileIndex = (++iNextFileIndex) % iFileGroupLen;
-
-                                bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, cup.p_VPPRTP.iXBType);
-                                operLog.strOperEvent = "采集图像";
-                                operLog.strFailReason = "回放异常错误";
-
-                            }
-                            else
-                            {
-                                iFileIndex = iNextFileIndex;
-                                iFileIndex = iFileIndex % (iFileGroupLen * 6);
-                                bRet = vpWin.PreViewOneImageFromFile(iFileIndex, true, cup.p_VPPRTP.iXBType);
-                                iNextFileIndex = (iFileIndex + 1) % (iFileGroupLen * 6);
-                                //    iFileIndex++;
-                            }
-
-                            if (bRet)
-                            {
-                                operLog.iEventStatus = 0;
-                            }
-                            else
-                            {
-                                operLog.iEventStatus = -1;
-                            }
-                            if (!cup.p_VPPRTP.bAcqFromCam && cup.p_VPPRTP.bAcqFromIDB)
-                            {
-                                iCurrentIndex = vpWin.GetCurImageIndex();
-                                iNextIndex = vpWin.GetNextImageIndex();
-                                toolStripStatus_No.Text = iCurrentIndex.ToString() + "|" + iNextIndex.ToString() + "||" + iFileGroupLen;
-                            }
-                            else if (!cup.p_VPPRTP.bAcqFromCam && !cup.p_VPPRTP.bAcqFromIDB)
-                            {
-                                toolStripStatus_No.Text = iFileIndex.ToString() + "|" + iNextFileIndex.ToString() + "||" + iFileGroupLen + "  Time:" + acqFIFO.strTime;
-                            }
-                            if (!bRet)
-                                iErrAcquisitionsTimes++;
-                            vpWin.bMainTaskFinished = true;
-                            UpdateStatisticsForJob(0);
-                            vpWin.FitAllWin();
-                            AddLog();
+                            PeviewOneImage();
                             break;
                         }
                     case "btFun_Preview":   // 实时预览  2024年7月11日 待验证
                         {
-
-                            if (!rts.initStatus.bCamInit)
-                            {
-                                operLog.iEventStatus = -1;
-                                operLog.strOperEvent = "启动图像预览";
-                                operLog.strFailReason = "相机未初始化";
-                                AddLog();
-                                return;
-                            }
-                            //允许预览
-                            /*if (vpWin._iTaskType != 1 && !vpWin.bMainTaskFinished)
-                            {
-                                // MessageBox.Show("当前任务没有结束，不能执行该操作");
-                                operLog.strOperEvent = "启动图像预览";
-                                operLog.iEventStatus = -1;
-                                operLog.strFailReason = "当前任务没有结束";
-                                AddLog();
-                                return;
-                            }*/  
-                            if (menuCam_Connect.Text == "启动图像预览")
-                            {
-                                btFun_Preview.FlatStyle = FlatStyle.Flat;
-                                if (OpenOrCloseCam(true))
-                                {
-                                    vpWin._iTaskType = 1;
-
-                                    vpWin.bMainTaskFinished = false;
-                                    operLog.iEventStatus = 0;
-                                }
-                                else
-                                {
-                                    btFun_Preview.FlatStyle = FlatStyle.Popup;
-                                    operLog.iEventStatus = -1;
-                                    operLog.strFailReason = "启动预览异常";
-                                }
-                                rts.iTaskType = vpWin._iTaskType;
-                            }
-                            else
-                            {
-                                operLog.strOperEvent = "关闭图像预览";
-                                if (OpenOrCloseCam(false))
-                                {
-                                    vpWin._iTaskType = -1;
-                                    btFun_Preview.FlatStyle = FlatStyle.Popup;
-                                    vpWin.bMainTaskFinished = true;
-                                    operLog.iEventStatus = 0;
-                                }
-                                else
-                                {
-                                    operLog.iEventStatus = -1;
-                                    operLog.strFailReason = "关闭预览异常";
-                                }
-                            }
-
                             //     AddLog();
+                            PreviewImage(0);
                             break;
                         }
                     case "btFunRunOneTime":
@@ -3202,8 +3078,6 @@ namespace VisionApplication
             InitSubRecordsList();
         }
 
-
-
         private void menuManage_Job_Click(object sender, EventArgs e)
         {
 
@@ -3251,8 +3125,6 @@ namespace VisionApplication
             bmp.UnlockBits(bmpData);
             return rgbValues;
         }
-
-
 
         private void menuManage_User_Click(object sender, EventArgs e)
         {
@@ -3635,8 +3507,6 @@ namespace VisionApplication
         }
 
 
-
-
         /// ///////////// ///////////// ///////////// ///////////// ///////////// //////////
         /// 
         private void menuTask_blow_Click(object sender, EventArgs e)
@@ -3944,8 +3814,6 @@ namespace VisionApplication
             AddLog();
         }
 
-
-
         bool bSingleFrameModel = false;  //单帧模式
         private void menuTask_SingleFrame_Click(object sender, EventArgs e)
         {
@@ -4194,29 +4062,29 @@ namespace VisionApplication
 
         }
 
-
-
         bool bfirstTime = true;
         private void timer1_Tick(object sender, EventArgs e)
         {
+            timer1.Stop();
             if (iProcess < 100)
                 return;
 
             if (bfirstTime)
             {
                 //第三步  查询文件对象
-            /*    lczParam.cmdType = 8;
-                lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");  //"route.ezd"
-                lczParam.ind3 = 0;
-                bCmdEnd = false;
-                if (pipeClient != null)
-                    pipeClient.SendParam(lczParam);*/
+                /*    lczParam.cmdType = 8;
+                    lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");  //"route.ezd"
+                    lczParam.ind3 = 0;
+                    bCmdEnd = false;
+                    if (pipeClient != null)
+                        pipeClient.SendParam(lczParam);*/
                 /*queryEntThread = new Thread(QueryEntInfo);
                 queryEntThread.Start();*/
 
-               /* JCZServerLayout();
+                /* JCZServerLayout();
+
+                 bfirstTime = false;*/
                 timer1.Interval = 10000;
-                bfirstTime = false;*/
             }
             if (cup.p_RTSP.bAutoConnCam)
             {
@@ -4244,6 +4112,7 @@ namespace VisionApplication
             }
             catch
             { };
+            timer1.Start();
         }
         public void equidistantBlow()
         {
@@ -4807,13 +4676,11 @@ namespace VisionApplication
 
         /// ///////////// ///////////// ///////////// ///////////// ///////////// //////////
 
-
         private void menu_View_ResultStatics_Click(object sender, EventArgs e)
         {
             menu_View_ResultStatics.Checked = !menu_View_ResultStatics.Checked;
             splitContainer2.Panel2Collapsed = !menu_View_ResultStatics.Checked;
         }
-
 
         private void menuTask_Refresh_Click(object sender, EventArgs e)
         {
@@ -4856,6 +4723,218 @@ namespace VisionApplication
         {
             frm_Serial fs = new frm_Serial();
             fs.ShowDialog();
+        }
+        //是否启用光度图重构
+        private void menuTask_FXRestruct_Click(object sender, EventArgs e)
+        {
+            menuTask_FXRestruct.Checked = !menuTask_FXRestruct.Checked;
+            cup.p_VPPRTP.bFXRestruct = menuTask_FXRestruct.Checked;
+            InitCheckStatus();
+        }
+        //是否启用VP视觉推理
+        private void menuTask_VisionInfer_Click(object sender, EventArgs e)
+        {
+            /*if(!menuTask_VisionInfer.Checked)
+            { 
+            }*/
+            menuTask_VisionInfer.Checked = !menuTask_VisionInfer.Checked;
+            cup.p_VPPRTP.bVisionInfer = menuTask_VisionInfer.Checked;
+            if (cup.p_VPPRTP.bVisionInfer)  //如果启用了VP视觉推理，则不加载历史结果
+            {
+                bLoadVPRes = false;
+                menuTask_LoadRes.Checked = bLoadVPRes;
+                vpWin.bLoadVPRes = bLoadVPRes;
+            }
+            InitCheckStatus();
+
+
+            if (cup.p_VPPRTP.bVisionInfer)
+            {
+                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
+            }
+            else
+            {
+                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
+            }
+        }
+        //是否启用深度推理
+        private void menuTask_Predict_Click(object sender, EventArgs e)
+        {
+            if (!menuTask_Predict.Checked && !rts.initStatus.bDLModelInit)  //视图开启深度学习，但目前深度学习还未初始化
+            {
+                if (MessageBox.Show("需要进行深度推理初始化吗", "提示", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    toolStrip1.Enabled = false;
+                    splitContainer1.Panel1.Enabled = false;
+                    //   InitDL();
+                    toolStrip1.Enabled = true;
+                    splitContainer1.Panel1.Enabled = true;
+                }
+            }
+            menuTask_Predict.Checked = !menuTask_Predict.Checked;
+            cup.p_VPPRTP.bDeepInfer = menuTask_Predict.Checked;
+            if (cup.p_VPPRTP.bDeepInfer)  //如果启用了深度推理，则不加载历史结果
+            {
+                bLoadVPRes = false;
+                menuTask_LoadRes.Checked = bLoadVPRes;
+                vpWin.bLoadVPRes = bLoadVPRes;
+            }
+
+            if (cup.p_VPPRTP.bVisionInfer)
+            {
+                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
+            }
+            else
+            {
+                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
+            }
+
+            //     vpWin.ClearDeepInfer(cup.p_VPPRTP.bDeepInfer);
+            InitCheckStatus();
+        }
+        //直接加载结果
+        bool bLoadVPRes = false;
+        private void menuTask_LoadRes_Click(object sender, EventArgs e)
+        {
+            bLoadVPRes = !bLoadVPRes;
+            menuTask_LoadRes.Checked = bLoadVPRes;
+            vpWin.bLoadVPRes = bLoadVPRes;
+            if (vpWin.bLoadVPRes)  //如果加载结果，则关闭深度推理和VP视觉推理
+            {
+                cup.p_VPPRTP.bVisionInfer = false;
+                menuTask_VisionInfer.Checked = false;
+                cup.p_VPPRTP.bDeepInfer = false;
+                menuTask_Predict.Checked = false;
+            }
+            if (cup.p_VPPRTP.bVisionInfer)
+            {
+                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
+            }
+            else
+            {
+                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
+            }
+
+        }
+        private void btFunParam_Click(object sender, EventArgs e)
+        {
+            /*  if (!LaserCondiction(4))
+                  return;
+
+              iLaserWorkingType = 4;
+              lczParam.cmdType = 40;  //参数设置 
+              pipeClient.SendParam(lczParam);*/
+        }
+
+        private void menuTool_LightDebug_Click(object sender, EventArgs e)
+        {
+            if (rts.iModelRole < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "打光流程设置";
+                operLog.strFailReason = "用户身份未验证";
+                AddLog();
+
+                //    MessageBox.Show("用户身份未验证，无法操作");
+                return;
+            }
+            if (!vpWin.bMainTaskFinished)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "打光流程设置";
+                operLog.strFailReason = "当前任务没有结束";
+                AddLog();
+                //   MessageBox.Show("当前任务没有结束，不能执行该操作");
+                return;
+            }
+
+            frm_Serial fs = new frm_Serial(csd);
+
+            if (fs.ShowDialog() == DialogResult.OK)
+            {
+                csd.p_LS = fs.p_LS;
+                csd.p_LS2 = fs.p_LS2;
+                cup.p_LS = fs.p_LS;
+                cup.p_LS2 = fs.p_LS2;
+                SaveUserParam();
+            }
+
+        }
+
+        private void menuHelp_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void menuManage_SuperOrNormal_Click(object sender, EventArgs e)
+        {
+            if (rts.iModelRole == 10)
+            {
+                rts.iModelRole = 9;
+                vpWin.iModelRole = 9;
+                menuManage_SuperOrNormal.Text = "切换至超级用户";
+            }
+            else
+            {
+                rts.iModelRole = 10;
+                vpWin.iModelRole = 10;
+                menuManage_SuperOrNormal.Text = "切换至普通用户";
+            }
+            vpWin.SiftRDMain();
+            if (rts.iModelRole == 10)
+            {
+                /* txt_NextImageIndex.Visible = true;
+                 label5.Visible = true;*/
+                btFunSet.Visible = true;
+                groupBox1.Visible = true;
+            }
+            else
+            {
+                /*txt_NextImageIndex.Visible = false;
+                label5.Visible = false;*/
+                btFunSet.Visible = false;
+                groupBox1.Visible = false;
+            }
+        }
+
+        private void menuFile_SaveDirectory_Click(object sender, EventArgs e)
+        {
+            Process.Start("explorer.exe", cup.p_Paf.strConSavePath);
+        }
+
+        private void menuFile_PlaybackDirectory_Click(object sender, EventArgs e)
+        {
+            Process.Start("explorer.exe", cup.p_Paf.strPlaybackPath);
+        }
+
+        private void menuFile_UpdatePlaybackDirectory_Click(object sender, EventArgs e)
+        {
+            InitLocalFile();
+        }
+
+        private void menuFile_LogDirectory_Click(object sender, EventArgs e)
+        {
+            Process.Start("explorer.exe", cup.p_Paf.ManuMarkPath);
+        }
+
+        private void menuFile_ResultDirectory_Click(object sender, EventArgs e)
+        {
+            //Process.Start("explorer.exe", cup.p_Paf.strResSavePath);
+            Process.Start("explorer.exe", Path.GetDirectoryName(cup.p_Paf.strVPPFilePath));
+        }
+
+        private void splitContainer6_Panel2_Resize(object sender, EventArgs e)
+        {
+            /* if (embeddedHwnd != IntPtr.Zero)
+             {
+                 MoveWindow(
+                     embeddedHwnd,
+                     0, 0,
+                     splitContainer6.Panel2.ClientSize.Width,
+                     splitContainer6.Panel2.ClientSize.Height,
+                     true
+                 );
+             }*/
         }
 
         #endregion  交互操作事件区
@@ -5135,29 +5214,24 @@ namespace VisionApplication
             else if (Readlen == 10 && inf[0] == 0x01 && inf[1] == 0x45
                 && inf[2] == 0x05 && inf[3] == 0x01)
             {
-                if ((inf[4] & 0x01) == 0x01)  //气缸抬升完成
-                {
-                    if (rts.onLS.bTrigg && rts.iIsRunning == 0)  //启用触发，并且收到触发信号
-                    {
-                        toolStripStatus_Hand.Text = DateTime.Now.ToString() + ":请求检测";
-                        if (rts.onLS.iFeedbackType == 5)          //不作检测，直接反馈OK
-                        {
-                            Thread.Sleep(800);
-                            csd.SendResultToIO(sPortCy, true, cup.p_IOPP);
-                        }
-                        else                                      //执行检测
-                        {
-                            Thread.Sleep(5);  //留一个延时去抖动，再进行采集
-                            if (bRunCondiction(10))
-                                runonetime();
-                        }
-                    }
-                }
-                else if ((inf[4] & 0x02) == 0x02)  //气缸下降完成
-                {
-                    toolStripStatus_Hand.Text = DateTime.Now.ToString() + ":匣钵下降完成";
-                    //   AddEventLog();
-                }
+                //2025年10月08日  根据设置的触发条件，判断IO输入
+                Byte bOrder = 0;
+                int OrderType = 0;  
+                              
+                bOrder = (Byte)(1 << (cup.p_IOPP.AcqTrig - 1));
+                if ((inf[4] & bOrder) == bOrder)
+                    OrderType = 1;
+                bOrder = (Byte)(1 << (cup.p_IOPP.DetTrig - 1));
+                if ((inf[4] & bOrder) == bOrder)
+                    OrderType = 2;
+                bOrder = (Byte)(1 << (cup.p_IOPP.EndAcqTrig - 1));
+                if ((inf[4] & bOrder) == bOrder)
+                    OrderType = 3;
+                bOrder = (Byte)(1 << (cup.p_IOPP.EndDetTrig - 1));
+                if ((inf[4] & bOrder) == bOrder)
+                    OrderType = 4;
+                ExeIOTrig(OrderType);  //执行触发任务
+                
             }
             else
             {
@@ -5166,6 +5240,56 @@ namespace VisionApplication
 
         }
 
+        private void ExeIOTrig(int TrigType)
+        {
+            //未登录，禁止操作
+            if (rts.iModelRole < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "执行功能操作";
+                operLog.strFailReason = "用户身份未验证";
+                AddLog();
+                MessageBox.Show("用户身份未验证，无法操作");
+                return;
+            }
+
+            switch (TrigType)
+            {
+                case 1:  //启动采集
+                    if (cup.p_IOPP.EndAcqTrig == 0)  //没有采集结束信号，则认为每次触发仅采集一帧图像
+                    {
+                        PeviewOneImage();
+                    }
+                    else  //有采集结束信号，则认为每次触发启用实时预览
+                    {
+                        PreviewImage(1);  //启动实时预览
+                    }
+                    break;
+
+                case 2:  //启动检测
+                    if (cup.p_IOPP.EndDetTrig == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
+                    {
+                        if (bRunCondiction(1)) //运行条件判断
+                            runonetime();
+                    }
+                    else  //有检测结束信号，则认为每次触发启用连续检测
+                    {
+                        StartRun();
+                    }
+                    break;
+
+                case 3:  //停止采集
+                    PreviewImage(2);  //停止实时预览
+                    break;
+
+                case 4:  //停止检测
+                    StopRun();
+                    break;
+            }
+
+        }
+       
+        
         //st 2022年10月31日
         private bool openSer(SerialPort sPortS, string com)
         {
@@ -5233,7 +5357,190 @@ namespace VisionApplication
         #endregion
 
         // 
-        #region    Runtime implementation
+        #region    Runtime implementation 
+
+        private void PeviewOneImage()
+        {
+            if (!bRunCondiction(0))
+                return;
+
+            vpWin._iTaskType = 0;
+            rts.iTaskType = vpWin._iTaskType;
+            iAcquisitionsTimes++;
+            bool bRet = false;
+
+            vpWin.bMainTaskFinished = false;
+            if (cup.p_VPPRTP.bAcqFromCam)  //实时采集
+            {
+                rts.dtLastAcq = DateTime.Now;
+                bRet = vpWin.PreViewOneImage(cup.p_VPPRTP.iXBType);
+                if (!bRet)
+                {
+                    operLog.strOperEvent = "采集图像";
+                    operLog.strFailReason = "采集异常错误";
+                }
+            }
+            else if (!bSingleFrameModel)  //回放模式
+            {
+                iFileIndex = iNextFileIndex;
+                iFileIndex = iFileIndex % iFileGroupLen;
+                vpWin.iFileIndex = iFileIndex;
+                if (!bCrackPlayback)
+                    iNextFileIndex = (++iNextFileIndex) % iFileGroupLen;
+                bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, cup.p_VPPRTP.iXBType);
+                operLog.strOperEvent = "采集图像";
+                operLog.strFailReason = "回放异常错误";
+
+            }
+            else
+            {
+                iFileIndex = iNextFileIndex;
+                iFileIndex = iFileIndex % (iFileGroupLen * 6);
+                bRet = vpWin.PreViewOneImageFromFile(iFileIndex, true, cup.p_VPPRTP.iXBType);
+                iNextFileIndex = (iFileIndex + 1) % (iFileGroupLen * 6);
+                //    iFileIndex++;
+            }
+
+            if (bRet)
+            {
+                operLog.iEventStatus = 0;
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+            }
+            if (!cup.p_VPPRTP.bAcqFromCam && cup.p_VPPRTP.bAcqFromIDB)
+            {
+                iCurrentIndex = vpWin.GetCurImageIndex();
+                iNextIndex = vpWin.GetNextImageIndex();
+                toolStripStatus_No.Text = iCurrentIndex.ToString() + "|" + iNextIndex.ToString() + "||" + iFileGroupLen;
+            }
+            else if (!cup.p_VPPRTP.bAcqFromCam && !cup.p_VPPRTP.bAcqFromIDB)
+            {
+                toolStripStatus_No.Text = iFileIndex.ToString() + "|" + iNextFileIndex.ToString() + "||" + iFileGroupLen + "  Time:" + acqFIFO.strTime;
+            }
+            if (!bRet)
+                iErrAcquisitionsTimes++;
+            vpWin.bMainTaskFinished = true;
+            UpdateStatisticsForJob(0);
+            vpWin.FitAllWin();
+            AddLog();
+
+        }
+        private void StartPreview()
+        {
+            if (vpWin._iTaskType == 1 && !vpWin.bMainTaskFinished)  //已经在实时预览
+            {
+                return;
+            }
+            else   //不是，则开启实时预览
+            {
+                btFun_Preview.FlatStyle = FlatStyle.Flat;
+                if (OpenOrCloseCam(true))
+                {
+                    vpWin._iTaskType = 1;
+
+                    vpWin.bMainTaskFinished = false;
+                    operLog.iEventStatus = 0;
+                }
+                else
+                {
+                    btFun_Preview.FlatStyle = FlatStyle.Popup;
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = "启动预览异常";
+                }
+                rts.iTaskType = vpWin._iTaskType;
+            }
+        }
+        private void StopPreview()
+        {
+            if (vpWin._iTaskType == -1)  //已经处于停止状态
+            {
+                return;
+            }
+            else
+            {
+                operLog.strOperEvent = "关闭图像预览";
+                if (OpenOrCloseCam(false))
+                {
+                    vpWin._iTaskType = -1;
+                    btFun_Preview.FlatStyle = FlatStyle.Popup;
+                    vpWin.bMainTaskFinished = true;
+                    operLog.iEventStatus = 0;
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = "关闭预览异常";
+                }
+            }
+        }
+        private void PreviewImage(int StartOrStop)
+        {
+            if (!rts.initStatus.bCamInit)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "启动图像预览";
+                operLog.strFailReason = "相机未初始化";
+                AddLog();
+                return;
+            }
+            if (StartOrStop == 1)  //启动预览
+            {
+                StartPreview();
+            }
+            else if (StartOrStop == 2)  //停止预览
+            {
+                StopPreview();
+            }
+            else
+            {
+                if (menuCam_Connect.Text == "启动图像预览")
+                {
+                    StartPreview();
+                }
+                else
+                {
+                    StopPreview();
+                }
+            }
+
+        }
+
+        private void StartRun()
+        {
+            vpWin._iTaskType = 3;
+            btFunRunCont.FlatStyle = FlatStyle.Flat;
+            btFunRunCont.Image = global::VisionApplication.Properties.Resources.Pause;
+            vpWin.bMainTaskFinished = false;
+            //2024年7月13日
+            vpWin._bContRun = true;
+            contThread = new Thread(RunContinuousThread);
+            contThread.Start();
+
+            operLog.strOperEvent = "启动连续运行";
+            operLog.iEventStatus = 0;
+        }
+        private void StopRun()
+        {
+            vpWin._bContRun = false;
+            btFunRunCont.Enabled = false;
+            operLog.strOperEvent = "关闭连续运行";
+            operLog.iEventStatus = 0;
+        }
+
+        private void RunContinue(int StartOrStop)
+        {
+            if (vpWin.bMainTaskFinished)
+            {
+                StartRun();
+            }
+            else
+            {
+                StopRun();
+            }
+        }
+
 
         private bool bRunCondiction(int iType) 
         {
@@ -5439,220 +5746,13 @@ namespace VisionApplication
             }
         }
 
-        //是否启用光度图重构
-        private void menuTask_FXRestruct_Click(object sender, EventArgs e)
-        {
-            menuTask_FXRestruct.Checked = !menuTask_FXRestruct.Checked;
-            cup.p_VPPRTP.bFXRestruct = menuTask_FXRestruct.Checked;
-            InitCheckStatus();
-        }
-        //是否启用VP视觉推理
-        private void menuTask_VisionInfer_Click(object sender, EventArgs e)
-        {
-            /*if(!menuTask_VisionInfer.Checked)
-            { 
-            }*/
-            menuTask_VisionInfer.Checked = !menuTask_VisionInfer.Checked;
-            cup.p_VPPRTP.bVisionInfer = menuTask_VisionInfer.Checked;
-            if (cup.p_VPPRTP.bVisionInfer)  //如果启用了VP视觉推理，则不加载历史结果
-            {
-                bLoadVPRes = false;
-                menuTask_LoadRes.Checked = bLoadVPRes;
-                vpWin.bLoadVPRes = bLoadVPRes;
-            }
-            InitCheckStatus();
-
-
-            if (cup.p_VPPRTP.bVisionInfer)
-            {
-                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
-            }
-            else
-            {
-                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
-            }
-        }
-        //是否启用深度推理
-        private void menuTask_Predict_Click(object sender, EventArgs e)
-        {
-            if (!menuTask_Predict.Checked && !rts.initStatus.bDLModelInit)  //视图开启深度学习，但目前深度学习还未初始化
-            {
-                if (MessageBox.Show("需要进行深度推理初始化吗", "提示", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                {
-                    toolStrip1.Enabled = false;
-                    splitContainer1.Panel1.Enabled = false;
-                    //   InitDL();
-                    toolStrip1.Enabled = true;
-                    splitContainer1.Panel1.Enabled = true;
-                }
-            }
-            menuTask_Predict.Checked = !menuTask_Predict.Checked;
-            cup.p_VPPRTP.bDeepInfer = menuTask_Predict.Checked;
-            if (cup.p_VPPRTP.bDeepInfer)  //如果启用了深度推理，则不加载历史结果
-            {
-                bLoadVPRes = false;
-                menuTask_LoadRes.Checked = bLoadVPRes;
-                vpWin.bLoadVPRes = bLoadVPRes;
-            }
-
-            if (cup.p_VPPRTP.bVisionInfer)
-            {
-                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
-            }
-            else
-            {
-                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
-            }
-
-            //     vpWin.ClearDeepInfer(cup.p_VPPRTP.bDeepInfer);
-            InitCheckStatus();
-        }
-        //直接加载结果
-        bool bLoadVPRes = false;
-        private void menuTask_LoadRes_Click(object sender, EventArgs e)
-        {
-            bLoadVPRes = !bLoadVPRes;
-            menuTask_LoadRes.Checked = bLoadVPRes;
-            vpWin.bLoadVPRes = bLoadVPRes;
-            if (vpWin.bLoadVPRes)  //如果加载结果，则关闭深度推理和VP视觉推理
-            {
-                cup.p_VPPRTP.bVisionInfer = false;
-                menuTask_VisionInfer.Checked = false;
-                cup.p_VPPRTP.bDeepInfer = false;
-                menuTask_Predict.Checked = false;
-            }
-            if (cup.p_VPPRTP.bVisionInfer)
-            {
-                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
-            }
-            else
-            {
-                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
-            }
-
-        }
-        private void btFunParam_Click(object sender, EventArgs e)
-        {
-          /*  if (!LaserCondiction(4))
-                return;
-
-            iLaserWorkingType = 4;
-            lczParam.cmdType = 40;  //参数设置 
-            pipeClient.SendParam(lczParam);*/
-        }
-
-        private void menuTool_LightDebug_Click(object sender, EventArgs e)
-        {
-            if (rts.iModelRole < 0)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "打光流程设置";
-                operLog.strFailReason = "用户身份未验证";
-                AddLog();
-
-                //    MessageBox.Show("用户身份未验证，无法操作");
-                return;
-            }
-            if (!vpWin.bMainTaskFinished)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "打光流程设置";
-                operLog.strFailReason = "当前任务没有结束";
-                AddLog();
-                //   MessageBox.Show("当前任务没有结束，不能执行该操作");
-                return;
-            }
-
-            frm_Serial fs = new frm_Serial(csd);
-
-            if (fs.ShowDialog() == DialogResult.OK)
-            {
-                csd.p_LS = fs.p_LS;
-                csd.p_LS2 = fs.p_LS2;
-                cup.p_LS = fs.p_LS;
-                cup.p_LS2 = fs.p_LS2;
-                SaveUserParam();
-            }
-
-        }
-
-        private void menuHelp_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void menuManage_SuperOrNormal_Click(object sender, EventArgs e)
-        {
-            if (rts.iModelRole == 10)
-            {
-                rts.iModelRole = 9;
-                vpWin.iModelRole = 9;
-                menuManage_SuperOrNormal.Text = "切换至超级用户";
-            }
-            else
-            {
-                rts.iModelRole = 10;
-                vpWin.iModelRole = 10;
-                menuManage_SuperOrNormal.Text = "切换至普通用户";
-            }
-            vpWin.SiftRDMain();
-            if (rts.iModelRole == 10)
-            {
-                /* txt_NextImageIndex.Visible = true;
-                 label5.Visible = true;*/
-                btFunSet.Visible = true;
-                groupBox1.Visible = true;
-            }
-            else
-            {
-                /*txt_NextImageIndex.Visible = false;
-                label5.Visible = false;*/
-                btFunSet.Visible = false;
-                groupBox1.Visible = false;
-            }
-        }
-
-        private void menuFile_SaveDirectory_Click(object sender, EventArgs e)
-        {
-            Process.Start("explorer.exe", cup.p_Paf.strConSavePath);
-        }
-
-        private void menuFile_PlaybackDirectory_Click(object sender, EventArgs e)
-        {
-            Process.Start("explorer.exe", cup.p_Paf.strPlaybackPath);
-        }
-
-        private void menuFile_UpdatePlaybackDirectory_Click(object sender, EventArgs e)
-        {
-            InitLocalFile();
-        }
-
-        private void menuFile_LogDirectory_Click(object sender, EventArgs e)
-        {
-            Process.Start("explorer.exe", cup.p_Paf.ManuMarkPath);
-        }
-
-        private void menuFile_ResultDirectory_Click(object sender, EventArgs e)
-        {
-            //Process.Start("explorer.exe", cup.p_Paf.strResSavePath);
-            Process.Start("explorer.exe", Path.GetDirectoryName(cup.p_Paf.strVPPFilePath));
-        }
-
        
-        private void splitContainer6_Panel2_Resize(object sender, EventArgs e)
+        //更新VP记录，在VP模块发生改变时需要手动更新一次VP图片记录
+        private void InitSubRecordsList()
         {
-           /* if (embeddedHwnd != IntPtr.Zero)
-            {
-                MoveWindow(
-                    embeddedHwnd,
-                    0, 0,
-                    splitContainer6.Panel2.ClientSize.Width,
-                    splitContainer6.Panel2.ClientSize.Height,
-                    true
-                );
-            }*/
+            UpdateThread = new Thread(RunAndUpdateThread);
+            UpdateThread.Start();
         }
-
 
         //运行一次，产生新的图像列表
         public void RunAndUpdateThread()
@@ -5687,9 +5787,7 @@ namespace VisionApplication
 
         }
 
-        Thread UpdateUIThread;
-
-
+        //Thread UpdateUIThread; 
         //RunOneTime()->   RunOneTimeThread()  ->vpWin.RunOneTime()
         //->LaserMarkAfterVisionDet()->UpdateUIExe()
         public void RunOneTimeThread()
@@ -5741,16 +5839,17 @@ namespace VisionApplication
             }
             vpWin.bMainTaskFinished = true;
             btFunRunOneTime.FlatStyle = FlatStyle.Popup;
-            // 
-
+            //  
             //st 2024年7月13日
-            UpdateUIThread = new Thread(UpdateUIExe);
-            UpdateUIThread.Start();
-
+            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
+            if (this.InvokeRequired)
+            {
+                this.Invoke(updateUItmp, null); 
+            }
+            /*UpdateUIThread = new Thread(UpdateUIExe);
+            UpdateUIThread.Start();*/ 
         }
-
-
-
+         
         public delegate void delegateUIUpdate();
         private void UpdateUIExe()
         {

@@ -695,14 +695,14 @@ namespace CommonCls
                 return false;
             try
             {
-                int ioPort = 1;
+                int ioPort = 0;
                 if (bOk)
                 {
-                     ioPort =  ioParam.OkOut; 
+                     ioPort =  ioParam.OkOut-1; 
                 }
                 else
                 {
-                      ioPort = ioParam.NGOut; 
+                      ioPort = ioParam.NGOut-1; 
                 }
                 returnBytes[7] =(Byte)(1 << ioPort);
                 CalculateCRC(ref returnBytes);
