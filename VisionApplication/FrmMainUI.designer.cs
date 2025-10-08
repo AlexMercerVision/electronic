@@ -1434,6 +1434,7 @@ namespace VisionApplication
             this.toolBtSta_MarkAfterLocated.Name = "toolBtSta_MarkAfterLocated";
             this.toolBtSta_MarkAfterLocated.Size = new System.Drawing.Size(36, 42);
             this.toolBtSta_MarkAfterLocated.ToolTipText = "定位后进行标刻";
+            this.toolBtSta_MarkAfterLocated.Visible = false;
             this.toolBtSta_MarkAfterLocated.Click += new System.EventHandler(this.toolBtSta_MarkAfterLocated_Click);
             // 
             // toolBt_LaserPreview
@@ -1445,6 +1446,7 @@ namespace VisionApplication
             this.toolBt_LaserPreview.Size = new System.Drawing.Size(36, 42);
             this.toolBt_LaserPreview.Text = "手动发送NG结果";
             this.toolBt_LaserPreview.ToolTipText = "清除任务";
+            this.toolBt_LaserPreview.Visible = false;
             // 
             // toolBtSta_SaveRes
             // 
@@ -1526,7 +1528,6 @@ namespace VisionApplication
             this.toolBt_CleanHistory.Text = "toolStripButton3";
             this.toolBt_CleanHistory.ToolTipText = "清除";
             this.toolBt_CleanHistory.Visible = false;
-      //      this.toolBt_CleanHistory.Click += new System.EventHandler(this.toolBt_CleanHistory_Click);
             // 
             // toolBtSta_UseFX
             // 

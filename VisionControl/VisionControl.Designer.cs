@@ -168,7 +168,7 @@ namespace VisionControl
             this.Name = "VisionControl";
             this.Size = new System.Drawing.Size(913, 643);
             this.Load += new System.EventHandler(this.VisionControl_Load);
-            this.SizeChanged += new System.EventHandler(this.VisionControl_SizeChanged);
+            //this.SizeChanged += new System.EventHandler(this.VisionControl_SizeChanged);
             ((System.ComponentModel.ISupportInitialize)(this.applicationErrorProvider)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picSub1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picSub2)).EndInit();

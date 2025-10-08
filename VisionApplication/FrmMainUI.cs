@@ -4064,15 +4064,15 @@ namespace VisionApplication
 
         bool bfirstTime = true;
         private void timer1_Tick(object sender, EventArgs e)
-        {
-            timer1.Stop();
+        {          
             if (iProcess < 100)
                 return;
 
+            timer1.Stop();
             if (bfirstTime)
             {
                 //第三步  查询文件对象
-                /*    lczParam.cmdType = 8;
+                /*  lczParam.cmdType = 8;
                     lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");  //"route.ezd"
                     lczParam.ind3 = 0;
                     bCmdEnd = false;
@@ -4082,24 +4082,22 @@ namespace VisionApplication
                 queryEntThread.Start();*/
 
                 /* JCZServerLayout();
-
                  bfirstTime = false;*/
                 timer1.Interval = 10000;
             }
-            if (cup.p_RTSP.bAutoConnCam)
-            {
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    //判断相机是否在线
-                    if (!acqFIFO.IsCamConn(i))
-                        rts.cs.iStatus[i] = 0;
-                }
-            }
-
             try
             {
+                if (cup.p_RTSP.bAutoConnCam)
+                {
+                    for (int i = 0; i < maxCameraNum; i++)
+                    {
+                        //判断相机是否在线
+                        if (!acqFIFO.IsCamConn(i))
+                            rts.cs.iStatus[i] = 0;
+                    }
+                }
                 TipInfo();
-                if (DateTime.Now.Hour == 0 && DateTime.Now.Minute == 0)
+                if (DateTime.Now.Hour == 0 && DateTime.Now.Minute < 5) //0点到0:05分，
                 {
                     dirJudge(true);
                 }
@@ -5706,7 +5704,7 @@ namespace VisionApplication
 
         }
       
-
+        //触发运行模式
         public bool RunTrigModeInit()
         {
             /*  int iCamInd = cup.p_CD.triggleCam;
@@ -5723,9 +5721,6 @@ namespace VisionApplication
         }
         public void RunCont()
         {
-
-
-
             if (vpWin.RunCont())
             {
                 /*if (rts.onLS.bTrigg)

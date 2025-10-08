@@ -40,7 +40,7 @@ namespace VisionControl
     {
 
         //**20220416  开放单次运行接口
-        #region
+        #region  变量定义
         //   CDL_Predict cdl_Predict = new CDL_Predict();
         public int iReject = 0;
         const int maxCameraNum = 5;
@@ -97,7 +97,7 @@ namespace VisionControl
             get { return pmaRes; }
             set { pmaRes = value; }
         }
-        //     DLResult[] DL_result=new DLResult[maxCameraNum];
+        //DLResult[] DL_result=new DLResult[maxCameraNum];
         public int _iTaskType
         {
             get { return iTaskType; }
@@ -162,65 +162,23 @@ namespace VisionControl
         public bool bActivateRun = false;
         int inactiveTime = 0;
         public int iFileIndex = 0;
+        public uint _cameraNum
+        {
+            get { return cameraNum; }
+            set { cameraNum = value; }
+        }
 
         public int cost_milliseconds;
         TimeSpan infer_start_time;
         TimeSpan infer_end_time;
         TimeSpan start2end_time;
 
-
-        private void initVar()
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                ci8gAcq[i] = new CogImage8Grey();
-            }
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                ci8gFX[i] = new CogImage8Grey();
-            }
-            for (int i = 0; i < 6; i++)
-            {
-                hObjFX[i] = new HObject();
-            }
-            acqFIFO._ci8gAcq = ci8gAcq;
-            acqFIFO._hObj = hObjFX;
+        #endregion
 
 
-            vpRes.iResCode = new int[maxCameraNum];
-            vpRes.TF = new CogTransform2DLinear[maxCameraNum];
-        }
 
-        public void SetAcqFIFO(ImgAcqFIFO _acqFIFO)
-        {
-            acqFIFO = _acqFIFO;
-        }
-
-        public void SetLock(bool bLock)
-        {
-            /* ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
-             
-           ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
-
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
-
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;*/
-        }
-
-        public void SetSaveRes(bool bSaveRes)
-        {
-            /* ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
-
-             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
-
-             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
-             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
-
-             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;*/
-        }
-
-      
+        #region  VP执行运算
+        //防假死激活运行
         public void ActivateRun()
         {
             if (mJM == null || mJM.JobsRunningState != CogJobsRunningStateConstants.None)
@@ -235,7 +193,9 @@ namespace VisionControl
             if (inactiveTime == 0)   //连续10次不活跃，执行一个工具
             {
                 bActivateRun = true;
-               (mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].Run();  // //20250620   
+               (mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].Run();  // //20250620  根据脚本代码，此处应该是阻塞执行，不用判断是否执行完毕 
+
+                // ((mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].RunStatus.Result== CogToolResultConstants.Accept) 
                 bActivateRun = false;
                 iToolIndex += 1;
                 iToolIndex = iToolIndex % toolNum;
@@ -243,21 +203,11 @@ namespace VisionControl
 
         }
 
-    
+        //VP执行一次运算
         public bool RunOneTime()
         {
+            infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始
 
-            infer_start_time = new TimeSpan(DateTime.Now.Ticks);
-
-            /*   mJM.Job(0).Run();
-               mJM.
-
-               infer_end_time = new TimeSpan(DateTime.Now.Ticks);
-               start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
-               cost_milliseconds = (int)start2end_time.TotalMilliseconds;
-               bRunOneTimeFinished = 2;*/
-
-            // return true;
 
             if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
                 return false;
@@ -335,143 +285,50 @@ namespace VisionControl
             return true;
 
         }
+     
+        //设置VP的输入图像
         public void SetVPPImage()
         {
 
             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = ci8gAcq[cup.p_VPPRTP.iXBType];
 
         }
-        public void DirectShowImage()
+     
+       //VP执行连续运算
+        public bool RunCont()
         {
-            for (int i = 0; i < maxCameraNum; i++)
+            if (bContRun)
             {
-                if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)  //启用的检测面才做采集
+                // Stop continuous
+                mJM.Stop();
+                mCurrentRunState = RunState.Stopped;
+                bContRun = false;
+                // note that mJM_Stopped will be called when job manager has completed this stop
+
+                return false;
+            }
+            else
+            {
+                // update control state here to prevent an error from a quick button doubleclick
+                //  mCurrentRunState = RunState.RunningContinuous;
+                bContRun = true;
+                mCurrentRunState = RunState.RunningContinuous;
+
+                try
                 {
-                    switch (i)
-                    {
-                        case 0:
-                            if (iModelRole == 10)
-                            {
-                                cogRDMain.Display.Image = ci8gAcq[i];
-                                cogRDMain.Display.Fit(true);
-                            }
-                            else
-                            {
-                                cogRDMainUser.Image = ci8gAcq[i];
-                                cogRDMainUser.Fit(true);
-                            }
-                            break;
-                        case 1:
-                            cogRDSub1.Image = ci8gAcq[i];
-                            cogRDSub1.Fit(true);
-                            break;
-                        case 2:
-                            cogRDSub2.Image = ci8gAcq[i];
-                            cogRDSub2.Fit(true);
-                            break;
-                            /* case 3:
-                                 cogRDSub3.Image = ci8gAcq[i];
-                                 cogRDSub3.Fit(true);
-                                 break;
-                             case 4:
-                                 cogRDSub4.Image = ci8gAcq[i];
-                                 cogRDSub4.Fit(true);
-                                 break;*/
-                    }
+                    mJM.RunContinuous();
                 }
-
-            }
-        }
-        public CogPMAlignMultiTool _pmaMTGrey
-        {
-            //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool); }
-
-        }
-        public CogPMAlignTool _pmaMT
-        {
-            //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool); }
-
-        }
-        public CogBlobTool _blobCalib
-        {
-            //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool); }
-
-        }
-        public bool setBlob(CogBlobTool blobT)
-        {
-            try
-            {
-                (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] = blobT;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        public bool setPMA(CogPMAlignMultiTool pma)
-        {
-            try
-            {
-                (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] = pma;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        public bool setPMA(CogPMAlignTool pma)
-        {
-            try
-            {
-                (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] = pma;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        //2024年8月27日  根据设定的匣钵类型对多模板匹配搜索集进行设置
-        CogPMAlignMultiTool pmaMTGrey;
-        public void SetxbType(int xbType)
-        {
-
-            try
-            {
-
-                if (cup.p_CD.bListProcess[0])
+                catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
                 {
-                    //  pmaMTFX = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Tools["CogPMAlignMultiToolFX"] as CogPMAlignMultiTool;
-                    pmaMTGrey = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool);
-                    //   pmaMTFX.Operator.RemoveAllItemsFromSearchOrder();
-                    pmaMTGrey.Operator.RemoveAllItemsFromSearchOrder();
-                    if (xbType == 0)
-                    {
-                        //     pmaMTFX.Operator.AddItemToSearchOrderByInternalID(0);
-                        pmaMTGrey.Operator.AddItemToSearchOrderByInternalID(0);
-                        // pmaMTGrey.Operator.remove
-                    }
-                    else if (xbType == 1)
-                    {
-                        //   pmaMTFX.Operator.AddItemToSearchOrderByInternalID(1);
-                        pmaMTGrey.Operator.AddItemToSearchOrderByInternalID(1);
-                    }
-                    else
-                    {
-                        //  pmaMTFX.Operator.AddAllItemsToSearchOrder();
-                        pmaMTGrey.Operator.AddAllItemsToSearchOrder();
-                    }
-
+                    // do nothing in this case - we're already running
                 }
-
+                catch (Cognex.VisionPro.Exceptions.CogException ex)
+                {
+                    mCurrentRunState = RunState.Stopped;
+                    strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                }
+                return true;
             }
-            catch
-            { }
         }
 
         /* public bool RunOneTime()
@@ -665,45 +522,33 @@ namespace VisionControl
             set { bContRun = value; }
             get { return bContRun; }
         }
+        #endregion
 
-        public bool RunCont()
+
+        #region  初始化以及VP设置相关
+        //变量初始化，空间加载后_Load 事件中调用
+        private void initVar()
         {
-            if (bContRun)
+            for (int i = 0; i < maxCameraNum; i++)
             {
-                // Stop continuous
-                mJM.Stop();
-                mCurrentRunState = RunState.Stopped;
-                bContRun = false;
-                // note that mJM_Stopped will be called when job manager has completed this stop
-
-                return false;
+                ci8gAcq[i] = new CogImage8Grey();
             }
-            else
+            for (int i = 0; i < maxCameraNum; i++)
             {
-                // update control state here to prevent an error from a quick button doubleclick
-                //  mCurrentRunState = RunState.RunningContinuous;
-                bContRun = true;
-                mCurrentRunState = RunState.RunningContinuous;
-
-                try
-                {
-                    mJM.RunContinuous();
-                }
-                catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
-                {
-                    // do nothing in this case - we're already running
-                }
-                catch (Cognex.VisionPro.Exceptions.CogException ex)
-                {
-                    mCurrentRunState = RunState.Stopped;
-                    strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
-                }
-                return true;
+                ci8gFX[i] = new CogImage8Grey();
             }
+            for (int i = 0; i < 6; i++)
+            {
+                hObjFX[i] = new HObject();
+            }
+            acqFIFO._ci8gAcq = ci8gAcq;
+            acqFIFO._hObj = hObjFX;
+
+
+            vpRes.iResCode = new int[maxCameraNum];
+            vpRes.TF = new CogTransform2DLinear[maxCameraNum];
         }
-
-
-
+        //VP选项配置
         public int VPConfig()
         {
             FormConfig frmConfigSelect = new FormConfig(mQuickBuildAccess, mUsePasswords);
@@ -770,53 +615,487 @@ namespace VisionControl
             }
             return iRet;
         }
-        CogJob j;
-        public string[] RetStatisticsForJob(int i)
+        public bool SetListProcess(CUserParam cup)
         {
-            bool runningLive = mCurrentRunState == RunState.RunningLive;
-            if (runningLive)
-                return null;
-            string[] strStatus = new string[12];
-
-            j = mJM.Job(i);
-            strStatus[0] = (j.TotalJobIterations).ToString();
-            //  strStatus[1] = j.TotalVisionToolAccepts.ToString();
-            strStatus[1] = (j.TotalJobIterations - iReject).ToString();
-            string percentStr = "0";
-            if (j.TotalJobIterations > 0)
+            try
             {
-                double p = (j.TotalJobIterations - iReject) * 100.0 / (j.TotalJobIterations);
-                percentStr = p.ToString("0.0");
+                (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("ListProcess", cup.p_CD.bListProcess);
+
+                CogToolGroup myToolGroup = mJM.Job(0).VisionTool as CogToolGroup;
+
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                    {
+                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 1]);
+                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 2]);
+                    }
+                    else
+                    {
+                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 1]);
+                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 2]);
+                    }
+                }
             }
-
-            strStatus[2] = percentStr;
-            //  strStatus[3] = j.TotalVisionToolRejects.ToString();
-            strStatus[3] = iReject.ToString();
-            strStatus[4] = j.TotalVisionToolWarnings.ToString();
-            strStatus[5] = j.TotalVisionToolErrors.ToString();
-
-            strStatus[6] = j.TotalAcquisitions.ToString();
-            strStatus[7] = j.TotalAcquisitionErrors.ToString();
-            strStatus[8] = j.TotalAcquisitionOverruns.ToString();
-
-            if (j.TotalJobThroughputMax != 0)
+            catch
             {
-                strStatus[9] = j.TotalJobThroughput.ToString("0.000");
-                strStatus[10] = j.TotalJobThroughputMin.ToString("0.000");
-                strStatus[11] = j.TotalJobThroughputMax.ToString("0.000");
+                return false;
             }
-            else
+            return true;
+        }
+        public bool SetDiagParam(CUserParam cup)
+        {
+            try
             {
-                string waiting = ResourceUtility.GetString("RtStatsWaiting");
-                strStatus[9] = waiting;
-                strStatus[10] = waiting;
-                strStatus[11] = waiting;
-            }
+                // 设置掩膜
+                string imagePath = @".\Mask\Sub1MaskWithDL.bmp";
+                CogImageFileTool cogFile = new CogImageFileTool();
+                CogImage8Grey cogImageMask = new CogImage8Grey();
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
+                        cogImageMask.Copy();
 
-            return strStatus;
+                imagePath = @".\Mask\Sub1MaskWithOutDL.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
+                        cogImageMask.Copy();
+
+
+                imagePath = @".\Mask\Sub2MaskWithDL.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
+                        cogImageMask.Copy();
+
+                imagePath = @".\Mask\Sub2MaskWithOutDL.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
+                        cogImageMask.Copy();
+
+                imagePath = @".\Mask\Sub3MaskWithDL.bmp";
+
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
+                        cogImageMask.Copy();
+
+                imagePath = @".\Mask\Sub3MaskWithOutDL.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
+                        cogImageMask.Copy();
+
+                imagePath = @".\Mask\Sub4MaskWithDL.bmp";
+
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
+                        cogImageMask.Copy();
+
+                imagePath = @".\Mask\Sub4MaskWithOutDL.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
+                        cogImageMask.Copy();
+
+
+
+                imagePath = @".\Mask\底面MaskLocalWithoutEdge.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutEdge"].Value =
+                       cogImageMask.Copy();
+
+
+                imagePath = @".\Mask\底面MaskEdge.bmp";
+                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
+                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
+                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
+                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithEdge"].Value =
+                       cogImageMask.Copy();
+
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["greyAbnormCount"].Value = cup.p_DP.dmParam.greyAbnormCount;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["greyAbnormArea"].Value = cup.p_DP.dmParam.greyAbnormArea;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["FXAbnormArea1"].Value = cup.p_DP.dmParam.FXAbnormArea1;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["FXAbnormArea1"].Value = cup.p_DP.dmParam.FXAbnormArea1;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["FXAbnormArea2"].Value = cup.p_DP.dmParam.FXAbnormArea2;
+
+
+                for (int i = 0; i < maxCameraNum - 1; i++)
+                {
+
+
+                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["edgeAbnormCount"].Value = cup.p_DP.cmParam[i].edgeAbnormCount;
+                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["edgeLeftAbnormCount"].Value = cup.p_DP.cmParam[i].edgeLeftAbnormCount;
+                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["edgeRightAbnormCount"].Value = cup.p_DP.cmParam[i].edgeRightAbnormCount;
+                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["lwArea"].Value = cup.p_DP.cmParam[i].lwArea;
+                    (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Tools["CogToolBlockCrack"] as CogToolBlock).Inputs["CrackParam"].Value = cup.p_CP;
+
+                }
+
+                SetRemark(cup.p_VPPRTP.bRemarkArea, cup.p_VPPRTP.bRemarkResult);
+
+                /*
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["edgeAbnormCount"].Value = cup.p_DP.cmParam[1].edgeAbnormCount;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["edgeLeftAbnormCount"].Value = cup.p_DP.cmParam[1].edgeLeftAbnormCount;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["edgeRightAbnormCount"].Value = cup.p_DP.cmParam[1].edgeRightAbnormCount;
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["lwArea"].Value = cup.p_DP.cmParam[1].lwArea;
+                */
+            }
+            catch
+            {
+                return false;
+                // MessageBox.Show("设置流程参数失败");
+            }
+            return true;
+        }
+        //侧面是否使用光度立体法
+        public void SetUseFX(bool bUseFX)
+        {
+
+            (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bInputFX", bUseFX);
+
+        }
+        //是否使用相机数据
+        public void SetFromCam(bool bAcqFromCam)
+        {
+            (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bAcqFromCam", bAcqFromCam);
+
+        }
+        public int iModelRole = -1;
+        public void SetUseWeakCrackDetect(bool bWeakCrackDetect)
+        {
+            for (int i = 0; i < maxCameraNum - 1; i++)
+            {
+                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["bWeakDetect"].Value = cup.p_VPPRTP.bUseWeakCrack;
+            }
+        }
+        //设置VPP算法文件参数
+        public bool SetVPPRuntimeParam()
+        {
+            try
+            {
+                SetLock(false);
+                SetUseFX(cup.p_VPPRTP.bUseFX);
+                SetFromCam(cup.p_VPPRTP.bAcqFromCam || !cup.p_VPPRTP.bAcqFromIDB);
+                SetRemark(cup.p_VPPRTP.bRemarkArea, cup.p_VPPRTP.bRemarkResult);
+                SetListProcess(cup);
+                SetDiagParam(cup);
+                SetUseWeakCrackDetect(cup.p_VPPRTP.bUseWeakCrack);
+                SetxbType(cup.p_VPPRTP.iXBType);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
 
-        public bool InitAcqCB()  //注册回调
+        //主窗体InitVisionControl()中调用
+        public void SetAcqFIFO(ImgAcqFIFO _acqFIFO)
+        {
+            acqFIFO = _acqFIFO;
+        }
+        //SetVPPRuntimeParam()函数中调用
+        public void SetLock(bool bLock)
+        {
+            /* ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
+             
+           ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
+
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;
+
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Inputs["bRerun"].Value = bLock;*/
+        }
+        //设置VP中是否要保存图像结果
+        public void SetSaveRes(bool bSaveRes)
+        {
+            /* ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
+
+             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
+
+             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
+             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;
+
+             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["bSaveRes"].Value = bSaveRes;*/
+        }
+        //2024年8月27日  根据设定的匣钵类型对多模板匹配搜索集进行设置
+        CogPMAlignMultiTool pmaMTGrey;
+        public void SetxbType(int xbType)
+        {
+
+            try
+            {
+
+                if (cup.p_CD.bListProcess[0])
+                {
+                    //  pmaMTFX = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Tools["CogPMAlignMultiToolFX"] as CogPMAlignMultiTool;
+                    pmaMTGrey = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool);
+                    //   pmaMTFX.Operator.RemoveAllItemsFromSearchOrder();
+                    pmaMTGrey.Operator.RemoveAllItemsFromSearchOrder();
+                    if (xbType == 0)
+                    {
+                        //     pmaMTFX.Operator.AddItemToSearchOrderByInternalID(0);
+                        pmaMTGrey.Operator.AddItemToSearchOrderByInternalID(0);
+                        // pmaMTGrey.Operator.remove
+                    }
+                    else if (xbType == 1)
+                    {
+                        //   pmaMTFX.Operator.AddItemToSearchOrderByInternalID(1);
+                        pmaMTGrey.Operator.AddItemToSearchOrderByInternalID(1);
+                    }
+                    else
+                    {
+                        //  pmaMTFX.Operator.AddAllItemsToSearchOrder();
+                        pmaMTGrey.Operator.AddAllItemsToSearchOrder();
+                    }
+
+                }
+
+            }
+            catch
+            { }
+        }
+        //设置推理模式
+        public void SetVPInferModel(int iType)
+        {
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+        }
+
+        public void SetVPResult()
+        {
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[0];
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsMain;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
+
+
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[1];
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub1;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
+
+
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[2];
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub2;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
+
+
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[3];
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub3;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
+
+
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[4];
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub4;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
+        }
+
+        #endregion
+
+        #region  VP工具相关设置
+
+        public CogPMAlignMultiTool _pmaMTGrey
+        {
+            //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
+            get { return ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool); }
+
+        }
+        public CogPMAlignTool _pmaMT
+        {
+            //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
+            get { return ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool); }
+
+        }
+        public CogBlobTool _blobCalib
+        {
+            //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
+            get { return ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool); }
+
+        }
+        public bool setBlob(CogBlobTool blobT)
+        {
+            try
+            {
+                (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] = blobT;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public bool setPMA(CogPMAlignMultiTool pma)
+        {
+            try
+            {
+                (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] = pma;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public bool setPMA(CogPMAlignTool pma)
+        {
+            try
+            {
+                (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] = pma;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+        public void SetPMAParam(PMAlignParam pmaParam)
+        {
+            try
+            {
+                //设置训练参数
+                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
+                pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
+                pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
+                pma.Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
+                pma.Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
+                pma.Pattern.IgnorePolarity = pmaParam.TrainPolarity;
+                switch (pmaParam.TrainAlg)
+                {
+                    case 0:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
+                        break;
+                    case 1:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
+                        break;
+                    case 2:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
+                        break;
+                }
+                //设置运行参数
+
+                switch (pmaParam.RunAlg)
+                {
+                    case 0:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
+                        break;
+                    case 1:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
+                        break;
+                    case 2:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
+                        break;
+                }
+                pma.RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
+                pma.RunParams.ScoreUsingClutter = pmaParam.RunArt;
+                pma.RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
+                pma.RunParams.ContrastThreshold = pmaParam.RunConstractThre;
+                pma.RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
+                pma.RunParams.AcceptThreshold = pmaParam.RunScoreThre;
+                if (pmaParam.RunEnableAngle)
+                {
+                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
+                }
+                else
+                {
+                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
+                }
+                pma.RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
+                pma.RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+        public void GetAlignRegion(ref AlignImParam alImParam)
+        {
+            try
+            {
+                CogAffineTransformTool cogTrans = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                alImParam.dCenX = cogTrans.Region.CenterX;
+                alImParam.dCenY = cogTrans.Region.CenterY;
+                alImParam.dWidth = cogTrans.Region.SideXLength;
+                alImParam.dHeight = cogTrans.Region.SideYLength;
+
+                cogTrans.Run();
+                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                alImParam.width = cogIm.Width;
+                alImParam.height = cogIm.Height;
+                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
+                mImageFile.Append(cogIm);
+                mImageFile.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+
+        }
+        public void GetPMAParam(ref PMAlignParam pmaParam)
+        {
+            //获取训练参数
+            try
+            {
+                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pmaParam.TrainAutoGrun = pma.Pattern.GrainLimitAutoSelect;
+                pmaParam.TrainCoarse = pma.Pattern.GrainLimitCoarse;
+                pmaParam.TrainFine = pma.Pattern.GrainLimitFine;
+                pmaParam.TrainEdgeThre = pma.Pattern.EdgeThreshold;
+                pmaParam.TrainAutoEdgeThre = pma.Pattern.AutoEdgeThresholdEnabled;
+                pmaParam.TrainPolarity = pma.Pattern.IgnorePolarity;
+                pmaParam.TrainAlg = (int)pma.Pattern.TrainAlgorithm;
+                if (pmaParam.TrainAlg > 2 || pmaParam.TrainAlg < 0)
+                    pmaParam.TrainAlg = 2;
+
+                //获取运行参数
+                pmaParam.RunAlg = (int)pma.RunParams.RunAlgorithm;
+                if (pmaParam.RunAlg > 2 || pmaParam.RunAlg < 0)
+                    pmaParam.RunAlg = 2;
+
+                pmaParam.RunAutoEdgeThre = pma.RunParams.AutoEdgeThresholdEnabled;
+                pmaParam.RunArt = pma.RunParams.ScoreUsingClutter;
+                pmaParam.RunEdgeThre = pma.RunParams.EdgeThreshold;
+                pmaParam.RunConstractThre = pma.RunParams.ContrastThreshold;
+                pmaParam.RunSearchNum = pma.RunParams.ApproximateNumberToFind;
+                pmaParam.RunScoreThre = pma.RunParams.AcceptThreshold;
+
+                if (pma.RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
+                    pmaParam.RunEnableAngle = true;
+                else
+                    pmaParam.RunEnableAngle = false;
+                pmaParam.RunAngleD = pma.RunParams.ZoneAngle.Low * 180 / Math.PI;
+                pmaParam.RunAngleU = pma.RunParams.ZoneAngle.High * 180 / Math.PI;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+
+        #endregion
+
+        #region  相机触发采集，以及由触发采集执行运算
+        public bool InitAcqCB()  //注册触发采集回调
         {
             int iCamInd = cup.p_CD.camInd[cup.p_CD.triggleCam];
             cbImage = new MyCamera.cbOutputExdelegate(ImageCallBackCont);
@@ -824,9 +1103,6 @@ namespace VisionControl
             bool bSucc = SetTrigger(cup.p_CD.bTriggle, cup.p_CD.triggleMode, iCamInd);
             return bSucc;
         }
-
-
-
 
         //设置触发模式
         public bool SetTrigger(bool bTrigger, int iMode, int iCamInd)
@@ -1038,11 +1314,10 @@ namespace VisionControl
             // ++m_nFrames[nIndex];
 
         }
-
         #endregion
 
 
-        #region
+        #region  运算后处理
         //更新Record清单
         public bool UpdateSubRecordsList()
         {
@@ -1161,6 +1436,7 @@ namespace VisionControl
             cup.p_SRN.count = count;
             return true;
         }
+       //判断VP是否已经运行过，运行过将产生图像记录
         public bool HaveRun()
         {
             ICogRecord result = mHistoryCollection[mSelectedJob].CurrentItem;
@@ -1168,14 +1444,54 @@ namespace VisionControl
                 return false;
             return true;
         }
-        public uint _cameraNum
+        CogJob j;
+        public string[] RetStatisticsForJob(int i)
         {
-            get { return cameraNum; }
-            set { cameraNum = value; }
-        }
+            bool runningLive = mCurrentRunState == RunState.RunningLive;
+            if (runningLive)
+                return null;
+            string[] strStatus = new string[12];
 
+            j = mJM.Job(i);
+            strStatus[0] = (j.TotalJobIterations).ToString();
+            //  strStatus[1] = j.TotalVisionToolAccepts.ToString();
+            strStatus[1] = (j.TotalJobIterations - iReject).ToString();
+            string percentStr = "0";
+            if (j.TotalJobIterations > 0)
+            {
+                double p = (j.TotalJobIterations - iReject) * 100.0 / (j.TotalJobIterations);
+                percentStr = p.ToString("0.0");
+            }
+
+            strStatus[2] = percentStr;
+            //  strStatus[3] = j.TotalVisionToolRejects.ToString();
+            strStatus[3] = iReject.ToString();
+            strStatus[4] = j.TotalVisionToolWarnings.ToString();
+            strStatus[5] = j.TotalVisionToolErrors.ToString();
+
+            strStatus[6] = j.TotalAcquisitions.ToString();
+            strStatus[7] = j.TotalAcquisitionErrors.ToString();
+            strStatus[8] = j.TotalAcquisitionOverruns.ToString();
+
+            if (j.TotalJobThroughputMax != 0)
+            {
+                strStatus[9] = j.TotalJobThroughput.ToString("0.000");
+                strStatus[10] = j.TotalJobThroughputMin.ToString("0.000");
+                strStatus[11] = j.TotalJobThroughputMax.ToString("0.000");
+            }
+            else
+            {
+                string waiting = ResourceUtility.GetString("RtStatsWaiting");
+                strStatus[9] = waiting;
+                strStatus[10] = waiting;
+                strStatus[11] = waiting;
+            }
+
+            return strStatus;
+        }
         #endregion
-        #region //**  20220416   图像采集相关
+
+        #region  光度立体法相关
         public void FXSurfaceFromImageFile(int iFileInd)
         {
             acqFIFO.FXSurfaceAllFromFile(iFileInd, cup.p_CD.bListProcess);
@@ -1235,198 +1551,85 @@ namespace VisionControl
                 cogRDSub4.Image = acqFIFO.ci8gAcqFX[4];
             }*/
         }
-
-
-        private void LoadMenuSubRecord()
+        public bool PreViewOneImageFromFileFX(int iFileInd, bool bSingle)
         {
-            contMenuSubRecord.Items.Clear();
-            int count = cup.p_SRN.count;
-            for (int i = 0; i < count; i++)
-            {
-                if (cup.p_SRN.bList[i])
-                {
-                    contMenuSubRecord.Items.Add(cup.p_SRN.strName[i]);
-                }
-            }
-        }
-
-
-        public void SetGUIShow(int iType)
-        {
-            // cogRDMain.SelectedRecordKey
             try
             {
-                switch (iType)
+                ci8gAcq = acqFIFO.GrabOneFrameCogFromFileSingle(iFileInd, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType);
+                for (int i = 0; i < maxCameraNum; i++)
                 {
-                    case 0:
-                        strSubRecordsName = cup.p_SRN.strDefaultGUIName;
+                    if (cup.p_CD.bListProcess[i] && ci8gAcq != null && ci8gAcq[i] != null)  //启用的检测面才做采集
+                    {
+                        switch (i)
+                        {
+                            case 0:
+                                if (iModelRole == 10)
+                                {
+                                    cogRDMain.Display.Image = ci8gAcq[i];
 
-                        break;
-                    case 1:
-                        strSubRecordsName = cup.p_SRN.strGreyGUIName;
+                                    //  AddGrap(cogRDMain, DL_result[i]);
+                                }
+                                else
+                                {
+                                    cogRDMainUser.Image = ci8gAcq[i];
 
-                        break;
-                    case 2:
-                        strSubRecordsName = cup.p_SRN.strFXGUIName;
+                                    //   AddGrap(cogRDMainUser, DL_result[i]);
+                                }
 
-                        break;
-                    case 3:
-                        strSubRecordsName = cup.p_SRN.strPMAGUIName;
+                                break;
+                            case 1:
+                                cogRDSub1.Image = ci8gAcq[i];
+                                //  AddGrap(cogRDSub1, DL_result[i]);
+                                break;
+                            case 2:
+                                cogRDSub2.Image = ci8gAcq[i];
+                                //   AddGrap(cogRDSub2, DL_result[i]);
+                                break;
+                                /*case 3:
+                                    cogRDSub3.Image = ci8gAcq[i];
+                                 //   AddGrap(cogRDSub3, DL_result[i]);
+                                    break;
+                                case 4:
+                                    cogRDSub4.Image = ci8gAcq[i];*/
+                                //    AddGrap(cogRDSub4, DL_result[i]);
+                                break;
+                        }
+                    }
 
-                        break;
                 }
-                if (cogRDMain.Subject == null)
-                    return;
-                if (strSubRecordsName[0] != null)
+
                 {
-                    if (iModelRole == 10)
-                        cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
-                    else
-                        cogRDMainUser.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
+                    ci8gAcq = acqFIFO._ci8gAcq;
+                    ci8gFX = acqFIFO.ci8gAcqFX;
+
+                    if (cup.p_CD.bListProcess[0] && ci8gFX[0] != null)
+                    {
+                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImageFX"].Value = ci8gFX[0];
+                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImageGrey"].Value = ci8gAcq[0];
+
+                    }
+                    for (int i = 1; i < maxCameraNum; i++)
+                    {
+                        if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)
+                        {
+                            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + i.ToString() + "定位"] as CogToolBlock).Inputs["InputImageGrey"].Value = ci8gAcq[i];
+                            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + i.ToString() + "定位"] as CogToolBlock).Inputs["InputImageFX"].Value = ci8gFX[i];
+                        }
+                    }
 
                 }
-                if (strSubRecordsName[1] != null)
-                    cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];
-                if (strSubRecordsName[2] != null)
-                    cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];
-                /*if (strSubRecordsName[3] != null)
-                    cogRDSub3.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[3]];
-                if (strSubRecordsName[4] != null)
-                    cogRDSub4.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[4]];*/
+
             }
             catch
             {
-
+                return false;
             }
-            cogRDMain.Display.BackColor = Color.Black;
-            cogRDMainUser.BackColor = Color.Black;
-            cogRDSub1.BackColor = Color.Black;
-            cogRDSub2.BackColor = Color.Black;
-            /*cogRDSub3.BackColor = Color.Black;
-            cogRDSub4.BackColor = Color.Black;*/
-        }
-        private void contMenuSubRecord_Click(object sender, EventArgs e)
-        {
-            foreach (ToolStripItem items in contMenuSubRecord.Items)
-            {
-                if (items.Selected == true)
-                {
-                    switch (iSubSlectIndex)
-                    {
-                        case 1:
-                            cogRDSub1.Record = cogRDMain.Subject.SubRecords[items.ToString()];
-
-                            break;
-
-                        case 2:
-                            cogRDSub2.Record = cogRDMain.Subject.SubRecords[items.ToString()];
-
-                            break;
-                    }
-
-                }
-            }
+            return true;
         }
 
-        private void cogRDSub1_DoubleClick(object sender, EventArgs e)
-        {
-            iSubSlectIndex = 1;
-            ICogImage imgTmp;//=new ICogImage();
-            if (iModelRole == 10)
-            {
-                imgTmp = cogRDMain.Display.Image;
-                cogRDMain.Display.Image = cogRDSub1.Image;
-            }
-            else
-            {
-                imgTmp = cogRDMainUser.Image;
-                cogRDMainUser.Image = cogRDSub1.Image;
-            }
-            cogRDSub1.Image = imgTmp;
+        #endregion
 
-            //    LoadMenuSubRecord();
-            //  contMenuSubRecord.Show();
-        }
-        /*private void cogRDSub3_DoubleClick(object sender, EventArgs e)
-        {
-            iSubSlectIndex = 3;
-            ICogImage imgTmp;//=new ICogImage();
-            if (iModelRole == 10)
-            {
-                imgTmp = cogRDMain.Display.Image;
-                cogRDMain.Display.Image = cogRDSub3.Image;
-            }
-            else
-            {
-                imgTmp = cogRDMainUser.Image;
-                cogRDMainUser.Image = cogRDSub3.Image;
-            }
-            cogRDSub3.Image = imgTmp;
-        }
-        private void cogRDSub4_DoubleClick(object sender, EventArgs e)
-        {
-            iSubSlectIndex = 4;
-            ICogImage imgTmp;//=new ICogImage();
-            if (iModelRole == 10)
-            {
-                imgTmp = cogRDMain.Display.Image;
-                cogRDMain.Display.Image = cogRDSub4.Image;
-            }
-            else
-            {
-                imgTmp = cogRDMainUser.Image;
-                cogRDMainUser.Image = cogRDSub4.Image;
-            }
-            cogRDSub4.Image = imgTmp;
-        }*/
-        private void cogRDSub2_DoubleClick(object sender, EventArgs e)
-        {
-            iSubSlectIndex = 2;
-            ICogImage imgTmp;//=new ICogImage();
-            if (iModelRole == 10)
-            {
-                imgTmp = cogRDMain.Display.Image;
-                cogRDMain.Display.Image = cogRDSub2.Image;
-            }
-            else
-            {
-                imgTmp = cogRDMainUser.Image;
-                cogRDMainUser.Image = cogRDSub2.Image;
-            }
-            cogRDSub2.Image = imgTmp;
-        }
-
-        public void FitAllWin()
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)  //启用的检测面才做采集
-                {
-                    switch (i)
-                    {
-                        case 0:
-                            if (iModelRole == 10)
-                                cogRDMain.Display.Fit(true);
-                            else
-                                cogRDMainUser.Fit(true);
-                            break;
-                        case 1:
-                            cogRDSub1.Fit(true);
-                            break;
-                        case 2:
-                            cogRDSub2.Fit(true);
-                            break;
-                            /*case 3:                           
-                                cogRDSub3.Fit(true);
-                                break;
-                            case 4:                          
-                                cogRDSub4.Fit(true);
-                                break;*/
-                    }
-                }
-
-            }
-        }
+        #region  图像采集相关
 
         public void OpenOrCloseCam(bool bOpen)
         {
@@ -1584,82 +1787,6 @@ namespace VisionControl
                         cogRDMainUser.Image = ci8gAcq[wsInd];
 
                     }
-                }
-
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool PreViewOneImageFromFileFX(int iFileInd, bool bSingle)
-        {
-            try
-            {
-                ci8gAcq = acqFIFO.GrabOneFrameCogFromFileSingle(iFileInd, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType);
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    if (cup.p_CD.bListProcess[i] && ci8gAcq != null && ci8gAcq[i] != null)  //启用的检测面才做采集
-                    {
-                        switch (i)
-                        {
-                            case 0:
-                                if (iModelRole == 10)
-                                {
-                                    cogRDMain.Display.Image = ci8gAcq[i];
-
-                                    //  AddGrap(cogRDMain, DL_result[i]);
-                                }
-                                else
-                                {
-                                    cogRDMainUser.Image = ci8gAcq[i];
-
-                                    //   AddGrap(cogRDMainUser, DL_result[i]);
-                                }
-
-                                break;
-                            case 1:
-                                cogRDSub1.Image = ci8gAcq[i];
-                                //  AddGrap(cogRDSub1, DL_result[i]);
-                                break;
-                            case 2:
-                                cogRDSub2.Image = ci8gAcq[i];
-                                //   AddGrap(cogRDSub2, DL_result[i]);
-                                break;
-                                /*case 3:
-                                    cogRDSub3.Image = ci8gAcq[i];
-                                 //   AddGrap(cogRDSub3, DL_result[i]);
-                                    break;
-                                case 4:
-                                    cogRDSub4.Image = ci8gAcq[i];*/
-                                //    AddGrap(cogRDSub4, DL_result[i]);
-                                break;
-                        }
-                    }
-
-                }
-
-                {
-                    ci8gAcq = acqFIFO._ci8gAcq;
-                    ci8gFX = acqFIFO.ci8gAcqFX;
-
-                    if (cup.p_CD.bListProcess[0] && ci8gFX[0] != null)
-                    {
-                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImageFX"].Value = ci8gFX[0];
-                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImageGrey"].Value = ci8gAcq[0];
-
-                    }
-                    for (int i = 1; i < maxCameraNum; i++)
-                    {
-                        if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)
-                        {
-                            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + i.ToString() + "定位"] as CogToolBlock).Inputs["InputImageGrey"].Value = ci8gAcq[i];
-                            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + i.ToString() + "定位"] as CogToolBlock).Inputs["InputImageFX"].Value = ci8gFX[i];
-                        }
-                    }
-
                 }
 
             }
@@ -2087,92 +2214,6 @@ namespace VisionControl
 
         }
 
-        private string[,] strInferRes = new string[maxCameraNum, 6];
-
-
-        private void AnaInferRes(int iStep)
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                strInferRes[i, iStep] = "";
-                strInferRes[i, iStep + 3] = "";
-                /* for (int j = 0; j < DL_result[i].AL_Type.Count; j++)
-                 {
-                     if (DL_result[i].AL_Type[j] != 3)
-                     {
-                         strInferRes[i, iStep] += DL_result[i].AL_Type[j].ToString();
-                         strInferRes[i, iStep + 3] += DL_result[i].AL_score[j].ToString("0.00");
-                     }
-                     // strInfo += DL_result[i].AL_Type[j].ToString() + "- " + DL_result[i].AL_score[j].ToString("0.00") + "  ";
-                 }*/
-
-            }
-        }
-        private void DrawDLRes(Graphics g)
-        {
-            Pen pen = new Pen(Color.White);
-            pen.Width = 2;
-            Font ft = new Font("宋体", 12, FontStyle.Regular);
-
-
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                string strInfo = SaveImagePrefix[i].Replace('_', ':') + "  ";
-                /*for (int j=0;j< DL_result[i].AL_Type.Count;j++)
-                {
-                    strInfo += DL_result[i].AL_Type[j].ToString() + "- " + DL_result[i].AL_score[j].ToString("0.00") + "  ";
-                }*/
-                for (int j = 0; j < 3; j++)
-                {
-                    strInfo += strInferRes[i, j] + "    ;";
-                }
-                strInfo += strInferRes[i, 3];
-                //        if(DL_result[i].AL_Type.Count>0)
-                {
-                    g.DrawString(strInfo, ft, Brushes.White, 20, 40 + i * 30);
-                    g.DrawString("深度推理结果：", ft, Brushes.White, 20, 10);
-                }
-            }
-
-            //  g.DrawString(.strHeadInfo, ft, brCoor[index], m_RectArea[index].Left + m_nLeftRemain[index] + 25/**/, m_RectArea[index].Top + m_nTopRemain[index] - 30 + sizeTxt.Height * index);
-        }
-
-        public void InitBG()
-        {
-            cogRDMain.Display.BackColor = Color.Black;
-            cogRDMain.Display.VerticalScrollBar = false;
-            cogRDMain.Display.HorizontalScrollBar = false;
-
-            cogRDMainUser.BackColor = Color.Black;
-            cogRDMainUser.VerticalScrollBar = false;
-            cogRDMainUser.HorizontalScrollBar = false;
-
-
-            if (cup.p_VPPRTP.iLayoutType > 1)
-            {
-                cogRDSub1.VerticalScrollBar = false;
-                cogRDSub1.HorizontalScrollBar = false;
-                cogRDSub1.BackColor = Color.Black;
-            }
-            if (cup.p_VPPRTP.iLayoutType > 1)
-            {
-                cogRDSub2.VerticalScrollBar = false;
-                cogRDSub2.HorizontalScrollBar = false;
-                cogRDSub2.BackColor = Color.Black;
-            }
-            /*if (cup.p_VPPRTP.iLayoutType > 1)
-            {
-                cogRDSub3.VerticalScrollBar = false;
-                cogRDSub3.HorizontalScrollBar = false;
-                cogRDSub3.BackColor = Color.Black;
-            }
-            if (cup.p_VPPRTP.iLayoutType > 1)
-            {
-                cogRDSub4.VerticalScrollBar = false;
-                cogRDSub4.HorizontalScrollBar = false;
-                cogRDSub4.BackColor = Color.Black;
-            }*/
-        }
 
         CogImageFileTool cogIFT;  //st**20220811
         public int GetCurImageIndex()
@@ -2317,7 +2358,71 @@ namespace VisionControl
             return 0; //cogIFT.NextImageIndex;
         }
 
+      
+      
+        //单步测试
+        public void StepTest(int stepInd, bool bAcq)
+        {
+            switch (stepInd)
+            {
+                case 0:
 
+                case 1:
+
+                case 2:
+
+                case 3:
+
+                case 4:
+
+                case 5:
+                    acqFIFO.csd.ExeProcessAll(stepInd);
+                    break;
+            }
+
+            if (!bAcq)
+                return;
+            PreViewOneImage(cup.p_VPPRTP.iXBType);
+
+        }
+      
+        #endregion
+
+        #region  保存相关
+        Thread SaveImageResultThread;   //保存图像结果线程，UpdateGuiIfNeeded()中调用
+        public int SaveVPP()
+        {
+            string vpp = mLoadedVppFilename;
+            try
+            {
+                bool wasAttached = mAttached;
+                if (wasAttached)
+                    AttachToJobManager(false);
+
+
+                //st**保存之前进行备份
+                string strPath = Path.GetDirectoryName(vpp);
+                string strName = Path.GetFileName(vpp);
+
+                string strBakName = strPath + "\\" + strName.Substring(0, strName.Length - 4);
+                File.Copy(vpp, strBakName, true);
+
+                Utility.FlushAllQueues(mJM);
+                CogSerializer.SaveObjectToFile(mJM, vpp);
+                return 0;
+            }
+            catch (IOException ex)
+            {
+                return 2;
+                //    MessageBox.Show("保存流程文件失败");
+            }
+            catch (AccessViolationException ex)
+            {
+                return 2;
+
+            }
+
+        }
         //保存图片结果
         public void SaveImageReult()
         {
@@ -2336,7 +2441,225 @@ namespace VisionControl
             string pathSub4 = strSaveResPath + strTime + "_Sub4_" + j.TotalJobIterations.ToString() + ".png";
             SaveScreenImage(cogRDSub4, pathSub2); */
         }
+        //保存识别结果
+        public void SaveVPResult()
+        {
+            //     j.TotalJobIterations.ToString();
+            try
+            {
+                // string strTime= DateTime.Now.ToString("HHmmssff");
+                string strTime = acqFIFO.strTime.ToString();
 
+                {
+                    if (cup.p_CD.bListProcess[0])
+                    {
+                        vpRes.gpgsMain = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
+                        vpRes.TF[0] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+
+                    }
+
+                    if (cup.p_CD.bListProcess[1])
+                    {
+                        vpRes.gpgsSub1 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
+                        vpRes.TF[1] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+
+                    }
+                    if (cup.p_CD.bListProcess[2])
+                    {
+                        vpRes.gpgsSub2 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
+                        vpRes.TF[2] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+                    }
+                    if (cup.p_CD.bListProcess[3])
+                    {
+                        vpRes.gpgsSub3 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
+                        vpRes.TF[3] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+                    }
+                    if (cup.p_CD.bListProcess[4])
+                    {
+                        vpRes.gpgsSub4 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
+                        vpRes.TF[4] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+                    }
+                }
+                string strFile = cup.p_Paf.strResSavePath + "\\" + cup.p_LI.strLineName + acqFIFO.strTime.ToString();
+                using (FileStream stream = new FileStream(strFile, FileMode.Create))
+                {
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    formatter.Serialize(stream, vpRes);
+                }
+
+            }
+            catch
+            {
+
+            }
+
+            //  return true;
+        }
+        //保存主图像窗口图片
+        private void SaveScreenImage(CogRecordsDisplay display, string fullpath) //保存界面截图jpeg
+        {
+            try
+            {
+                string path = Path.GetDirectoryName(fullpath);
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                Bitmap bmp = cogRDMain.Display.CreateContentBitmap(Cognex.VisionPro.Display.CogDisplayContentBitmapConstants.Image) as Bitmap;
+
+                bmp.Save(fullpath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+            catch (Exception ex)
+            {
+                //  Log.WriteTxt("保存处理图像出现错误，信息为" + ex.Message);
+            }
+        }
+        //保存辅图像窗口图片
+        private void SaveScreenImage(CogRecordDisplay display, string fullpath) //保存界面截图jpeg
+        {
+            try
+            {
+                string path = Path.GetDirectoryName(fullpath);
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                Bitmap bmp = display.CreateContentBitmap(Cognex.VisionPro.Display.CogDisplayContentBitmapConstants.Image) as Bitmap;
+
+                bmp.Save(fullpath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+            catch (Exception ex)
+            {
+                //  Log.WriteTxt("保存处理图像出现错误，信息为" + ex.Message);
+            }
+        }
+
+        #endregion
+
+        #region  界面显示相关
+        Thread cogRDThread;             //界面显示线程，  UpdateGuiIfNeeded()中调用
+
+        public void InitBG()
+        {
+            cogRDMain.Display.BackColor = Color.Black;
+            cogRDMain.Display.VerticalScrollBar = false;
+            cogRDMain.Display.HorizontalScrollBar = false;
+
+            cogRDMainUser.BackColor = Color.Black;
+            cogRDMainUser.VerticalScrollBar = false;
+            cogRDMainUser.HorizontalScrollBar = false;
+
+
+            if (cup.p_VPPRTP.iLayoutType > 1)
+            {
+                cogRDSub1.VerticalScrollBar = false;
+                cogRDSub1.HorizontalScrollBar = false;
+                cogRDSub1.BackColor = Color.Black;
+            }
+            if (cup.p_VPPRTP.iLayoutType > 1)
+            {
+                cogRDSub2.VerticalScrollBar = false;
+                cogRDSub2.HorizontalScrollBar = false;
+                cogRDSub2.BackColor = Color.Black;
+            }
+            /*if (cup.p_VPPRTP.iLayoutType > 1)
+            {
+                cogRDSub3.VerticalScrollBar = false;
+                cogRDSub3.HorizontalScrollBar = false;
+                cogRDSub3.BackColor = Color.Black;
+            }
+            if (cup.p_VPPRTP.iLayoutType > 1)
+            {
+                cogRDSub4.VerticalScrollBar = false;
+                cogRDSub4.HorizontalScrollBar = false;
+                cogRDSub4.BackColor = Color.Black;
+            }*/
+        }
+        public void SiftRDMain()
+        {
+            if (iModelRole == 10)
+            {
+                cogRDMain.Visible = true;
+                cogRDMainUser.Visible = false;
+                cogRDMain.Display.Image = cogRDMainUser.Image;
+            }
+            else
+            {
+                cogRDMain.Visible = false;
+                cogRDMainUser.Visible = true;
+                cogRDMainUser.Image = cogRDMain.Display.Image;
+            }
+        }
+        private void cogRecordsDisplay()
+        {
+            //待修改，如果定位失败，要更新主界面图像
+            if (!pmaRes.bLocated)
+            {
+                DirectShowImage();
+            }
+            try
+            {
+                if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null && iModelRole == 10)
+                {
+                    cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
+                    cogRDMain.Display.BackColor = Color.Black;
+                    /*cogRDMain.Display.Fit(true);*/
+                }
+                else if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null)
+                {
+                    cogRDMainUser.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
+                    cogRDMainUser.BackColor = Color.Black;
+                    /*  cogRDMainUser.Fit(true);*/
+                }
+                if (cup.p_CD.bListProcess[1] && strSubRecordsName[1] != null)
+                {
+                    cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                    /*cogRDSub1.BackColor = Color.Black;
+                    cogRDSub1.Fit(true);*/
+                }
+                if (cup.p_CD.bListProcess[2] && strSubRecordsName[2] != null)
+                {
+                    cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                    /*cogRDSub2.BackColor = Color.Black;
+                    cogRDSub2.Fit(true);*/
+                }
+                /*if (cup.p_CD.bListProcess[3] && strSubRecordsName[3] != null)
+                {
+                    cogRDSub3.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[3]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                    cogRDSub3.BackColor = Color.Black;
+                    cogRDSub3.Fit(true);
+                }
+                if (cup.p_CD.bListProcess[4] && strSubRecordsName[4] != null)
+                {
+                    cogRDSub4.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[4]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                    cogRDSub4.BackColor = Color.Black;
+                    cogRDSub4.Fit(true);
+                }*/
+                /*AnaInferRes(2);
+                picSub1.Invalidate();*/
+            }
+            catch
+            { };
+            //    UpdateGui(null, null);
+        }
+
+        private void picSub1_Paint(object sender, PaintEventArgs e)
+        {
+            if (iModelRole == 10 && bShowDiagInfo)
+                DrawDLRes(e.Graphics);
+        }
+
+        public bool bShowDiagInfo = false;
+        private void picSub1_DoubleClick(object sender, EventArgs e)
+        {
+            bShowDiagInfo = !bShowDiagInfo;
+            picSub1.Invalidate();
+        }
 
         //读取识别结果
         public void ReadVPResult()
@@ -2428,492 +2751,300 @@ namespace VisionControl
 
             //    cogDisp.InteractiveGraphics.Add(ResultLabel, "", false);
         }
+        private string[,] strInferRes = new string[maxCameraNum, 6];
 
-        //设置推理模式
-        public void SetVPInferModel(int iType)
+
+        private void AnaInferRes(int iStep)
         {
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
-        }
-
-        public void SetVPResult()
-        {
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[0];
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsMain;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
-
-
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[1];
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub1;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
-
-
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[2];
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub2;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
-
-
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[3];
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub3;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
-
-
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["iResCode"].Value = vpRes.iResCode[4];
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["gpgs"].Value = vpRes.gpgsSub4;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["bDefect"].Value = vpRes.bDefect;
-        }
-
-        //保存识别结果
-        public void SaveVPResult()
-        {
-            //     j.TotalJobIterations.ToString();
-            try
+            for (int i = 0; i < maxCameraNum; i++)
             {
-                // string strTime= DateTime.Now.ToString("HHmmssff");
-                string strTime = acqFIFO.strTime.ToString();
+                strInferRes[i, iStep] = "";
+                strInferRes[i, iStep + 3] = "";
+                /* for (int j = 0; j < DL_result[i].AL_Type.Count; j++)
+                 {
+                     if (DL_result[i].AL_Type[j] != 3)
+                     {
+                         strInferRes[i, iStep] += DL_result[i].AL_Type[j].ToString();
+                         strInferRes[i, iStep + 3] += DL_result[i].AL_score[j].ToString("0.00");
+                     }
+                     // strInfo += DL_result[i].AL_Type[j].ToString() + "- " + DL_result[i].AL_score[j].ToString("0.00") + "  ";
+                 }*/
 
+            }
+        }
+        private void DrawDLRes(Graphics g)
+        {
+            Pen pen = new Pen(Color.White);
+            pen.Width = 2;
+            Font ft = new Font("宋体", 12, FontStyle.Regular);
+
+
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                string strInfo = SaveImagePrefix[i].Replace('_', ':') + "  ";
+                /*for (int j=0;j< DL_result[i].AL_Type.Count;j++)
                 {
-                    if (cup.p_CD.bListProcess[0])
-                    {
-                        vpRes.gpgsMain = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
-                        vpRes.TF[0] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+                    strInfo += DL_result[i].AL_Type[j].ToString() + "- " + DL_result[i].AL_score[j].ToString("0.00") + "  ";
+                }*/
+                for (int j = 0; j < 3; j++)
+                {
+                    strInfo += strInferRes[i, j] + "    ;";
+                }
+                strInfo += strInferRes[i, 3];
+                //        if(DL_result[i].AL_Type.Count>0)
+                {
+                    g.DrawString(strInfo, ft, Brushes.White, 20, 40 + i * 30);
+                    g.DrawString("深度推理结果：", ft, Brushes.White, 20, 10);
+                }
+            }
 
-                    }
-
-                    if (cup.p_CD.bListProcess[1])
+            //  g.DrawString(.strHeadInfo, ft, brCoor[index], m_RectArea[index].Left + m_nLeftRemain[index] + 25/**/, m_RectArea[index].Top + m_nTopRemain[index] - 30 + sizeTxt.Height * index);
+        }
+        public void DirectShowImage()
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)  //启用的检测面才做采集
+                {
+                    switch (i)
                     {
-                        vpRes.gpgsSub1 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
-                        vpRes.TF[1] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
-
-                    }
-                    if (cup.p_CD.bListProcess[2])
-                    {
-                        vpRes.gpgsSub2 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
-                        vpRes.TF[2] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
-                    }
-                    if (cup.p_CD.bListProcess[3])
-                    {
-                        vpRes.gpgsSub3 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
-                        vpRes.TF[3] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
-                    }
-                    if (cup.p_CD.bListProcess[4])
-                    {
-                        vpRes.gpgsSub4 = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Outputs["gpgs"].Value as List<CogPolygon>;
-                        vpRes.TF[4] = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Outputs["Transform2DLinear"].Value as CogTransform2DLinear;
+                        case 0:
+                            if (iModelRole == 10)
+                            {
+                                cogRDMain.Display.Image = ci8gAcq[i];
+                                cogRDMain.Display.Fit(true);
+                            }
+                            else
+                            {
+                                cogRDMainUser.Image = ci8gAcq[i];
+                                cogRDMainUser.Fit(true);
+                            }
+                            break;
+                        case 1:
+                            cogRDSub1.Image = ci8gAcq[i];
+                            cogRDSub1.Fit(true);
+                            break;
+                        case 2:
+                            cogRDSub2.Image = ci8gAcq[i];
+                            cogRDSub2.Fit(true);
+                            break;
+                            /* case 3:
+                                 cogRDSub3.Image = ci8gAcq[i];
+                                 cogRDSub3.Fit(true);
+                                 break;
+                             case 4:
+                                 cogRDSub4.Image = ci8gAcq[i];
+                                 cogRDSub4.Fit(true);
+                                 break;*/
                     }
                 }
-                string strFile = cup.p_Paf.strResSavePath + "\\" + cup.p_LI.strLineName + acqFIFO.strTime.ToString();
-                using (FileStream stream = new FileStream(strFile, FileMode.Create))
-                {
-                    BinaryFormatter formatter = new BinaryFormatter();
-                    formatter.Serialize(stream, vpRes);
-                }
 
             }
-            catch
-            {
-
-            }
-
-            //  return true;
         }
-        private void SaveScreenImage(CogRecordsDisplay display, string fullpath) //保存界面截图jpeg
+
+        public void SetGUIShow(int iType)
         {
+            // cogRDMain.SelectedRecordKey
             try
             {
-                string path = Path.GetDirectoryName(fullpath);
-                if (!Directory.Exists(path))
+                switch (iType)
                 {
-                    Directory.CreateDirectory(path);
+                    case 0:
+                        strSubRecordsName = cup.p_SRN.strDefaultGUIName;
+
+                        break;
+                    case 1:
+                        strSubRecordsName = cup.p_SRN.strGreyGUIName;
+
+                        break;
+                    case 2:
+                        strSubRecordsName = cup.p_SRN.strFXGUIName;
+
+                        break;
+                    case 3:
+                        strSubRecordsName = cup.p_SRN.strPMAGUIName;
+
+                        break;
                 }
-
-                Bitmap bmp = cogRDMain.Display.CreateContentBitmap(Cognex.VisionPro.Display.CogDisplayContentBitmapConstants.Image) as Bitmap;
-
-                bmp.Save(fullpath, System.Drawing.Imaging.ImageFormat.Png);
-            }
-            catch (Exception ex)
-            {
-                //  Log.WriteTxt("保存处理图像出现错误，信息为" + ex.Message);
-            }
-        }
-        private void SaveScreenImage(CogRecordDisplay display, string fullpath) //保存界面截图jpeg
-        {
-            try
-            {
-                string path = Path.GetDirectoryName(fullpath);
-                if (!Directory.Exists(path))
+                if (cogRDMain.Subject == null)
+                    return;
+                if (strSubRecordsName[0] != null)
                 {
-                    Directory.CreateDirectory(path);
-                }
-                Bitmap bmp = display.CreateContentBitmap(Cognex.VisionPro.Display.CogDisplayContentBitmapConstants.Image) as Bitmap;
-
-                bmp.Save(fullpath, System.Drawing.Imaging.ImageFormat.Png);
-            }
-            catch (Exception ex)
-            {
-                //  Log.WriteTxt("保存处理图像出现错误，信息为" + ex.Message);
-            }
-        }
-        //单步测试
-        public void StepTest(int stepInd, bool bAcq)
-        {
-            switch (stepInd)
-            {
-                case 0:
-
-                case 1:
-
-                case 2:
-
-                case 3:
-
-                case 4:
-
-                case 5:
-                    acqFIFO.csd.ExeProcessAll(stepInd);
-                    break;
-            }
-
-            if (!bAcq)
-                return;
-            PreViewOneImage(cup.p_VPPRTP.iXBType);
-
-        }
-
-
-        public bool SetListProcess(CUserParam cup)
-        {
-            try
-            {
-                (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("ListProcess", cup.p_CD.bListProcess);
-
-                CogToolGroup myToolGroup = mJM.Job(0).VisionTool as CogToolGroup;
-
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    if (cup.p_CD.bListProcess[i])
-                    {
-                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 1]);
-                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 2]);
-                    }
+                    if (iModelRole == 10)
+                        cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
                     else
+                        cogRDMainUser.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
+
+                }
+                if (strSubRecordsName[1] != null)
+                    cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];
+                if (strSubRecordsName[2] != null)
+                    cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];
+                /*if (strSubRecordsName[3] != null)
+                    cogRDSub3.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[3]];
+                if (strSubRecordsName[4] != null)
+                    cogRDSub4.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[4]];*/
+            }
+            catch
+            {
+
+            }
+            cogRDMain.Display.BackColor = Color.Black;
+            cogRDMainUser.BackColor = Color.Black;
+            cogRDSub1.BackColor = Color.Black;
+            cogRDSub2.BackColor = Color.Black;
+            /*cogRDSub3.BackColor = Color.Black;
+            cogRDSub4.BackColor = Color.Black;*/
+        }
+
+
+        private void LoadMenuSubRecord()
+        {
+            contMenuSubRecord.Items.Clear();
+            int count = cup.p_SRN.count;
+            for (int i = 0; i < count; i++)
+            {
+                if (cup.p_SRN.bList[i])
+                {
+                    contMenuSubRecord.Items.Add(cup.p_SRN.strName[i]);
+                }
+            }
+        }
+
+
+        private void contMenuSubRecord_Click(object sender, EventArgs e)
+        {
+            foreach (ToolStripItem items in contMenuSubRecord.Items)
+            {
+                if (items.Selected == true)
+                {
+                    switch (iSubSlectIndex)
                     {
-                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 1]);
-                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 2]);
+                        case 1:
+                            cogRDSub1.Record = cogRDMain.Subject.SubRecords[items.ToString()];
+
+                            break;
+
+                        case 2:
+                            cogRDSub2.Record = cogRDMain.Subject.SubRecords[items.ToString()];
+
+                            break;
+                    }
+
+                }
+            }
+        }
+
+        private void cogRDSub1_DoubleClick(object sender, EventArgs e)
+        {
+            iSubSlectIndex = 1;
+            ICogImage imgTmp;//=new ICogImage();
+            if (iModelRole == 10)
+            {
+                imgTmp = cogRDMain.Display.Image;
+                cogRDMain.Display.Image = cogRDSub1.Image;
+            }
+            else
+            {
+                imgTmp = cogRDMainUser.Image;
+                cogRDMainUser.Image = cogRDSub1.Image;
+            }
+            cogRDSub1.Image = imgTmp;
+
+            //    LoadMenuSubRecord();
+            //  contMenuSubRecord.Show();
+        }
+        /*private void cogRDSub3_DoubleClick(object sender, EventArgs e)
+        {
+            iSubSlectIndex = 3;
+            ICogImage imgTmp;//=new ICogImage();
+            if (iModelRole == 10)
+            {
+                imgTmp = cogRDMain.Display.Image;
+                cogRDMain.Display.Image = cogRDSub3.Image;
+            }
+            else
+            {
+                imgTmp = cogRDMainUser.Image;
+                cogRDMainUser.Image = cogRDSub3.Image;
+            }
+            cogRDSub3.Image = imgTmp;
+        }
+        private void cogRDSub4_DoubleClick(object sender, EventArgs e)
+        {
+            iSubSlectIndex = 4;
+            ICogImage imgTmp;//=new ICogImage();
+            if (iModelRole == 10)
+            {
+                imgTmp = cogRDMain.Display.Image;
+                cogRDMain.Display.Image = cogRDSub4.Image;
+            }
+            else
+            {
+                imgTmp = cogRDMainUser.Image;
+                cogRDMainUser.Image = cogRDSub4.Image;
+            }
+            cogRDSub4.Image = imgTmp;
+        }*/
+        private void cogRDSub2_DoubleClick(object sender, EventArgs e)
+        {
+            iSubSlectIndex = 2;
+            ICogImage imgTmp;//=new ICogImage();
+            if (iModelRole == 10)
+            {
+                imgTmp = cogRDMain.Display.Image;
+                cogRDMain.Display.Image = cogRDSub2.Image;
+            }
+            else
+            {
+                imgTmp = cogRDMainUser.Image;
+                cogRDMainUser.Image = cogRDSub2.Image;
+            }
+            cogRDSub2.Image = imgTmp;
+        }
+
+        public void FitAllWin()
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)  //启用的检测面才做采集
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            if (iModelRole == 10)
+                                cogRDMain.Display.Fit(true);
+                            else
+                                cogRDMainUser.Fit(true);
+                            break;
+                        case 1:
+                            cogRDSub1.Fit(true);
+                            break;
+                        case 2:
+                            cogRDSub2.Fit(true);
+                            break;
+                            /*case 3:                           
+                                cogRDSub3.Fit(true);
+                                break;
+                            case 4:                          
+                                cogRDSub4.Fit(true);
+                                break;*/
                     }
                 }
+
             }
-            catch
-            {
-                return false;
-            }
-            return true;
         }
-
-        public bool SetDiagParam(CUserParam cup)
-        {
-            try
-            {
-                // 设置掩膜
-                string imagePath = @".\Mask\Sub1MaskWithDL.bmp";
-                CogImageFileTool cogFile = new CogImageFileTool();
-                CogImage8Grey cogImageMask = new CogImage8Grey();
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
-                        cogImageMask.Copy();
-
-                imagePath = @".\Mask\Sub1MaskWithOutDL.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
-                        cogImageMask.Copy();
+        #endregion
 
 
-                imagePath = @".\Mask\Sub2MaskWithDL.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
-                        cogImageMask.Copy();
-
-                imagePath = @".\Mask\Sub2MaskWithOutDL.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
-                        cogImageMask.Copy();
-
-                imagePath = @".\Mask\Sub3MaskWithDL.bmp";
-
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
-                        cogImageMask.Copy();
-
-                imagePath = @".\Mask\Sub3MaskWithOutDL.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
-                        cogImageMask.Copy();
-
-                imagePath = @".\Mask\Sub4MaskWithDL.bmp";
-
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithDL"].Value =
-                        cogImageMask.Copy();
-
-                imagePath = @".\Mask\Sub4MaskWithOutDL.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutDL"].Value =
-                        cogImageMask.Copy();
-
-
-
-                imagePath = @".\Mask\底面MaskLocalWithoutEdge.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithOutEdge"].Value =
-                       cogImageMask.Copy();
-
-
-                imagePath = @".\Mask\底面MaskEdge.bmp";
-                cogFile.Operator.Open(imagePath, CogImageFileModeConstants.Read);
-                cogFile.Run();//图片在Run()方法运行后才会开始导入。 
-                cogImageMask = (CogImage8Grey)cogFile.OutputImage;
-                (((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Tools["区域提取"] as CogToolBlock).Inputs["InputMaskWithEdge"].Value =
-                       cogImageMask.Copy();
-
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["greyAbnormCount"].Value = cup.p_DP.dmParam.greyAbnormCount;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["greyAbnormArea"].Value = cup.p_DP.dmParam.greyAbnormArea;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["FXAbnormArea1"].Value = cup.p_DP.dmParam.FXAbnormArea1;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["FXAbnormArea1"].Value = cup.p_DP.dmParam.FXAbnormArea1;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["FXAbnormArea2"].Value = cup.p_DP.dmParam.FXAbnormArea2;
-
-
-                for (int i = 0; i < maxCameraNum - 1; i++)
-                {
-
-
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["edgeAbnormCount"].Value = cup.p_DP.cmParam[i].edgeAbnormCount;
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["edgeLeftAbnormCount"].Value = cup.p_DP.cmParam[i].edgeLeftAbnormCount;
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["edgeRightAbnormCount"].Value = cup.p_DP.cmParam[i].edgeRightAbnormCount;
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["lwArea"].Value = cup.p_DP.cmParam[i].lwArea;
-                    (((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Tools["CogToolBlockCrack"] as CogToolBlock).Inputs["CrackParam"].Value = cup.p_CP;
-
-                }
-
-                SetRemark(cup.p_VPPRTP.bRemarkArea, cup.p_VPPRTP.bRemarkResult);
-
-                /*
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["edgeAbnormCount"].Value = cup.p_DP.cmParam[1].edgeAbnormCount;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["edgeLeftAbnormCount"].Value = cup.p_DP.cmParam[1].edgeLeftAbnormCount;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["edgeRightAbnormCount"].Value = cup.p_DP.cmParam[1].edgeRightAbnormCount;
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["lwArea"].Value = cup.p_DP.cmParam[1].lwArea;
-                */
-            }
-            catch
-            {
-                return false;
-                // MessageBox.Show("设置流程参数失败");
-            }
-            return true;
-        }
-
-        //侧面是否使用光度立体法
-        public void SetUseFX(bool bUseFX)
-        {
-
-            (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bInputFX", bUseFX);
-
-        }
-        //是否使用相机数据
-        public void SetFromCam(bool bAcqFromCam)
-        {
-            (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bAcqFromCam", bAcqFromCam);
-
-        }
-
-        public int iModelRole = -1;
-        private void picSub1_Paint(object sender, PaintEventArgs e)
-        {
-            if (iModelRole == 10 && bShowDiagInfo)
-                DrawDLRes(e.Graphics);
-        }
-
-        public bool bShowDiagInfo = false;
-        private void picSub1_DoubleClick(object sender, EventArgs e)
-        {
-            bShowDiagInfo = !bShowDiagInfo;
-            picSub1.Invalidate();
-        }
-
-
-
-
-
+        #region  深度学习推理相关
         //是否对结果进行标注
         public void SetRemark(bool bRemarkArea, bool bRemarkResult)
         {
             (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bRemarkArea", bRemarkArea);
             (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bRemarkResult", bRemarkResult);
         }
-        public void SetUseWeakCrackDetect(bool bWeakCrackDetect)
-        {
-            for (int i = 0; i < maxCameraNum - 1; i++)
-            {
-                ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + (i + 1).ToString() + "检测"] as CogToolBlock).Inputs["bWeakDetect"].Value = cup.p_VPPRTP.bUseWeakCrack;
-            }
-        }
 
-        //设置VPP算法文件参数
-        public bool SetVPPRuntimeParam()
-        {
-            try
-            {
-                SetLock(false);
-                SetUseFX(cup.p_VPPRTP.bUseFX);
-                SetFromCam(cup.p_VPPRTP.bAcqFromCam || !cup.p_VPPRTP.bAcqFromIDB);
-                SetRemark(cup.p_VPPRTP.bRemarkArea, cup.p_VPPRTP.bRemarkResult);
-                SetListProcess(cup);
-                SetDiagParam(cup);
-                SetUseWeakCrackDetect(cup.p_VPPRTP.bUseWeakCrack);
-                SetxbType(cup.p_VPPRTP.iXBType);
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
-        #endregion
-
-
-        public int SaveVPP()
-        {
-            string vpp = mLoadedVppFilename;
-            try
-            {
-                bool wasAttached = mAttached;
-                if (wasAttached)
-                    AttachToJobManager(false);
-
-
-                //st**保存之前进行备份
-                string strPath = Path.GetDirectoryName(vpp);
-                string strName = Path.GetFileName(vpp);
-
-                string strBakName = strPath + "\\" + strName.Substring(0, strName.Length - 4);
-                File.Copy(vpp, strBakName, true);
-
-                Utility.FlushAllQueues(mJM);
-                CogSerializer.SaveObjectToFile(mJM, vpp);
-                return 0;
-            }
-            catch (IOException ex)
-            {
-                return 2;
-                //    MessageBox.Show("保存流程文件失败");
-            }
-            catch (AccessViolationException ex)
-            {
-                return 2;
-
-            }
-
-        }
-
-        Thread SaveImageResultThread;
-        Thread cogRDThread;// = new Thread[maxCameraNum];
-
-        public void SiftRDMain()
-        {
-            if (iModelRole == 10)
-            {
-                cogRDMain.Visible = true;
-                cogRDMainUser.Visible = false;
-                cogRDMain.Display.Image = cogRDMainUser.Image;
-            }
-            else
-            {
-                cogRDMain.Visible = false;
-                cogRDMainUser.Visible = true;
-                cogRDMainUser.Image = cogRDMain.Display.Image;
-            }
-        }
-        private void cogRecordsDisplay()
-        {
-            //待修改，如果定位失败，要更新主界面图像
-            if (!pmaRes.bLocated)
-            {
-                DirectShowImage();
-            }
-            try
-            {
-                if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null && iModelRole == 10)
-                {
-                    cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
-                    cogRDMain.Display.BackColor = Color.Black;
-                    /*cogRDMain.Display.Fit(true);*/
-                }
-                else if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null)
-                {
-                    cogRDMainUser.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
-                    cogRDMainUser.BackColor = Color.Black;
-                    /*  cogRDMainUser.Fit(true);*/
-                }
-                if (cup.p_CD.bListProcess[1] && strSubRecordsName[1] != null)
-                {
-                    cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    /*cogRDSub1.BackColor = Color.Black;
-                    cogRDSub1.Fit(true);*/
-                }
-                if (cup.p_CD.bListProcess[2] && strSubRecordsName[2] != null)
-                {
-                    cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    /*cogRDSub2.BackColor = Color.Black;
-                    cogRDSub2.Fit(true);*/
-                }
-                /*if (cup.p_CD.bListProcess[3] && strSubRecordsName[3] != null)
-                {
-                    cogRDSub3.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[3]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    cogRDSub3.BackColor = Color.Black;
-                    cogRDSub3.Fit(true);
-                }
-                if (cup.p_CD.bListProcess[4] && strSubRecordsName[4] != null)
-                {
-                    cogRDSub4.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[4]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    cogRDSub4.BackColor = Color.Black;
-                    cogRDSub4.Fit(true);
-                }*/
-                /*AnaInferRes(2);
-                picSub1.Invalidate();*/
-            }
-            catch
-            { };
-            //    UpdateGui(null, null);
-        }
-
-
-        // DL 预测
-        #region
         /* public void MainPredict(string model_type, ref byte[] byteArray, bool one_img_flag)
          {
 
@@ -3045,11 +3176,7 @@ namespace VisionControl
         }
 
         #endregion
-        //
-        private void VisionControl_SizeChanged(object sender, EventArgs e)
-        {
-            // ViewLayout();
-        }
+       
 
         #region  9点标定
         //////////////////////////////////////////
@@ -3214,8 +3341,6 @@ namespace VisionControl
 
         }
 
-
-
         //使用VP9点标定工具进行9点标定，图像坐标与激光坐标分开传入
         public CalibRes _9PointCalib2(double[] dCoorIm, double[] dCoorLaser)
         {
@@ -3243,8 +3368,6 @@ namespace VisionControl
             calibRes.dSkew = calibrationTransform.Skew;
             return calibRes;
         }
-
-
 
         //设置图像并执行blob分析
         public void SetCalibBlobImage(CogImage8Grey calibIm)
@@ -3353,135 +3476,7 @@ namespace VisionControl
         }
         #endregion
 
-        #region
-        //设置PMA工具的参数
-        public void SetPMAParam(PMAlignParam pmaParam)
-        {
-            try
-            {
-                //设置训练参数
-                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
-                pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
-                pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
-                pma.Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
-                pma.Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
-                pma.Pattern.IgnorePolarity = pmaParam.TrainPolarity;
-                switch (pmaParam.TrainAlg)
-                {
-                    case 0:
-                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
-                        break;
-                    case 1:
-                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
-                        break;
-                    case 2:
-                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
-                        break;
-                }
-                //设置运行参数
-
-                switch (pmaParam.RunAlg)
-                {
-                    case 0:
-                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
-                        break;
-                    case 1:
-                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
-                        break;
-                    case 2:
-                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
-                        break;
-                }
-                pma.RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
-                pma.RunParams.ScoreUsingClutter = pmaParam.RunArt;
-                pma.RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
-                pma.RunParams.ContrastThreshold = pmaParam.RunConstractThre;
-                pma.RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
-                pma.RunParams.AcceptThreshold = pmaParam.RunScoreThre;
-                if (pmaParam.RunEnableAngle)
-                {
-                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
-                }
-                else
-                {
-                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
-                }
-                pma.RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
-                pma.RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-        }
-        public void GetAlignRegion(ref AlignImParam alImParam)
-        {
-            try
-            {
-                CogAffineTransformTool cogTrans = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
-                alImParam.dCenX = cogTrans.Region.CenterX;
-                alImParam.dCenY = cogTrans.Region.CenterY;
-                alImParam.dWidth = cogTrans.Region.SideXLength;
-                alImParam.dHeight = cogTrans.Region.SideYLength;
-
-                cogTrans.Run();
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
-                alImParam.width = cogIm.Width;
-                alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
-                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile.Append(cogIm);
-                mImageFile.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-
-        }
-        public void GetPMAParam(ref PMAlignParam pmaParam)
-        {
-            //获取训练参数
-            try
-            {
-                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                pmaParam.TrainAutoGrun = pma.Pattern.GrainLimitAutoSelect;
-                pmaParam.TrainCoarse = pma.Pattern.GrainLimitCoarse;
-                pmaParam.TrainFine = pma.Pattern.GrainLimitFine;
-                pmaParam.TrainEdgeThre = pma.Pattern.EdgeThreshold;
-                pmaParam.TrainAutoEdgeThre = pma.Pattern.AutoEdgeThresholdEnabled;
-                pmaParam.TrainPolarity = pma.Pattern.IgnorePolarity;
-                pmaParam.TrainAlg = (int)pma.Pattern.TrainAlgorithm;
-                if (pmaParam.TrainAlg > 2 || pmaParam.TrainAlg < 0)
-                    pmaParam.TrainAlg = 2;
-
-                //获取运行参数
-                pmaParam.RunAlg = (int)pma.RunParams.RunAlgorithm;
-                if (pmaParam.RunAlg > 2 || pmaParam.RunAlg < 0)
-                    pmaParam.RunAlg = 2;
-
-                pmaParam.RunAutoEdgeThre = pma.RunParams.AutoEdgeThresholdEnabled;
-                pmaParam.RunArt = pma.RunParams.ScoreUsingClutter;
-                pmaParam.RunEdgeThre = pma.RunParams.EdgeThreshold;
-                pmaParam.RunConstractThre = pma.RunParams.ContrastThreshold;
-                pmaParam.RunSearchNum = pma.RunParams.ApproximateNumberToFind;
-                pmaParam.RunScoreThre = pma.RunParams.AcceptThreshold;
-
-                if (pma.RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
-                    pmaParam.RunEnableAngle = true;
-                else
-                    pmaParam.RunEnableAngle = false;
-                pmaParam.RunAngleD = pma.RunParams.ZoneAngle.Low * 180 / Math.PI;
-                pmaParam.RunAngleU = pma.RunParams.ZoneAngle.High * 180 / Math.PI;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-        }
-
-        #endregion
+        
     }
  
 }
