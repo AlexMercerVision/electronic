@@ -68,8 +68,8 @@ namespace VisionControl
         //运行结果记录清单
         private CogJobResultHistoryCollection mHistoryCollection = new CogJobResultHistoryCollection();
 
-        private enum RunState { Stopped, RunningContinuous, RunningOnce, RunningLive };
-        private RunState mCurrentRunState = RunState.Stopped;
+        public enum RunState { Stopped, RunningContinuous, RunningOnce, RunningLive };
+        public RunState mCurrentRunState = RunState.Stopped;
         private JobData[] mJobData = null;
         //  private bool mInitError = false;
         private bool mStarted = false;
@@ -521,13 +521,14 @@ namespace VisionControl
             bRunOneTimeFinished = 1;
             try
             {
-                if (this.InvokeRequired)
+                //2025年10月8日  该回调中不涉及到GUI更新，尝试去掉委托
+               /* if (this.InvokeRequired)
                 {
                     // Call this same function on the GUI thread.
                     // No need to wait for it here, so ignore the asyncresult return value and return immediately
                     BeginInvoke(new CogJob.CogJobRunningEventHandler(Job_Running), new object[] { sender, e });
                     return;
-                }
+                }*/
 
 
                 RunState newrunstate = RunState.Stopped;
@@ -570,7 +571,7 @@ namespace VisionControl
         private void cogJobResultHistory_CurrentItemChanged(object sender, System.EventArgs e)
         {
             bool newResultForSelectedJob = false;
-
+            //查找哪个job 记录发生改变
             int jobIndex = FindResultHistoryIndex(sender);
             if (jobIndex < 0)
                 return;
@@ -578,7 +579,7 @@ namespace VisionControl
             if (jobIndex == mSelectedJob)
                 newResultForSelectedJob = true;
             //2025年10月7日 屏蔽该更新
-            UpdateGUIForJob(jobIndex);
+            //UpdateGUIForJob(jobIndex);
 
             // if there is a new result for the selected job, update the gui now
             if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
@@ -630,8 +631,9 @@ namespace VisionControl
                     // Note that this may cause a "checked == false" event to occur.
                     // checkBox_LiveDisplay.Checked = false;
                 }
-                if (cup.p_RTSP.bUpdateImage)
-                    UpdateGui(null, null);
+                //2025年10月8日  去掉UpdateGUI并没有影响结果显示
+                /*if (cup.p_RTSP.bUpdateImage)
+                    UpdateGui(null, null);*/
                 //  UpdateControlsEnabled();
                 //  SetResultBarCurrent();
             }

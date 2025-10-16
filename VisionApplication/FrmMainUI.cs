@@ -5873,11 +5873,16 @@ namespace VisionApplication
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5;
-                    while (vpWin._bRunOneTimeFinished != 2 && count < maxTimes)
+                    //2025年10月8日 此处条件不完全正确，待修改
+                    while (/*vpWin.mCurrentRunState != 0*/vpWin._bRunOneTimeFinished != 2 && count < maxTimes)
                     {
                         Thread.Sleep(5);
                         count++;
                     }
+                  /*  if(vpWin.mCurrentRunState!=0)
+                    {
+
+                    }*/
                     vpWin._bRunOneTimeFinished = 2;  //强制结束
                     pmaRes = vpWin._PMARes;
 
@@ -5901,6 +5906,10 @@ namespace VisionApplication
                         iNextFileIndex = (++iNextFileIndex) % iFileGroupLen;
                     }
                     Thread.Sleep(2);
+                }
+                else
+                {
+
                 }
             }
             vpWin._iTaskType = -1;
