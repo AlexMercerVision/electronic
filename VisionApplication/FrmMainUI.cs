@@ -1999,15 +1999,18 @@ namespace VisionApplication
         //授权验证
         private void RoleCheck()
         {
-            if (!Directory.Exists("C:\\Users\\GearDet"))
+            //用户app数据目录，不要求管理员权限
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            if (!Directory.Exists(appData+"\\GearDet"))
             {
-                Directory.CreateDirectory("C:\\Users\\GearDet");
+                Directory.CreateDirectory(appData + "\\GearDet");
             }
 
-            if (!File.Exists("C:\\Users\\GearDet\\authentication.txt"))
+            if (!File.Exists(appData + "\\GearDet\\authentication.txt"))
             {
-                File.Copy("authentication.txt", "C:\\Users\\GearDet\\authentication.txt", true);
-                mPasswordFile = new Protect("C:\\Users\\GearDet\authentication.txt");
+                File.Copy("authentication.txt", appData + "\\GearDet\\authentication.txt", true);
+                mPasswordFile = new Protect(appData + "\\GearDet\\authentication.txt");
             }
             string strMAC = mPasswordFile.GetMacAddress();
             string strEnableMAC = mPasswordFile.GetCID();
