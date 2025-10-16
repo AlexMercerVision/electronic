@@ -43,7 +43,7 @@ namespace VisionApplication
     {
         Frm_Welcome fw;
         
-        Protect mPasswordFile = new Protect("C:\\Windows\\authentication.txt");
+        Protect mPasswordFile = new Protect("C:\\Users\\GearDet\\authentication.txt");
 
         //用户参数
         CUserParam cup = new CUserParam();
@@ -1929,7 +1929,7 @@ namespace VisionApplication
             //  InitCamLog();
 
 
-            if (rts.iModelRole == 10)
+            if (rts.iModelRole >= 9)
             {
                 /*  txt_NextImageIndex.Visible = true;
                   label5.Visible = true;*/
@@ -1999,10 +1999,18 @@ namespace VisionApplication
         //授权验证
         private void RoleCheck()
         {
-            if (!File.Exists("C:\\Windows\\authentication.txt"))
+            //用户app数据目录，不要求管理员权限
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            if (!Directory.Exists(appData+"\\GearDet"))
             {
-                File.Copy("authentication.txt", "C:\\Windows\\authentication.txt", true);
-                mPasswordFile = new Protect("C:\\Windows\\authentication.txt");
+                Directory.CreateDirectory(appData + "\\GearDet");
+            }
+
+            if (!File.Exists(appData + "\\GearDet\\authentication.txt"))
+            {
+                File.Copy("authentication.txt", appData + "\\GearDet\\authentication.txt", true);
+                mPasswordFile = new Protect(appData + "\\GearDet\\authentication.txt");
             }
             string strMAC = mPasswordFile.GetMacAddress();
             string strEnableMAC = mPasswordFile.GetCID();
@@ -4879,7 +4887,7 @@ namespace VisionApplication
                 menuManage_SuperOrNormal.Text = "切换至普通用户";
             }
             vpWin.SiftRDMain();
-            if (rts.iModelRole == 10)
+            if (rts.iModelRole >=9)
             {
                 /* txt_NextImageIndex.Visible = true;
                  label5.Visible = true;*/

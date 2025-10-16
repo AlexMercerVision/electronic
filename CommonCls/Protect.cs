@@ -334,7 +334,8 @@ namespace CommonCls
 
         public void WritePasswordFile()
         {
-            string fname = "C:\\Windows\\authentication.txt";
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string fname = appData + "\\GearDet\\authentication.txt";
             if (this.mFound)
                 fname = this.mFilename;
 
