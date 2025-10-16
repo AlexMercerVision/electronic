@@ -43,7 +43,7 @@ namespace VisionApplication
     {
         Frm_Welcome fw;
         
-        Protect mPasswordFile = new Protect("C:\\Windows\\authentication.txt");
+        Protect mPasswordFile = new Protect("C:\\Users\\GearDet\\authentication.txt");
 
         //用户参数
         CUserParam cup = new CUserParam();
@@ -1999,10 +1999,15 @@ namespace VisionApplication
         //授权验证
         private void RoleCheck()
         {
-            if (!File.Exists("C:\\Windows\\authentication.txt"))
+            if (!Directory.Exists("C:\\Users\\GearDet"))
             {
-                File.Copy("authentication.txt", "C:\\Windows\\authentication.txt", true);
-                mPasswordFile = new Protect("C:\\Windows\\authentication.txt");
+                Directory.CreateDirectory("C:\\Users\\GearDet");
+            }
+
+            if (!File.Exists("C:\\Users\\GearDet\\authentication.txt"))
+            {
+                File.Copy("authentication.txt", "C:\\Users\\GearDet\\authentication.txt", true);
+                mPasswordFile = new Protect("C:\\Users\\GearDet\authentication.txt");
             }
             string strMAC = mPasswordFile.GetMacAddress();
             string strEnableMAC = mPasswordFile.GetCID();

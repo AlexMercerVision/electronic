@@ -334,7 +334,7 @@ namespace CommonCls
 
         public void WritePasswordFile()
         {
-            string fname = "C:\\Windows\\authentication.txt";
+            string fname = "C:\\Users\\GearDet\\authentication.txt";
             if (this.mFound)
                 fname = this.mFilename;
 
