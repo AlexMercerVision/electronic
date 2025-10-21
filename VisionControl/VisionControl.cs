@@ -380,6 +380,14 @@ namespace VisionControl
             //   Cognex.Visionpro.Quickbuild.IO.CogIOOutputLineInfo cogIOOutputLineInfo;
             //   IO.CogIOOutputLineInfo mJM.IOHeartbeat;  //CogIOOutputLineInfo
         }
+        //2025年10月21日 修改VPP文件路径后重新加载VPP
+        public void ReLoadVisionControl(string strVPPFile)
+        {
+            mVppFilename = strVPPFile;
+            if (!DesignMode)
+                StartApplication();
+            initVar(); //st  变量初始化 20220522
+        }
         private void VisionControl_Load(object sender, EventArgs e)
         {
             // perform initialization to update the control gui - remainder of initialization

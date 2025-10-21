@@ -55,6 +55,7 @@ namespace VisionApplication
 
         CUserParam cup;
         public bool bVPPChange = false;
+        bool bLoadVPPChange = false; //窗体加载时VPP目录的修改
         public bool bVPPParamChanged = false;
         public bool bMaskChanged = false;
         public string strVPPFileName;
@@ -1316,6 +1317,7 @@ namespace VisionApplication
             //路径设置参数
             try
             {
+                bLoadVPPChange = true;
                 tbVPPPath.Text = cup.p_Paf.strVPPFilePath;
                 tbSingleFramePath.Text = cup.p_Paf.strSigSavePath;
                 tbContFramePath.Text = cup.p_Paf.strConSavePath;
@@ -2156,7 +2158,11 @@ namespace VisionApplication
 
         private void tbVPPPath_TextChanged(object sender, EventArgs e)
         {
-            bVPPChange = true;
+            if (!bLoadVPPChange)
+            {
+                bVPPChange = true;                
+            }
+            bLoadVPPChange = false;
         }
 
         private void cmbCrackGroupParamGrey1_SelectedIndexChanged(object sender, EventArgs e)

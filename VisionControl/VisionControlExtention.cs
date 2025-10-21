@@ -1724,6 +1724,11 @@ namespace VisionControl
                 {
                     if (iModelRole == 10)
                     {
+                        if(cogRDMain.Visible==false)
+                        {
+                            cogRDMain.Visible = true;
+                            cogRDMainUser.Visible = false;
+                        }
                         cogRDMain.Display.Image = ci8gAcq[wsInd];
                         if (bLoadVPRes)
                         {
@@ -1732,6 +1737,11 @@ namespace VisionControl
                     }
                     else
                     {
+                        if (cogRDMainUser.Visible == false)
+                        {
+                            cogRDMainUser.Visible = true;
+                            cogRDMain.Visible = false;
+                        }
                         cogRDMainUser.Image = ci8gAcq[wsInd];
 
                     }
@@ -1801,6 +1811,19 @@ namespace VisionControl
             return true;
         }
 
+        public bool ClearCogDispaly()
+        {
+            //   cogRDMain.Display
+            cogRDMain.Display.InteractiveGraphics.Clear();
+            //    cogRDMain.Display.Image = null;
+            if (cup.p_CD.bListProcess[1])
+            {
+                cogRDSub1.InteractiveGraphics.Clear();
+            }
+            if (cup.p_CD.bListProcess[2])
+            { cogRDSub2.InteractiveGraphics.Clear(); }
+            return true;
+        }
 
         string[] SaveImagePrefix = { "Main_", "Sub1_", "Sub2_", "Sub3_", "Sub4_" };
 

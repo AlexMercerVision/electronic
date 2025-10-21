@@ -242,7 +242,7 @@ namespace VisionApplication
         //VisionControl初始化
         bool bVPWinAttached = false;  //视图控件是否已经加载进来
      
-        private void LoadVPFile()  //2025年10月4日  修改
+        private void LoadVPFile(bool bReLoad)  //2025年10月4日  修改
         {
             string strVPPFile = "";
            //判断算法文件是否存在
@@ -272,7 +272,12 @@ namespace VisionApplication
             {
                 try
                 {
-                    this.vpWin = new VisionControl.VisionControl(strVPPFile);
+                    if (bReLoad)
+                    {
+                        vpWin.ReLoadVisionControl(strVPPFile);
+                    }
+                    else
+                        this.vpWin = new VisionControl.VisionControl(strVPPFile);
                    
                     rts.initStatus.iVPPStatus = vpWin.mInitError; //vpp文件初始化错误代码
                                                                   //    vpWin.cdl = cdl;
@@ -287,7 +292,7 @@ namespace VisionApplication
 
                         this.vpWin.Location = new System.Drawing.Point(-2, 6);
                         this.vpWin.Name = "XB视图";
-                        this.vpWin.Size = new System.Drawing.Size(393, 357);
+                 //       this.vpWin.Size = new System.Drawing.Size(393, 357);
                         this.vpWin.TabIndex = 2;
 
                         //2025年8月26日
@@ -2096,7 +2101,7 @@ namespace VisionApplication
                  
                 iProcess = 20;
                 fw.SetProgress(20, "正在加载机器视觉环境");
-                LoadVPFile();            //VP控件初始化，加载VPP文件和VisionControl控件
+                LoadVPFile(false);            //VP控件初始化，加载VPP文件和VisionControl控件
 
 
                 iProcess = 30;
@@ -2295,6 +2300,8 @@ namespace VisionApplication
                 {
                     case "btFunAcqOneImage":    //采集单帧图像
                         {
+                            if (vpWin._iTaskType != 0)
+                                vpWin.ClearCogDispaly();
                             PeviewOneImage();
                             break;
                         }
@@ -2969,10 +2976,11 @@ namespace VisionApplication
                 {
 
                     // rts.initStatus.bVPPInit = vpWin.ReLoadVPP(frs.strVPPFileName);
-                    LoadVPFile();
+                    //2025年10月21日 重新加载VPP文件
+                    LoadVPFile(true);
                     if (rts.initStatus.bVPPInit)
                     {
-                        InitVisionControl();
+                 //       InitVisionControl();
                         //   bSucc = vpWin.SetVPPRuntimeParam();             //visionpro控件初始化
                     }
 
