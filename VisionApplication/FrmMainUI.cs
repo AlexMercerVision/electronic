@@ -2010,8 +2010,9 @@ namespace VisionApplication
             if (!File.Exists(appData + "\\GearDet\\authentication.txt"))
             {
                 File.Copy("authentication.txt", appData + "\\GearDet\\authentication.txt", true);
-                mPasswordFile = new Protect(appData + "\\GearDet\\authentication.txt");
+             
             }
+            mPasswordFile = new Protect(appData + "\\GearDet\\authentication.txt");
             string strMAC = mPasswordFile.GetMacAddress();
             string strEnableMAC = mPasswordFile.GetCID();
 
@@ -4091,6 +4092,8 @@ namespace VisionApplication
 
                 /* JCZServerLayout();
                  bfirstTime = false;*/
+
+                vpWin.iModelRole = rts.iModelRole;
                 timer1.Interval = 10000;
             }
             try
@@ -4115,6 +4118,7 @@ namespace VisionApplication
                     if (rts.initStatus.bVPPInit && vpWin._iTaskType != 3)
                         vpWin.ActivateRun();
                 }
+                vpWin.iModelRole = rts.iModelRole;
             }
             catch
             { };
@@ -5562,7 +5566,7 @@ namespace VisionApplication
             //回放模式，文件没有就绪
             if (!cup.p_VPPRTP.bAcqFromCam && !rts.initStatus.bLocalFileExist)
             {
-                operLog.strOperEvent = "运行一次";
+                operLog.strOperEvent = "数据检测";
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = "回放文件夹不存在或者图像文件不存在";
                 AddLog();

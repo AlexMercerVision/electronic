@@ -56,13 +56,12 @@ namespace VisionControl
 
         private PasswordFile mCurrentPasswordFile;
         private string mLoadedVppFilename;
-
         private OptionsFile mCurrentOptionsFile;
-
         private CogJobManager mJM = null;  //vpp文件实例对象
+
         private bool mAttached = false;
         private int mSelectedJob = 0;
-        private AccessLevel mCurrentAccessLevel;
+     //   private AccessLevel mCurrentAccessLevel;
         //   Cognex.Visionpro.Quickbuild.IO.CogIOOutputLineInfo
         //     public Cognex.VisionPro.QuickBuild.IO.CogIOutputLineInfo;
         //运行结果记录清单
@@ -70,13 +69,13 @@ namespace VisionControl
 
         public enum RunState { Stopped, RunningContinuous, RunningOnce, RunningLive };
         public RunState mCurrentRunState = RunState.Stopped;
-        private JobData[] mJobData = null;
+        //private JobData[] mJobData = null;
         //  private bool mInitError = false;
         private bool mStarted = false;
         private bool mIsClosing = false;
 
         // resource support for localization
-        private Hashtable mResultTextHash;
+       // private Hashtable mResultTextHash;
         #endregion
 
 
@@ -236,7 +235,7 @@ namespace VisionControl
               return true;
           }*/
 
-        //st** 加载vpp文件初始化
+        //st** 加载vpp文件初始化条件判断
         private int PerformRequiredInit()
         {
             // resolve the quickbuild filename
@@ -385,31 +384,26 @@ namespace VisionControl
         {
             // perform initialization to update the control gui - remainder of initialization
             // takes place in StartApplication
-            if (mUsePasswords)
+            /*if (mUsePasswords)
                 mCurrentAccessLevel = AccessLevel.Operator;
             else
             {
                 mCurrentAccessLevel = AccessLevel.Administrator;
 
-            }
-
-            this.mResultTextHash = new Hashtable();
+            }*/
+            //2025年10月16日 
+            /*this.mResultTextHash = new Hashtable();
             this.mResultTextHash.Add(CogToolResultConstants.Accept, ResourceUtility.GetString("RtAccept"));
             this.mResultTextHash.Add(CogToolResultConstants.Warning, ResourceUtility.GetString("RtWarning"));
             this.mResultTextHash.Add(CogToolResultConstants.Reject, ResourceUtility.GetString("RtReject"));
-            this.mResultTextHash.Add(CogToolResultConstants.Error, ResourceUtility.GetString("RtError"));
+            this.mResultTextHash.Add(CogToolResultConstants.Error, ResourceUtility.GetString("RtError"));*/
 
             if (!DesignMode)
                 StartApplication();
 
             initVar(); //st  变量初始化 20220522
         }
-
-        public void RefreshJobManager()
-        {
-            AttachToJobManager(false);
-            AttachToJobManager(true);
-        }
+ 
         private void AttachToJobManager(bool attach)
         {
             // attach and detach our event handlers/etc
@@ -560,7 +554,7 @@ namespace VisionControl
         {
             HandleUserResults();
             RunOneTimeFinished();
-            //  mJM_stop_User();
+            
 
             infer_end_time = new TimeSpan(DateTime.Now.Ticks);
             start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
@@ -579,7 +573,7 @@ namespace VisionControl
             if (jobIndex == mSelectedJob)
                 newResultForSelectedJob = true;
             //2025年10月7日 屏蔽该更新
-            //UpdateGUIForJob(jobIndex);
+         //   UpdateGUIForJob(jobIndex);
 
             // if there is a new result for the selected job, update the gui now
             if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
@@ -632,8 +626,8 @@ namespace VisionControl
                     // checkBox_LiveDisplay.Checked = false;
                 }
                 //2025年10月8日  去掉UpdateGUI并没有影响结果显示
-                /*if (cup.p_RTSP.bUpdateImage)
-                    UpdateGui(null, null);*/
+                if (cup.p_RTSP.bUpdateImage)
+                    UpdateGui(null, null);
                 //  UpdateControlsEnabled();
                 //  SetResultBarCurrent();
             }
@@ -756,9 +750,6 @@ namespace VisionControl
                     Utility.FlushAllQueues(mJM);
                     CogSerializer.SaveObjectToFile(mJM, vpp);
 
-
-
-
                     if (wasAttached)
                         AttachToJobManager(true);
                     return 0;
@@ -818,7 +809,7 @@ namespace VisionControl
 
         //获取结果状态
         public bool bLoadVPRes = true;
-        public VPRes vpRes = new VPRes();
+        public VPRes vpRes = new VPRes();  //xb项目的结果存储结构体
         //   CogBlobResultCollection[] blobColl = new CogBlobResultCollection[maxCameraNum];
         private void RunOneTimeFinished()
         {
@@ -826,7 +817,7 @@ namespace VisionControl
             {
                 bRunOneTimeFinished = 2;
                 pmaRes.bOk = (bool)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
-
+                pmaRes.bLocated = true;
                 /* if (!pmaRes.bLocated)
                  {
                      iReject++; 
@@ -885,8 +876,7 @@ namespace VisionControl
                     // put an empty record in if no LastRunRecord is available
                     //st** 选择项性加载
                     if (bChkSubrecord)
-                    {
-                        //  if (!Utility.AddRecordToDisplayChk(cogRDMain, result, _updateDisplayStrings, cup.p_SRN.bList, newSelectedJob))
+                    { 
                         if (!Utility.AddRecordToDisplayChk(cogRDMain, result, _updateDisplayStrings, cup.p_SRN.strSelectName, newSelectedJob))
                             cogRDMain.Subject = null;
                     }
@@ -998,7 +988,8 @@ namespace VisionControl
                 }
                 catch
                 { }
-
+                //2025年10月16日
+             //   UpdateGui(null, null);
 
             }
         }

@@ -546,7 +546,7 @@ namespace VisionControl
 
 
             vpRes.iResCode = new int[maxCameraNum];
-            vpRes.TF = new CogTransform2DLinear[maxCameraNum];
+            //vpRes.TF = new CogTransform2DLinear[maxCameraNum];
         }
         //VP选项配置
         public int VPConfig()
@@ -615,34 +615,7 @@ namespace VisionControl
             }
             return iRet;
         }
-        public bool SetListProcess(CUserParam cup)
-        {
-            try
-            {
-                (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("ListProcess", cup.p_CD.bListProcess);
-
-                CogToolGroup myToolGroup = mJM.Job(0).VisionTool as CogToolGroup;
-
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    if (cup.p_CD.bListProcess[i])
-                    {
-                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 1]);
-                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 2]);
-                    }
-                    else
-                    {
-                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 1]);
-                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 2]);
-                    }
-                }
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
+      
         public bool SetDiagParam(CUserParam cup)
         {
             try
@@ -795,6 +768,35 @@ namespace VisionControl
                 SetDiagParam(cup);
                 SetUseWeakCrackDetect(cup.p_VPPRTP.bUseWeakCrack);
                 SetxbType(cup.p_VPPRTP.iXBType);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+        //设置VPP中的工具是否启用
+        public bool SetListProcess(CUserParam cup)
+        {
+            try
+            {
+                (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("ListProcess", cup.p_CD.bListProcess);
+
+                CogToolGroup myToolGroup = mJM.Job(0).VisionTool as CogToolGroup;
+
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                    {
+                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 1]);
+                        myToolGroup.DisabledTools.Remove(myToolGroup.Tools[i * 2 + 2]);
+                    }
+                    else
+                    {
+                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 1]);
+                        myToolGroup.DisabledTools.Add(myToolGroup.Tools[i * 2 + 2]);
+                    }
+                }
             }
             catch
             {
@@ -1681,6 +1683,8 @@ namespace VisionControl
 
                 //  HObject hIm = new HObject();
                 int wsInd = cup.p_VPPRTP.iXBType;
+             //   cogRDMain.Display.cogRecordDisplay.Record = null;
+               
                 while (hikCanGrab)
                 {
                     try
@@ -1807,7 +1811,7 @@ namespace VisionControl
             string[] strImageFileS = new string[maxCameraNum];
             try
             {
-                Thread.Sleep(20);
+                Thread.Sleep(2);
                 //采集  
                 if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
                 {
@@ -1820,11 +1824,13 @@ namespace VisionControl
                 {
                     if (iModelRole == 10)
                     {
+                       //  cogRDMain.Display.ima
                         cogRDMain.Display.Image = ci8gAcq[wsInd];
                         cogRDMain.Display.Fit(true);
                     }
                     else
                     {
+                        //cogRDMainUser.Record = null;
                         cogRDMainUser.Image = ci8gAcq[wsInd];
                         cogRDMainUser.Fit(true);
                     }
@@ -2597,55 +2603,62 @@ namespace VisionControl
             if (!pmaRes.bLocated)
             {
                 DirectShowImage();
+
             }
-            try
+            else
             {
-                if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null && iModelRole == 10)
+                try
                 {
-                    cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
-                    cogRDMain.Display.BackColor = Color.Black;
-                    /*cogRDMain.Display.Fit(true);*/
+                    if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null && iModelRole == 10)
+                    {
+                        //    cogRDMain.Display.Image = null;
+                        cogRDMain.SelectedRecordKey = "LastRun." + strSubRecordsName[0];
+                        cogRDMain.Display.BackColor = Color.Black;
+                        /*
+                        cogRDMain.Display.Fit(true);*/
+                    }
+                    else if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null)
+                    {
+                        cogRDMainUser.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
+                        cogRDMainUser.BackColor = Color.Black;
+                        /* 
+                         cogRDMainUser.Fit(true);*/
+                    }
+                    if (cup.p_CD.bListProcess[1] && strSubRecordsName[1] != null)
+                    {
+                        cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                        cogRDSub1.BackColor = Color.Black;
+                        /*
+                        cogRDSub1.Fit(true);*/
+                    }
+                    if (cup.p_CD.bListProcess[2] && strSubRecordsName[2] != null)
+                    {
+                        cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                              //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                        /*cogRDSub2.BackColor = Color.Black;
+                        cogRDSub2.Fit(true);*/
+                    }
+                    /*if (cup.p_CD.bListProcess[3] && strSubRecordsName[3] != null)
+                    {
+                        cogRDSub3.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[3]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                              //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                        cogRDSub3.BackColor = Color.Black;
+                        cogRDSub3.Fit(true);
+                    }
+                    if (cup.p_CD.bListProcess[4] && strSubRecordsName[4] != null)
+                    {
+                        cogRDSub4.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[4]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
+                                                                                              //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
+                        cogRDSub4.BackColor = Color.Black;
+                        cogRDSub4.Fit(true);
+                    }*/
+                    /*AnaInferRes(2);
+                    picSub1.Invalidate();*/
                 }
-                else if (cup.p_CD.bListProcess[0] && strSubRecordsName[0] != null)
-                {
-                    cogRDMainUser.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[0]];
-                    cogRDMainUser.BackColor = Color.Black;
-                    /*  cogRDMainUser.Fit(true);*/
-                }
-                if (cup.p_CD.bListProcess[1] && strSubRecordsName[1] != null)
-                {
-                    cogRDSub1.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[1]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    /*cogRDSub1.BackColor = Color.Black;
-                    cogRDSub1.Fit(true);*/
-                }
-                if (cup.p_CD.bListProcess[2] && strSubRecordsName[2] != null)
-                {
-                    cogRDSub2.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[2]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    /*cogRDSub2.BackColor = Color.Black;
-                    cogRDSub2.Fit(true);*/
-                }
-                /*if (cup.p_CD.bListProcess[3] && strSubRecordsName[3] != null)
-                {
-                    cogRDSub3.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[3]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    cogRDSub3.BackColor = Color.Black;
-                    cogRDSub3.Fit(true);
-                }
-                if (cup.p_CD.bListProcess[4] && strSubRecordsName[4] != null)
-                {
-                    cogRDSub4.Record = cogRDMain.Subject.SubRecords[strSubRecordsName[4]];//"侧面1检测多模板.CogFixtureTool1.OutputImage"
-                                                                                          //  cogRDSub1.Image = ci8gAcq[cup.p_CD.camInd[1]];
-                    cogRDSub4.BackColor = Color.Black;
-                    cogRDSub4.Fit(true);
-                }*/
-                /*AnaInferRes(2);
-                picSub1.Invalidate();*/
+                catch
+                { };
             }
-            catch
-            { };
-            //    UpdateGui(null, null);
+            UpdateGui(null, null);
         }
 
         private void picSub1_Paint(object sender, PaintEventArgs e)
