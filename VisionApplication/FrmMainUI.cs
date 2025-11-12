@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.IO.Pipes;
 using System.Management;
 using System.Xml;
-
+using System.ServiceProcess;
 using HalconDotNet;
 //using HOperatorSet_EX;
 using System.Runtime.InteropServices;
@@ -504,13 +504,13 @@ namespace VisionApplication
             switch (cup.p_VPPRTP.iXBType)
             {
                 case 0:
-                    menuXBType_1.Checked = true;
+                    menuWS_Job1.Checked = true;
                     break;
                 case 1:
-                    menuXBType_2.Checked = true;
+                    menuWS_Job2.Checked = true;
                     break;
                 case 9:
-                    menuXBType_9.Checked = true;
+                    menuWS_Job3.Checked = true;
                     break;
             }
             rts.onLS.iFeedbackType = cup.p_VPPRTP.iFeedbackType;
@@ -2444,7 +2444,7 @@ namespace VisionApplication
                             return;
                         }
 
-                        if (rts.iModelRole < 10)
+                        if (rts.iModelRole < 9)
                         {
                             operLog.iEventStatus = -1;
                             operLog.strOperEvent = "流程设置";
@@ -2463,7 +2463,7 @@ namespace VisionApplication
                         else
                         {
                             operLog.strOperEvent = "流程设置";
-                            if (rts.iModelRole == 10)
+                            if (rts.iModelRole >=9)
                             {
                                 int iTmpType = vpWin._iTaskType;
                                 vpWin._iTaskType = 5;
@@ -4619,49 +4619,7 @@ namespace VisionApplication
             AddLog();
         }
 
-        private void menuXBTypeS_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                //  double dSig;
-                switch (((ToolStripMenuItem)sender).Name)
-                {
-                    case "menuXBType_1":
-                        menuXBType_1.Checked = true;
-                        menuXBType_2.Checked = false;
-                        menuXBType_9.Checked = false;
-                        cup.p_VPPRTP.iXBType = 0;
-                        //      dSig = 2;
-                        //     vpWin.SetxbType(cup.p_VPPRTP.iXBType);
-                        break;
-                    case "menuXBType_2":
-                        menuXBType_1.Checked = false;
-                        menuXBType_2.Checked = true;
-                        menuXBType_9.Checked = false;
-                        cup.p_VPPRTP.iXBType = 1;
-                        //       dSig = 3;
-                        //        vpWin.SetxbType(cup.p_VPPRTP.iXBType);
-                        break;
-                    case "menuXBType_9":
-                        menuXBType_1.Checked = false;
-                        menuXBType_2.Checked = false;
-                        menuXBType_9.Checked = true;
-                        cup.p_VPPRTP.iXBType = 9;
-                        break;
-                }
-                vpWin.SetxbType(cup.p_VPPRTP.iXBType);
-                /*  for (int i=0;i<4;i++)
-                  {
-                      cup.p_subFX[i].sigma = dSig;
-                  }*/
-
-            }
-            catch
-            {
-
-            }
-
-        }
+     
 
         bool bCrackPlayback = false;
 
@@ -5769,6 +5727,45 @@ namespace VisionApplication
             UpdateThread.Start();
         }
 
+        int iJobIndex = 0;  
+        private void menuWSJobS_Click(object sender, EventArgs e)
+        {
+            menuWS_Job1.Checked = false;
+            menuWS_Job2.Checked = false;
+            menuWS_Job3.Checked = false;
+            menuWS_JobS.Checked = false;
+            ((ToolStripMenuItem)sender).Checked = true;
+            switch (((ToolStripMenuItem)sender).Name)
+            {
+                case "menuWS_Job1":
+                    iJobIndex = 0;
+                    break;
+                case "menuWS_Job2":
+                    iJobIndex = 1;
+                    break;
+                case "menuWS_Job3":
+                    iJobIndex =2;
+                    break;
+                case "menuWS_Jobs":
+                    iJobIndex = -1;
+                    break;
+            }
+        }
+
+        public void StartService(string serviceName)
+        {
+            ServiceController service = new ServiceController(serviceName);
+            if (service.Status != ServiceControllerStatus.Running)
+            {
+                service.Start();
+                service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
+            }
+        }
+        private void toolBt_LaserPreview_Click(object sender, EventArgs e)
+        {
+            StartService("Cognex Security Service");
+        }
+
         //运行一次，产生新的图像列表
         public void RunAndUpdateThread()
         {
@@ -5815,7 +5812,7 @@ namespace VisionApplication
                   operLog.strOperEvent = "启动一次运行";
                   operLog.strFailReason = "";
                   AddLog();*/
-                if (vpWin.RunOneTime())
+                if (vpWin.RunOneTime(iJobIndex))
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 10;

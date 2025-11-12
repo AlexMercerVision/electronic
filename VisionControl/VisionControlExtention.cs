@@ -204,6 +204,87 @@ namespace VisionControl
         }
 
         //VP执行一次运算
+        public bool RunOneTime(int iJobIndex)
+        {
+            infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始  
+           // mJM.Job(iJobIndex).
+            if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
+                return false;
+
+            if (mCurrentRunState != RunState.RunningContinuous)
+                mCurrentRunState = RunState.RunningOnce;
+
+            int iCount = 0;
+            int maxTimes = cup.p_RTSP.runTimeOut / 5;
+            while (bActivateRun && iCount< maxTimes)
+            {
+                Thread.Sleep(5);
+            }
+            try
+            {  
+                inactiveTime = 0;       //只要运行了，就将不活跃次数置零 
+                
+                bRunOneTimeFinished = 0;
+
+                if (iJobIndex >= 0)
+                {
+                    if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess, iJobIndex) ||
+                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAllFromFile(iFileIndex, cup.p_CD.bListProcess, iJobIndex))
+                    { 
+                        {
+                            ci8gAcq = acqFIFO._ci8gAcq;
+                            ci8gFX = acqFIFO.ci8gAcqFX;
+
+                            SetVPPImage(iJobIndex);
+                            Thread.Sleep(10);  //st** 20220804 
+                            mJM.Job(iJobIndex).Run();
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    for(int index=0; index < 3; index++)
+                    {
+                        
+                        if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess, index) ||
+                         !cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAllFromFile(iFileIndex, cup.p_CD.bListProcess, index))
+                        {
+                            {
+                                ci8gAcq = acqFIFO._ci8gAcq;
+                                ci8gFX = acqFIFO.ci8gAcqFX;
+
+                                SetVPPImage(index);
+                                Thread.Sleep(10);  //st** 20220804 
+                                mJM.Job(index).Run();
+                            }
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
+            {
+                // do nothing in this case - we're already running
+                return false;
+            }
+            catch (Cognex.VisionPro.Exceptions.CogException ex)
+            {
+                if (mCurrentRunState != RunState.RunningContinuous)
+                    mCurrentRunState = RunState.Stopped;
+                strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                return false;
+            }
+            return true; 
+        }
+
+        //VP执行一次运算
         public bool RunOneTime()
         {
             infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始
@@ -285,7 +366,14 @@ namespace VisionControl
             return true;
 
         }
-     
+
+        //设置VP的输入图像
+        public void SetVPPImage(int iJobIndex)
+        { 
+            ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = ci8gAcq[iJobIndex];
+        }
+
+
         //设置VP的输入图像
         public void SetVPPImage()
         {

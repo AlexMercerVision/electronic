@@ -183,6 +183,19 @@
             this.lblOrderStatus2 = new System.Windows.Forms.Label();
             this.btTest2 = new System.Windows.Forms.Button();
             this.btTestALl = new System.Windows.Forms.Button();
+            this.rdbSinglePulse = new System.Windows.Forms.RadioButton();
+            this.rdbSquarewave = new System.Windows.Forms.RadioButton();
+            this.rdbSinwave = new System.Windows.Forms.RadioButton();
+            this.label54 = new System.Windows.Forms.Label();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.label55 = new System.Windows.Forms.Label();
+            this.textBox3 = new System.Windows.Forms.TextBox();
+            this.label56 = new System.Windows.Forms.Label();
+            this.btExe = new System.Windows.Forms.Button();
+            this.label58 = new System.Windows.Forms.Label();
+            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numInd_Anc)).BeginInit();
@@ -1205,7 +1218,7 @@
             this.groupBox4.Controls.Add(this.label14);
             this.groupBox4.Controls.Add(this.label11);
             this.groupBox4.Controls.Add(this.label12);
-            this.groupBox4.Location = new System.Drawing.Point(541, 350);
+            this.groupBox4.Location = new System.Drawing.Point(540, 397);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(421, 301);
             this.groupBox4.TabIndex = 67;
@@ -1883,7 +1896,7 @@
             this.groupBox6.Controls.Add(this.bt2_Ch2);
             this.groupBox6.Controls.Add(this.bt2_Ch3);
             this.groupBox6.Controls.Add(this.lblStatus2);
-            this.groupBox6.Location = new System.Drawing.Point(20, 345);
+            this.groupBox6.Location = new System.Drawing.Point(23, 397);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Size = new System.Drawing.Size(494, 202);
             this.groupBox6.TabIndex = 66;
@@ -2051,16 +2064,160 @@
             this.btTestALl.Visible = false;
             this.btTestALl.Click += new System.EventHandler(this.btTestALl_Click);
             // 
+            // rdbSinglePulse
+            // 
+            this.rdbSinglePulse.AutoSize = true;
+            this.rdbSinglePulse.Location = new System.Drawing.Point(23, 293);
+            this.rdbSinglePulse.Name = "rdbSinglePulse";
+            this.rdbSinglePulse.Size = new System.Drawing.Size(59, 16);
+            this.rdbSinglePulse.TabIndex = 69;
+            this.rdbSinglePulse.TabStop = true;
+            this.rdbSinglePulse.Text = "单脉冲";
+            this.rdbSinglePulse.UseVisualStyleBackColor = true;
+            // 
+            // rdbSquarewave
+            // 
+            this.rdbSquarewave.AutoSize = true;
+            this.rdbSquarewave.Location = new System.Drawing.Point(21, 317);
+            this.rdbSquarewave.Name = "rdbSquarewave";
+            this.rdbSquarewave.Size = new System.Drawing.Size(47, 16);
+            this.rdbSquarewave.TabIndex = 69;
+            this.rdbSquarewave.TabStop = true;
+            this.rdbSquarewave.Text = "方波";
+            this.rdbSquarewave.UseVisualStyleBackColor = true;
+            // 
+            // rdbSinwave
+            // 
+            this.rdbSinwave.AutoSize = true;
+            this.rdbSinwave.Location = new System.Drawing.Point(21, 342);
+            this.rdbSinwave.Name = "rdbSinwave";
+            this.rdbSinwave.Size = new System.Drawing.Size(59, 16);
+            this.rdbSinwave.TabIndex = 69;
+            this.rdbSinwave.TabStop = true;
+            this.rdbSinwave.Text = "正弦波";
+            this.rdbSinwave.UseVisualStyleBackColor = true;
+            // 
+            // label54
+            // 
+            this.label54.AutoSize = true;
+            this.label54.Location = new System.Drawing.Point(97, 295);
+            this.label54.Name = "label54";
+            this.label54.Size = new System.Drawing.Size(65, 12);
+            this.label54.TabIndex = 62;
+            this.label54.Text = "脉冲宽度：";
+            // 
+            // textBox1
+            // 
+            this.textBox1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.textBox1.Location = new System.Drawing.Point(163, 290);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(47, 21);
+            this.textBox1.TabIndex = 62;
+            this.textBox1.Text = "10";
+            // 
+            // textBox2
+            // 
+            this.textBox2.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.textBox2.Location = new System.Drawing.Point(163, 316);
+            this.textBox2.Name = "textBox2";
+            this.textBox2.Size = new System.Drawing.Size(47, 21);
+            this.textBox2.TabIndex = 62;
+            this.textBox2.Text = "2";
+            // 
+            // label55
+            // 
+            this.label55.AutoSize = true;
+            this.label55.Location = new System.Drawing.Point(97, 321);
+            this.label55.Name = "label55";
+            this.label55.Size = new System.Drawing.Size(41, 12);
+            this.label55.TabIndex = 62;
+            this.label55.Text = "频率：";
+            // 
+            // textBox3
+            // 
+            this.textBox3.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.textBox3.Location = new System.Drawing.Point(163, 341);
+            this.textBox3.Name = "textBox3";
+            this.textBox3.Size = new System.Drawing.Size(47, 21);
+            this.textBox3.TabIndex = 62;
+            this.textBox3.Text = "2";
+            // 
+            // label56
+            // 
+            this.label56.AutoSize = true;
+            this.label56.Location = new System.Drawing.Point(97, 346);
+            this.label56.Name = "label56";
+            this.label56.Size = new System.Drawing.Size(41, 12);
+            this.label56.TabIndex = 62;
+            this.label56.Text = "频率：";
+            // 
+            // btExe
+            // 
+            this.btExe.Location = new System.Drawing.Point(421, 295);
+            this.btExe.Name = "btExe";
+            this.btExe.Size = new System.Drawing.Size(52, 29);
+            this.btExe.TabIndex = 63;
+            this.btExe.Text = "开始";
+            this.btExe.UseVisualStyleBackColor = true;
+            // 
+            // label58
+            // 
+            this.label58.AutoSize = true;
+            this.label58.BackColor = System.Drawing.Color.Transparent;
+            this.label58.ForeColor = System.Drawing.Color.Black;
+            this.label58.Location = new System.Drawing.Point(268, 299);
+            this.label58.Name = "label58";
+            this.label58.Size = new System.Drawing.Size(41, 12);
+            this.label58.TabIndex = 5;
+            this.label58.Text = "通道：";
+            // 
+            // comboBox1
+            // 
+            this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.Items.AddRange(new object[] {
+            "1",
+            "2",
+            "3",
+            "4"});
+            this.comboBox1.Location = new System.Drawing.Point(306, 296);
+            this.comboBox1.Name = "comboBox1";
+            this.comboBox1.Size = new System.Drawing.Size(97, 20);
+            this.comboBox1.TabIndex = 0;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.cbxPortName1_SelectedIndexChanged);
+            // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(270, 341);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(48, 16);
+            this.checkBox1.TabIndex = 70;
+            this.checkBox1.Text = "循环";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            // 
             // frm_Serial
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(973, 343);
+            this.ClientSize = new System.Drawing.Size(973, 487);
+            this.Controls.Add(this.checkBox1);
+            this.Controls.Add(this.rdbSinwave);
+            this.Controls.Add(this.comboBox1);
+            this.Controls.Add(this.rdbSquarewave);
+            this.Controls.Add(this.rdbSinglePulse);
             this.Controls.Add(this.btSubPort);
+            this.Controls.Add(this.btExe);
             this.Controls.Add(this.btnSend);
             this.Controls.Add(this.chkEditProcess);
+            this.Controls.Add(this.label56);
+            this.Controls.Add(this.label58);
+            this.Controls.Add(this.label55);
+            this.Controls.Add(this.textBox3);
+            this.Controls.Add(this.label54);
+            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.txtOrderSubPort);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.txtOrder1);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
@@ -2265,5 +2422,18 @@
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label12;
+        private System.Windows.Forms.RadioButton rdbSinglePulse;
+        private System.Windows.Forms.RadioButton rdbSquarewave;
+        private System.Windows.Forms.RadioButton rdbSinwave;
+        private System.Windows.Forms.Label label54;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.Label label55;
+        private System.Windows.Forms.TextBox textBox3;
+        private System.Windows.Forms.Label label56;
+        private System.Windows.Forms.Button btExe;
+        private System.Windows.Forms.Label label58;
+        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }

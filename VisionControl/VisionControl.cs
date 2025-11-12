@@ -561,7 +561,7 @@ namespace VisionControl
         private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
         {
             HandleUserResults();
-            RunOneTimeFinished();
+            RunOneTimeFinished(iCurrentJobIndex);
             
 
             infer_end_time = new TimeSpan(DateTime.Now.Ticks);
@@ -584,7 +584,7 @@ namespace VisionControl
          //   UpdateGUIForJob(jobIndex);
 
             // if there is a new result for the selected job, update the gui now
-            if (newResultForSelectedJob && cup.p_RTSP.bUpdateImage)
+            if (cup.p_RTSP.bUpdateImage)
             {
                 UpdateGUIForSelectedJob(false);  //更新CogRDMain
                 UpdateGuiIfNeeded();             //CogRDMain、CogRDSub1、 CogRDSub2 显示相应记录
@@ -782,7 +782,8 @@ namespace VisionControl
 
 
         #region Result implementation   //结果处理相关
-
+      
+        int iCurrentJobIndex = -1;
         //  mHistoryCollection 更新记录
         private void HandleUserResults()
         {
@@ -793,6 +794,7 @@ namespace VisionControl
             {
                 string jobName = (string)result.SubRecords["JobName"].Content;
                 int jobIndex = Utility.GetJobIndexFromName(mJM, jobName);
+                iCurrentJobIndex = jobIndex;
                 // note - ignore unknown job names
                 if (jobIndex >= 0)
                 {
@@ -819,12 +821,12 @@ namespace VisionControl
         public bool bLoadVPRes = true;
         public VPRes vpRes = new VPRes();  //xb项目的结果存储结构体
         //   CogBlobResultCollection[] blobColl = new CogBlobResultCollection[maxCameraNum];
-        private void RunOneTimeFinished()
+        private void RunOneTimeFinished(int iJobIndex)
         {
             try
             {
                 bRunOneTimeFinished = 2;
-                pmaRes.bOk = (bool)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
+                pmaRes.bOk = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
                 pmaRes.bLocated = true;
                 /* if (!pmaRes.bLocated)
                  {

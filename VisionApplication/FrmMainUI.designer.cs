@@ -62,9 +62,10 @@ namespace VisionApplication
             this.menu_View_LayoutEq = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_Fit = new System.Windows.Forms.ToolStripMenuItem();
             this.menuXBType = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuXBType_1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuXBType_2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuXBType_9 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_Job1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_Job2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_Job3 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_JobS = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFile_SaveDirectory = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFile_PlaybackDirectory = new System.Windows.Forms.ToolStripMenuItem();
@@ -716,35 +717,40 @@ namespace VisionApplication
             // menuXBType
             // 
             this.menuXBType.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuXBType_1,
-            this.menuXBType_2,
-            this.menuXBType_9});
+            this.menuWS_Job1,
+            this.menuWS_Job2,
+            this.menuWS_Job3,
+            this.menuWS_JobS});
             this.menuXBType.Name = "menuXBType";
             this.menuXBType.Size = new System.Drawing.Size(44, 22);
-            this.menuXBType.Text = "段位";
-            this.menuXBType.Visible = false;
+            this.menuXBType.Text = "工位";
             // 
-            // menuXBType_1
+            // menuWS_Job1
             // 
-            this.menuXBType_1.Name = "menuXBType_1";
-            this.menuXBType_1.Size = new System.Drawing.Size(107, 22);
-            this.menuXBType_1.Text = "工位1";
-            this.menuXBType_1.Click += new System.EventHandler(this.menuXBTypeS_Click);
+            this.menuWS_Job1.Name = "menuWS_Job1";
+            this.menuWS_Job1.Size = new System.Drawing.Size(107, 22);
+            this.menuWS_Job1.Text = "工位1";
+            this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
-            // menuXBType_2
+            // menuWS_Job2
             // 
-            this.menuXBType_2.Name = "menuXBType_2";
-            this.menuXBType_2.Size = new System.Drawing.Size(107, 22);
-            this.menuXBType_2.Text = "工位2";
-            this.menuXBType_2.Click += new System.EventHandler(this.menuXBTypeS_Click);
+            this.menuWS_Job2.Name = "menuWS_Job2";
+            this.menuWS_Job2.Size = new System.Drawing.Size(107, 22);
+            this.menuWS_Job2.Text = "工位2";
+            this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
-            // menuXBType_9
+            // menuWS_Job3
             // 
-            this.menuXBType_9.Name = "menuXBType_9";
-            this.menuXBType_9.Size = new System.Drawing.Size(107, 22);
-            this.menuXBType_9.Text = "三段";
-            this.menuXBType_9.Visible = false;
-            this.menuXBType_9.Click += new System.EventHandler(this.menuXBTypeS_Click);
+            this.menuWS_Job3.Name = "menuWS_Job3";
+            this.menuWS_Job3.Size = new System.Drawing.Size(107, 22);
+            this.menuWS_Job3.Text = "工位3";
+            this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
+            // 
+            // menuWS_JobS
+            // 
+            this.menuWS_JobS.Name = "menuWS_JobS";
+            this.menuWS_JobS.Size = new System.Drawing.Size(107, 22);
+            this.menuWS_JobS.Text = "同步";
             // 
             // menuFile
             // 
@@ -1279,8 +1285,8 @@ namespace VisionApplication
             this.toolBt_RuntimeSet,
             this.toolStripSeparator17,
             this.toolStripSeparator16,
-            this.toolBtSta_MarkAfterLocated,
             this.toolBt_LaserPreview,
+            this.toolBtSta_MarkAfterLocated,
             this.toolBtSta_SaveRes,
             this.toolBtSta_ErrMark,
             this.toolBtSta_Export,
@@ -1445,8 +1451,8 @@ namespace VisionApplication
             this.toolBt_LaserPreview.Name = "toolBt_LaserPreview";
             this.toolBt_LaserPreview.Size = new System.Drawing.Size(36, 42);
             this.toolBt_LaserPreview.Text = "手动发送NG结果";
-            this.toolBt_LaserPreview.ToolTipText = "清除任务";
-            this.toolBt_LaserPreview.Visible = false;
+            this.toolBt_LaserPreview.ToolTipText = "唤醒";
+            this.toolBt_LaserPreview.Click += new System.EventHandler(this.toolBt_LaserPreview_Click);
             // 
             // toolBtSta_SaveRes
             // 
@@ -4642,9 +4648,9 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripMenuItem menuTool_ImageMarkCmp;
         private System.Windows.Forms.ToolStripButton toolBtSta_Export;
         private System.Windows.Forms.ToolStripMenuItem menuXBType;
-        private System.Windows.Forms.ToolStripMenuItem menuXBType_1;
-        private System.Windows.Forms.ToolStripMenuItem menuXBType_2;
-        private System.Windows.Forms.ToolStripMenuItem menuXBType_9;
+        private System.Windows.Forms.ToolStripMenuItem menuWS_Job1;
+        private System.Windows.Forms.ToolStripMenuItem menuWS_Job2;
+        private System.Windows.Forms.ToolStripMenuItem menuWS_Job3;
         private System.Windows.Forms.ToolStripMenuItem menuTask_CrackPlayback;
         private System.Windows.Forms.ToolStripMenuItem menuTask_VisionInfer;
         private System.Windows.Forms.ToolStripMenuItem menuTask_FXRestruct;
@@ -4832,5 +4838,6 @@ namespace VisionApplication
         private System.Windows.Forms.TextBox tbCalibErr;
         private System.Windows.Forms.Label label69;
         private System.Windows.Forms.Panel panel7;
+        private System.Windows.Forms.ToolStripMenuItem menuWS_JobS;
     }
 }

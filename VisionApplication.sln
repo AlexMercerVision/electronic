@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LS_UartAssist", "VisionAppl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerMang", "VisionApplication\PerMang.csproj", "{436B75AE-FB8A-4648-882F-474816DF0BDC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageViewer", "ImageViewer\ImageViewer.csproj", "{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -142,6 +144,26 @@ Global
 		{436B75AE-FB8A-4648-882F-474816DF0BDC}.Release|x64.Build.0 = Release|Any CPU
 		{436B75AE-FB8A-4648-882F-474816DF0BDC}.Release|x86.ActiveCfg = Release|Any CPU
 		{436B75AE-FB8A-4648-882F-474816DF0BDC}.Release|x86.Build.0 = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|ARM.Build.0 = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|x64.Build.0 = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Debug|x86.Build.0 = Debug|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|ARM.ActiveCfg = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|ARM.Build.0 = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|ARM64.Build.0 = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x64.ActiveCfg = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x64.Build.0 = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x86.ActiveCfg = Release|Any CPU
+		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

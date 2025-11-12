@@ -369,7 +369,6 @@ namespace CommonCls
                 {
                     nRet = camera2[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000); // m_BufForDriver为图像数据接收指针
 
-
                     if (nRet == MyCamera.MV_OK)
                     {
                         image.GenImage1("byte", (int)stFrameInfo.nWidth, (int)stFrameInfo.nHeight, m_BufForDriverS[iCamInd]);
@@ -1345,12 +1344,8 @@ namespace CommonCls
         }
         public bool FXSurfaceAllFromFile(int iFileInd, bool[] bListProcess,int wsInd)
         {
-          //  bool bRecord = false;
-            int tWait = 5;
-         //   HObject objTmp;
-        //   int ind = 0;
-
-
+          
+            int tWait = 5; 
             try
             {
                 if (bListProcess[wsInd])
@@ -1361,8 +1356,7 @@ namespace CommonCls
                     {
                         iStart = cup.p_LI.strCamPrefix[wsInd].Length;
                     }
-                    strTime = (Path.GetFileName(strFiles[wsInd][iFileInd])).Substring(iStart,14);
-
+                    strTime = (Path.GetFileName(strFiles[wsInd][iFileInd])).Substring(iStart,14); 
 
                     HOperatorSet.ReadImage(out hObjFXA[wsInd, 0], strFiles[wsInd][iFileInd]); 
                     ci8gAcq[wsInd] = HObj2CogImage(hObjFXA[wsInd, 0]);
@@ -1371,7 +1365,7 @@ namespace CommonCls
                  
                 return true;
             }
-            catch
+            catch(Exception ex)
             {
                 return false;
             }
