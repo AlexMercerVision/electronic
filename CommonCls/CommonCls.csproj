@@ -160,6 +160,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AcqFIFO.cs" />
+    <Compile Include="CDL.cs" />
     <Compile Include="ClsList.cs">
       <SubType>Form</SubType>
     </Compile>

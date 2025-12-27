@@ -448,6 +448,7 @@ namespace CommonCls
                     xmlDoc.Load(strNullXMLName);
                 }
                 //读取二级节点   如果不存在则新增二级节点
+                XmlNode nodeName1 = xmlDoc.SelectSingleNode($"annotation ");
                 XmlNode nodeName = xmlDoc.SelectSingleNode($"annotation/filename");
                 nodeName.InnerText = strSourceName;
                 nodeName = xmlDoc.SelectSingleNode($"annotation/path");
@@ -524,7 +525,8 @@ namespace CommonCls
 
                 xmlDoc.Save(strDestPath);
             }
-            catch { }
+            catch(Exception ex)
+            { }
 
             return true;
         }
@@ -773,8 +775,8 @@ namespace CommonCls
                 dlRes.AL_score = new List<float>();
                 dlRes.AL_Type = new List<int>();
                 dlRes.Al_bDiff = new List<bool>();
-
-                string strXMLName = strSourcePath + "\\" + Path.GetFileName(imageName).Replace(".jpg", ".xml");
+                string extension = Path.GetExtension(imageName);
+                string strXMLName = strSourcePath + "\\" + Path.GetFileName(imageName).Replace(extension, ".xml");
 
                 XmlDocument xmlDoc = new XmlDocument();
                 if (File.Exists(strXMLName))
