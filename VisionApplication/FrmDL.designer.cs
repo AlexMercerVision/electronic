@@ -197,6 +197,7 @@ namespace xbDefectDect
             this.cmb_Thre.Size = new System.Drawing.Size(75, 20);
             this.cmb_Thre.TabIndex = 15;
             this.cmb_Thre.SelectedIndexChanged += new System.EventHandler(this.cmbThre_SelectedIndexChanged);
+            this.cmb_Thre.TextChanged += new System.EventHandler(this.cmb_Thre_TextChanged);
             // 
             // numericUpDown1
             // 
@@ -360,21 +361,21 @@ namespace xbDefectDect
             // menu_Model_Init
             // 
             this.menu_Model_Init.Name = "menu_Model_Init";
-            this.menu_Model_Init.Size = new System.Drawing.Size(180, 22);
+            this.menu_Model_Init.Size = new System.Drawing.Size(148, 22);
             this.menu_Model_Init.Text = "模型初始化";
             this.menu_Model_Init.Click += new System.EventHandler(this.menu_Model_Init_Click);
             // 
             // menu_Model_Destroy
             // 
             this.menu_Model_Destroy.Name = "menu_Model_Destroy";
-            this.menu_Model_Destroy.Size = new System.Drawing.Size(180, 22);
+            this.menu_Model_Destroy.Size = new System.Drawing.Size(148, 22);
             this.menu_Model_Destroy.Text = "模型销毁";
             this.menu_Model_Destroy.Click += new System.EventHandler(this.menu_Model_Destroy_Click);
             // 
             // menu_Model_ModelPath
             // 
             this.menu_Model_ModelPath.Name = "menu_Model_ModelPath";
-            this.menu_Model_ModelPath.Size = new System.Drawing.Size(180, 22);
+            this.menu_Model_ModelPath.Size = new System.Drawing.Size(148, 22);
             this.menu_Model_ModelPath.Text = "设置模型路径";
             this.menu_Model_ModelPath.Click += new System.EventHandler(this.menu_Model_ModelPath_Click);
             // 

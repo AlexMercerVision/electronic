@@ -205,8 +205,8 @@ namespace VisionApplication
 
             setParam();
             bMaskChanged = false;
-            for (int i = 0; i < 4; i++)
-                tabControl1.TabPages.Remove(tabControl1.TabPages[7]);
+            for (int i = 0; i < 3; i++)
+                tabControl1.TabPages.Remove(tabControl1.TabPages[8]);
         }
 
         private void btOK_Click(object sender, EventArgs e)
@@ -1059,7 +1059,7 @@ namespace VisionApplication
             // GetFXParam(cmbLightSource.SelectedIndex);  //光度立体算法参数
             // GetRunParam();   //运行参数
             // GetCMDiagParam();    //诊断参数
-            // GetDLParam();        //深度学习参数
+             GetDLParam();        //深度学习参数
             //GetHightLevelCrackParam();    //高级别裂纹诊断参数
             // GetBlowParam();       //获取吹气参数
 
@@ -1441,7 +1441,7 @@ namespace VisionApplication
 
             // SetCMDiagParam();
 
-            // SetDLParam();
+             SetDLParam();
             SetIOParam();
             SetRunTimeStatusParam();
         }

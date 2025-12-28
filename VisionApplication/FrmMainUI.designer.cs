@@ -833,11 +833,11 @@ namespace VisionApplication
             this.toolStripSeparator6,
             this.menuTask_CrackPlayback,
             this.menuTask_LoadRes});
-            this.menuTask.Enabled = false;
+            this.menuTask.Enabled = true;
             this.menuTask.Name = "menuTask";
             this.menuTask.Size = new System.Drawing.Size(68, 22);
             this.menuTask.Text = "推理模式";
-            this.menuTask.Visible = false;
+            this.menuTask.Visible = true;
             this.menuTask.Click += new System.EventHandler(this.menuTask_Click);
             // 
             // menuTask_AcqOneImage

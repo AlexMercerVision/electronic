@@ -172,8 +172,11 @@ namespace VisionApplication
             this.chkRemarkArea = new System.Windows.Forms.CheckBox();
             this.chkRemarkResult = new System.Windows.Forms.CheckBox();
             this.groupBox14 = new System.Windows.Forms.GroupBox();
+            this.cmbRunTimeOut = new System.Windows.Forms.ComboBox();
             this.chkConnCam = new System.Windows.Forms.CheckBox();
+            this.label97 = new System.Windows.Forms.Label();
             this.chkConnSerial = new System.Windows.Forms.CheckBox();
+            this.label98 = new System.Windows.Forms.Label();
             this.chkRunVPP = new System.Windows.Forms.CheckBox();
             this.chkConnMotionCard = new System.Windows.Forms.CheckBox();
             this.chkConnJCZ = new System.Windows.Forms.CheckBox();
@@ -184,6 +187,10 @@ namespace VisionApplication
             this.chkUpdateIO = new System.Windows.Forms.CheckBox();
             this.chkUpdateLog = new System.Windows.Forms.CheckBox();
             this.tabIO = new System.Windows.Forms.TabPage();
+            this.cmbIOTimeDelay = new System.Windows.Forms.ComboBox();
+            this.label95 = new System.Windows.Forms.Label();
+            this.chkNgOut = new System.Windows.Forms.CheckBox();
+            this.chkOkOut = new System.Windows.Forms.CheckBox();
             this.cmbNgOut = new System.Windows.Forms.ComboBox();
             this.cmbOkOut = new System.Windows.Forms.ComboBox();
             this.cmbEndDetTrig = new System.Windows.Forms.ComboBox();
@@ -191,11 +198,52 @@ namespace VisionApplication
             this.cmbDetTrig = new System.Windows.Forms.ComboBox();
             this.cmbAcqTrig = new System.Windows.Forms.ComboBox();
             this.label92 = new System.Windows.Forms.Label();
+            this.label96 = new System.Windows.Forms.Label();
             this.label94 = new System.Windows.Forms.Label();
             this.label90 = new System.Windows.Forms.Label();
             this.label91 = new System.Windows.Forms.Label();
             this.label93 = new System.Windows.Forms.Label();
             this.label89 = new System.Windows.Forms.Label();
+            this.tabDL = new System.Windows.Forms.TabPage();
+            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.label61 = new System.Windows.Forms.Label();
+            this.label62 = new System.Windows.Forms.Label();
+            this.label63 = new System.Windows.Forms.Label();
+            this.txtDL_PoszAreaTh = new System.Windows.Forms.TextBox();
+            this.txtDL_PoszSideTh = new System.Windows.Forms.TextBox();
+            this.txtDL_CrackLenTh = new System.Windows.Forms.TextBox();
+            this.groupBox7 = new System.Windows.Forms.GroupBox();
+            this.tbModelPath = new System.Windows.Forms.TextBox();
+            this.label45 = new System.Windows.Forms.Label();
+            this.txtGPUID = new System.Windows.Forms.TextBox();
+            this.btModel = new System.Windows.Forms.Button();
+            this.label48 = new System.Windows.Forms.Label();
+            this.cmb_EvnType = new System.Windows.Forms.ComboBox();
+            this.cmb_ModelType = new System.Windows.Forms.ComboBox();
+            this.label46 = new System.Windows.Forms.Label();
+            this.groupBox6 = new System.Windows.Forms.GroupBox();
+            this.label49 = new System.Windows.Forms.Label();
+            this.label52 = new System.Windows.Forms.Label();
+            this.cmb_Threshold = new System.Windows.Forms.ComboBox();
+            this.label50 = new System.Windows.Forms.Label();
+            this.label47 = new System.Windows.Forms.Label();
+            this.label51 = new System.Windows.Forms.Label();
+            this.label65 = new System.Windows.Forms.Label();
+            this.label67 = new System.Windows.Forms.Label();
+            this.label59 = new System.Windows.Forms.Label();
+            this.cmb_CertThresholdCrack = new System.Windows.Forms.ComboBox();
+            this.cmb_ThresholdCrack = new System.Windows.Forms.ComboBox();
+            this.label66 = new System.Windows.Forms.Label();
+            this.cmb_ThresholdFX_posz = new System.Windows.Forms.ComboBox();
+            this.label60 = new System.Windows.Forms.Label();
+            this.cmb_ThresholdIoU = new System.Windows.Forms.ComboBox();
+            this.label64 = new System.Windows.Forms.Label();
+            this.label58 = new System.Windows.Forms.Label();
+            this.cmb_CertThresholdPosz = new System.Windows.Forms.ComboBox();
+            this.cmb_ThresholdPoszNum = new System.Windows.Forms.ComboBox();
+            this.cmb_ThresholdPosz = new System.Windows.Forms.ComboBox();
+            this.cmb_ThresholdGray_posz = new System.Windows.Forms.ComboBox();
+            this.cmb_ThresholdGray_crack = new System.Windows.Forms.ComboBox();
             this.tabDiagnose = new System.Windows.Forms.TabPage();
             this.groupBox8 = new System.Windows.Forms.GroupBox();
             this.label71 = new System.Windows.Forms.Label();
@@ -257,46 +305,6 @@ namespace VisionApplication
             this.label8 = new System.Windows.Forms.Label();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.tabDL = new System.Windows.Forms.TabPage();
-            this.groupBox5 = new System.Windows.Forms.GroupBox();
-            this.label61 = new System.Windows.Forms.Label();
-            this.label62 = new System.Windows.Forms.Label();
-            this.label63 = new System.Windows.Forms.Label();
-            this.txtDL_PoszAreaTh = new System.Windows.Forms.TextBox();
-            this.txtDL_PoszSideTh = new System.Windows.Forms.TextBox();
-            this.txtDL_CrackLenTh = new System.Windows.Forms.TextBox();
-            this.groupBox7 = new System.Windows.Forms.GroupBox();
-            this.tbModelPath = new System.Windows.Forms.TextBox();
-            this.label45 = new System.Windows.Forms.Label();
-            this.txtGPUID = new System.Windows.Forms.TextBox();
-            this.btModel = new System.Windows.Forms.Button();
-            this.label48 = new System.Windows.Forms.Label();
-            this.cmb_EvnType = new System.Windows.Forms.ComboBox();
-            this.cmb_ModelType = new System.Windows.Forms.ComboBox();
-            this.label46 = new System.Windows.Forms.Label();
-            this.groupBox6 = new System.Windows.Forms.GroupBox();
-            this.label49 = new System.Windows.Forms.Label();
-            this.label52 = new System.Windows.Forms.Label();
-            this.cmb_Threshold = new System.Windows.Forms.ComboBox();
-            this.label50 = new System.Windows.Forms.Label();
-            this.label47 = new System.Windows.Forms.Label();
-            this.label51 = new System.Windows.Forms.Label();
-            this.label65 = new System.Windows.Forms.Label();
-            this.label67 = new System.Windows.Forms.Label();
-            this.label59 = new System.Windows.Forms.Label();
-            this.cmb_CertThresholdCrack = new System.Windows.Forms.ComboBox();
-            this.cmb_ThresholdCrack = new System.Windows.Forms.ComboBox();
-            this.label66 = new System.Windows.Forms.Label();
-            this.cmb_ThresholdFX_posz = new System.Windows.Forms.ComboBox();
-            this.label60 = new System.Windows.Forms.Label();
-            this.cmb_ThresholdIoU = new System.Windows.Forms.ComboBox();
-            this.label64 = new System.Windows.Forms.Label();
-            this.label58 = new System.Windows.Forms.Label();
-            this.cmb_CertThresholdPosz = new System.Windows.Forms.ComboBox();
-            this.cmb_ThresholdPoszNum = new System.Windows.Forms.ComboBox();
-            this.cmb_ThresholdPosz = new System.Windows.Forms.ComboBox();
-            this.cmb_ThresholdGray_posz = new System.Windows.Forms.ComboBox();
-            this.cmb_ThresholdGray_crack = new System.Windows.Forms.ComboBox();
             this.tabBlow = new System.Windows.Forms.TabPage();
             this.chkBlowUsed = new System.Windows.Forms.CheckBox();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
@@ -322,14 +330,7 @@ namespace VisionApplication
             this.btCancle = new System.Windows.Forms.Button();
             this.btUpdateParamFile = new System.Windows.Forms.Button();
             this.btOK = new System.Windows.Forms.Button();
-            this.chkOkOut = new System.Windows.Forms.CheckBox();
-            this.chkNgOut = new System.Windows.Forms.CheckBox();
-            this.cmbIOTimeDelay = new System.Windows.Forms.ComboBox();
-            this.label95 = new System.Windows.Forms.Label();
-            this.label96 = new System.Windows.Forms.Label();
-            this.cmbRunTimeOut = new System.Windows.Forms.ComboBox();
-            this.label97 = new System.Windows.Forms.Label();
-            this.label98 = new System.Windows.Forms.Label();
+            this.label99 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabLine.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).BeginInit();
@@ -346,6 +347,10 @@ namespace VisionApplication
             this.groupBox14.SuspendLayout();
             this.groupBox12.SuspendLayout();
             this.tabIO.SuspendLayout();
+            this.tabDL.SuspendLayout();
+            this.groupBox5.SuspendLayout();
+            this.groupBox7.SuspendLayout();
+            this.groupBox6.SuspendLayout();
             this.tabDiagnose.SuspendLayout();
             this.groupBox8.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -361,10 +366,6 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.num_Tilts1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.tabDL.SuspendLayout();
-            this.groupBox5.SuspendLayout();
-            this.groupBox7.SuspendLayout();
-            this.groupBox6.SuspendLayout();
             this.tabBlow.SuspendLayout();
             this.groupBox10.SuspendLayout();
             this.groupBox9.SuspendLayout();
@@ -381,9 +382,9 @@ namespace VisionApplication
             this.tabControl1.Controls.Add(this.tabImItem);
             this.tabControl1.Controls.Add(this.tabRunTime);
             this.tabControl1.Controls.Add(this.tabIO);
+            this.tabControl1.Controls.Add(this.tabDL);
             this.tabControl1.Controls.Add(this.tabDiagnose);
             this.tabControl1.Controls.Add(this.tabFX);
-            this.tabControl1.Controls.Add(this.tabDL);
             this.tabControl1.Controls.Add(this.tabBlow);
             this.tabControl1.Location = new System.Drawing.Point(12, 2);
             this.tabControl1.Name = "tabControl1";
@@ -1957,6 +1958,19 @@ namespace VisionApplication
             this.groupBox14.TabStop = false;
             this.groupBox14.Text = "运行过程参数";
             // 
+            // cmbRunTimeOut
+            // 
+            this.cmbRunTimeOut.FormattingEnabled = true;
+            this.cmbRunTimeOut.Items.AddRange(new object[] {
+            "500",
+            "1000",
+            "1500",
+            "2000"});
+            this.cmbRunTimeOut.Location = new System.Drawing.Point(78, 227);
+            this.cmbRunTimeOut.Name = "cmbRunTimeOut";
+            this.cmbRunTimeOut.Size = new System.Drawing.Size(69, 20);
+            this.cmbRunTimeOut.TabIndex = 11;
+            // 
             // chkConnCam
             // 
             this.chkConnCam.AutoSize = true;
@@ -1968,6 +1982,15 @@ namespace VisionApplication
             this.chkConnCam.UseVisualStyleBackColor = true;
             this.chkConnCam.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
             // 
+            // label97
+            // 
+            this.label97.AutoSize = true;
+            this.label97.Location = new System.Drawing.Point(154, 230);
+            this.label97.Name = "label97";
+            this.label97.Size = new System.Drawing.Size(17, 12);
+            this.label97.TabIndex = 10;
+            this.label97.Text = "ms";
+            // 
             // chkConnSerial
             // 
             this.chkConnSerial.AutoSize = true;
@@ -1978,6 +2001,16 @@ namespace VisionApplication
             this.chkConnSerial.Text = "启动串口断线连接";
             this.chkConnSerial.UseVisualStyleBackColor = true;
             this.chkConnSerial.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
+            // 
+            // label98
+            // 
+            this.label98.AutoSize = true;
+            this.label98.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label98.Location = new System.Drawing.Point(19, 230);
+            this.label98.Name = "label98";
+            this.label98.Size = new System.Drawing.Size(53, 12);
+            this.label98.TabIndex = 9;
+            this.label98.Text = "运行超时";
             // 
             // chkRunVPP
             // 
@@ -2107,6 +2140,51 @@ namespace VisionApplication
             this.tabIO.TabIndex = 10;
             this.tabIO.Text = "IO口设置";
             // 
+            // cmbIOTimeDelay
+            // 
+            this.cmbIOTimeDelay.FormattingEnabled = true;
+            this.cmbIOTimeDelay.Items.AddRange(new object[] {
+            "20",
+            "40",
+            "60",
+            "80",
+            "100"});
+            this.cmbIOTimeDelay.Location = new System.Drawing.Point(414, 139);
+            this.cmbIOTimeDelay.Name = "cmbIOTimeDelay";
+            this.cmbIOTimeDelay.Size = new System.Drawing.Size(98, 20);
+            this.cmbIOTimeDelay.TabIndex = 4;
+            // 
+            // label95
+            // 
+            this.label95.AutoSize = true;
+            this.label95.Location = new System.Drawing.Point(518, 142);
+            this.label95.Name = "label95";
+            this.label95.Size = new System.Drawing.Size(17, 12);
+            this.label95.TabIndex = 3;
+            this.label95.Text = "ms";
+            // 
+            // chkNgOut
+            // 
+            this.chkNgOut.AutoSize = true;
+            this.chkNgOut.Location = new System.Drawing.Point(586, 89);
+            this.chkNgOut.Name = "chkNgOut";
+            this.chkNgOut.Size = new System.Drawing.Size(72, 16);
+            this.chkNgOut.TabIndex = 2;
+            this.chkNgOut.Text = "NG时输出";
+            this.chkNgOut.UseVisualStyleBackColor = true;
+            this.chkNgOut.Visible = false;
+            // 
+            // chkOkOut
+            // 
+            this.chkOkOut.AutoSize = true;
+            this.chkOkOut.Location = new System.Drawing.Point(586, 41);
+            this.chkOkOut.Name = "chkOkOut";
+            this.chkOkOut.Size = new System.Drawing.Size(72, 16);
+            this.chkOkOut.TabIndex = 2;
+            this.chkOkOut.Text = "OK时输出";
+            this.chkOkOut.UseVisualStyleBackColor = true;
+            this.chkOkOut.Visible = false;
+            // 
             // cmbNgOut
             // 
             this.cmbNgOut.FormattingEnabled = true;
@@ -2225,6 +2303,16 @@ namespace VisionApplication
             this.label92.TabIndex = 0;
             this.label92.Text = "检测结束";
             // 
+            // label96
+            // 
+            this.label96.AutoSize = true;
+            this.label96.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label96.Location = new System.Drawing.Point(331, 142);
+            this.label96.Name = "label96";
+            this.label96.Size = new System.Drawing.Size(53, 12);
+            this.label96.TabIndex = 0;
+            this.label96.Text = "脉冲时长";
+            // 
             // label94
             // 
             this.label94.AutoSize = true;
@@ -2274,6 +2362,577 @@ namespace VisionApplication
             this.label89.Size = new System.Drawing.Size(53, 12);
             this.label89.TabIndex = 0;
             this.label89.Text = "采集触发";
+            // 
+            // tabDL
+            // 
+            this.tabDL.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
+            this.tabDL.Controls.Add(this.groupBox5);
+            this.tabDL.Controls.Add(this.groupBox7);
+            this.tabDL.Controls.Add(this.groupBox6);
+            this.tabDL.Location = new System.Drawing.Point(4, 22);
+            this.tabDL.Name = "tabDL";
+            this.tabDL.Size = new System.Drawing.Size(795, 494);
+            this.tabDL.TabIndex = 7;
+            this.tabDL.Text = "深度学习";
+            // 
+            // groupBox5
+            // 
+            this.groupBox5.Controls.Add(this.label61);
+            this.groupBox5.Controls.Add(this.label62);
+            this.groupBox5.Controls.Add(this.label63);
+            this.groupBox5.Controls.Add(this.txtDL_PoszAreaTh);
+            this.groupBox5.Controls.Add(this.txtDL_PoszSideTh);
+            this.groupBox5.Controls.Add(this.txtDL_CrackLenTh);
+            this.groupBox5.Location = new System.Drawing.Point(14, 392);
+            this.groupBox5.Name = "groupBox5";
+            this.groupBox5.Size = new System.Drawing.Size(761, 82);
+            this.groupBox5.TabIndex = 14;
+            this.groupBox5.TabStop = false;
+            this.groupBox5.Text = "筛选参数";
+            this.groupBox5.Visible = false;
+            // 
+            // label61
+            // 
+            this.label61.AutoSize = true;
+            this.label61.Location = new System.Drawing.Point(16, 37);
+            this.label61.Name = "label61";
+            this.label61.Size = new System.Drawing.Size(83, 12);
+            this.label61.TabIndex = 6;
+            this.label61.Text = "破损面积阈值:";
+            // 
+            // label62
+            // 
+            this.label62.AutoSize = true;
+            this.label62.Location = new System.Drawing.Point(461, 37);
+            this.label62.Name = "label62";
+            this.label62.Size = new System.Drawing.Size(89, 12);
+            this.label62.TabIndex = 5;
+            this.label62.Text = "裂纹长度阈值：";
+            // 
+            // label63
+            // 
+            this.label63.AutoSize = true;
+            this.label63.Location = new System.Drawing.Point(233, 37);
+            this.label63.Name = "label63";
+            this.label63.Size = new System.Drawing.Size(83, 12);
+            this.label63.TabIndex = 4;
+            this.label63.Text = "破损边长阈值:";
+            // 
+            // txtDL_PoszAreaTh
+            // 
+            this.txtDL_PoszAreaTh.Location = new System.Drawing.Point(129, 34);
+            this.txtDL_PoszAreaTh.Name = "txtDL_PoszAreaTh";
+            this.txtDL_PoszAreaTh.Size = new System.Drawing.Size(50, 21);
+            this.txtDL_PoszAreaTh.TabIndex = 9;
+            this.txtDL_PoszAreaTh.Text = "10000";
+            // 
+            // txtDL_PoszSideTh
+            // 
+            this.txtDL_PoszSideTh.Location = new System.Drawing.Point(340, 34);
+            this.txtDL_PoszSideTh.Name = "txtDL_PoszSideTh";
+            this.txtDL_PoszSideTh.Size = new System.Drawing.Size(51, 21);
+            this.txtDL_PoszSideTh.TabIndex = 7;
+            this.txtDL_PoszSideTh.Text = "60";
+            // 
+            // txtDL_CrackLenTh
+            // 
+            this.txtDL_CrackLenTh.Location = new System.Drawing.Point(574, 34);
+            this.txtDL_CrackLenTh.Name = "txtDL_CrackLenTh";
+            this.txtDL_CrackLenTh.Size = new System.Drawing.Size(50, 21);
+            this.txtDL_CrackLenTh.TabIndex = 8;
+            this.txtDL_CrackLenTh.Text = "40";
+            // 
+            // groupBox7
+            // 
+            this.groupBox7.Controls.Add(this.label49);
+            this.groupBox7.Controls.Add(this.tbModelPath);
+            this.groupBox7.Controls.Add(this.cmb_Threshold);
+            this.groupBox7.Controls.Add(this.label45);
+            this.groupBox7.Controls.Add(this.txtGPUID);
+            this.groupBox7.Controls.Add(this.btModel);
+            this.groupBox7.Controls.Add(this.label48);
+            this.groupBox7.Controls.Add(this.cmb_EvnType);
+            this.groupBox7.Controls.Add(this.cmb_ModelType);
+            this.groupBox7.Controls.Add(this.label99);
+            this.groupBox7.Controls.Add(this.label46);
+            this.groupBox7.Location = new System.Drawing.Point(14, 29);
+            this.groupBox7.Name = "groupBox7";
+            this.groupBox7.Size = new System.Drawing.Size(761, 145);
+            this.groupBox7.TabIndex = 13;
+            this.groupBox7.TabStop = false;
+            this.groupBox7.Text = "基本设置";
+            // 
+            // tbModelPath
+            // 
+            this.tbModelPath.Location = new System.Drawing.Point(139, 32);
+            this.tbModelPath.Name = "tbModelPath";
+            this.tbModelPath.Size = new System.Drawing.Size(223, 21);
+            this.tbModelPath.TabIndex = 4;
+            // 
+            // label45
+            // 
+            this.label45.AutoSize = true;
+            this.label45.Location = new System.Drawing.Point(14, 39);
+            this.label45.Name = "label45";
+            this.label45.Size = new System.Drawing.Size(107, 12);
+            this.label45.TabIndex = 3;
+            this.label45.Text = "深度学习模型文件:";
+            // 
+            // txtGPUID
+            // 
+            this.txtGPUID.Location = new System.Drawing.Point(591, 70);
+            this.txtGPUID.Name = "txtGPUID";
+            this.txtGPUID.Size = new System.Drawing.Size(50, 21);
+            this.txtGPUID.TabIndex = 11;
+            this.txtGPUID.Text = "0";
+            this.txtGPUID.TextChanged += new System.EventHandler(this.txtGPUID_TextChanged);
+            // 
+            // btModel
+            // 
+            this.btModel.Location = new System.Drawing.Point(408, 28);
+            this.btModel.Name = "btModel";
+            this.btModel.Size = new System.Drawing.Size(75, 23);
+            this.btModel.TabIndex = 5;
+            this.btModel.Text = "选择路径";
+            this.btModel.UseVisualStyleBackColor = true;
+            this.btModel.Click += new System.EventHandler(this.btModel_Click);
+            // 
+            // label48
+            // 
+            this.label48.AutoSize = true;
+            this.label48.BackColor = System.Drawing.Color.Transparent;
+            this.label48.ForeColor = System.Drawing.Color.Black;
+            this.label48.Location = new System.Drawing.Point(16, 79);
+            this.label48.Name = "label48";
+            this.label48.Size = new System.Drawing.Size(65, 12);
+            this.label48.TabIndex = 9;
+            this.label48.Text = "模型选择：";
+            // 
+            // cmb_EvnType
+            // 
+            this.cmb_EvnType.FormattingEnabled = true;
+            this.cmb_EvnType.Items.AddRange(new object[] {
+            "CPU",
+            "GPU"});
+            this.cmb_EvnType.Location = new System.Drawing.Point(408, 76);
+            this.cmb_EvnType.Name = "cmb_EvnType";
+            this.cmb_EvnType.Size = new System.Drawing.Size(97, 20);
+            this.cmb_EvnType.TabIndex = 8;
+            this.cmb_EvnType.SelectedIndexChanged += new System.EventHandler(this.cmb_EvnType_SelectedIndexChanged);
+            // 
+            // cmb_ModelType
+            // 
+            this.cmb_ModelType.FormattingEnabled = true;
+            this.cmb_ModelType.Items.AddRange(new object[] {
+            "det",
+            "seg",
+            "clas",
+            "mask",
+            "paddlex"});
+            this.cmb_ModelType.Location = new System.Drawing.Point(139, 76);
+            this.cmb_ModelType.Name = "cmb_ModelType";
+            this.cmb_ModelType.Size = new System.Drawing.Size(97, 20);
+            this.cmb_ModelType.TabIndex = 8;
+            this.cmb_ModelType.SelectedIndexChanged += new System.EventHandler(this.cmb_ModelType_SelectedIndexChanged);
+            // 
+            // label46
+            // 
+            this.label46.AutoSize = true;
+            this.label46.BackColor = System.Drawing.Color.Transparent;
+            this.label46.ForeColor = System.Drawing.Color.Black;
+            this.label46.Location = new System.Drawing.Point(310, 76);
+            this.label46.Name = "label46";
+            this.label46.Size = new System.Drawing.Size(65, 12);
+            this.label46.TabIndex = 9;
+            this.label46.Text = "环境选择：";
+            // 
+            // groupBox6
+            // 
+            this.groupBox6.Controls.Add(this.label52);
+            this.groupBox6.Controls.Add(this.label50);
+            this.groupBox6.Controls.Add(this.label47);
+            this.groupBox6.Controls.Add(this.label51);
+            this.groupBox6.Controls.Add(this.label65);
+            this.groupBox6.Controls.Add(this.label67);
+            this.groupBox6.Controls.Add(this.label59);
+            this.groupBox6.Controls.Add(this.cmb_CertThresholdCrack);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdCrack);
+            this.groupBox6.Controls.Add(this.label66);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdFX_posz);
+            this.groupBox6.Controls.Add(this.label60);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdIoU);
+            this.groupBox6.Controls.Add(this.label64);
+            this.groupBox6.Controls.Add(this.label58);
+            this.groupBox6.Controls.Add(this.cmb_CertThresholdPosz);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdPoszNum);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdPosz);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdGray_posz);
+            this.groupBox6.Controls.Add(this.cmb_ThresholdGray_crack);
+            this.groupBox6.Location = new System.Drawing.Point(14, 180);
+            this.groupBox6.Name = "groupBox6";
+            this.groupBox6.Size = new System.Drawing.Size(761, 193);
+            this.groupBox6.TabIndex = 12;
+            this.groupBox6.TabStop = false;
+            this.groupBox6.Text = "深度推理诊断参数";
+            this.groupBox6.Visible = false;
+            // 
+            // label49
+            // 
+            this.label49.AutoSize = true;
+            this.label49.Location = new System.Drawing.Point(16, 115);
+            this.label49.Name = "label49";
+            this.label49.Size = new System.Drawing.Size(59, 12);
+            this.label49.TabIndex = 10;
+            this.label49.Text = "接受阈值:";
+            // 
+            // label52
+            // 
+            this.label52.AutoSize = true;
+            this.label52.Location = new System.Drawing.Point(599, 32);
+            this.label52.Name = "label52";
+            this.label52.Size = new System.Drawing.Size(71, 12);
+            this.label52.TabIndex = 10;
+            this.label52.Text = "破损灰度图:";
+            // 
+            // cmb_Threshold
+            // 
+            this.cmb_Threshold.FormattingEnabled = true;
+            this.cmb_Threshold.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_Threshold.Location = new System.Drawing.Point(141, 112);
+            this.cmb_Threshold.Name = "cmb_Threshold";
+            this.cmb_Threshold.Size = new System.Drawing.Size(65, 20);
+            this.cmb_Threshold.TabIndex = 8;
+            this.cmb_Threshold.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // label50
+            // 
+            this.label50.AutoSize = true;
+            this.label50.Location = new System.Drawing.Point(278, 35);
+            this.label50.Name = "label50";
+            this.label50.Size = new System.Drawing.Size(71, 12);
+            this.label50.TabIndex = 10;
+            this.label50.Text = "裂纹灰度图:";
+            // 
+            // label47
+            // 
+            this.label47.AutoSize = true;
+            this.label47.BackColor = System.Drawing.Color.Transparent;
+            this.label47.ForeColor = System.Drawing.Color.Black;
+            this.label47.Location = new System.Drawing.Point(16, 38);
+            this.label47.Name = "label47";
+            this.label47.Size = new System.Drawing.Size(65, 12);
+            this.label47.TabIndex = 9;
+            this.label47.Text = "接受阈值：";
+            // 
+            // label51
+            // 
+            this.label51.AutoSize = true;
+            this.label51.Location = new System.Drawing.Point(441, 35);
+            this.label51.Name = "label51";
+            this.label51.Size = new System.Drawing.Size(71, 12);
+            this.label51.TabIndex = 10;
+            this.label51.Text = "破损光度图:";
+            // 
+            // label65
+            // 
+            this.label65.AutoSize = true;
+            this.label65.BackColor = System.Drawing.Color.Transparent;
+            this.label65.ForeColor = System.Drawing.Color.Black;
+            this.label65.Location = new System.Drawing.Point(14, 87);
+            this.label65.Name = "label65";
+            this.label65.Size = new System.Drawing.Size(89, 12);
+            this.label65.TabIndex = 9;
+            this.label65.Text = "综合诊断策略：";
+            // 
+            // label67
+            // 
+            this.label67.AutoSize = true;
+            this.label67.Location = new System.Drawing.Point(376, 170);
+            this.label67.Name = "label67";
+            this.label67.Size = new System.Drawing.Size(119, 12);
+            this.label67.TabIndex = 10;
+            this.label67.Text = "破损综合分（确认）:";
+            // 
+            // label59
+            // 
+            this.label59.AutoSize = true;
+            this.label59.Location = new System.Drawing.Point(376, 124);
+            this.label59.Name = "label59";
+            this.label59.Size = new System.Drawing.Size(119, 12);
+            this.label59.TabIndex = 10;
+            this.label59.Text = "破损综合分（最低）:";
+            // 
+            // cmb_CertThresholdCrack
+            // 
+            this.cmb_CertThresholdCrack.FormattingEnabled = true;
+            this.cmb_CertThresholdCrack.Items.AddRange(new object[] {
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0",
+            "1.1",
+            "1.2",
+            "1.3",
+            "1.4",
+            "1.5",
+            "1.6",
+            "1.7",
+            "1.8",
+            "1.9",
+            "2.0"});
+            this.cmb_CertThresholdCrack.Location = new System.Drawing.Point(281, 167);
+            this.cmb_CertThresholdCrack.Name = "cmb_CertThresholdCrack";
+            this.cmb_CertThresholdCrack.Size = new System.Drawing.Size(65, 20);
+            this.cmb_CertThresholdCrack.TabIndex = 8;
+            this.cmb_CertThresholdCrack.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // cmb_ThresholdCrack
+            // 
+            this.cmb_ThresholdCrack.FormattingEnabled = true;
+            this.cmb_ThresholdCrack.Items.AddRange(new object[] {
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0",
+            "1.1",
+            "1.2",
+            "1.3",
+            "1.4",
+            "1.5",
+            "1.6",
+            "1.7",
+            "1.8",
+            "1.9",
+            "2.0"});
+            this.cmb_ThresholdCrack.Location = new System.Drawing.Point(281, 121);
+            this.cmb_ThresholdCrack.Name = "cmb_ThresholdCrack";
+            this.cmb_ThresholdCrack.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdCrack.TabIndex = 8;
+            this.cmb_ThresholdCrack.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // label66
+            // 
+            this.label66.AutoSize = true;
+            this.label66.Location = new System.Drawing.Point(376, 84);
+            this.label66.Name = "label66";
+            this.label66.Size = new System.Drawing.Size(95, 12);
+            this.label66.TabIndex = 10;
+            this.label66.Text = "破损检测面阈值:";
+            // 
+            // cmb_ThresholdFX_posz
+            // 
+            this.cmb_ThresholdFX_posz.FormattingEnabled = true;
+            this.cmb_ThresholdFX_posz.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_ThresholdFX_posz.Location = new System.Drawing.Point(518, 32);
+            this.cmb_ThresholdFX_posz.Name = "cmb_ThresholdFX_posz";
+            this.cmb_ThresholdFX_posz.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdFX_posz.TabIndex = 8;
+            this.cmb_ThresholdFX_posz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // label60
+            // 
+            this.label60.AutoSize = true;
+            this.label60.Location = new System.Drawing.Point(137, 87);
+            this.label60.Name = "label60";
+            this.label60.Size = new System.Drawing.Size(119, 12);
+            this.label60.TabIndex = 10;
+            this.label60.Text = "单面合并交并比阈值:";
+            // 
+            // cmb_ThresholdIoU
+            // 
+            this.cmb_ThresholdIoU.FormattingEnabled = true;
+            this.cmb_ThresholdIoU.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_ThresholdIoU.Location = new System.Drawing.Point(282, 84);
+            this.cmb_ThresholdIoU.Name = "cmb_ThresholdIoU";
+            this.cmb_ThresholdIoU.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdIoU.TabIndex = 8;
+            this.cmb_ThresholdIoU.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // label64
+            // 
+            this.label64.AutoSize = true;
+            this.label64.Location = new System.Drawing.Point(137, 170);
+            this.label64.Name = "label64";
+            this.label64.Size = new System.Drawing.Size(119, 12);
+            this.label64.TabIndex = 10;
+            this.label64.Text = "裂纹综合分（确认）:";
+            // 
+            // label58
+            // 
+            this.label58.AutoSize = true;
+            this.label58.Location = new System.Drawing.Point(137, 124);
+            this.label58.Name = "label58";
+            this.label58.Size = new System.Drawing.Size(119, 12);
+            this.label58.TabIndex = 10;
+            this.label58.Text = "裂纹综合分（最低）:";
+            // 
+            // cmb_CertThresholdPosz
+            // 
+            this.cmb_CertThresholdPosz.FormattingEnabled = true;
+            this.cmb_CertThresholdPosz.Items.AddRange(new object[] {
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0",
+            "1.1",
+            "1.2",
+            "1.3",
+            "1.4",
+            "1.5",
+            "1.6",
+            "1.7",
+            "1.8",
+            "1.9",
+            "2.0"});
+            this.cmb_CertThresholdPosz.Location = new System.Drawing.Point(497, 167);
+            this.cmb_CertThresholdPosz.Name = "cmb_CertThresholdPosz";
+            this.cmb_CertThresholdPosz.Size = new System.Drawing.Size(65, 20);
+            this.cmb_CertThresholdPosz.TabIndex = 8;
+            this.cmb_CertThresholdPosz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // cmb_ThresholdPoszNum
+            // 
+            this.cmb_ThresholdPoszNum.FormattingEnabled = true;
+            this.cmb_ThresholdPoszNum.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_ThresholdPoszNum.Location = new System.Drawing.Point(497, 81);
+            this.cmb_ThresholdPoszNum.Name = "cmb_ThresholdPoszNum";
+            this.cmb_ThresholdPoszNum.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdPoszNum.TabIndex = 8;
+            this.cmb_ThresholdPoszNum.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // cmb_ThresholdPosz
+            // 
+            this.cmb_ThresholdPosz.FormattingEnabled = true;
+            this.cmb_ThresholdPosz.Items.AddRange(new object[] {
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0",
+            "1.1",
+            "1.2",
+            "1.3",
+            "1.4",
+            "1.5",
+            "1.6",
+            "1.7",
+            "1.8",
+            "1.9",
+            "2.0"});
+            this.cmb_ThresholdPosz.Location = new System.Drawing.Point(497, 121);
+            this.cmb_ThresholdPosz.Name = "cmb_ThresholdPosz";
+            this.cmb_ThresholdPosz.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdPosz.TabIndex = 8;
+            this.cmb_ThresholdPosz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // cmb_ThresholdGray_posz
+            // 
+            this.cmb_ThresholdGray_posz.FormattingEnabled = true;
+            this.cmb_ThresholdGray_posz.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_ThresholdGray_posz.Location = new System.Drawing.Point(676, 29);
+            this.cmb_ThresholdGray_posz.Name = "cmb_ThresholdGray_posz";
+            this.cmb_ThresholdGray_posz.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdGray_posz.TabIndex = 8;
+            this.cmb_ThresholdGray_posz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
+            // 
+            // cmb_ThresholdGray_crack
+            // 
+            this.cmb_ThresholdGray_crack.FormattingEnabled = true;
+            this.cmb_ThresholdGray_crack.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_ThresholdGray_crack.Location = new System.Drawing.Point(355, 32);
+            this.cmb_ThresholdGray_crack.Name = "cmb_ThresholdGray_crack";
+            this.cmb_ThresholdGray_crack.Size = new System.Drawing.Size(65, 20);
+            this.cmb_ThresholdGray_crack.TabIndex = 8;
+            this.cmb_ThresholdGray_crack.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
             // 
             // tabDiagnose
             // 
@@ -2973,574 +3632,6 @@ namespace VisionApplication
             this.pictureBox1.TabIndex = 4;
             this.pictureBox1.TabStop = false;
             // 
-            // tabDL
-            // 
-            this.tabDL.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
-            this.tabDL.Controls.Add(this.groupBox5);
-            this.tabDL.Controls.Add(this.groupBox7);
-            this.tabDL.Controls.Add(this.groupBox6);
-            this.tabDL.Location = new System.Drawing.Point(4, 22);
-            this.tabDL.Name = "tabDL";
-            this.tabDL.Size = new System.Drawing.Size(795, 494);
-            this.tabDL.TabIndex = 7;
-            this.tabDL.Text = "深度学习";
-            // 
-            // groupBox5
-            // 
-            this.groupBox5.Controls.Add(this.label61);
-            this.groupBox5.Controls.Add(this.label62);
-            this.groupBox5.Controls.Add(this.label63);
-            this.groupBox5.Controls.Add(this.txtDL_PoszAreaTh);
-            this.groupBox5.Controls.Add(this.txtDL_PoszSideTh);
-            this.groupBox5.Controls.Add(this.txtDL_CrackLenTh);
-            this.groupBox5.Location = new System.Drawing.Point(14, 392);
-            this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(761, 82);
-            this.groupBox5.TabIndex = 14;
-            this.groupBox5.TabStop = false;
-            this.groupBox5.Text = "筛选参数";
-            // 
-            // label61
-            // 
-            this.label61.AutoSize = true;
-            this.label61.Location = new System.Drawing.Point(16, 37);
-            this.label61.Name = "label61";
-            this.label61.Size = new System.Drawing.Size(83, 12);
-            this.label61.TabIndex = 6;
-            this.label61.Text = "破损面积阈值:";
-            // 
-            // label62
-            // 
-            this.label62.AutoSize = true;
-            this.label62.Location = new System.Drawing.Point(461, 37);
-            this.label62.Name = "label62";
-            this.label62.Size = new System.Drawing.Size(89, 12);
-            this.label62.TabIndex = 5;
-            this.label62.Text = "裂纹长度阈值：";
-            // 
-            // label63
-            // 
-            this.label63.AutoSize = true;
-            this.label63.Location = new System.Drawing.Point(233, 37);
-            this.label63.Name = "label63";
-            this.label63.Size = new System.Drawing.Size(83, 12);
-            this.label63.TabIndex = 4;
-            this.label63.Text = "破损边长阈值:";
-            // 
-            // txtDL_PoszAreaTh
-            // 
-            this.txtDL_PoszAreaTh.Location = new System.Drawing.Point(129, 34);
-            this.txtDL_PoszAreaTh.Name = "txtDL_PoszAreaTh";
-            this.txtDL_PoszAreaTh.Size = new System.Drawing.Size(50, 21);
-            this.txtDL_PoszAreaTh.TabIndex = 9;
-            this.txtDL_PoszAreaTh.Text = "10000";
-            // 
-            // txtDL_PoszSideTh
-            // 
-            this.txtDL_PoszSideTh.Location = new System.Drawing.Point(340, 34);
-            this.txtDL_PoszSideTh.Name = "txtDL_PoszSideTh";
-            this.txtDL_PoszSideTh.Size = new System.Drawing.Size(51, 21);
-            this.txtDL_PoszSideTh.TabIndex = 7;
-            this.txtDL_PoszSideTh.Text = "60";
-            // 
-            // txtDL_CrackLenTh
-            // 
-            this.txtDL_CrackLenTh.Location = new System.Drawing.Point(574, 34);
-            this.txtDL_CrackLenTh.Name = "txtDL_CrackLenTh";
-            this.txtDL_CrackLenTh.Size = new System.Drawing.Size(50, 21);
-            this.txtDL_CrackLenTh.TabIndex = 8;
-            this.txtDL_CrackLenTh.Text = "40";
-            // 
-            // groupBox7
-            // 
-            this.groupBox7.Controls.Add(this.tbModelPath);
-            this.groupBox7.Controls.Add(this.label45);
-            this.groupBox7.Controls.Add(this.txtGPUID);
-            this.groupBox7.Controls.Add(this.btModel);
-            this.groupBox7.Controls.Add(this.label48);
-            this.groupBox7.Controls.Add(this.cmb_EvnType);
-            this.groupBox7.Controls.Add(this.cmb_ModelType);
-            this.groupBox7.Controls.Add(this.label46);
-            this.groupBox7.Location = new System.Drawing.Point(14, 29);
-            this.groupBox7.Name = "groupBox7";
-            this.groupBox7.Size = new System.Drawing.Size(761, 132);
-            this.groupBox7.TabIndex = 13;
-            this.groupBox7.TabStop = false;
-            this.groupBox7.Text = "基本设置";
-            // 
-            // tbModelPath
-            // 
-            this.tbModelPath.Location = new System.Drawing.Point(139, 32);
-            this.tbModelPath.Name = "tbModelPath";
-            this.tbModelPath.Size = new System.Drawing.Size(223, 21);
-            this.tbModelPath.TabIndex = 4;
-            // 
-            // label45
-            // 
-            this.label45.AutoSize = true;
-            this.label45.Location = new System.Drawing.Point(14, 39);
-            this.label45.Name = "label45";
-            this.label45.Size = new System.Drawing.Size(107, 12);
-            this.label45.TabIndex = 3;
-            this.label45.Text = "深度学习模型文件:";
-            // 
-            // txtGPUID
-            // 
-            this.txtGPUID.Location = new System.Drawing.Point(605, 83);
-            this.txtGPUID.Name = "txtGPUID";
-            this.txtGPUID.Size = new System.Drawing.Size(50, 21);
-            this.txtGPUID.TabIndex = 11;
-            this.txtGPUID.Text = "0";
-            this.txtGPUID.TextChanged += new System.EventHandler(this.txtGPUID_TextChanged);
-            // 
-            // btModel
-            // 
-            this.btModel.Location = new System.Drawing.Point(408, 28);
-            this.btModel.Name = "btModel";
-            this.btModel.Size = new System.Drawing.Size(75, 23);
-            this.btModel.TabIndex = 5;
-            this.btModel.Text = "选择路径";
-            this.btModel.UseVisualStyleBackColor = true;
-            this.btModel.Click += new System.EventHandler(this.btModel_Click);
-            // 
-            // label48
-            // 
-            this.label48.AutoSize = true;
-            this.label48.BackColor = System.Drawing.Color.Transparent;
-            this.label48.ForeColor = System.Drawing.Color.Black;
-            this.label48.Location = new System.Drawing.Point(14, 87);
-            this.label48.Name = "label48";
-            this.label48.Size = new System.Drawing.Size(65, 12);
-            this.label48.TabIndex = 9;
-            this.label48.Text = "模型选择：";
-            // 
-            // cmb_EvnType
-            // 
-            this.cmb_EvnType.FormattingEnabled = true;
-            this.cmb_EvnType.Items.AddRange(new object[] {
-            "CPU",
-            "GPU"});
-            this.cmb_EvnType.Location = new System.Drawing.Point(432, 84);
-            this.cmb_EvnType.Name = "cmb_EvnType";
-            this.cmb_EvnType.Size = new System.Drawing.Size(97, 20);
-            this.cmb_EvnType.TabIndex = 8;
-            this.cmb_EvnType.SelectedIndexChanged += new System.EventHandler(this.cmb_EvnType_SelectedIndexChanged);
-            // 
-            // cmb_ModelType
-            // 
-            this.cmb_ModelType.FormattingEnabled = true;
-            this.cmb_ModelType.Items.AddRange(new object[] {
-            "det",
-            "seg",
-            "clas",
-            "mask",
-            "paddlex"});
-            this.cmb_ModelType.Location = new System.Drawing.Point(139, 84);
-            this.cmb_ModelType.Name = "cmb_ModelType";
-            this.cmb_ModelType.Size = new System.Drawing.Size(97, 20);
-            this.cmb_ModelType.TabIndex = 8;
-            this.cmb_ModelType.SelectedIndexChanged += new System.EventHandler(this.cmb_ModelType_SelectedIndexChanged);
-            // 
-            // label46
-            // 
-            this.label46.AutoSize = true;
-            this.label46.BackColor = System.Drawing.Color.Transparent;
-            this.label46.ForeColor = System.Drawing.Color.Black;
-            this.label46.Location = new System.Drawing.Point(307, 87);
-            this.label46.Name = "label46";
-            this.label46.Size = new System.Drawing.Size(65, 12);
-            this.label46.TabIndex = 9;
-            this.label46.Text = "环境选择：";
-            // 
-            // groupBox6
-            // 
-            this.groupBox6.Controls.Add(this.label49);
-            this.groupBox6.Controls.Add(this.label52);
-            this.groupBox6.Controls.Add(this.cmb_Threshold);
-            this.groupBox6.Controls.Add(this.label50);
-            this.groupBox6.Controls.Add(this.label47);
-            this.groupBox6.Controls.Add(this.label51);
-            this.groupBox6.Controls.Add(this.label65);
-            this.groupBox6.Controls.Add(this.label67);
-            this.groupBox6.Controls.Add(this.label59);
-            this.groupBox6.Controls.Add(this.cmb_CertThresholdCrack);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdCrack);
-            this.groupBox6.Controls.Add(this.label66);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdFX_posz);
-            this.groupBox6.Controls.Add(this.label60);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdIoU);
-            this.groupBox6.Controls.Add(this.label64);
-            this.groupBox6.Controls.Add(this.label58);
-            this.groupBox6.Controls.Add(this.cmb_CertThresholdPosz);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdPoszNum);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdPosz);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdGray_posz);
-            this.groupBox6.Controls.Add(this.cmb_ThresholdGray_crack);
-            this.groupBox6.Location = new System.Drawing.Point(14, 167);
-            this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(761, 206);
-            this.groupBox6.TabIndex = 12;
-            this.groupBox6.TabStop = false;
-            this.groupBox6.Text = "深度推理诊断参数";
-            // 
-            // label49
-            // 
-            this.label49.AutoSize = true;
-            this.label49.Location = new System.Drawing.Point(120, 38);
-            this.label49.Name = "label49";
-            this.label49.Size = new System.Drawing.Size(71, 12);
-            this.label49.TabIndex = 10;
-            this.label49.Text = "裂纹光度图:";
-            // 
-            // label52
-            // 
-            this.label52.AutoSize = true;
-            this.label52.Location = new System.Drawing.Point(599, 32);
-            this.label52.Name = "label52";
-            this.label52.Size = new System.Drawing.Size(71, 12);
-            this.label52.TabIndex = 10;
-            this.label52.Text = "破损灰度图:";
-            // 
-            // cmb_Threshold
-            // 
-            this.cmb_Threshold.FormattingEnabled = true;
-            this.cmb_Threshold.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_Threshold.Location = new System.Drawing.Point(197, 35);
-            this.cmb_Threshold.Name = "cmb_Threshold";
-            this.cmb_Threshold.Size = new System.Drawing.Size(65, 20);
-            this.cmb_Threshold.TabIndex = 8;
-            this.cmb_Threshold.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // label50
-            // 
-            this.label50.AutoSize = true;
-            this.label50.Location = new System.Drawing.Point(278, 35);
-            this.label50.Name = "label50";
-            this.label50.Size = new System.Drawing.Size(71, 12);
-            this.label50.TabIndex = 10;
-            this.label50.Text = "裂纹灰度图:";
-            // 
-            // label47
-            // 
-            this.label47.AutoSize = true;
-            this.label47.BackColor = System.Drawing.Color.Transparent;
-            this.label47.ForeColor = System.Drawing.Color.Black;
-            this.label47.Location = new System.Drawing.Point(16, 38);
-            this.label47.Name = "label47";
-            this.label47.Size = new System.Drawing.Size(65, 12);
-            this.label47.TabIndex = 9;
-            this.label47.Text = "接受阈值：";
-            // 
-            // label51
-            // 
-            this.label51.AutoSize = true;
-            this.label51.Location = new System.Drawing.Point(441, 35);
-            this.label51.Name = "label51";
-            this.label51.Size = new System.Drawing.Size(71, 12);
-            this.label51.TabIndex = 10;
-            this.label51.Text = "破损光度图:";
-            // 
-            // label65
-            // 
-            this.label65.AutoSize = true;
-            this.label65.BackColor = System.Drawing.Color.Transparent;
-            this.label65.ForeColor = System.Drawing.Color.Black;
-            this.label65.Location = new System.Drawing.Point(14, 87);
-            this.label65.Name = "label65";
-            this.label65.Size = new System.Drawing.Size(89, 12);
-            this.label65.TabIndex = 9;
-            this.label65.Text = "综合诊断策略：";
-            // 
-            // label67
-            // 
-            this.label67.AutoSize = true;
-            this.label67.Location = new System.Drawing.Point(376, 170);
-            this.label67.Name = "label67";
-            this.label67.Size = new System.Drawing.Size(119, 12);
-            this.label67.TabIndex = 10;
-            this.label67.Text = "破损综合分（确认）:";
-            // 
-            // label59
-            // 
-            this.label59.AutoSize = true;
-            this.label59.Location = new System.Drawing.Point(376, 124);
-            this.label59.Name = "label59";
-            this.label59.Size = new System.Drawing.Size(119, 12);
-            this.label59.TabIndex = 10;
-            this.label59.Text = "破损综合分（最低）:";
-            // 
-            // cmb_CertThresholdCrack
-            // 
-            this.cmb_CertThresholdCrack.FormattingEnabled = true;
-            this.cmb_CertThresholdCrack.Items.AddRange(new object[] {
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0",
-            "1.1",
-            "1.2",
-            "1.3",
-            "1.4",
-            "1.5",
-            "1.6",
-            "1.7",
-            "1.8",
-            "1.9",
-            "2.0"});
-            this.cmb_CertThresholdCrack.Location = new System.Drawing.Point(281, 167);
-            this.cmb_CertThresholdCrack.Name = "cmb_CertThresholdCrack";
-            this.cmb_CertThresholdCrack.Size = new System.Drawing.Size(65, 20);
-            this.cmb_CertThresholdCrack.TabIndex = 8;
-            this.cmb_CertThresholdCrack.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // cmb_ThresholdCrack
-            // 
-            this.cmb_ThresholdCrack.FormattingEnabled = true;
-            this.cmb_ThresholdCrack.Items.AddRange(new object[] {
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0",
-            "1.1",
-            "1.2",
-            "1.3",
-            "1.4",
-            "1.5",
-            "1.6",
-            "1.7",
-            "1.8",
-            "1.9",
-            "2.0"});
-            this.cmb_ThresholdCrack.Location = new System.Drawing.Point(281, 121);
-            this.cmb_ThresholdCrack.Name = "cmb_ThresholdCrack";
-            this.cmb_ThresholdCrack.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdCrack.TabIndex = 8;
-            this.cmb_ThresholdCrack.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // label66
-            // 
-            this.label66.AutoSize = true;
-            this.label66.Location = new System.Drawing.Point(376, 84);
-            this.label66.Name = "label66";
-            this.label66.Size = new System.Drawing.Size(95, 12);
-            this.label66.TabIndex = 10;
-            this.label66.Text = "破损检测面阈值:";
-            // 
-            // cmb_ThresholdFX_posz
-            // 
-            this.cmb_ThresholdFX_posz.FormattingEnabled = true;
-            this.cmb_ThresholdFX_posz.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_ThresholdFX_posz.Location = new System.Drawing.Point(518, 32);
-            this.cmb_ThresholdFX_posz.Name = "cmb_ThresholdFX_posz";
-            this.cmb_ThresholdFX_posz.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdFX_posz.TabIndex = 8;
-            this.cmb_ThresholdFX_posz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // label60
-            // 
-            this.label60.AutoSize = true;
-            this.label60.Location = new System.Drawing.Point(137, 87);
-            this.label60.Name = "label60";
-            this.label60.Size = new System.Drawing.Size(119, 12);
-            this.label60.TabIndex = 10;
-            this.label60.Text = "单面合并交并比阈值:";
-            // 
-            // cmb_ThresholdIoU
-            // 
-            this.cmb_ThresholdIoU.FormattingEnabled = true;
-            this.cmb_ThresholdIoU.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_ThresholdIoU.Location = new System.Drawing.Point(282, 84);
-            this.cmb_ThresholdIoU.Name = "cmb_ThresholdIoU";
-            this.cmb_ThresholdIoU.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdIoU.TabIndex = 8;
-            this.cmb_ThresholdIoU.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // label64
-            // 
-            this.label64.AutoSize = true;
-            this.label64.Location = new System.Drawing.Point(137, 170);
-            this.label64.Name = "label64";
-            this.label64.Size = new System.Drawing.Size(119, 12);
-            this.label64.TabIndex = 10;
-            this.label64.Text = "裂纹综合分（确认）:";
-            // 
-            // label58
-            // 
-            this.label58.AutoSize = true;
-            this.label58.Location = new System.Drawing.Point(137, 124);
-            this.label58.Name = "label58";
-            this.label58.Size = new System.Drawing.Size(119, 12);
-            this.label58.TabIndex = 10;
-            this.label58.Text = "裂纹综合分（最低）:";
-            // 
-            // cmb_CertThresholdPosz
-            // 
-            this.cmb_CertThresholdPosz.FormattingEnabled = true;
-            this.cmb_CertThresholdPosz.Items.AddRange(new object[] {
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0",
-            "1.1",
-            "1.2",
-            "1.3",
-            "1.4",
-            "1.5",
-            "1.6",
-            "1.7",
-            "1.8",
-            "1.9",
-            "2.0"});
-            this.cmb_CertThresholdPosz.Location = new System.Drawing.Point(497, 167);
-            this.cmb_CertThresholdPosz.Name = "cmb_CertThresholdPosz";
-            this.cmb_CertThresholdPosz.Size = new System.Drawing.Size(65, 20);
-            this.cmb_CertThresholdPosz.TabIndex = 8;
-            this.cmb_CertThresholdPosz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // cmb_ThresholdPoszNum
-            // 
-            this.cmb_ThresholdPoszNum.FormattingEnabled = true;
-            this.cmb_ThresholdPoszNum.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_ThresholdPoszNum.Location = new System.Drawing.Point(497, 81);
-            this.cmb_ThresholdPoszNum.Name = "cmb_ThresholdPoszNum";
-            this.cmb_ThresholdPoszNum.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdPoszNum.TabIndex = 8;
-            this.cmb_ThresholdPoszNum.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // cmb_ThresholdPosz
-            // 
-            this.cmb_ThresholdPosz.FormattingEnabled = true;
-            this.cmb_ThresholdPosz.Items.AddRange(new object[] {
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0",
-            "1.1",
-            "1.2",
-            "1.3",
-            "1.4",
-            "1.5",
-            "1.6",
-            "1.7",
-            "1.8",
-            "1.9",
-            "2.0"});
-            this.cmb_ThresholdPosz.Location = new System.Drawing.Point(497, 121);
-            this.cmb_ThresholdPosz.Name = "cmb_ThresholdPosz";
-            this.cmb_ThresholdPosz.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdPosz.TabIndex = 8;
-            this.cmb_ThresholdPosz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // cmb_ThresholdGray_posz
-            // 
-            this.cmb_ThresholdGray_posz.FormattingEnabled = true;
-            this.cmb_ThresholdGray_posz.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_ThresholdGray_posz.Location = new System.Drawing.Point(676, 29);
-            this.cmb_ThresholdGray_posz.Name = "cmb_ThresholdGray_posz";
-            this.cmb_ThresholdGray_posz.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdGray_posz.TabIndex = 8;
-            this.cmb_ThresholdGray_posz.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
-            // cmb_ThresholdGray_crack
-            // 
-            this.cmb_ThresholdGray_crack.FormattingEnabled = true;
-            this.cmb_ThresholdGray_crack.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_ThresholdGray_crack.Location = new System.Drawing.Point(355, 32);
-            this.cmb_ThresholdGray_crack.Name = "cmb_ThresholdGray_crack";
-            this.cmb_ThresholdGray_crack.Size = new System.Drawing.Size(65, 20);
-            this.cmb_ThresholdGray_crack.TabIndex = 8;
-            this.cmb_ThresholdGray_crack.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
-            // 
             // tabBlow
             // 
             this.tabBlow.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
@@ -3817,92 +3908,16 @@ namespace VisionApplication
             this.btOK.UseVisualStyleBackColor = false;
             this.btOK.Click += new System.EventHandler(this.btOK_Click);
             // 
-            // chkOkOut
+            // label99
             // 
-            this.chkOkOut.AutoSize = true;
-            this.chkOkOut.Location = new System.Drawing.Point(586, 41);
-            this.chkOkOut.Name = "chkOkOut";
-            this.chkOkOut.Size = new System.Drawing.Size(72, 16);
-            this.chkOkOut.TabIndex = 2;
-            this.chkOkOut.Text = "OK时输出";
-            this.chkOkOut.UseVisualStyleBackColor = true;
-            this.chkOkOut.Visible = false;
-            // 
-            // chkNgOut
-            // 
-            this.chkNgOut.AutoSize = true;
-            this.chkNgOut.Location = new System.Drawing.Point(586, 89);
-            this.chkNgOut.Name = "chkNgOut";
-            this.chkNgOut.Size = new System.Drawing.Size(72, 16);
-            this.chkNgOut.TabIndex = 2;
-            this.chkNgOut.Text = "NG时输出";
-            this.chkNgOut.UseVisualStyleBackColor = true;
-            this.chkNgOut.Visible = false;
-            // 
-            // cmbIOTimeDelay
-            // 
-            this.cmbIOTimeDelay.FormattingEnabled = true;
-            this.cmbIOTimeDelay.Items.AddRange(new object[] {
-            "20",
-            "40",
-            "60",
-            "80",
-            "100"});
-            this.cmbIOTimeDelay.Location = new System.Drawing.Point(414, 139);
-            this.cmbIOTimeDelay.Name = "cmbIOTimeDelay";
-            this.cmbIOTimeDelay.Size = new System.Drawing.Size(98, 20);
-            this.cmbIOTimeDelay.TabIndex = 4;
-            // 
-            // label95
-            // 
-            this.label95.AutoSize = true;
-            this.label95.Location = new System.Drawing.Point(518, 142);
-            this.label95.Name = "label95";
-            this.label95.Size = new System.Drawing.Size(17, 12);
-            this.label95.TabIndex = 3;
-            this.label95.Text = "ms";
-            // 
-            // label96
-            // 
-            this.label96.AutoSize = true;
-            this.label96.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label96.Location = new System.Drawing.Point(331, 142);
-            this.label96.Name = "label96";
-            this.label96.Size = new System.Drawing.Size(53, 12);
-            this.label96.TabIndex = 0;
-            this.label96.Text = "脉冲时长";
-            // 
-            // cmbRunTimeOut
-            // 
-            this.cmbRunTimeOut.FormattingEnabled = true;
-            this.cmbRunTimeOut.Items.AddRange(new object[] {
-            "500",
-            "1000",
-            "1500",
-            "2000"});
-            this.cmbRunTimeOut.Location = new System.Drawing.Point(78, 227);
-            this.cmbRunTimeOut.Name = "cmbRunTimeOut";
-            this.cmbRunTimeOut.Size = new System.Drawing.Size(69, 20);
-            this.cmbRunTimeOut.TabIndex = 11;
-            // 
-            // label97
-            // 
-            this.label97.AutoSize = true;
-            this.label97.Location = new System.Drawing.Point(154, 230);
-            this.label97.Name = "label97";
-            this.label97.Size = new System.Drawing.Size(17, 12);
-            this.label97.TabIndex = 10;
-            this.label97.Text = "ms";
-            // 
-            // label98
-            // 
-            this.label98.AutoSize = true;
-            this.label98.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label98.Location = new System.Drawing.Point(19, 230);
-            this.label98.Name = "label98";
-            this.label98.Size = new System.Drawing.Size(53, 12);
-            this.label98.TabIndex = 9;
-            this.label98.Text = "运行超时";
+            this.label99.AutoSize = true;
+            this.label99.BackColor = System.Drawing.Color.Transparent;
+            this.label99.ForeColor = System.Drawing.Color.Black;
+            this.label99.Location = new System.Drawing.Point(520, 79);
+            this.label99.Name = "label99";
+            this.label99.Size = new System.Drawing.Size(59, 12);
+            this.label99.TabIndex = 9;
+            this.label99.Text = "GPU编号：";
             // 
             // Frm_RuntimeSet
             // 
@@ -3945,6 +3960,13 @@ namespace VisionApplication
             this.groupBox12.PerformLayout();
             this.tabIO.ResumeLayout(false);
             this.tabIO.PerformLayout();
+            this.tabDL.ResumeLayout(false);
+            this.groupBox5.ResumeLayout(false);
+            this.groupBox5.PerformLayout();
+            this.groupBox7.ResumeLayout(false);
+            this.groupBox7.PerformLayout();
+            this.groupBox6.ResumeLayout(false);
+            this.groupBox6.PerformLayout();
             this.tabDiagnose.ResumeLayout(false);
             this.groupBox8.ResumeLayout(false);
             this.groupBox8.PerformLayout();
@@ -3964,13 +3986,6 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.num_Tilts1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.tabDL.ResumeLayout(false);
-            this.groupBox5.ResumeLayout(false);
-            this.groupBox5.PerformLayout();
-            this.groupBox7.ResumeLayout(false);
-            this.groupBox7.PerformLayout();
-            this.groupBox6.ResumeLayout(false);
-            this.groupBox6.PerformLayout();
             this.tabBlow.ResumeLayout(false);
             this.tabBlow.PerformLayout();
             this.groupBox10.ResumeLayout(false);
@@ -4283,5 +4298,6 @@ namespace VisionApplication
         private System.Windows.Forms.ComboBox cmbIOTimeDelay;
         private System.Windows.Forms.Label label95;
         private System.Windows.Forms.Label label96;
+        private System.Windows.Forms.Label label99;
     }
 }

@@ -88,8 +88,11 @@ namespace VisionControl
 
         //深度学习相关
         public bool bDeepInfer = true; //是否启用深度推理  检测VP算法时可以关闭深度推理
-                                       //   public CDL cdl = new CDL();
+        public CDL cdl = new CDL();
         List<CogRectangleAffine>[] AL_det_result = new List<CogRectangleAffine>[maxCameraNum];
+
+        DLResult[] DL_result = new DLResult[maxCameraNum];
+
 
         private PMARes pmaRes;
         public PMARes _PMARes
@@ -173,6 +176,10 @@ namespace VisionControl
         TimeSpan infer_end_time;
         TimeSpan start2end_time;
 
+
+        //深度学习相关
+       // public bool bDeepInfer = true; //是否启用深度推理  检测VP算法时可以关闭深度推理
+    //    public CDL cdl = new CDL();
         #endregion
 
 
@@ -202,8 +209,198 @@ namespace VisionControl
             }
 
         }
-
+        bool[] bSureCheck = new bool[6];
         //VP执行一次运算
+        private void AddGrapOkNg(CogRecordDisplay cogDisp, bool bOk)
+        {
+            //创建文本
+            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
+            ResultLabel.X = 300;
+            ResultLabel.Y = 100;
+            if(bOk)
+            {
+                ResultLabel.Text = "OK";
+                ResultLabel.Color = CogColorConstants.Green;
+                ResultLabel.Font = new Font("arial", 30);
+            }
+            else
+            {
+                ResultLabel.Text = "NG";
+                ResultLabel.Color = CogColorConstants.Red;
+                ResultLabel.Font = new Font("arial", 30);
+            }
+            cogDisp.InteractiveGraphics.Add(ResultLabel, "", false);
+        }
+        private void AddGrapOkNg(CogRecordsDisplay cogDisp, bool bOk)
+        {
+            //创建文本
+            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
+            ResultLabel.X = 300;
+            ResultLabel.Y = 100;
+            if (bOk)
+            {
+                ResultLabel.Text = "OK";
+                ResultLabel.Color = CogColorConstants.Green;
+                ResultLabel.Font = new Font("arial", 30);
+            }
+            else
+            {
+                ResultLabel.Text = "NG";
+                ResultLabel.Color = CogColorConstants.Red;
+                ResultLabel.Font = new Font("arial", 30);
+            }
+            cogDisp.Display.InteractiveGraphics.Add(ResultLabel, "", false);
+        }
+        private void AddGrap(CogRecordDisplay cogDisp, DLResult dlRes)
+        {
+            string strGroupName = "";
+            cogDisp.InteractiveGraphics.Clear();
+             
+            //创建文本
+            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
+
+            //     ResultLabel.Text = "Label Test,添加文本测试";
+
+            for (int i = 0; i < dlRes.AL_Rect.Count; i++)
+            {
+                if (dlRes.AL_Type[i] == 1)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Red;
+                    strGroupName = "liewen";
+                    ResultLabel.Color = CogColorConstants.Red;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 2)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "posz";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 3)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "liewenWP";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 4)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "poszWP";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 5)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "flaking";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
+                ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
+                ResultLabel.Y = dlRes.AL_Rect[i].CornerXY;
+                ResultLabel.Text = strGroupName + ":" + Math.Round(dlRes.AL_score[i], 2).ToString();
+                strGroupName += i;
+                cogDisp.InteractiveGraphics.Add(dlRes.AL_Rect[i], strGroupName, false);
+               // cogDisp.InteractiveGraphics.Add(ResultLabel, strGroupName, false);
+              //  ResultLabel = new CogGraphicLabel();
+            }
+        }
+        private void AddGrap(CogRecordsDisplay cogDisp, DLResult dlRes)
+        {
+            string strGroupName = "";
+            cogDisp.Display.InteractiveGraphics.Clear();
+             
+            //创建文本
+            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
+
+            //     ResultLabel.Text = "Label Test,添加文本测试";
+
+            for (int i = 0; i < dlRes.AL_Rect.Count; i++)
+            {
+                if (dlRes.AL_Type[i] == 1)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Red;
+                    strGroupName = "liewen";
+                    ResultLabel.Color = CogColorConstants.Red;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 2)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "posz";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 3)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "liewenWP";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 4)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "poszWP";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 5)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                    strGroupName = "flaking";
+                    ResultLabel.Color = CogColorConstants.Green;
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
+                ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
+                ResultLabel.Y = dlRes.AL_Rect[i].CornerXY;
+                ResultLabel.Text = strGroupName + ":" + Math.Round(dlRes.AL_score[i], 2).ToString();
+                strGroupName += i;
+                cogDisp.Display.InteractiveGraphics.Add(dlRes.AL_Rect[i], strGroupName, false);
+              //  cogDisp.Display.InteractiveGraphics.Add(ResultLabel, strGroupName, false);
+              //  ResultLabel = new CogGraphicLabel();
+            }
+        }
+
+        private void DLinfer()
+        {
+            DL_result[iJobIndex].AL_Rect.Clear();
+            DL_result[iJobIndex].AL_score.Clear();
+            DL_result[iJobIndex].AL_Type.Clear();
+            DL_result[iJobIndex].Al_bDiff.Clear();
+
+            bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[iJobIndex].Width, ci8gAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
+
+            if (DL_result[iJobIndex].AL_Rect.Count > 0)
+            {
+                pmaRes.bOk = false;
+            }
+            else
+            {
+                pmaRes.bOk = true;
+            }
+            DirectShowImage();
+
+            if (iModelRole == 10)
+            {
+                AddGrap(cogRDMain, DL_result[iJobIndex]);
+                AddGrapOkNg(cogRDMain, pmaRes.bOk);
+            }
+            else
+            {
+                AddGrap(cogRDMainUser, DL_result[iJobIndex]);
+                AddGrapOkNg(cogRDMainUser, pmaRes.bOk);
+            }
+
+
+            bRunOneTimeFinished = 2;
+            // pmaRes.bOk = //(bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
+            pmaRes.bLocated = true;
+        }
         public bool RunOneTime(int iJobIndex)
         {
             infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始  
@@ -230,15 +427,26 @@ namespace VisionControl
                 {
                     if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess, iJobIndex) ||
                         !cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAllFromFile(iFileIndex, cup.p_CD.bListProcess, iJobIndex))
-                    { 
-                        {
-                            ci8gAcq = acqFIFO._ci8gAcq;
-                            ci8gFX = acqFIFO.ci8gAcqFX;
+                    {
+                        ci8gAcq = acqFIFO._ci8gAcq;
+                        ci8gFX = acqFIFO.ci8gAcqFX;
 
-                            SetVPPImage(iJobIndex);
-                            Thread.Sleep(10);  //st** 20220804 
-                            mJM.Job(iJobIndex).Run();
+                        if (cup.p_VPPRTP.bDeepInfer)   //从GPU实时推理
+                        {
+                            DLinfer();
                         }
+                        else if(cup.p_VPPRTP.bVisionInfer)
+                        {
+                            {
+                                
+
+                                SetVPPImage(iJobIndex);
+                                Thread.Sleep(10);  //st** 20220804 
+                                mJM.Job(iJobIndex).Run();
+                            }
+                        }
+
+                        
                     }
                     else
                     {
@@ -631,7 +839,14 @@ namespace VisionControl
             }
             acqFIFO._ci8gAcq = ci8gAcq;
             acqFIFO._hObj = hObjFX;
-
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                DL_result[i].AL_Rect = new List<CogRectangleAffine>();
+                DL_result[i].AL_score = new List<float>();
+                DL_result[i].AL_Type = new List<int>();
+                DL_result[i].Al_bDiff = new List<bool>();
+                ;
+            }
 
             vpRes.iResCode = new int[maxCameraNum];
             //vpRes.TF = new CogTransform2DLinear[maxCameraNum];
@@ -962,11 +1177,11 @@ namespace VisionControl
         //设置推理模式
         public void SetVPInferModel(int iType)
         {
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+         /*   ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
             ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面3检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["inferType"].Value = iType;
+            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面4检测"] as CogToolBlock).Inputs["inferType"].Value = iType;*/
         }
 
         public void SetVPResult()

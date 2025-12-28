@@ -111,7 +111,7 @@ namespace CommonCls
 
 
         // 用于启动时执行一次推理任务，第一次推理比较慢，在软件正式启动前执行  2024年7月22日
-        public bool det_infer_img()
+       /* public bool det_infer_img()
         {
 
             float[] resultlist = new float[600];
@@ -141,7 +141,7 @@ namespace CommonCls
             }
 
             return bSure;
-        }
+        }*/
 
 
         public bool det_infer_img_En(HObject inputData, int Width, int Height, float fThreshold, float fThresholdPS, ref DLResult dlR)
@@ -181,7 +181,7 @@ namespace CommonCls
                     float score = resultlist[i * 6 + 1];
                    
 
-                    if(score>0.2)   //大于0.1 ,即作为待选
+                    if(score> fThreshold)   //大于0.1 ,即作为待选
                     {
                         CogRectangleAffine cogRect = new CogRectangleAffine();
                         cogRect.CenterX = resultlist[i * 6 + 2] + resultlist[i * 6 + 4] / 2;
@@ -202,7 +202,7 @@ namespace CommonCls
                             dlR.AL_Type.Add(5);
 
 
-                        if (predict_Label_List[i] == "liewen" && score > fThreshold || (predict_Label_List[i] == "posz" && score > fThresholdPS))
+                        /*if (predict_Label_List[i] == "liewen" && score > fThreshold || (predict_Label_List[i] == "posz" && score > fThresholdPS))
                         {
                             dlR.Al_bDiff.Add(false);
                             bSure=true;
@@ -211,7 +211,7 @@ namespace CommonCls
                         {
                             bSure = false;
                             dlR.Al_bDiff.Add(true);
-                        }
+                        }*/
                     }
 
                     
@@ -1032,295 +1032,7 @@ namespace CommonCls
             return intersectionArea / (areaA + areaB - intersectionArea);
         }
 
-       
-
-        //逐点执行求解，效率较低
-        public void PhotometricStereo()
-        {
-            List<double> tilts = new List<double> { 0.0, Math.PI / 2, Math.PI, 3 * Math.PI / 2 }; // 光源平面方位角
-            List<double> slants = new List<double> { Math.PI / 4, Math.PI / 4, Math.PI / 4, Math.PI / 4 }; // 光源俯仰角
-                                                                                                           // ========== 计算光源方向矩阵 ==========
-            Mat L = new Mat(4, 3, MatType.CV_32F); // 光源方向矩阵 (4x3)
-            for (int i = 0; i < 4; i++)
-            {
-                double tilt = tilts[i];
-                double slant = slants[i];
-
-                // 将极坐标转换为笛卡尔坐标
-                float lx = (float)(Math.Sin(slant) * Math.Cos(tilt));
-                float ly = (float)(Math.Sin(slant) * Math.Sin(tilt));
-                float lz = (float)Math.Cos(slant);
-
-                L.Set<float>(i, 0, lx);
-                L.Set<float>(i, 1, ly);
-                L.Set<float>(i, 2, lz);
-            }
-
-            Mat[] images = new Mat[4];
-            for (int i = 0; i < 4; i++)
-            {
-                images[i] = Cv2.ImRead(@"C:\WorkSpace\项目\xb\data\20220807\Main\"+$"Main_102837_0{i+1}.jpg", ImreadModes.Grayscale);
-                images[i].ConvertTo(images[i], MatType.CV_32F, 1.0 / 255.0); // 归一化到[0,1]
-            }
-
-            // ========== 光度立体法核心计算 ==========
-            Mat normalMap = new Mat(images[0].Rows, images[0].Cols, MatType.CV_32FC3); // 法线图 (XYZ)
-            Mat albedoMap = new Mat(images[0].Size(), MatType.CV_32F); // 反射率图
-
-            // 遍历所有像素
-            for (int y = 0; y < images[0].Rows; y++)
-            {
-                for (int x = 0; x < images[0].Cols; x++)
-                {
-                    // 收集四个光源下的像素强度
-                    Mat I = new Mat(4, 1, MatType.CV_32F);
-                    for (int i = 0; i < 4; i++)
-                    {
-                        I.Set<float>(i, 0, images[i].At<float>(y, x));
-                    }
-
-                    // 解线性方程组: L * n = I (使用SVD分解)
-                    Mat n = new Mat();
-                    Cv2.Solve(L, I, n, DecompTypes.SVD);
-
-                    // 计算反射率 (albedo) 作为法线长度
-                    double albedo = Cv2.Norm(n);
-                    albedoMap.Set<float>(y, x, (float)albedo);
-
-                    // 归一化法线
-                    if (albedo > 1e-6)
-                    {
-                        n /= albedo;
-                    }
-
-                    // 存储法线 (OpenCV坐标系需注意方向)
-                    Vec3f normal = new Vec3f(
-                        n.At<float>(0),
-                        n.At<float>(1),
-                        n.At<float>(2)
-                    );
-                    normalMap.Set<Vec3f>(y, x, normal);
-                }
-            }
-            // ========== 后处理与可视化 ==========
-            // 将法线图转换到可视范围 [0,1]
-            Mat normalVis = new Mat();
-            Cv2.Normalize(normalMap, normalVis, 0, 1, NormTypes.MinMax);
-
-            // 反射率图直方图均衡化
-            Mat albedoVis = new Mat();
-       //     Cv2.EqualizeHist(albedoMap, albedoVis);
-
-            // 显示结果
-            Cv2.ImShow("Normal Map", normalVis);
-            Cv2.ImShow("Albedo Map", albedoMap);
-            Cv2.WaitKey(0);
-
-        }
-
-        //矩阵批量执行
-        public void PhotometricStereoOpt()
-        {
-            // ========== 参数设置 ==========
-           Mat[] images = Enumerable.Range(0, 4)
-                .Select(i => Cv2.ImRead(@"C:\WorkSpace\项目\xb\data\20220807\Main\" + $"Main_102837_0{i + 1}.jpg", ImreadModes.Grayscale))
-                .Select(m =>
-                {
-                    var converted = new Mat();
-                    m.ConvertTo(converted, MatType.CV_32F, 1.0 / 255.0);
-                    return converted;
-                })
-                .ToArray();
-
-           /* Mat[] images = new Mat[4];
-            for (int i = 0; i < 4; i++)
-            {
-                images[i] = Cv2.ImRead(@"C:\WorkSpace\项目\xb\data\20220807\Main\" + $"Main_102837_0{i+1}.jpg", ImreadModes.Grayscale);
-                images[i].ConvertTo(images[i], MatType.CV_32F, 1.0 / 255.0); // 归一化到[0,1]
-            }*/
-            // ========== 光源方向矩阵 ==========
-            double[] tilts = { 0.0, Math.PI / 2, Math.PI, 3 * Math.PI / 2 };
-            double[] slants = { Math.PI / 3, Math.PI / 3, Math.PI / 3, Math.PI / 3 };
-
-           /* Mat L = new Mat(4, 3, MatType.CV_32F); // 光源方向矩阵 (4x3)
-            for (int i = 0; i < 4; i++)
-            {
-                double tilt = tilts[i];
-                double slant = slants[i];
-
-                // 将极坐标转换为笛卡尔坐标
-                float lx = (float)(Math.Sin(slant) * Math.Cos(tilt));
-                float ly = (float)(Math.Sin(slant) * Math.Sin(tilt));
-                float lz = (float)Math.Cos(slant);
-
-                L.Set<float>(i, 0, lx);
-                L.Set<float>(i, 1, ly);
-                L.Set<float>(i, 2, lz);
-                *//*  double d1 = L.At<float>(i, 0);  0.707  0  0.707;0 0.707 0.707; -0.707,0,0.707;0 -0.707 0.707;
-                  double d2 = L.At<float>(i, 1);
-                  double d3 = L.At<float>(i, 2);*//*
-            }*/
-
-            Mat L = new Mat(4, 3, MatType.CV_32F, tilts.Zip(slants, (tilt, slant) =>
-                new[] {
-                (float)(Math.Sin(slant) * Math.Cos(tilt)),
-                (float)(Math.Sin(slant) * Math.Sin(tilt)),
-                (float)Math.Cos(slant)
-                }).SelectMany(x => x).ToArray());
-
-
-
-            /*unsafe
-            {
-                fixed (double* ptrArray = array)
-                {
-                    Buffer.MemoryCopy(
-                        (void*)L.Data, // 源指针（Mat 数据）
-                        (void*)ptrArray,       // 目标指针（数组）
-                        sizeof(float) * totalElements,
-                        sizeof(float) * totalElements
-                    );
-                }
-            }*/
-
-            // ========== 数据矩阵化 ==========
-            int rows = images[0].Rows;
-            int cols = images[0].Cols;
-            Mat I = new Mat(4, rows * cols, MatType.CV_32F);
-            for (int i = 0; i < 4; i++)
-            {
-                images[i].Reshape(1, 1).Row(0).CopyTo(I.Row(i));
-            }
-
-            // ========== 批量求解法线 ==========
-            Mat LInv = new Mat();
-            Cv2.Invert(L, LInv, DecompTypes.SVD);
-             
-
-            Mat N = LInv * I; // 3xN 矩阵，每列是法线向量
-
-            // 获取总元素数
-            int totalElements = L.Rows * L.Cols;
-
-            // 直接复制数据到 double[]
-            double[] array = new double[totalElements];
-            int index = 0;
-            for (int i = 0; i < L.Rows; i++)
-            {
-                for (int j = 0; j < L.Cols; j++)
-                {
-                    array[index++] = L.At<float>(i, j);
-                }
-            }
-
-            // ========== 反射率计算 ==========
-            Mat albedo = new Mat();
-            Cv2.Sqrt(N.Pow(2).Reduce(ReduceDimension.Row, ReduceTypes.Sum,-1), albedo); // 计算模长
-
-            // ========== 重构反射率图 ==========
-            Mat albedoMap = albedo.Reshape(1, rows);
-            Cv2.ImShow("albedoMap", albedoMap);
-            // ========== 法线归一化 ==========
-            Mat albedoExpanded = new Mat();
-            Cv2.Repeat(albedo, N.Rows, 1, albedoExpanded);
-            Mat normalizedN = new Mat();
-            Cv2.Divide(N, albedoExpanded, normalizedN, 1.0, MatType.CV_32F);
-
-            // ========== 重构法线图 ==========
-            Mat[] normalChannels = normalizedN.Reshape(3, rows).Split();
-            Mat normalMap = new Mat();
-            Cv2.Merge(normalChannels, normalMap);
-
         
-
-            // ========== 后处理 ==========
-            normalMap = normalMap.Clone(); // 解除矩阵依赖
-            albedoMap.ConvertTo(albedoMap, MatType.CV_8U, 255); // 转换到0-255范围
-
-            // ========== 后处理与可视化 ==========
-            // 将法线图转换到可视范围 [0,1]
-            Mat normalVis = new Mat();
-            Cv2.Normalize(normalMap, normalVis, 0, 1, NormTypes.MinMax);
-
-            // 反射率图直方图均衡化
-          //  Mat albedoVis = new Mat();
-          //  Cv2.EqualizeHist(albedoMap, albedoVis);
-
-            // 显示结果
-            Cv2.ImShow("Normal Map", normalVis);
-            Cv2.ImShow("Albedo Map", albedoMap);
-            Cv2.WaitKey(0);
-        }
-         public void PhotometricStereo1()
-        {
-            Mat img1 = new Mat(@"C:\WorkSpace\项目\xb\data\20220807\Main\Main_102837_01.jpg");
-            Mat img2 = new Mat(@"C:\WorkSpace\项目\xb\data\20220807\Main\Main_102837_02.jpg");
-            Mat img3 = new Mat(@"C:\WorkSpace\项目\xb\data\20220807\Main\Main_102837_03.jpg");
-            Mat img4 = new Mat(@"C:\WorkSpace\项目\xb\data\20220807\Main\Main_102837_04.jpg");
-
-          //  Mat dTilt  = new Mat(1, 4, MatType.CV_32FC1, new double[] { 0*Math.PI/180, 90 * Math.PI / 180, 180 * Math.PI / 180, -90 * Math.PI / 180 });/*分布角*/
-          //  Mat dSlant = new Mat(1, 4, MatType.CV_32FC1, new double[] { 45 * Math.PI / 180,45 * Math.PI / 180, 45 * Math.PI / 180, 45 * Math.PI / 180 });/*入射角*/
-
-            Mat dSlantCos = new Mat(), dSlantSin = new Mat();
-            Mat dTiltCos = new Mat(), dTiltSin = new Mat();
-            double[] dTilt = { 0 * Math.PI / 180, 90 * Math.PI / 180, 180 * Math.PI / 180, -90 * Math.PI / 180 };  /*分布角*/
-            double[] dSlant = { 45 * Math.PI / 180, 45 * Math.PI / 180, 45 * Math.PI / 180, 45 * Math.PI / 180 }; /*入射角*/
-
-            /*   L_x:= sin(theta_rad) * cos(phi_rad)
-   L_y:= sin(theta_rad) * sin(phi_rad)
-   L_z:= cos(theta_rad)*/
-
-
-            Matrix<double> lightDirections = Matrix<double>.Build.DenseOfArray(new double[,]
-            {
-            { Math.Sin(dSlant[0])*Math.Cos(dTilt[0]), Math.Sin(dSlant[0])*Math.Sin(dTilt[0]),  Math.Cos(dSlant[0]) },  // 光源 2 方向
-            { Math.Sin(dSlant[1])*Math.Cos(dTilt[1]), Math.Sin(dSlant[1])*Math.Sin(dTilt[1]),  Math.Cos(dSlant[1]) },  // 光源 3 方向
-            { Math.Sin(dSlant[2])*Math.Cos(dTilt[2]), Math.Sin(dSlant[2])*Math.Sin(dTilt[2]),  Math.Cos(dSlant[2])},  // 光源 1 方向
-            { Math.Sin(dSlant[3])*Math.Cos(dTilt[3]), Math.Sin(dSlant[3])*Math.Sin(dTilt[3]),  Math.Cos(dSlant[3])}  // 光源 1 方向
-          });
-
-            // 获取图像尺寸
-            int width = img1.Width;
-            int height = img1.Height;
-
-            // 初始化法线图和 albedo 图
-            Mat normalMap = new Mat(width,height,OpenCvSharp.MatType.CV_8UC1);
-            Mat albedoMap = new Mat(width, height, OpenCvSharp.MatType.CV_8UC1);
-
-            for(int i=0;i<height;i++)
-            {
-                for (int j = 0; j < width; j++)
-                {
-                    Vector<double> intensities = Vector<double>.Build.Dense(new double[]
-                      {
-                            img1.At<byte>(i,j)/255.0,
-                            img2.At<byte>(i,j)/255.0,
-                            img3.At<byte>(i,j)/255.0,
-                            img4.At<byte>(i,j)/255.0,
-                      });
-
-                    // 解线性方程组：I = L * N * rho
-                    Vector<double> normalAndAlbedo = lightDirections.Solve(intensities);
-
-                    // 提取法线和 albedo
-                    Vector<double> normal = normalAndAlbedo.SubVector(0, 3);
-                    double albedo = normal.L2Norm(); // Albedo 是法线的长度
-                    normal = normal.Normalize(2);    // 归一化法线
-
-                   normalMap.Set<byte>(j, i, (byte)((normal[0]+1)*127.5));
-                    albedoMap.Set<byte>(j, i, (byte)(albedo*255));
-                }
-
-            }
-            normalMap.SaveImage("testNormalmap.jpg");
-
-            albedoMap.SaveImage("testAlbedoMap.jpg");
-
-
-
-
-        }
-
 
     }
 }

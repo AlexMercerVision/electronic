@@ -314,7 +314,7 @@ namespace xbDefectDect
                 float right = resultlist[i * 6 + 4];  // det -- right down
                 float down = resultlist[i * 6 + 5];
 
-                if (score > det_threshold)
+                if (score >det_threshold)
                 {
                   
                     var text_size = Cv2.GetTextSize($"{predict_Label_List[i]}-{labelindex}-{score:f2}",
@@ -337,6 +337,10 @@ namespace xbDefectDect
                         dlRes.AL_Type.Add(2);
                     else if (predict_Label_List[i] == "liewenWP")
                         dlRes.AL_Type.Add(3);
+                    else if (predict_Label_List[i] == "poszWP")
+                        dlRes.AL_Type.Add(4);
+                    else if (predict_Label_List[i] == "flaking")
+                        dlRes.AL_Type.Add(5);
 
                 }
             }
@@ -970,20 +974,7 @@ namespace xbDefectDect
 
         private void cmbThre_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (is_infer == 1 && comboBox_clicked == 0)
-            {
-                MessageBox.Show("正在推理中，检测阈值修改将在本次模型推理完成后生效!", "提示", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                comboBox_clicked = 1;
-                cmb_Thre.SelectedIndex = comboBox3_last_index;
-                return;
-            }
-
-            det_threshold = float.Parse(cmb_Thre.SelectedItem.ToString());
-            comboBox3_last_index = cmb_Thre.SelectedIndex;
-
-
-            comboBox_clicked = 0;
+           
         }
 
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
@@ -1060,6 +1051,24 @@ namespace xbDefectDect
         private void toolStop_Click(object sender, EventArgs e)
         {
             menu_Infer_Stop_Click(null, null);
+        }
+
+        private void cmb_Thre_TextChanged(object sender, EventArgs e)
+        {
+            if (is_infer == 1 && comboBox_clicked == 0)
+            {
+                MessageBox.Show("正在推理中，检测阈值修改将在本次模型推理完成后生效!", "提示", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                comboBox_clicked = 1;
+                cmb_Thre.SelectedIndex = comboBox3_last_index;
+                return;
+            }
+
+            det_threshold = float.Parse(cmb_Thre.Text);
+            comboBox3_last_index = cmb_Thre.SelectedIndex;
+
+
+            comboBox_clicked = 0;
         }
     }
 }

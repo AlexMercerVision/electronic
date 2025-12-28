@@ -148,7 +148,8 @@ namespace VisionApplication
 
         AlignImParam alImParam = new AlignImParam();
         #endregion   状态及标志相关
-
+        //深度学习推理相关
+        CDL cdl = new CDL();
 
         //获取记录清单
 
@@ -289,7 +290,7 @@ namespace VisionApplication
                             bVPWinAttached = true;
                             this.splitContainer3.Panel1.Controls.Add(this.vpWin);
                         }
-
+                        vpWin.cdl = cdl;
                         this.vpWin.Location = new System.Drawing.Point(-2, 6);
                         this.vpWin.Name = "XB视图";
                  //       this.vpWin.Size = new System.Drawing.Size(393, 357);
@@ -359,7 +360,7 @@ namespace VisionApplication
                 acqFIFO._cup = cup;
                 //    acqFIFO.InitFX();
                 acqFIFO._csd = csd;
-                //   acqFIFO.cdl = cdl;
+                // acqFIFO.cdl = cdl;
 
                 vpWin._cup = cup;
                 vpWin.SetGUIShow(0);
@@ -388,7 +389,7 @@ namespace VisionApplication
                 rts.initStatus.bDLModelPathExist = true;
                 try
                 {
-                    //   iRet = cdl.InitDL(cup.p_DL);
+                   iRet = cdl.InitDL(cup.p_DL);
                     if (iRet == -1)
                     {
                         rts.initStatus.bDLModelInit = false;
@@ -1713,7 +1714,7 @@ namespace VisionApplication
             pmaRes = vpWin._PMARes;
             if (!pmaRes.bOk)
             {
-                operLog.iEventStatus = -1;
+                operLog.iEventStatus = -2;
                 operLog.strOperEvent = "完成一次运行";
                 operLog.strFailReason = "检测结果：NG";
                 AddLog();
@@ -1884,6 +1885,10 @@ namespace VisionApplication
                     break;
                 case -1:
                     dgvLog.Rows[ind].Cells[2].Value = "操作失败";
+                    dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                    break;
+                case -2:
+                    dgvLog.Rows[ind].Cells[2].Value = "操作正常";
                     dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                     break;
                 case 1:
@@ -2141,7 +2146,12 @@ namespace VisionApplication
                 fw.SetProgress(70, "正在进行历史数据加载");
                 InitRecord();       //初始化路径
                 InitLocalFile();    //加载回放数据                            //  bSucc = vpWin.SetDiagParam(cup);
-                 
+
+                iProcess = 80;
+                fw.SetProgress(80, "正在加深度载推理环境");
+                if (cup.p_VPPRTP.bDeepInfer)
+                    InitDL();
+
                 InitCheckStatus(); 
                 iProcess = 90;
                 fw.SetProgress(90, "正在启动相机采集");
@@ -2208,7 +2218,7 @@ namespace VisionApplication
             if (vpWin != null)
                 vpWin.Close(bVPPParamChanged);
 
-            //    cdl.CloseDL();
+            cdl.CloseDL();
         }
 
         private void splitContainer3_Panel1_SizeChanged(object sender, EventArgs e)
@@ -4742,7 +4752,7 @@ namespace VisionApplication
                 {
                     toolStrip1.Enabled = false;
                     splitContainer1.Panel1.Enabled = false;
-                    //   InitDL();
+                    InitDL();
                     toolStrip1.Enabled = true;
                     splitContainer1.Panel1.Enabled = true;
                 }
@@ -5886,7 +5896,7 @@ namespace VisionApplication
             updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
             while (vpWin._bContRun)
             {
-                if (vpWin.RunOneTime())
+                if (vpWin.RunOneTime(iJobIndex))
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5;

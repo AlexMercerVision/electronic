@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerMang", "VisionApplicatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageViewer", "ImageViewer\ImageViewer.csproj", "{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xbDet", "VisionApplication\xbDet.csproj", "{0E007FA3-A265-4091-A1D8-4A05E02CE10D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -164,6 +166,26 @@ Global
 		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x64.Build.0 = Release|Any CPU
 		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x86.ActiveCfg = Release|Any CPU
 		{F87E36E7-E2CD-4CEA-B1B2-AE789F2405ED}.Release|x86.Build.0 = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM.Build.0 = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x64.ActiveCfg = Debug|x64
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x64.Build.0 = Debug|x64
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x86.Build.0 = Debug|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM.ActiveCfg = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM.Build.0 = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM64.Build.0 = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x64.ActiveCfg = Release|x64
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x64.Build.0 = Release|x64
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x86.ActiveCfg = Release|Any CPU
+		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
