@@ -213,18 +213,19 @@ namespace VisionApplication
             this.txtDL_PoszSideTh = new System.Windows.Forms.TextBox();
             this.txtDL_CrackLenTh = new System.Windows.Forms.TextBox();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
+            this.label49 = new System.Windows.Forms.Label();
             this.tbModelPath = new System.Windows.Forms.TextBox();
+            this.cmb_Threshold = new System.Windows.Forms.ComboBox();
             this.label45 = new System.Windows.Forms.Label();
             this.txtGPUID = new System.Windows.Forms.TextBox();
             this.btModel = new System.Windows.Forms.Button();
             this.label48 = new System.Windows.Forms.Label();
             this.cmb_EvnType = new System.Windows.Forms.ComboBox();
             this.cmb_ModelType = new System.Windows.Forms.ComboBox();
+            this.label99 = new System.Windows.Forms.Label();
             this.label46 = new System.Windows.Forms.Label();
             this.groupBox6 = new System.Windows.Forms.GroupBox();
-            this.label49 = new System.Windows.Forms.Label();
             this.label52 = new System.Windows.Forms.Label();
-            this.cmb_Threshold = new System.Windows.Forms.ComboBox();
             this.label50 = new System.Windows.Forms.Label();
             this.label47 = new System.Windows.Forms.Label();
             this.label51 = new System.Windows.Forms.Label();
@@ -330,7 +331,6 @@ namespace VisionApplication
             this.btCancle = new System.Windows.Forms.Button();
             this.btUpdateParamFile = new System.Windows.Forms.Button();
             this.btOK = new System.Windows.Forms.Button();
-            this.label99 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabLine.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).BeginInit();
@@ -2148,7 +2148,13 @@ namespace VisionApplication
             "40",
             "60",
             "80",
-            "100"});
+            "100",
+            "150",
+            "200",
+            "250",
+            "300",
+            "350",
+            "400"});
             this.cmbIOTimeDelay.Location = new System.Drawing.Point(414, 139);
             this.cmbIOTimeDelay.Name = "cmbIOTimeDelay";
             this.cmbIOTimeDelay.Size = new System.Drawing.Size(98, 20);
@@ -2462,12 +2468,42 @@ namespace VisionApplication
             this.groupBox7.TabStop = false;
             this.groupBox7.Text = "基本设置";
             // 
+            // label49
+            // 
+            this.label49.AutoSize = true;
+            this.label49.Location = new System.Drawing.Point(16, 115);
+            this.label49.Name = "label49";
+            this.label49.Size = new System.Drawing.Size(59, 12);
+            this.label49.TabIndex = 10;
+            this.label49.Text = "接受阈值:";
+            // 
             // tbModelPath
             // 
             this.tbModelPath.Location = new System.Drawing.Point(139, 32);
             this.tbModelPath.Name = "tbModelPath";
             this.tbModelPath.Size = new System.Drawing.Size(223, 21);
             this.tbModelPath.TabIndex = 4;
+            // 
+            // cmb_Threshold
+            // 
+            this.cmb_Threshold.FormattingEnabled = true;
+            this.cmb_Threshold.Items.AddRange(new object[] {
+            "0",
+            "0.1",
+            "0.2",
+            "0.3",
+            "0.4",
+            "0.5",
+            "0.6",
+            "0.7",
+            "0.8",
+            "0.9",
+            "1.0"});
+            this.cmb_Threshold.Location = new System.Drawing.Point(141, 112);
+            this.cmb_Threshold.Name = "cmb_Threshold";
+            this.cmb_Threshold.Size = new System.Drawing.Size(65, 20);
+            this.cmb_Threshold.TabIndex = 8;
+            this.cmb_Threshold.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
             // 
             // label45
             // 
@@ -2535,6 +2571,17 @@ namespace VisionApplication
             this.cmb_ModelType.TabIndex = 8;
             this.cmb_ModelType.SelectedIndexChanged += new System.EventHandler(this.cmb_ModelType_SelectedIndexChanged);
             // 
+            // label99
+            // 
+            this.label99.AutoSize = true;
+            this.label99.BackColor = System.Drawing.Color.Transparent;
+            this.label99.ForeColor = System.Drawing.Color.Black;
+            this.label99.Location = new System.Drawing.Point(520, 79);
+            this.label99.Name = "label99";
+            this.label99.Size = new System.Drawing.Size(59, 12);
+            this.label99.TabIndex = 9;
+            this.label99.Text = "GPU编号：";
+            // 
             // label46
             // 
             this.label46.AutoSize = true;
@@ -2576,15 +2623,6 @@ namespace VisionApplication
             this.groupBox6.Text = "深度推理诊断参数";
             this.groupBox6.Visible = false;
             // 
-            // label49
-            // 
-            this.label49.AutoSize = true;
-            this.label49.Location = new System.Drawing.Point(16, 115);
-            this.label49.Name = "label49";
-            this.label49.Size = new System.Drawing.Size(59, 12);
-            this.label49.TabIndex = 10;
-            this.label49.Text = "接受阈值:";
-            // 
             // label52
             // 
             this.label52.AutoSize = true;
@@ -2593,27 +2631,6 @@ namespace VisionApplication
             this.label52.Size = new System.Drawing.Size(71, 12);
             this.label52.TabIndex = 10;
             this.label52.Text = "破损灰度图:";
-            // 
-            // cmb_Threshold
-            // 
-            this.cmb_Threshold.FormattingEnabled = true;
-            this.cmb_Threshold.Items.AddRange(new object[] {
-            "0",
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"});
-            this.cmb_Threshold.Location = new System.Drawing.Point(141, 112);
-            this.cmb_Threshold.Name = "cmb_Threshold";
-            this.cmb_Threshold.Size = new System.Drawing.Size(65, 20);
-            this.cmb_Threshold.TabIndex = 8;
-            this.cmb_Threshold.SelectedIndexChanged += new System.EventHandler(this.cmb_Threshold_SelectedIndexChanged);
             // 
             // label50
             // 
@@ -3907,17 +3924,6 @@ namespace VisionApplication
             this.btOK.Text = "确定";
             this.btOK.UseVisualStyleBackColor = false;
             this.btOK.Click += new System.EventHandler(this.btOK_Click);
-            // 
-            // label99
-            // 
-            this.label99.AutoSize = true;
-            this.label99.BackColor = System.Drawing.Color.Transparent;
-            this.label99.ForeColor = System.Drawing.Color.Black;
-            this.label99.Location = new System.Drawing.Point(520, 79);
-            this.label99.Name = "label99";
-            this.label99.Size = new System.Drawing.Size(59, 12);
-            this.label99.TabIndex = 9;
-            this.label99.Text = "GPU编号：";
             // 
             // Frm_RuntimeSet
             // 

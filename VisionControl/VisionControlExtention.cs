@@ -401,12 +401,16 @@ namespace VisionControl
             // pmaRes.bOk = //(bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
             pmaRes.bLocated = true;
         }
+        int iDeepInferTime = 0;
         public bool RunOneTime(int iJobIndex)
         {
             infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始  
-           // mJM.Job(iJobIndex).
-            if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
-                return false;
+                                                                 // mJM.Job(iJobIndex).
+            if (cup.p_VPPRTP.bVisionInfer)
+            {
+                if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
+                    return false;
+            }
 
             if (mCurrentRunState != RunState.RunningContinuous)
                 mCurrentRunState = RunState.RunningOnce;
@@ -434,6 +438,7 @@ namespace VisionControl
                         if (cup.p_VPPRTP.bDeepInfer)   //从GPU实时推理
                         {
                             DLinfer();
+                            iDeepInferTime++;
                         }
                         else if(cup.p_VPPRTP.bVisionInfer)
                         {
@@ -1047,6 +1052,7 @@ namespace VisionControl
         //是否使用相机数据
         public void SetFromCam(bool bAcqFromCam)
         {
+            if(cup.p_VPPRTP.bVisionInfer)
             (mJM.Job(0).VisionTool as CogToolGroup).SetScriptTerminalData("bAcqFromCam", bAcqFromCam);
 
         }
@@ -1756,40 +1762,47 @@ namespace VisionControl
             if (runningLive)
                 return null;
             string[] strStatus = new string[12];
-
-            j = mJM.Job(i);
-            strStatus[0] = (j.TotalJobIterations).ToString();
-            //  strStatus[1] = j.TotalVisionToolAccepts.ToString();
-            strStatus[1] = (j.TotalJobIterations - iReject).ToString();
-            string percentStr = "0";
-            if (j.TotalJobIterations > 0)
+            if (cup.p_VPPRTP.bDeepInfer)
             {
-                double p = (j.TotalJobIterations - iReject) * 100.0 / (j.TotalJobIterations);
-                percentStr = p.ToString("0.0");
-            }
-
-            strStatus[2] = percentStr;
-            //  strStatus[3] = j.TotalVisionToolRejects.ToString();
-            strStatus[3] = iReject.ToString();
-            strStatus[4] = j.TotalVisionToolWarnings.ToString();
-            strStatus[5] = j.TotalVisionToolErrors.ToString();
-
-            strStatus[6] = j.TotalAcquisitions.ToString();
-            strStatus[7] = j.TotalAcquisitionErrors.ToString();
-            strStatus[8] = j.TotalAcquisitionOverruns.ToString();
-
-            if (j.TotalJobThroughputMax != 0)
-            {
-                strStatus[9] = j.TotalJobThroughput.ToString("0.000");
-                strStatus[10] = j.TotalJobThroughputMin.ToString("0.000");
-                strStatus[11] = j.TotalJobThroughputMax.ToString("0.000");
+                strStatus[0] = iDeepInferTime.ToString();
+                return strStatus;
             }
             else
             {
-                string waiting = ResourceUtility.GetString("RtStatsWaiting");
-                strStatus[9] = waiting;
-                strStatus[10] = waiting;
-                strStatus[11] = waiting;
+                j = mJM.Job(i);
+                strStatus[0] = (j.TotalJobIterations).ToString();
+                //  strStatus[1] = j.TotalVisionToolAccepts.ToString();
+                strStatus[1] = (j.TotalJobIterations - iReject).ToString();
+                string percentStr = "0";
+                if (j.TotalJobIterations > 0)
+                {
+                    double p = (j.TotalJobIterations - iReject) * 100.0 / (j.TotalJobIterations);
+                    percentStr = p.ToString("0.0");
+                }
+
+                strStatus[2] = percentStr;
+                //  strStatus[3] = j.TotalVisionToolRejects.ToString();
+                strStatus[3] = iReject.ToString();
+                strStatus[4] = j.TotalVisionToolWarnings.ToString();
+                strStatus[5] = j.TotalVisionToolErrors.ToString();
+
+                strStatus[6] = j.TotalAcquisitions.ToString();
+                strStatus[7] = j.TotalAcquisitionErrors.ToString();
+                strStatus[8] = j.TotalAcquisitionOverruns.ToString();
+
+                if (j.TotalJobThroughputMax != 0)
+                {
+                    strStatus[9] = j.TotalJobThroughput.ToString("0.000");
+                    strStatus[10] = j.TotalJobThroughputMin.ToString("0.000");
+                    strStatus[11] = j.TotalJobThroughputMax.ToString("0.000");
+                }
+                else
+                {
+                    string waiting = ResourceUtility.GetString("RtStatsWaiting");
+                    strStatus[9] = waiting;
+                    strStatus[10] = waiting;
+                    strStatus[11] = waiting;
+                }
             }
 
             return strStatus;
@@ -2724,6 +2737,8 @@ namespace VisionControl
         Thread SaveImageResultThread;   //保存图像结果线程，UpdateGuiIfNeeded()中调用
         public int SaveVPP()
         {
+            if (!cup.p_VPPRTP.bVisionInfer)
+                return 0;
             string vpp = mLoadedVppFilename;
             try
             {

@@ -286,10 +286,10 @@ namespace VisionApplication
             }
             else
             {
-                operLog.iEventStatus = -1;
+                /*operLog.iEventStatus = -1;
                 operLog.strFailReason = "";
                 operLog.strOperEvent = "修改相机亮度参数";
-                AddLog();
+                AddLog();*/
             }
 
         }
@@ -1225,9 +1225,7 @@ namespace VisionApplication
                 UpdateUIFromPMAParam();
             }
             //加载相机参数
-            UpdateCamParam2UI();
-
-
+            UpdateCamParam2UI(); 
 
             ViewLayout();
         }

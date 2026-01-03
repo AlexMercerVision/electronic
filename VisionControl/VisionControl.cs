@@ -212,8 +212,7 @@ namespace VisionControl
         public VisionControl(string strFileName)
         {
             mVppFilename = strFileName;
-            InitializeComponent();
-
+            InitializeComponent(); 
         }
 
         //修改vpp文件
@@ -405,7 +404,14 @@ namespace VisionControl
             this.mResultTextHash.Add(CogToolResultConstants.Warning, ResourceUtility.GetString("RtWarning"));
             this.mResultTextHash.Add(CogToolResultConstants.Reject, ResourceUtility.GetString("RtReject"));
             this.mResultTextHash.Add(CogToolResultConstants.Error, ResourceUtility.GetString("RtError"));*/
-
+            string vppFileToLoad = ResolveVppFilename();
+            if (!File.Exists(vppFileToLoad) && !File.Exists(mVppFilename))
+            {
+                // vpp file does not exist in either developer location or current dir
+                //**label_controlErrorMessage.Text = ResourceUtility.FormatString("RtVppNotFound", vppFileToLoad, mVppFilename);
+                initVar();
+                return ;
+            }
             if (!DesignMode)
                 StartApplication();
 
@@ -415,6 +421,8 @@ namespace VisionControl
         private void AttachToJobManager(bool attach)
         {
             // attach and detach our event handlers/etc
+            if (!cup.p_VPPRTP.bVisionInfer)
+                return;
             if (attach)
             {
                 if (mAttached)

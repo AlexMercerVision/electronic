@@ -186,7 +186,7 @@ namespace VisionApplication
         {
             mainWindWidth = splitContainer3.Panel1.Width;
             mainWindHeight = splitContainer3.Panel1.Height;
-            splitContainer4.SplitterDistance = 100;
+            splitContainer4.SplitterDistance = 150;
             splitContainer5.Panel1Collapsed = false;
             //**20220409  主窗口大小调整
             if (vpWin != null)
@@ -323,19 +323,35 @@ namespace VisionApplication
             {
 
                 this.vpWin = new VisionControl.VisionControl();
-                rts.initStatus.bVPPInit = false;  //vpp文件完成初始化
-                rts.initStatus.iVPPStatus = vpWin.mInitError; //vpp文件初始化错误代码
-                                                              //   vpWin.cdl = cdl;
-              //  this.splitContainer3.Panel1.Controls.Add(this.vpWin);
-                this.vpWin.Location = new System.Drawing.Point(-2, 6);
-                this.vpWin.Name = "XB视图";
-                this.vpWin.Size = new System.Drawing.Size(393, 357);
-                this.vpWin.TabIndex = 2;
+                
+                if(cup.p_VPPRTP.bVisionInfer)
+                {
+                    rts.initStatus.bVPPInit = false;  //vpp文件完成初始化
+                    rts.initStatus.iVPPStatus = vpWin.mInitError; //vpp文件初始化错误代码
+                                                                  //   vpWin.cdl = cdl;
+                                                                  //  this.splitContainer3.Panel1.Controls.Add(this.vpWin);
+                    this.vpWin.Location = new System.Drawing.Point(-2, 6);
+                    this.vpWin.Name = "XB视图";
+                    this.vpWin.Size = new System.Drawing.Size(393, 357);
+                    this.vpWin.TabIndex = 2;
 
-                operLog.strOperEvent = "加载视觉算法文件";
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "未能找到文件";
-                AddLog();
+                    operLog.strOperEvent = "加载视觉算法文件";
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = "未能找到文件";
+                    AddLog();
+                }
+                else if(cup.p_VPPRTP.bDeepInfer)
+                {
+                    
+                    this.splitContainer3.Panel1.Controls.Add(this.vpWin);
+                     
+                    vpWin.cdl = cdl;
+                    this.vpWin.Location = new System.Drawing.Point(-2, 6);
+                    this.vpWin.Name = "XB视图";
+                    //       this.vpWin.Size = new System.Drawing.Size(393, 357);
+                    this.vpWin.TabIndex = 2;
+                }
+                
             }
         }
 
@@ -374,9 +390,12 @@ namespace VisionApplication
             {
                 operLog.iEventStatus = -1;
             }
-
-            operLog.strOperEvent = "VP模型初始化";
-            AddLog();
+            if(cup.p_VPPRTP.bVisionInfer)
+            {
+                operLog.strOperEvent = "VP模型初始化";
+                AddLog();
+            }
+            
         }
 
         //初始化深度学习模型
@@ -1902,7 +1921,7 @@ namespace VisionApplication
             }
 
             dgvLog.Rows[ind].Cells[4].Value = operLog.strUserName;
-            if (operLog.iEventStatus == -1 || operLog.iEventStatus == 1
+            if (operLog.iEventStatus <0 || operLog.iEventStatus == 1
                 || operLog.iEventStatus == 2 || operLog.iEventStatus == 9)
             {
                 dgvLog.Rows[ind].Cells[3].Value = operLog.strFailReason;
@@ -1943,7 +1962,7 @@ namespace VisionApplication
             {
                 /*  txt_NextImageIndex.Visible = true;
                   label5.Visible = true;*/
-                btFunSet.Visible = true;
+              //  btFunSet.Visible = true;
                 groupBox1.Visible = true;
                 menuManage_SuperOrNormal.Visible = true;
             }
@@ -2127,7 +2146,7 @@ namespace VisionApplication
                                                                         //    fw.SetProgress(90, "正在初始化算法");
                 iProcess = 60;
                 fw.SetProgress(80, "正在初始化视图");
-                if (rts.initStatus.bVPPInit)
+                if (cup.p_VPPRTP.bDeepInfer || rts.initStatus.bVPPInit)
                 {
                     InitVisionControl();
                     //   bSucc = vpWin.SetVPPRuntimeParam();             //visionpro控件初始化
@@ -2162,8 +2181,8 @@ namespace VisionApplication
                 fw.SetProgress(25, "UI初始化");
                 InitParamUI();  //必要的参数初始化 
 
-                //  runonetime();  启动默认运行一次  2024年7月22日，处理运行初始化界面 
-                //  cdl.det_infer_img();
+                //  runonetime(); // 启动默认运行一次  2024年7月22日，处理运行初始化界面 
+                 cdl.det_infer_img();
 
                 this.Visible = true;
                 this.Show();
@@ -2312,12 +2331,14 @@ namespace VisionApplication
                         {
                             if (vpWin._iTaskType != 0)
                                 vpWin.ClearCogDispaly();
+                            operLog.strOperEvent = "采集图像";
                             PeviewOneImage();
                             break;
                         }
                     case "btFun_Preview":   // 实时预览  2024年7月11日 待验证
                         {
                             //     AddLog();
+                            operLog.strOperEvent = "预览图像";
                             PreviewImage(0);
                             break;
                         }
@@ -4871,7 +4892,7 @@ namespace VisionApplication
             {
                 /* txt_NextImageIndex.Visible = true;
                  label5.Visible = true;*/
-                btFunSet.Visible = true;
+             //   btFunSet.Visible = true;
                 groupBox1.Visible = true;
             }
             else
@@ -4906,7 +4927,7 @@ namespace VisionApplication
         private void menuFile_ResultDirectory_Click(object sender, EventArgs e)
         {
             //Process.Start("explorer.exe", cup.p_Paf.strResSavePath);
-            Process.Start("explorer.exe", Path.GetDirectoryName(cup.p_Paf.strVPPFilePath));
+            Process.Start("explorer.exe", Path.GetDirectoryName(cup.p_DL.modelPath));
         }
 
         private void splitContainer6_Panel2_Resize(object sender, EventArgs e)
@@ -4934,10 +4955,10 @@ namespace VisionApplication
         private void UpdateStatisticsForJob(int i)
         {
             // don't update statistics when showing live video
-
+            /**/
             strStatus = vpWin.RetStatisticsForJob(i);
             toolStripStatus_ExcuteTimes.Text = "执行次数：" + strStatus[0]+"/"+rts.detS.iTotal;
-          
+            
             /*textBox_JobN_TotalIterations.Text = strStatus[0];
             textBox_JobN_TotalAccept.Text = strStatus[1];
             textBox_JobN_TotalReject.Text = (Int32.Parse(strStatus[6]) + iAcquisitionsTimes).ToString();
@@ -4958,6 +4979,9 @@ namespace VisionApplication
             toolStripStatus_inferTime.Text = "推理时间：" + vpWin.cost_milliseconds;
 
             rts.detS.iTotal  = detStat.iTotal+ Int32.Parse(strStatus[0]);
+
+            if (!cup.p_VPPRTP.bVisionInfer)
+                return;
             rts.detS.iOKNum  = detStat.iTotal + Int32.Parse(strStatus[1]);
             rts.detS.iOKPer  = float.Parse(strStatus[2]);
             rts.detS.iNGNum  = detStat.iTotal + Int32.Parse(strStatus[3]);
@@ -5111,10 +5135,9 @@ namespace VisionApplication
             else
             {
                 int ind = 0;
-                for (int i = 0; i < strPortName.Length; i++)
+                for (int i = 0; i < 4; i++)
                 {
-                    if (i >= 4)
-                        break;
+                   
                     if (cup.p_SD.bUsed[i])
                     {
                         bool bSucc = InitSerialIndex(i);
@@ -5161,7 +5184,7 @@ namespace VisionApplication
         private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
         {
             // 获取接收缓冲区长度
-            Thread.Sleep(20);
+            Thread.Sleep(10);
             int Readlen = sPortCy.BytesToRead;
             // 新建一个 byte[] 数组 用来存放接收的数据
             byte[] inf = new byte[Readlen];
@@ -5202,9 +5225,13 @@ namespace VisionApplication
             {
                 //2025年10月08日  根据设置的触发条件，判断IO输入
                 Byte bOrder = 0;
-                int OrderType = 0;  
-                              
-                bOrder = (Byte)(1 << (cup.p_IOPP.AcqTrig - 1));
+                int OrderType = 0;
+                if (inf[4] == 1)
+                    OrderType = 2;
+                if (inf[4] == 2)
+                    OrderType = 4;
+
+                /*bOrder = (Byte)(1 << (cup.p_IOPP.AcqTrig - 1));
                 if ((inf[4] & bOrder) == bOrder)
                     OrderType = 1;
                 bOrder = (Byte)(1 << (cup.p_IOPP.DetTrig - 1));
@@ -5215,7 +5242,8 @@ namespace VisionApplication
                     OrderType = 3;
                 bOrder = (Byte)(1 << (cup.p_IOPP.EndDetTrig - 1));
                 if ((inf[4] & bOrder) == bOrder)
-                    OrderType = 4;
+                    OrderType = 4;*/
+                Thread.Sleep(10);
                 ExeIOTrig(OrderType);  //执行触发任务
                 
             }
@@ -5354,7 +5382,7 @@ namespace VisionApplication
             rts.iTaskType = vpWin._iTaskType;
             iAcquisitionsTimes++;
             bool bRet = false;
-
+            operLog.strOperEvent = "采集图像";
             vpWin.bMainTaskFinished = false;
             if (cup.p_VPPRTP.bAcqFromCam)  //实时采集
             {
@@ -5362,7 +5390,7 @@ namespace VisionApplication
                 bRet = vpWin.PreViewOneImage(cup.p_VPPRTP.iXBType);
                 if (!bRet)
                 {
-                    operLog.strOperEvent = "采集图像";
+                    
                     operLog.strFailReason = "采集异常错误";
                 }
             }
@@ -5495,6 +5523,8 @@ namespace VisionApplication
 
         private void StartRun()
         {
+            if (vpWin._iTaskType == 3 && !vpWin.bMainTaskFinished)
+                return;
             vpWin._iTaskType = 3;
             btFunRunCont.FlatStyle = FlatStyle.Flat;
             btFunRunCont.Image = global::VisionApplication.Properties.Resources.Pause;
@@ -5510,7 +5540,9 @@ namespace VisionApplication
         private void StopRun()
         {
             vpWin._bContRun = false;
-            btFunRunCont.Enabled = false;
+            btFunRunCont.FlatStyle = FlatStyle.Popup;
+            btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;
+            //  btFunRunCont.Enabled = false;
             operLog.strOperEvent = "关闭连续运行";
             operLog.iEventStatus = 0;
         }
@@ -5531,7 +5563,7 @@ namespace VisionApplication
         private bool bRunCondiction(int iType) 
         {
             //需要的工作相机没有就绪
-            if (cup.p_VPPRTP.bAcqFromCam && !rts.initStatus.bCamPrepared)
+            if (cup.p_VPPRTP.bAcqFromCam &&  (!rts.initStatus.bCamInit || !rts.initStatus.bCamPrepared))
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "连续运行";

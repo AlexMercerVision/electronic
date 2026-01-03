@@ -689,7 +689,7 @@ namespace CommonCls
         public void SaveImageForCam(int ind,int dw)
         {
 
-            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFFFF");   //st 2023年1月25日  增加日期，以免名称冲突
+            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");   //st 2023年1月25日  增加日期，以免名称冲突
             string strImageFile;
 
             strImageFile = strConSavePathS[ind] + "\\" + cup.p_LI.strPrefix[ind] + strTime + "_0" + dw.ToString() + ".jpg";
@@ -702,7 +702,7 @@ namespace CommonCls
         public void SaveImageForFXSurfaceAll()
         {
             
-            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFFFF");   //st 2023年1月25日  增加日期，以免名称冲突
+            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");   //st 2023年1月25日  增加日期，以免名称冲突
             string strImageFile;
          
 

@@ -27,7 +27,7 @@ namespace xbDefectDect
         string imgfile = null; // Single image path
         List<string> imgfiles = new List<string>(); // Multiple image paths
        
-        string[] img_type = {"jpg", "png", "JPEG", "jpeg"};
+        string[] img_type = {"jpg", "png", "JPEG", "jpeg", "bmp" };
 
     
         static int is_infer = 0;
@@ -86,8 +86,201 @@ namespace xbDefectDect
             strAutoMarkPath = cup.p_Paf.AutoMarkPath;
             strLogPath = cup.p_Paf.strLogPath;
             iRunType = 1;
+            
         }
 
+        #region
+        private List<string> filteredImgFiles = new List<string>();
+        private bool isFilterActive = false;
+        private bool bFinishLoad = false;
+        // 新增：存储类别信息
+     //   private List<DefectClassInfo> defectClasses = new List<DefectClassInfo>();
+        private void LoadDefectCls()
+        {
+            List<string> strCls = (new FileOper()).ReadRemarkImageFile("data\\predefined_classes.txt");
+            if (strCls != null && strCls.Count > 0)
+            {
+                cmbDefectCls.Items.Clear();
+                cmbDefectCls.Items.Add("All");
+                for (int i = 0; i < strCls.Count; i++)
+                {
+                    cmbDefectCls.Items.Add(strCls[i]);
+                    cmbDefectClsScr.Items.Add(strCls[i]);
+                    cmbDefectClsTar.Items.Add(strCls[i]);
+                } 
+                cmbDefectCls.SelectedIndex = 0;
+                cmbDefectClsScr.SelectedIndex = 0;
+                cmbDefectClsTar.SelectedIndex = 0;
+            }
+            cmbDefectScore.SelectedIndex = 5;
+            bFinishLoad = true;
+        }
+        // 筛选图片和标注文件
+        private void FilterImagesByDefect()
+        {
+            if (!bFinishLoad)
+                return;
+            try
+            {
+                if (imgfiles.Count == 0)
+                {
+                    MessageBox.Show("请先加载图片文件。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 获取用户选择的筛选条件
+                int selectedDefectId = -1; // -1 表示全部
+              /*  if (cmbDefectCls.SelectedIndex > 0 && cmbDefectCls.SelectedItem is DefectClassInfo)
+                {
+                    selectedDefectId = ((DefectClassInfo)cmbDefectCls.SelectedItem).Id;
+                }*/
+
+                if (!float.TryParse(cmbDefectScore.Text, out float scoreThreshold))
+                {
+                    MessageBox.Show("请输入有效的分数阈值。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // 确定使用哪个标注路径
+                string xmlPath = "";
+                if (rbManuMark.Checked)
+                {
+                    xmlPath = cup.p_Paf.ManuMarkPath;
+                }
+                else if (rbAutoMark.Checked)
+                {
+                    xmlPath = cup.p_Paf.AutoMarkPath;
+                }
+                else
+                {
+                    MessageBox.Show("请选择标注类型（手动或自动）。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                if (!Directory.Exists(xmlPath))
+                {
+                    MessageBox.Show($"标注路径不存在: {xmlPath}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // 开始筛选
+                filteredImgFiles.Clear();
+                int totalCount = imgfiles.Count;
+                int processedCount = 0;
+                int matchedCount = 0;
+
+                // 显示进度
+                progressBarFilter.Visible = true;
+                progressBarFilter.Minimum = 0;
+                progressBarFilter.Maximum = totalCount;
+                progressBarFilter.Value = 0;
+
+               /* lblFilterStatus.Text = $"正在筛选: 0/{totalCount}";
+                lblFilterStatus.Visible = true;*/
+                this.Refresh();
+
+                // 遍历所有图片文件
+                foreach (string imgFile in imgfiles)
+                {
+                    processedCount++;
+                  //  lblFilterStatus.Text = $"正在筛选: {processedCount}/{totalCount}";
+                    progressBarFilter.Value = processedCount;
+                    this.Refresh();
+
+                    try
+                    {
+                        // 读取标注文件
+                        DLResult dlResult = new DLResult();
+                        dlResult.AL_Rect = new List<CogRectangleAffine>();
+                        dlResult.AL_score = new List<float>();
+                        dlResult.AL_Type = new List<int>();
+                        dlResult.Al_bDiff = new List<bool>();
+
+                        cdl.ReadRemarkXML_EN1(imgFile, xmlPath, ref dlResult);
+
+                        bool matchFound = false;
+
+                        // 检查是否符合筛选条件
+                        for (int i = 0; i < dlResult.AL_Type.Count; i++)
+                        {
+                            int defectType = dlResult.AL_Type[i];
+                            float defectScore = dlResult.AL_score[i];
+
+                            // 检查缺陷类型
+                            bool typeMatches = (cmbDefectCls.SelectedIndex == 0) || (cmbDefectCls.SelectedIndex == defectType);
+
+                            // 检查分数阈值
+                            bool scoreMatches = defectScore >= scoreThreshold;
+                            if(chkHigh.Checked)
+                                scoreMatches = defectScore <= scoreThreshold;
+                            
+                            if (typeMatches && scoreMatches)
+                            {
+                                matchFound = true;
+                                break;
+                            }
+                        }
+
+                        if (matchFound)
+                        {
+                            filteredImgFiles.Add(imgFile);
+                            matchedCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 读取标注文件失败，跳过该文件
+                        Console.WriteLine($"读取标注文件失败: {imgFile}, 错误: {ex.Message}");
+                    }
+                }
+
+                // 隐藏进度条
+              //  progressBarFilter.Visible = false;
+              //  lblFilterStatus.Visible = false;
+
+                // 显示筛选结果
+                if (matchedCount > 0)
+                {
+                    isFilterActive = true;
+                    iFileIndex = -1;
+
+                    // 显示第一张匹配的图片
+                    ShowNext();
+
+                    MessageBox.Show($"筛选完成！找到 {matchedCount} 张符合条件的图片。", "筛选结果",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("未找到符合条件的图片。", "筛选结果",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"筛选过程中发生错误: {ex.Message}", "错误",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                progressBarFilter.Visible = false;
+              //  lblFilterStatus.Visible = false;
+            }
+        }
+
+        // 清除筛选结果
+        private void ClearFilter()
+        {
+            isFilterActive = false;
+            filteredImgFiles.Clear();
+            iFileIndex = -1;
+
+            // 显示第一张图片
+            ShowNext();
+
+            MessageBox.Show("筛选已清除。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+#endregion
         public FrmLabelImage(PathAndFile paf)
         {
             InitializeComponent();
@@ -96,7 +289,8 @@ namespace xbDefectDect
             strMarkPicPath  = paf.MarkPicPath;
             strManuMarkPath = paf.ManuMarkPath;
             strAutoMarkPath = paf.AutoMarkPath;
-            strLogPath = paf.strLogPath; 
+            strLogPath = paf.strLogPath;
+             
         }
 
         public FrmLabelImage(PathAndFile paf, List<string> strCurFile)
@@ -124,8 +318,7 @@ namespace xbDefectDect
             dlResManuRemark.AL_score=new List<float>();
             dlResManuRemark.AL_Type=new List<int>();
             dlResManuRemark.Al_bDiff = new List<bool>();
-
-
+             
 
             dlResAutoRemark.AL_Rect = new List<CogRectangleAffine>();
             dlResAutoRemark.AL_score = new List<float>();
@@ -140,6 +333,7 @@ namespace xbDefectDect
             StripStatus_ImagePath.Text = strMarkPicPath;
 
             InitLoadImage();
+            LoadDefectCls();
         }
 
         private void Form1_FromClosing(object sender, EventArgs e)
@@ -248,12 +442,12 @@ namespace xbDefectDect
 
         double dScoreRemark = 0;
         List<string> strInconsistentSamples = new List<string>();
+        List<string> strFPSamples = new List<string>();
+        List<string> strFNSamples = new List<string>();
 
-
-
-        private void LoadMark()
+        private void LoadMark(string imgfile)
         {
-            imgfile = imgfiles[iFileIndex% imgfiles.Count];
+            //imgfile = imgfiles[iFileIndex% imgfiles.Count];
 
             HOperatorSet.ReadImage(out objTmp, imgfile);
             ci8gImageFile = HObj2CogImage(objTmp);
@@ -582,11 +776,11 @@ namespace xbDefectDect
                 if (imgfiles.Count != 0)
                 {
                     iFileIndex++;
-                    LoadMark();
+                    LoadMark(imgfiles[iFileIndex]);
                 }
 
             }
-            fo.WriteRemarkCompareResult(strInconsistentSamples,  DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt");
+           // fo.WriteRemarkCompareResult(strInconsistentSamples,  DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt");
           
 
 
@@ -755,27 +949,92 @@ namespace xbDefectDect
         }
 
         bool bXG = true;
+        /*private void ShowNext()
+        {
+            for (int i = 0; i < dlResManuRemark.AL_Rect.Count; i++)
+            {
+                if (dlResManuRemark.AL_Type[i] == 3)
+                {
+                    dlResManuRemark.AL_Type[i] = 5;
+                    bXG = true;
+                }
+            }
+            if (dlResManuRemark.AL_Type.Count > 0)
+                bXG = true;
+            if (bXG)
+            {
+
+
+                ReCreateMark();
+                //   ReplaceMark(1);
+            }
+
+            if (imgfiles.Count != 0)
+            {
+                iFileIndex++;
+                int tmp = iFileIndex;
+
+                if (!bCheckRule)
+                {
+                    while (!CheckFile())
+                    {
+                        iFileIndex++;
+                        if (iFileIndex > imgfiles.Count - 1)
+                            iFileIndex = 0;
+
+                        if (iFileIndex == tmp)
+                        {
+                            MessageBox.Show("未找到符合要求的样本");
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    while (!CheckGroupFile())
+                    {
+                        iFileIndex += 6;
+                        if (iFileIndex > imgfiles.Count - 1)
+                            iFileIndex = 0;
+
+                        if (iFileIndex == tmp)
+                        {
+                            MessageBox.Show("未找到符合要求的样本");
+                            break;
+                        }
+                    }
+
+                }
+
+                LoadMark();
+                bXG = false;
+            }
+            indOri = -1;
+            indTarget = -1;
+        }*/
+
+        // 修改 ShowNext 方法以支持筛选
         private void ShowNext()
         {
-            /*for(int i=0;i< dlResManuRemark.AL_Rect.Count;i++)
-             {
-                 if(dlResManuRemark.AL_Type[i]==3)
-                 {
-                     dlResManuRemark.AL_Type[i] = 5;
-                     bXG = true;
-                 }
-             }*/
-        /*    if(dlResManuRemark.AL_Type.Count>0)
+            /* 原代码不变 ... */
+             /*for(int i=0;i< dlResManuRemark.AL_Rect.Count;i++)
+              {
+                if (dlResManuRemark.AL_Type[i] == 3)
+                {
+                    dlResManuRemark.AL_Type[i] = 5;
+                    bXG = true;
+                }
+            }*/
+             
+            /*if(dlResManuRemark.AL_Type.Count>0)
                 bXG = true;*/
             if (bXG)
             {
-               
-
                 ReCreateMark();
              //   ReplaceMark(1);
             }
             
-            if (imgfiles.Count != 0)
+            /*if (imgfiles.Count != 0)
             {
                 iFileIndex++;
                 int tmp = iFileIndex;
@@ -814,11 +1073,115 @@ namespace xbDefectDect
                 
                 LoadMark();
                 bXG = false;
+            }*/
+            indOri = -1;
+            indTarget = -1;
+            // 修改：根据是否启用筛选选择不同的图片列表
+            if (isFilterActive && filteredImgFiles.Count > 0)
+            {
+                // 使用筛选后的列表
+                if (filteredImgFiles.Count != 0)
+                {
+                    iFileIndex++;
+                    int tmp = iFileIndex;
+
+                    if (!bCheckRule)
+                    {
+                        while (!CheckFile(filteredImgFiles))
+                        {
+                            iFileIndex++;
+                            if (iFileIndex > filteredImgFiles.Count - 1)
+                                iFileIndex = 0;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while (!CheckGroupFile())
+                        {
+                            iFileIndex += 6;
+                            if (iFileIndex > filteredImgFiles.Count - 1)
+                                iFileIndex = 0;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+
+                    // 加载图片
+                    imgfile = filteredImgFiles[iFileIndex % filteredImgFiles.Count];
+                    LoadMark(imgfile);
+                }
             }
+            else
+            {
+                // 使用原始列表（原代码逻辑）
+                if (imgfiles.Count != 0)
+                {
+                    iFileIndex++;
+                    int tmp = iFileIndex;
+
+                    if (!bCheckRule)
+                    {
+                        while (!CheckFile(imgfiles))
+                        {
+                            iFileIndex++;
+                            if (iFileIndex > imgfiles.Count - 1)
+                                iFileIndex = 0;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while (!CheckGroupFile())
+                        {
+                            iFileIndex += 6;
+                            if (iFileIndex > imgfiles.Count - 1)
+                                iFileIndex = 0;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+
+                    LoadMark(imgfiles[iFileIndex]);
+                }
+            }
+
+            bXG = false;
             indOri = -1;
             indTarget = -1;
         }
-        private void ShowPreview()
+
+        // 修改 CheckFile 方法以接受图片列表参数
+        private bool CheckFile(List<string> imageList)
+        {
+            if (iFileIndex < 0 || iFileIndex >= imageList.Count)
+                return false;
+
+            imgfile = imageList[iFileIndex % imageList.Count];
+
+            // ... 其余代码保持不变 ...
+
+            return true;
+        }
+        /*private void ShowPreview()
         {
             if (bXG)
             {
@@ -872,6 +1235,321 @@ namespace xbDefectDect
             indTarget = -1;
         }
 
+*/
+        private void ShowPreview()
+        {
+            // 保存修改
+            if (bXG)
+            {
+                ReCreateMark();
+            }
+
+            if (isFilterActive && filteredImgFiles.Count > 0)
+            {
+                // 使用筛选后的列表
+                if (filteredImgFiles.Count != 0)
+                {
+                    iFileIndex--;
+                    int tmp = iFileIndex;
+
+                    if (!bCheckRule)
+                    {
+                        while (!CheckFile(filteredImgFiles))
+                        {
+                            iFileIndex--;
+                            if (iFileIndex <0)
+                                iFileIndex = filteredImgFiles.Count - 1;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while (!CheckGroupFile())
+                        {
+                            iFileIndex -= 6;
+                            if (iFileIndex <0 )
+                                iFileIndex = filteredImgFiles.Count - 1;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+
+                    // 加载图片
+                    imgfile = filteredImgFiles[iFileIndex % filteredImgFiles.Count];
+                    LoadMark(imgfile);
+                }
+            }
+            else
+            {
+                // 使用原始列表（原代码逻辑）
+                if (imgfiles.Count != 0)
+                {
+                    iFileIndex--;
+                    int tmp = iFileIndex;
+
+                    if (!bCheckRule)
+                    {
+                        while (!CheckFile(imgfiles))
+                        {
+                            iFileIndex--;
+                            if (iFileIndex <0 )
+                                iFileIndex = imgfiles.Count - 1;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while (!CheckGroupFile())
+                        {
+                            iFileIndex -= 6;
+                            if (iFileIndex <0 )
+                                iFileIndex = imgfiles.Count - 1;
+
+                            if (iFileIndex == tmp)
+                            {
+                                MessageBox.Show("未找到符合要求的样本");
+                                break;
+                            }
+                        }
+                    }
+
+                    LoadMark(imgfiles[iFileIndex]);
+                }
+            }
+
+            bXG = false;
+            indOri = -1;
+            indTarget = -1;
+        }
+        // 新增：检查单个文件（接受图片列表和索引参数）
+        private bool CheckFile(List<string> imageList, int index)
+        {
+            if (index < 0 || index >= imageList.Count)
+                return false;
+
+            string currentImage = imageList[index];
+
+            // 检查表面类型
+            if (iSurfaceType > 0)
+            {
+                string fileName = Path.GetFileName(currentImage);
+                string prefix = fileName.Length >= 4 ? fileName.Substring(0, 4) : "";
+                string expectedPrefix = iSurfaceType <= strPrefix.Length ? strPrefix[iSurfaceType - 1] : "";
+                string cupPrefix = iSurfaceType <= cup.p_LI.strPrefix.Length ? cup.p_LI.strPrefix[iSurfaceType - 1] : "";
+
+                if (prefix != expectedPrefix && prefix != cupPrefix)
+                    return false;
+            }
+
+            // 读取标注文件
+            DLResult currentResult = new DLResult();
+            currentResult.AL_Rect = new List<CogRectangleAffine>();
+            currentResult.AL_score = new List<float>();
+            currentResult.AL_Type = new List<int>();
+            currentResult.Al_bDiff = new List<bool>();
+
+            cdl.ReadRemarkXML_EN1(currentImage, StripStatus_ManulXMLPath.Text, ref currentResult);
+
+            // 检查是否存在所需的缺陷类型
+            bool foundCrack = false, foundPosz = false, foundCrackWP = false;
+
+            for (int i = 0; i < currentResult.AL_Type.Count; i++)
+            {
+                switch (currentResult.AL_Type[i])
+                {
+                    case 1: // 裂纹
+                        foundCrack = true;
+                        break;
+                    case 2: // 破损
+                        foundPosz = true;
+                        break;
+                    case 3: // 裂纹误判
+                        foundCrackWP = true;
+                        break;
+                }
+            }
+
+            // 根据筛选条件检查
+            if (bCrack && !foundCrack)
+            {
+                return false;
+            }
+            if (bPosz && !foundPosz)
+            {
+                return false;
+            }
+            if (bCrackWP && !foundCrackWP)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // 新增：检查文件组（接受图片列表和起始索引参数）
+        private bool CheckGroupFile(List<string> imageList, int startIndex)
+        {
+            int groupSize = 6;
+
+            // 检查是否有足够数量的图片组成一个组
+            if (startIndex + groupSize > imageList.Count)
+            {
+                return false;
+            }
+
+            // 检查表面类型
+            string firstImage = imageList[startIndex];
+            if (iSurfaceType > 0)
+            {
+                string fileName = Path.GetFileName(firstImage);
+                string prefix = fileName.Length >= 4 ? fileName.Substring(0, 4) : "";
+                string expectedPrefix = iSurfaceType <= strPrefix.Length ? strPrefix[iSurfaceType - 1] : "";
+                string cupPrefix = iSurfaceType <= cup.p_LI.strPrefix.Length ? cup.p_LI.strPrefix[iSurfaceType - 1] : "";
+
+                if (prefix != expectedPrefix && prefix != cupPrefix)
+                    return false;
+            }
+
+            // 合并组内所有文件的标注结果
+            DLResult groupResult = new DLResult();
+            groupResult.AL_Rect = new List<CogRectangleAffine>();
+            groupResult.AL_score = new List<float>();
+            groupResult.AL_Type = new List<int>();
+            groupResult.Al_bDiff = new List<bool>();
+
+            // 读取组内所有文件的标注
+            for (int i = 0; i < groupSize; i++)
+            {
+                string currentImage = imageList[startIndex + i];
+                DLResult currentResult = new DLResult();
+                currentResult.AL_Rect = new List<CogRectangleAffine>();
+                currentResult.AL_score = new List<float>();
+                currentResult.AL_Type = new List<int>();
+                currentResult.Al_bDiff = new List<bool>();
+
+                cdl.ReadRemarkXML_EN1(currentImage, StripStatus_ManulXMLPath.Text, ref currentResult);
+
+                // 合并到组结果
+                groupResult.AL_Rect.AddRange(currentResult.AL_Rect);
+                groupResult.AL_score.AddRange(currentResult.AL_score);
+                groupResult.AL_Type.AddRange(currentResult.AL_Type);
+                groupResult.Al_bDiff.AddRange(currentResult.Al_bDiff);
+            }
+
+            // 检查组内是否存在所需的缺陷类型
+            bool foundCrack = false, foundPosz = false;
+
+            for (int i = 0; i < groupResult.AL_Type.Count; i++)
+            {
+                int defectType = groupResult.AL_Type[i];
+                float defectScore = groupResult.AL_score[i];
+
+                if (!foundCrack && defectType == 1 && defectScore > 0.9f)
+                {
+                    foundCrack = true;
+                }
+                else if (!foundPosz && defectType == 2 && defectScore > 1.5f)
+                {
+                    foundPosz = true;
+                }
+            }
+
+            // 根据筛选条件检查
+            if (bCrack && !foundCrack)
+            {
+                return false;
+            }
+            if (bPosz && !foundPosz)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        // 新增：更新状态信息函数
+        private void UpdateStatusInfo()
+        {
+            List<string> currentImageList = isFilterActive && filteredImgFiles.Count > 0
+                ? filteredImgFiles
+                : imgfiles;
+
+            string statusText = "";
+
+            if (isFilterActive)
+            {
+                statusText = $"筛选模式: 共 {filteredImgFiles.Count} 张图片";
+                if (filteredImgFiles.Count > 0)
+                {
+                    statusText += $", 当前 {iFileIndex + 1}/{filteredImgFiles.Count}";
+                }
+            }
+            else
+            {
+                statusText = $"普通模式: 共 {imgfiles.Count} 张图片";
+                if (imgfiles.Count > 0)
+                {
+                    statusText += $", 当前 {iFileIndex + 1}/{imgfiles.Count}";
+                }
+            }
+
+            // 添加当前图片信息
+            if (currentImageList.Count > 0 && iFileIndex >= 0 && iFileIndex < currentImageList.Count)
+            {
+                string currentImage = currentImageList[iFileIndex];
+                string fileName = Path.GetFileName(currentImage);
+
+                // 读取标注信息
+                DLResult currentResult = new DLResult();
+                currentResult.AL_Rect = new List<CogRectangleAffine>();
+                currentResult.AL_score = new List<float>();
+                currentResult.AL_Type = new List<int>();
+                currentResult.Al_bDiff = new List<bool>();
+
+                cdl.ReadRemarkXML_EN1(currentImage, StripStatus_ManulXMLPath.Text, ref currentResult);
+
+                int crackCount = currentResult.AL_Type.Count(t => t == 1);
+                int poszCount = currentResult.AL_Type.Count(t => t == 2);
+                int crackWPCount = currentResult.AL_Type.Count(t => t == 3);
+
+                statusText += $" | {fileName} | 裂纹:{crackCount} 破损:{poszCount} 误判:{crackWPCount}";
+            }
+
+            // 更新状态栏
+           /* if (StripStatus_FilterMode != null)
+            {
+                StripStatus_FilterMode.Text = statusText;
+            }*/
+
+            // 更新标签显示
+            if (lblInfo != null && currentImageList.Count > 0 && iFileIndex >= 0 && iFileIndex < currentImageList.Count)
+            {
+                string currentImage = currentImageList[iFileIndex];
+                string fileName = Path.GetFileName(currentImage);
+
+                int group = 0;
+                if (bCheckRule)
+                {
+                    group = (iFileIndex / 6) + 1;
+                }
+
+                lblInfo.Text = $"{fileName} ({iFileIndex + 1}/{currentImageList.Count})" +
+                              (bCheckRule ? $" [组{group}]" : "");
+            }
+        }
         private void DelMarkFile()
         {
 
@@ -947,6 +1625,7 @@ namespace xbDefectDect
                 lst = getFile(strMarkPicPath, "*.jpg", lst);
                 lst = getFile(strMarkPicPath, "*.png", lst);
                 lst = getFile(strMarkPicPath, "*.JPEG", lst);
+                lst = getFile(strMarkPicPath, "*.bmp", lst);
                 imgfiles.Clear();
                 foreach (var Image_File in lst)
                 {
@@ -980,6 +1659,7 @@ namespace xbDefectDect
             {
 
                 strMarkPicPath = folderBrowserDialog1.SelectedPath;
+                cup.p_Paf.MarkPicPath = strMarkPicPath;
                 if (string.IsNullOrEmpty(strMarkPicPath)) // 判断是否选择了模型文件
                 {
                     MessageBox.Show("请选择图片文件夹路径/图片文件夹路径为空!", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -999,6 +1679,7 @@ namespace xbDefectDect
                 lst = getFile(strMarkPicPath, "*.jpg", lst);
                 lst = getFile(strMarkPicPath, "*.png", lst);
                 lst = getFile(strMarkPicPath, "*.JPEG", lst);
+                lst = getFile(strMarkPicPath, "*.bmp", lst);
                 imgfiles.Clear();
                 foreach (var Image_File in lst)
                 {
@@ -1704,7 +2385,7 @@ namespace xbDefectDect
 
 
         }
-
+        //将误识别的裂纹标注为误判类别
         private void menuOper_RemarkliewenWP_Click(object sender, EventArgs e)
         {
             bAutoCompare = !bAutoCompare;
@@ -1763,7 +2444,7 @@ namespace xbDefectDect
                     }
                 }
 
-                LoadMark();
+                LoadMark(imgfile);
                 bXG = false;
 
                 indOri = -1;
@@ -1785,7 +2466,7 @@ namespace xbDefectDect
             {
                 strAutoMarkPath = folderBrowserDialog1.SelectedPath;
                 // txtAutoPath.Text = strManuMarkPath;
-
+                cup.p_Paf.AutoMarkPath = strAutoMarkPath;
                 StripStatus_AutoXMLPath.Text = strAutoMarkPath;
             }
         }
@@ -1798,6 +2479,7 @@ namespace xbDefectDect
             {
                 strManuMarkPath = folderBrowserDialog1.SelectedPath;
                 // txtManuPath.Text = strAutoMarkPath;
+                cup.p_Paf.ManuMarkPath = strManuMarkPath;
                 StripStatus_ManulXMLPath.Text = strManuMarkPath; 
             }
         }
@@ -1866,6 +2548,527 @@ namespace xbDefectDect
 
 
         }
+
+        private void 修改标注ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string xmlDirectory = @"C:\WorkSpace\项目\缺齿缺陷\data\20251226\Sub1";
+
+            try
+            {
+                // 获取目录下所有XML文件
+                string[] xmlFiles = Directory.GetFiles(xmlDirectory, "*.xml");
+
+                if (xmlFiles.Length == 0)
+                {
+                    Console.WriteLine($"在目录 {xmlDirectory} 中没有找到XML文件。");
+                    return;
+                }
+
+                Console.WriteLine($"找到 {xmlFiles.Length} 个XML文件，开始处理...");
+                Console.WriteLine("=".PadRight(50, '='));
+
+                int processedCount = 0;
+                int skippedCount = 0;
+
+                // 遍历所有XML文件
+                foreach (string xmlFile in xmlFiles)
+                {
+                    try
+                    {
+                        bool isModified = ProcessXmlFile(xmlFile);
+
+                        if (isModified)
+                        {
+                            processedCount++;
+                            Console.WriteLine($"[✓] 已处理: {Path.GetFileName(xmlFile)}");
+                        }
+                        else
+                        {
+                            skippedCount++;
+                            Console.WriteLine($"[ ] 已跳过: {Path.GetFileName(xmlFile)} (未找到需要修改的内容)");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[✗] 处理失败: {Path.GetFileName(xmlFile)} - 错误: {ex.Message}");
+                    }
+                }
+
+                Console.WriteLine("=".PadRight(50, '='));
+                Console.WriteLine($"处理完成!");
+                Console.WriteLine($"成功处理: {processedCount} 个文件");
+                Console.WriteLine($"跳过: {skippedCount} 个文件");
+                Console.WriteLine($"总计: {xmlFiles.Length} 个文件");
+
+                // 等待用户按键退出
+                Console.WriteLine("\n按任意键退出...");
+                Console.ReadKey();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"程序发生错误: {ex.Message}");
+                Console.ReadKey();
+            }
+        }
+
+        private void cmbDefectCls_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            FilterImagesByDefect();
+        }
+
+        private void cmbDefectScore_TextChanged(object sender, EventArgs e)
+        {
+            FilterImagesByDefect();
+        }
+
+        private void chkHigh_CheckedChanged(object sender, EventArgs e)
+        {
+            FilterImagesByDefect();
+        }
+
+        private void rbManuMark_CheckedChanged(object sender, EventArgs e)
+        {
+            FilterImagesByDefect();
+        }
+
+        private void btFP_Click(object sender, EventArgs e)
+        {
+            strFPSamples.Add(imgfile);
+           /* try
+            {
+                // 添加当前图片到误报样本列表
+                if (!string.IsNullOrEmpty(imgfile) && !strFPSamples.Contains(imgfile))
+                {
+                    strFPSamples.Add(imgfile);
+
+                    // 获取文件名和路径信息
+                    string fileName = Path.GetFileName(imgfile);
+                    string directory = Path.GetDirectoryName(imgfile);
+
+                    // 获取当前日期时间作为记录时间戳
+                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                    // 创建误报样本记录对象
+                    FPSampleRecord record = new FPSampleRecord
+                    {
+                        ImagePath = imgfile,
+                        FileName = fileName,
+                        Directory = directory,
+                        Timestamp = timestamp,
+                        SourceType = rbManuMark.Checked ? "手动标注" : "自动标注",
+                        IoUThreshold = txtIoU.Text,
+                        CurrentIndex = iFileIndex + 1,
+                        TotalImages = imgfiles.Count
+                    };
+
+                    // 保存到文件
+                 //   SaveFPSampleToFile(record);
+
+                    // 显示成功消息
+                 //   toolStripStatusLabel.Text = $"已添加误报样本: {fileName} ({timestamp})";
+
+                    // 可选：播放提示音或显示短暂提示
+                    System.Media.SystemSounds.Beep.Play();
+                }
+                else
+                {
+                    MessageBox.Show("当前图片已在误报样本列表中或图片路径为空。", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"添加误报样本时出错: {ex.Message}", "错误",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }*/
+        }
+
+        private void btFN_Click(object sender, EventArgs e)
+        {
+            strFNSamples.Add(imgfile);
+        }
+
+        private void btTransform_Click(object sender, EventArgs e)
+        {
+            string strSrcCls = cmbDefectClsScr.Text;
+            string strTarCls = cmbDefectClsTar.Text;
+            // 验证输入
+            if (string.IsNullOrEmpty(strSrcCls) || string.IsNullOrEmpty(strTarCls))
+            {
+                MessageBox.Show("请选择源类别和目标类别。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (strSrcCls == strTarCls)
+            {
+                MessageBox.Show("源类别和目标类别不能相同。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            // 确认对话框
+            DialogResult result = MessageBox.Show(
+                $"确定要将所有标注文件中的【{strSrcCls}】类转换为【{strTarCls}】类吗？\n此操作不可撤销！",
+                "确认批量转换",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.Yes)
+            {
+                return;
+            }
+            transformDefectCls(strSrcCls, strTarCls);
+
+        }
+        private void transformDefectCls(string strSrcCls, string strTarCls)
+        {
+            try
+            {
+                // 获取类别映射（从预定义类别文件中读取）
+                List<string> strCls = (new FileOper()).ReadRemarkImageFile("data\\predefined_classes.txt");
+                if (strCls == null || strCls.Count == 0)
+                {
+                    MessageBox.Show("无法读取预定义类别文件。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                // 查找源类别和目标类别的索引
+                int srcClassIndex = -1;
+                int tarClassIndex = -1;
+
+                for (int i = 0; i < strCls.Count; i++)
+                {
+                    if (strCls[i] == strSrcCls)
+                        srcClassIndex = i + 1; // 类别索引从1开始
+                    if (strCls[i] == strTarCls)
+                        tarClassIndex = i + 1;
+                }
+                if (srcClassIndex == -1)
+                {
+                    MessageBox.Show($"找不到源类别【{strSrcCls}】的索引。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if (tarClassIndex == -1)
+                {
+                    MessageBox.Show($"找不到目标类别【{strTarCls}】的索引。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                // 确定标注路径
+                string xmlPath = "";
+                if (rbManuMark.Checked)
+                {
+                    xmlPath = StripStatus_ManulXMLPath.Text;
+                }
+                else if (rbAutoMark.Checked)
+                {
+                    xmlPath = StripStatus_AutoXMLPath.Text;
+                }
+                else
+                {
+                    MessageBox.Show("请选择标注类型（手动或自动）。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                if (!Directory.Exists(xmlPath))
+                {
+                    MessageBox.Show($"标注路径不存在: {xmlPath}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // 批量处理所有图片的标注文件
+                int totalFiles = 0;
+                int processedFiles = 0;
+                int changedCount = 0;
+
+                // 显示进度条
+                progressBarFilter.Visible = true;
+                progressBarFilter.Minimum = 0;
+                progressBarFilter.Maximum = imgfiles.Count;
+                progressBarFilter.Value = 0;
+
+                // 遍历所有图片文件
+                foreach (string imgFile in imgfiles)
+                {
+                    try
+                    {
+                        totalFiles++;
+                        progressBarFilter.Value = totalFiles;
+                        Application.DoEvents(); // 更新UI
+
+                        // 读取标注文件
+                        DLResult dlResult = new DLResult();
+                        dlResult.AL_Rect = new List<CogRectangleAffine>();
+                        dlResult.AL_score = new List<float>();
+                        dlResult.AL_Type = new List<int>();
+                        dlResult.Al_bDiff = new List<bool>();
+
+                        cdl.ReadRemarkXML_EN1(imgFile, xmlPath, ref dlResult);
+
+                        /*if (!hasAnnotation || dlResult.AL_Type.Count == 0)
+                        {
+                            continue; // 没有标注，跳过
+                        }*/
+
+                        bool fileChanged = false;
+
+                        // 检查并转换类别
+                        for (int i = 0; i < dlResult.AL_Type.Count; i++)
+                        {
+                            if (dlResult.AL_Type[i] == srcClassIndex)
+                            {
+                                // 找到源类别，转换为目标类别
+                                dlResult.AL_Type[i] = tarClassIndex;
+                                fileChanged = true;
+                                changedCount++;
+                            }
+                        }
+
+                        // 如果文件有变化，保存回标注文件
+                        if (fileChanged)
+                        {
+                            string strFileName = Path.GetFileNameWithoutExtension(imgFile);
+                            string strDestPath = xmlPath + "\\" + strFileName + ".xml";
+
+                            // 使用现有的创建标注XML方法
+                            cdl.CreateRemarkXML_EN("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlResult);
+                            processedFiles++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 记录错误但继续处理其他文件
+                        Console.WriteLine($"处理文件 {imgFile} 时出错: {ex.Message}");
+                    }
+                }
+
+                // 隐藏进度条
+                progressBarFilter.Visible = false;
+                // 显示结果
+
+                MessageBox.Show(
+                    $"批量转换完成！\n" +
+                    $"总文件数: {totalFiles}\n" +
+                    $"已处理文件数: {processedFiles}\n" +
+                    $"转换标注数量: {changedCount}\n" +
+                    $"已将【{strSrcCls}】(ID:{srcClassIndex}) 转换为 【{strTarCls}】(ID:{tarClassIndex})",
+                    "转换完成",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                // 刷新当前显示的图片标注
+                if (!string.IsNullOrEmpty(imgfile))
+                {
+                    LoadMark(imgfile);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"批量转换过程中发生错误: {ex.Message}", "错误",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                progressBarFilter.Visible = false;
+            }
+        }
+
+        private void btRecordClear(object sender, EventArgs e)
+        {
+
+        }
+
+        private void menuExport_Record_Click(object sender, EventArgs e)
+        {
+            File.WriteAllLines("data\\MarkFPList.txt", strFPSamples);
+            File.WriteAllLines("data\\MarkFNList.txt", strFNSamples);
+            File.WriteAllLines("data\\FilterList.txt", filteredImgFiles);
+        }
+
+        private void menuExport_Directory_Click(object sender, EventArgs e)
+        {
+            folderBrowserDialog1.Description = "请选择导出记录文件夹"; 
+            DialogResult folder = folderBrowserDialog1.ShowDialog();
+            if (folder == DialogResult.OK || folder == DialogResult.Yes)
+            {
+               // strAutoMarkPath = folderBrowserDialog1.SelectedPath;
+                
+                cup.p_Paf.strExportPath = folderBrowserDialog1.SelectedPath;
+                 
+            }
+        }
+
+        private void menuExport_FPSample_Click(object sender, EventArgs e)
+        {
+            ExportSamples(strFPSamples, "FP");
+        }
+
+        private void menuExport_FNSample_Click(object sender, EventArgs e)
+        {
+            ExportSamples(strFNSamples, "FN");
+        }
+
+        private void menuExport_FilterSample_Click(object sender, EventArgs e)
+        {
+            ExportSamples(filteredImgFiles, "Filter");
+        }
+        // 通用的导出方法
+        private void ExportSamples(List<string> sampleList, string subDirectory)
+        {
+            try
+            {
+                // 检查导出路径是否设置
+                if (string.IsNullOrEmpty(cup.p_Paf.strExportPath))
+                {
+                    MessageBox.Show($"请先设置导出路径！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // 调用导出目录设置菜单项
+                    menuExport_Directory_Click(null, null);
+
+                    if (string.IsNullOrEmpty(cup.p_Paf.strExportPath))
+                    {
+                        return; // 用户取消了目录选择
+                    }
+                }
+
+                // 检查样本列表是否为空
+                if (sampleList == null || sampleList.Count == 0)
+                {
+                    MessageBox.Show($"导出失败：{subDirectory}样本列表为空！", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 创建导出目录
+                string exportBasePath = cup.p_Paf.strExportPath;
+                string targetDir = Path.Combine(exportBasePath, subDirectory);
+
+                // 确保目标目录存在
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+
+                // 显示进度条
+                progressBarFilter.Visible = true;
+                progressBarFilter.Minimum = 0;
+                progressBarFilter.Maximum = sampleList.Count * 2; // 因为可能要复制两种文件
+                progressBarFilter.Value = 0;
+
+                int successCount = 0;
+                int failCount = 0;
+
+                // 遍历所有样本
+                foreach (string sourceImagePath in sampleList)
+                {
+                    try
+                    {
+                        string fileName = Path.GetFileName(sourceImagePath);
+                        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourceImagePath);
+                        string targetImagePath = Path.Combine(targetDir, fileName);
+
+                        // 复制图像文件（如果bExportImg为true）
+                        bool bExportImg = true; // 这里假设bExportImg是类中的布尔变量，您需要根据实际情况修改
+                        if (bExportImg && File.Exists(sourceImagePath))
+                        {
+                            try
+                            {
+                                File.Copy(sourceImagePath, targetImagePath, true);
+                                successCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                failCount++;
+                                Console.WriteLine($"复制图像文件失败: {sourceImagePath}, 错误: {ex.Message}");
+                            }
+                        }
+
+                        progressBarFilter.Value++;
+                        Application.DoEvents(); // 更新UI
+
+                        // 复制标注文件（如果bExportMark为true）
+                        bool bExportMark = true; // 这里假设bExportMark是类中的布尔变量，您需要根据实际情况修改
+                        if (bExportMark)
+                        {
+                            // 确定标注文件源路径（根据当前选择的标注类型）
+                            string markSourcePath = "";
+                            string xmlFileName = fileNameWithoutExt + ".xml";
+
+                            if (rbManuMark.Checked)
+                            {
+                                markSourcePath = Path.Combine(StripStatus_ManulXMLPath.Text, xmlFileName);
+                            }
+                            else if (rbAutoMark.Checked)
+                            {
+                                markSourcePath = Path.Combine(StripStatus_AutoXMLPath.Text, xmlFileName);
+                            }
+
+                            // 检查标注文件是否存在并复制
+                            if (!string.IsNullOrEmpty(markSourcePath) && File.Exists(markSourcePath))
+                            {
+                                try
+                                {
+                                    string targetMarkPath = Path.Combine(targetDir, xmlFileName);
+                                    File.Copy(markSourcePath, targetMarkPath, true);
+                                    successCount++;
+                                }
+                                catch (Exception ex)
+                                {
+                                    failCount++;
+                                    Console.WriteLine($"复制标注文件失败: {markSourcePath}, 错误: {ex.Message}");
+                                }
+                            }
+                            else
+                            {
+                                // 标注文件不存在，记录但不视为失败
+                                Console.WriteLine($"标注文件不存在: {markSourcePath}");
+                            }
+                        }
+
+                        progressBarFilter.Value++;
+                        Application.DoEvents(); // 更新UI
+                    }
+                    catch (Exception ex)
+                    {
+                        failCount++;
+                        Console.WriteLine($"处理文件失败: {sourceImagePath}, 错误: {ex.Message}");
+                    }
+                }
+
+                // 隐藏进度条
+                progressBarFilter.Visible = false;
+
+                // 显示导出结果
+                MessageBox.Show(
+                    $"{subDirectory}样本导出完成！\n" +
+                    $"成功复制: {successCount} 个文件\n" +
+                    $"失败: {failCount} 个文件\n" +
+                    $"导出路径: {targetDir}",
+                    "导出完成",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                // 记录导出日志
+              //  string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - 导出{successCount}个{subDirectory}样本到{targetDir}";
+              //  LogExportInfo(logMessage);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导出过程中发生错误: {ex.Message}", "错误",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                progressBarFilter.Visible = false;
+            }
+        }
+        bool bExportMark, bExportImg;
+        private void menuExport_MarkFile_Click(object sender, EventArgs e)
+        {
+            bExportMark = !bExportMark;
+            menuExport_MarkFile.Checked = bExportMark;
+        }
+
+        private void menuExport_ImageFile_Click(object sender, EventArgs e)
+        {
+            bExportImg = !bExportImg;
+            menuExport_ImageFile.Checked = bExportImg;
+        }
+
         private void cogRDManuMark_DoubleClick(object sender, EventArgs e)
         {
             if (indOri > -1 && indOri < dlResManuRemark.AL_Rect.Count)
@@ -1988,7 +3191,7 @@ namespace xbDefectDect
 
         private void resumeMark()
         {
-            LoadMark();
+            LoadMark(imgfile);
         }
         private void ReCreateMark()
         {
@@ -2010,5 +3213,52 @@ namespace xbDefectDect
             cdl.CreateRemarkXML_EN("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlResManuRemark);  
         }
 
+
+        /// <summary>
+        /// 处理单个XML文件，替换width和height参数值
+        /// </summary>
+        /// <param name="xmlFilePath">XML文件路径</param>
+        /// <returns>是否进行了修改</returns>
+        private  bool ProcessXmlFile(string xmlFilePath)
+        {
+            bool isModified = false;
+
+            // 加载XML文档
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(xmlFilePath);
+
+            // 获取size节点
+            XmlNode sizeNode = xmlDoc.SelectSingleNode("/annotation/size");
+
+            if (sizeNode != null)
+            {
+                // 获取width和height子节点
+                XmlNode widthNode = sizeNode.SelectSingleNode("width");
+                XmlNode heightNode = sizeNode.SelectSingleNode("height");
+
+                // 检查并修改width值
+                if (widthNode != null && widthNode.InnerText == "3072")
+                {
+                    widthNode.InnerText = "5472";
+                    isModified = true;
+                }
+
+                // 检查并修改height值
+                if (heightNode != null && heightNode.InnerText == "2048")
+                {
+                    heightNode.InnerText = "3648";
+                    isModified = true;
+                }
+
+                // 如果有修改，则保存文件
+                if (isModified)
+                {
+                    xmlDoc.Save(xmlFilePath);
+                }
+            }
+
+            return isModified;
+        }
     }
 }
+

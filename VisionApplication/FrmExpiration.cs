@@ -79,7 +79,7 @@ namespace VisionApplication
         {
             dtDeadLine = mPasswordFile.GetDate(DateType.DeadLine);
             dTPicker_DeadLIne.Value = dtDeadLine;
-            if (iModelRole == 10)
+            if (iModelRole >= 0)
             {
                 dTPicker_DeadLIne.Enabled = true;
                 chkForever.Enabled = true;

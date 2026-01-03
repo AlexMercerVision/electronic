@@ -76,13 +76,13 @@ namespace CommonCls
                         {
                             SetIntensity(i + 1, 0, sPortMain);
                         }
-                         
+
                         Thread.Sleep(10);
                     }
 
                 }
 
-                Thread.Sleep(p_LS.spTime[indStep] );
+                Thread.Sleep(p_LS.spTime[indStep]);
             }
             catch
             {
@@ -92,7 +92,7 @@ namespace CommonCls
 
             return true;
         }
-        public bool ExeProcessSubIndep(int indStep,int j)
+        public bool ExeProcessSubIndep(int indStep, int j)
         {
             string channel;
             int indent;
@@ -233,8 +233,8 @@ namespace CommonCls
             return true;
         }
         //设置通道亮度
-         StringBuilder sb = new StringBuilder();
-        public void SetIntensity(int channel, int intensity,SerialPort sPort)
+        StringBuilder sb = new StringBuilder();
+        public void SetIntensity(int channel, int intensity, SerialPort sPort)
         {
             //设置亮度
             sb.Clear();
@@ -258,8 +258,8 @@ namespace CommonCls
             // lblOrderStatus.Text = "命令发送失败";
             sPort.Write(xorCheck(sb.ToString()));
         }
-   
-      
+
+
         //四通道同步控制命令
         public string turnONArb(string channel, int indent)
         {
@@ -270,9 +270,9 @@ namespace CommonCls
                 ind = channel.IndexOf((i + 1).ToString());
                 if (indent.ToString().Length == 3)
                     order += indent.ToString();
-                 
+
                 else if (indent.ToString().Length == 2)
-                    order = order+ "0" + indent.ToString();
+                    order = order + "0" + indent.ToString();
                 else if (indent.ToString().Length == 1)
                     order = order + "00" + indent.ToString();
                 if (ind != -1)
@@ -287,13 +287,13 @@ namespace CommonCls
             order += "C#";
             return order;
         }
-         
+
 
         public bool AdjBright(int indentity)
         {
             try
             {
-                string strOrder = turnONArb("1234", indentity);             
+                string strOrder = turnONArb("1234", indentity);
                 sPortMain.Write(strOrder);
                 return true;
             }
@@ -301,36 +301,36 @@ namespace CommonCls
             {
                 return false;
             }
-           
+
         }
         //主光源执行(相机触发采集模式，当前实际未使用)
         public bool ExeProcess(int ind)
         {
             try
             {
-                if(p_LS.bExe[ind])
+                if (p_LS.bExe[ind])
                 {
-                    string strOrder =  turnONArb(p_LS.strCode[ind], p_LS.indent[ind]);
-                   
-                    if(!bUseSTC)
+                    string strOrder = turnONArb(p_LS.strCode[ind], p_LS.indent[ind]);
+
+                    if (!bUseSTC)
                         sPortMain.Write(strOrder);
                     else
-                        sPortMain.Write("1"+strOrder);
+                        sPortMain.Write("1" + strOrder);
                     Thread.Sleep(p_LS.spTime[ind]);
                 }
             }
-           catch
+            catch
             {
                 return false;
             }
 
             return true;
         }
-         
+
         //全部光源执行一步打光操作
         public bool ExeProcessAll(int ind)
         {
-           if(bGroup)   //四分区光源组合控制命令
+            if (bGroup)   //四分区光源组合控制命令
             {
                 return ExeProcessAllGroup(ind);
             }
@@ -339,7 +339,7 @@ namespace CommonCls
                 return ExeProcessAllIndep(ind);
             }
         }
-         
+
 
         //光源设置和测试界面使用
         //主光源全流程
@@ -365,14 +365,14 @@ namespace CommonCls
                     {
                         ExeProcessMainIndep(i);
                     }
-                    
+
                 }
             }
         }
         //侧光源全流程
-        public void FullProcessSub(SerialPort sPort,int ind)
+        public void FullProcessSub(SerialPort sPort, int ind)
         {
-            if ((!bUseSTC &&!sPort.IsOpen) || (bUseSTC && !sPort.IsOpen))  //修改
+            if ((!bUseSTC && !sPort.IsOpen) || (bUseSTC && !sPort.IsOpen))  //修改
                 return;
             string strOrder;
             for (int i = 0; i < 6; i++)
@@ -390,12 +390,12 @@ namespace CommonCls
                     }
                     else   //多通道独立控制命令
                     {
-                        ExeProcessSubIndep(i,ind);
-                    } 
+                        ExeProcessSubIndep(i, ind);
+                    }
                 }
             }
         }
-       
+
         //全流程
         public void FullProcessAllNew()
         {
@@ -437,10 +437,10 @@ namespace CommonCls
                 {
                     ExeProcessAllIndep(i);
                 }
-              
+
             }
         }
- 
+
         //主光源控制器全关
         public void turnOFFAllMain(SerialPort sPort)
         {
@@ -520,7 +520,7 @@ namespace CommonCls
             //以%分割字符串，并去掉空字符
             string hexString = "";
 
-            for(int i=0;i<hexByte.Length-1;i++)
+            for (int i = 0; i < hexByte.Length - 1; i++)
             {
                 hexString += hexByte[i].ToString("D2");
                 hexString += " ";
@@ -548,7 +548,7 @@ namespace CommonCls
         }
 
 
-    // 气缸交互控制
+        // 气缸交互控制
         Encoding encode = new UTF8Encoding();
 
         /// <summary>
@@ -564,7 +564,7 @@ namespace CommonCls
                 return false;
             try
             {
-                 
+
                 returnBytes = HexStringToString("01 0F 00 00 00 08 01 80 FF 35", encode);   //Y4=1
                 sPort.Write(returnBytes, 0, 10);
 
@@ -588,7 +588,7 @@ namespace CommonCls
         /// <param name="bUp">抬升、放下</param>
         public bool CylinderUpDown(SerialPort sPort, bool bUp)
         {
-             
+
             Byte[] returnBytes = new Byte[10];
             if (sPort == null || !sPort.IsOpen)
                 return false;
@@ -599,10 +599,10 @@ namespace CommonCls
                 else
                     returnBytes = HexStringToString("01 0F 00 00 00 08 01 08 FF 53", encode);   //Y4=1
                 sPort.Write(returnBytes, 0, 10);
-                
+
                 //输出1s钟的脉冲
                 Thread.Sleep(600);
-                ClearOutput(sPort);  
+                ClearOutput(sPort);
             }
             catch
             {
@@ -643,7 +643,7 @@ namespace CommonCls
         //01:后面要写入的数据字节数,0x01=十进制 1，写入 1 字节数据
         //01:写入的数据，0x01 换算成二进制 00000001 = Y8-Y7-Y6-Y5-Y4-Y3-Y2-Y1 输出状态，ON=0，OFF=1
         //ef 57:CRC 校验
-        public bool SendResult(SerialPort sPort, bool bOk,int bType)
+        public bool SendResult(SerialPort sPort, bool bOk, int bType)
         {
 
             ClearOutput(sPort);
@@ -659,7 +659,7 @@ namespace CommonCls
                 }
                 else
                 {
-                    if(bType==2)
+                    if (bType == 2)
                         returnBytes = HexStringToString("01 0F 00 00 00 08 01 02 7F 54", encode);  //Y2=1  平口缺陷
                     else
                         returnBytes = HexStringToString("01 0F 00 00 00 08 01 04 FF 56", encode);  //Y3=1  凹口缺陷
@@ -685,29 +685,55 @@ namespace CommonCls
         //01:后面要写入的数据字节数,0x01=十进制 1，写入 1 字节数据
         //01:写入的数据，0x01 换算成二进制 00000001 = Y8-Y7-Y6-Y5-Y4-Y3-Y2-Y1 输出状态，ON=0，OFF=1
         //ef 57:CRC 校验
+      //  Byte[5][] order
         public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
         {
-
-            ClearOutput(sPort);
-      //      Thread.Sleep(50);
-            Byte[] returnBytes = { 1, 16, 0, 0, 0, 8, 1, 1, 63, 85 };
-            if (sPort == null || !sPort.IsOpen)
-                return false;
-            try
+            Byte[] returnBytes = { 0x01, 0x0f, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0xef, 0x57 };
+            if(bOk)
             {
-                int ioPort = 0;
-                if (bOk)
-                {
-                     ioPort =  ioParam.OkOut-1; 
-                }
-                else
-                {
-                      ioPort = ioParam.NGOut-1; 
-                }
-                returnBytes[7] =(Byte)(1 << ioPort);
-                CalculateCRC(ref returnBytes);
-                 
                 sPort.Write(returnBytes, 0, 10);
+
+                Thread.Sleep(ioParam.IOTimeDelay);
+                returnBytes = HexStringToString("01 0f 00 00 00 01 01 00 2e 97", encode);
+                sPort.Write(returnBytes, 0, 10);
+                // ClearOutput(sPort);
+            }
+            else
+            {
+                returnBytes = HexStringToString("01 0f 00 01 00 01 01 01 d2 97", encode);
+                //  returnBytes = { 0x01, 0x0f, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0xef, 0x57 };
+                sPort.Write(returnBytes, 0, 10);
+
+                Thread.Sleep(ioParam.IOTimeDelay);
+                returnBytes = HexStringToString(" 01 0f 00 01 00 01 01 00 13 57", encode);
+                sPort.Write(returnBytes, 0, 10);
+                // ClearOutput(sPort);
+            }
+
+
+            /* ClearOutput(sPort);
+       //      Thread.Sleep(50);
+
+             if (sPort == null || !sPort.IsOpen)
+                 return false;
+             try
+             {
+                 int ioPort = 0;
+                 if (bOk)
+                 {
+                      ioPort =  ioParam.OkOut-1; 
+                 }
+                 else
+                 {
+                       ioPort = ioParam.NGOut-1; 
+                 }
+                 returnBytes[3] =(Byte)(1 << ioPort);
+                 CalculateCRC(ref returnBytes);
+                 returnBytes[8] = 0xd2;
+                 returnBytes[9] = 0x97;
+
+
+            sPort.Write(returnBytes, 0, 10);
 
                 Thread.Sleep(ioParam.IOTimeDelay);
                 ClearOutput(sPort);
@@ -715,7 +741,7 @@ namespace CommonCls
             catch
             {
                 return false;
-            }
+            }*/
             return true;
         }
 
@@ -786,7 +812,7 @@ namespace CommonCls
             try
             {
                 Byte[] returnBytes = new Byte[10];
-                returnBytes = HexStringToString("01 0F 00 00 00 08 01 00 FE 95", encode);  //Y=0
+                returnBytes = HexStringToString("01 0f 00 00 00 18 03 00 00 00 40 74", encode);  //Y=0
                 sPort.Write(returnBytes, 0, 10);
             }
             catch

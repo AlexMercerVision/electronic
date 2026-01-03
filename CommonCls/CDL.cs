@@ -111,7 +111,7 @@ namespace CommonCls
 
 
         // 用于启动时执行一次推理任务，第一次推理比较慢，在软件正式启动前执行  2024年7月22日
-       /* public bool det_infer_img()
+        public bool det_infer_img()
         {
 
             float[] resultlist = new float[600];
@@ -123,15 +123,15 @@ namespace CommonCls
             // int raise_ex_flag = 0;
             try
             {
-               
+
                 Mat matRGBImg = new Mat(@"C:\Program Files\Cognex\VisionPro\Images\smiley.bmp");
-               
-                byte[] bRGBData = new byte[matRGBImg.Total()*3];
+
+                byte[] bRGBData = new byte[matRGBImg.Total() * 3];
                 Marshal.Copy(matRGBImg.Data, bRGBData, 0, bRGBData.Length);
 
                 Det_ModelPredict(bRGBData, matRGBImg.Width, matRGBImg.Height, 3, results, boxesInfo, ref labellist[0]);
 
-                
+
             }
             catch (Exception e)
             {
@@ -141,7 +141,7 @@ namespace CommonCls
             }
 
             return bSure;
-        }*/
+        }
 
 
         public bool det_infer_img_En(HObject inputData, int Width, int Height, float fThreshold, float fThresholdPS, ref DLResult dlR)

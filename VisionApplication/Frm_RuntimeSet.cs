@@ -1633,7 +1633,7 @@ namespace VisionApplication
             string cfg_file = null;  // *.yml
 
             FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
-            
+            folderBrowserDialog1.SelectedPath = tbModelPath.Text;
             folderBrowserDialog1.Description = "请选择模型文件夹";
             DialogResult folder = folderBrowserDialog1.ShowDialog();
             if (folder == DialogResult.OK || folder == DialogResult.Yes)
