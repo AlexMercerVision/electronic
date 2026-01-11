@@ -2336,7 +2336,7 @@ namespace VisionApplication
         int iTmpType = 0;
 
 
-        
+        bool bTrig = false;
         CogPMAlignEditV2 pmaV2 = new CogPMAlignEditV2();
         private void btFun_Click(object sender, EventArgs e)
         {
@@ -2412,9 +2412,11 @@ namespace VisionApplication
                                     //   ((Button)sender).Image = global::VisionApplication.Properties.Resources.LoopRun2;
 
                                 }*/
-
+                                
+                                vpWin._iTaskType = 3;
                                 if (vpWin.bMainTaskFinished)
                                 {
+                                    bTrig = false;
                                     vpWin._iTaskType = 3;
                                     operLog.strOperEvent = "启动连续运行";
                                     ((Button)sender).FlatStyle = FlatStyle.Flat;
@@ -5578,11 +5580,39 @@ namespace VisionApplication
             if (vpWin._iTaskType == 3 && !vpWin.bMainTaskFinished)
                 return;
             vpWin._iTaskType = 3;
-            btFunRunCont.FlatStyle = FlatStyle.Flat;
-            btFunRunCont.Image = global::VisionApplication.Properties.Resources.Pause;
+
+            if (btFunRunCont.InvokeRequired)
+            {
+                btFunRunCont.Invoke(new Action(() =>
+                {
+                    if (btFunRunCont.Image != null)
+                    {
+                        btFunRunCont.Image.Dispose();
+                    }
+                    //btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2.Clone() as Image;
+                    btFunRunCont.FlatStyle = FlatStyle.Flat;
+                    btFunRunCont.Image = global::VisionApplication.Properties.Resources.Pause;
+                    btFunRunCont.Enabled = true;
+
+                }));
+            }
+            else
+            {
+                if (btFunRunCont.Image != null)
+                {
+                    btFunRunCont.Image.Dispose();
+                }
+                btFunRunCont.FlatStyle = FlatStyle.Flat;
+                btFunRunCont.Image = global::VisionApplication.Properties.Resources.Pause;
+                btFunRunCont.Enabled = true;
+                //  btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2.Clone() as Image;
+            }
+
+            
             vpWin.bMainTaskFinished = false;
             //2024年7月13日
             vpWin._bContRun = true;
+            bTrig = true;
             contThread = new Thread(RunContinuousThread);
             contThread.Start();
 
@@ -5993,7 +6023,7 @@ namespace VisionApplication
         delegateUIUpdate updateUItmp ; //将委托实例化
         public void RunContinuousThread()
         {
-            
+            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
             while (vpWin._bContRun)
             {
                 if (vpWin.RunOneTime(iJobIndex))
@@ -6012,7 +6042,10 @@ namespace VisionApplication
                     }*/
                     vpWin._bRunOneTimeFinished = 2;  //强制结束
                     pmaRes = vpWin._PMARes;
-
+                    if(!pmaRes.bOk)
+                    {
+                        vpWin._bContRun = false;
+                    }
                     if (this.InvokeRequired)
                     {
                         this.Invoke(updateUItmp, null);
@@ -6042,11 +6075,27 @@ namespace VisionApplication
             vpWin._iTaskType = -1;
             //  operLog.strOperEvent = "关闭连续运行";
             //  ((Button)sender).FlatStyle = FlatStyle.Flat;
-            btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;
+            if (btFunRunCont.InvokeRequired)
+            {
+                btFunRunCont.Invoke(new Action(() =>
+                { 
+                    btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;
+                    btFunRunCont.FlatStyle = FlatStyle.Popup;
+                    btFunRunCont.Enabled = true;
+
+                }));
+            }
+            else
+            { 
+                btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;
+                btFunRunCont.FlatStyle = FlatStyle.Popup;
+                btFunRunCont.Enabled = true; 
+            }
+            
+
             vpWin.bMainTaskFinished = true;
             operLog.iEventStatus = 0;
-            btFunRunCont.FlatStyle = FlatStyle.Popup;
-            btFunRunCont.Enabled = true;
+           
         }
         #endregion
 

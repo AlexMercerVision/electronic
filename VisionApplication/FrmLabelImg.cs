@@ -515,9 +515,9 @@ namespace xbDefectDect
 
 
             int group = (iFileIndex % (imgfiles.Count / 5)) / 6;
-            string strInfo =  Path.GetFileName(imgfile) + "；  " + (iFileIndex + 1).ToString() + "/" + imgfiles.Count.ToString();
-         //   lblInfo.Text = strInfo+"  ("+ group+")";
-            StripStatus_CurFile.Text= strInfo + "  (" + group + ")";
+            string strInfo = Path.GetFileName(imgfile) + "；  " + (iFileIndex + 1).ToString() + "/" + imgfiles.Count.ToString();
+            //   lblInfo.Text = strInfo+"  ("+ group+")";
+            StripStatus_CurFile.Text = strInfo ;
 
         }
 
@@ -775,8 +775,9 @@ namespace xbDefectDect
             {
                 if (imgfiles.Count != 0)
                 {
-                    iFileIndex++;
                     LoadMark(imgfiles[iFileIndex]);
+                    iFileIndex++;
+
                 }
 
             }

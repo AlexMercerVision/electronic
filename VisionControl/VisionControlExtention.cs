@@ -255,7 +255,8 @@ namespace VisionControl
         {
             string strGroupName = "";
             cogDisp.InteractiveGraphics.Clear();
-             
+
+            
             //创建文本
             CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
 
@@ -266,37 +267,37 @@ namespace VisionControl
                 if (dlRes.AL_Type[i] == 1)
                 {
                     dlRes.AL_Rect[i].Color = CogColorConstants.Red;
-                    strGroupName = "liewen";
+                    /*strGroupName = "liewen";
                     ResultLabel.Color = CogColorConstants.Red;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 2)
                 {
                     dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "posz";
-                    ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    /* strGroupName = "posz";
+                     ResultLabel.Color = CogColorConstants.Green;
+                     ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 3)
                 {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "liewenWP";
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Blue;
+                    /*strGroupName = "liewenWP";
                     ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 4)
                 {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "poszWP";
-                    ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Cyan;
+                    /* strGroupName = "poszWP";
+                     ResultLabel.Color = CogColorConstants.Green;
+                     ResultLabel.Font = new Font("arial", 10);*/
                 }
-                else if (dlRes.AL_Type[i] == 5)
+                else if (dlRes.AL_Type[i] == 5)  //容易误判类别，屏蔽处理
                 {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "flaking";
-                    ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    /* dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                     strGroupName = "flaking";
+                     ResultLabel.Color = CogColorConstants.Green;
+                     ResultLabel.Font = new Font("arial", 10);*/
                 }
                 //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
                 ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
@@ -323,37 +324,37 @@ namespace VisionControl
                 if (dlRes.AL_Type[i] == 1)
                 {
                     dlRes.AL_Rect[i].Color = CogColorConstants.Red;
-                    strGroupName = "liewen";
+                    /*strGroupName = "liewen";
                     ResultLabel.Color = CogColorConstants.Red;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 2)
                 {
                     dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "posz";
+                   /* strGroupName = "posz";
                     ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 3)
                 {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "liewenWP";
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Blue;
+                    /*strGroupName = "liewenWP";
                     ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 4)
                 {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "poszWP";
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Cyan;
+                   /* strGroupName = "poszWP";
                     ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 else if (dlRes.AL_Type[i] == 5)  //容易误判类别，屏蔽处理
                 {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                   /* dlRes.AL_Rect[i].Color = CogColorConstants.Green;
                     strGroupName = "flaking";
                     ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
+                    ResultLabel.Font = new Font("arial", 10);*/
                 }
                 //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
                 ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
@@ -400,11 +401,6 @@ namespace VisionControl
                 }
             }
                 
-            
-            
-            bRunOneTimeFinished = 2;
-            // pmaRes.bOk = //(bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
-            pmaRes.bLocated = true;
         }
 
       
@@ -450,8 +446,10 @@ namespace VisionControl
 
                         if (cup.p_VPPRTP.bDeepInfer)   //从GPU实时推理
                         {
-                            DLinfer();
+                             DLinfer();
                             iDeepInferTime++;
+                            bRunOneTimeFinished = 2; 
+                            pmaRes.bLocated = true;
                         }
                         else if(cup.p_VPPRTP.bVisionInfer)
                         {

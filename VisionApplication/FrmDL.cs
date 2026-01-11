@@ -442,6 +442,20 @@ namespace xbDefectDect
                     ResultLabel.Color = CogColorConstants.Green;
                     ResultLabel.Font = new Font("arial", 10);
                 }
+                else if (dlRes.AL_Type[i] == 4)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.DarkGreen;
+                    strGroupName = "poszWP";
+                    ResultLabel.Color = CogColorConstants.DarkGreen; 
+                    ResultLabel.Font = new Font("arial", 10);
+                }
+                else if (dlRes.AL_Type[i] == 5)
+                {
+                    dlRes.AL_Rect[i].Color = CogColorConstants.Purple;
+                    strGroupName = "flaking";
+                    ResultLabel.Color = CogColorConstants.Purple; 
+                    ResultLabel.Font = new Font("arial", 10);
+                }
                 //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
                 ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
                 ResultLabel.Y = dlRes.AL_Rect[i].CornerXY;

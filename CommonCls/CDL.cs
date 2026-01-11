@@ -279,6 +279,9 @@ namespace CommonCls
 
                     if(score> fThreshold)   //大于0.1 ,即作为待选
                     {
+                        if (predict_Label_List[i] == "flaking")
+                            continue;
+                        cogRect=new CogRectangleAffine();
                         cogRect.CenterX = resultlist[i * 6 + 2] + resultlist[i * 6 + 4] / 2;
                         cogRect.CenterY = resultlist[i * 6 + 3] + resultlist[i * 6 + 5] / 2;
                         cogRect.SideXLength = resultlist[i * 6 + 4];
@@ -304,7 +307,7 @@ namespace CommonCls
                         }
                         else if (predict_Label_List[i] == "poszWP")  //添加条件判断
                         {
-                            if(score >Math.Min( fThreshold+0.05,0.9) )
+                            if(score >Math.Min( fThreshold+0.02,0.82) )
                             {
                                 if(cogRect.SideXLength>500 && cogRect.SideYLength>400)
                                 {
@@ -312,6 +315,14 @@ namespace CommonCls
                                     dlR.AL_Rect.Add(cogRect);
                                     dlR.AL_score.Add(score);
                                 }
+                                else
+                                {
+
+                                }
+                            }
+                            else
+                            {
+
                             }
                             
                         }
@@ -319,7 +330,7 @@ namespace CommonCls
 
                       /*  else if (predict_Label_List[i] == "flaking") //容易误识别的类别，屏蔽
                             dlR.AL_Type.Add(5);*/
-
+                     
 
                         /*if (predict_Label_List[i] == "liewen" && score > fThreshold || (predict_Label_List[i] == "posz" && score > fThresholdPS))
                         {
