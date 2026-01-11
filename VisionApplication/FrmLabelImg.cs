@@ -780,8 +780,9 @@ namespace xbDefectDect
                 }
 
             }
-           // fo.WriteRemarkCompareResult(strInconsistentSamples,  DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt");
-          
+
+            // fo.WriteRemarkCompareResult(strInconsistentSamples,  DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt");
+
 
 
             bAutoCompare = !bAutoCompare;
@@ -3079,6 +3080,7 @@ namespace xbDefectDect
                     iLastClsType = clsList.iClsType;
                     dlResManuRemark.AL_Type[indOri] = iLastClsType;
                     AddRDManuGrap();
+                    bXG = true;
                 }
                
             }

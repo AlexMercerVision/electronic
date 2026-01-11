@@ -685,11 +685,79 @@ namespace CommonCls
         //01:后面要写入的数据字节数,0x01=十进制 1，写入 1 字节数据
         //01:写入的数据，0x01 换算成二进制 00000001 = Y8-Y7-Y6-Y5-Y4-Y3-Y2-Y1 输出状态，ON=0，OFF=1
         //ef 57:CRC 校验
-      //  Byte[5][] order
+        //  Byte[5][] order
         public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
         {
+            try
+            {
+                // 使用ThreadPool来执行异步操作
+                ThreadPool.QueueUserWorkItem(state =>
+                {
+                    try
+                    {
+                        SendResultToIOAsync(sPort, bOk, ioParam);
+                    }
+                    catch (Exception ex)
+                    {
+                         // 记录日志，避免异常传播到线程池
+                         // Debug.WriteLine($"SendResultToIOAsync error: {ex.Message}");
+                     }
+                });
+
+                return true; // 立即返回，不等待操作完成
+            }
+            catch (Exception ex)
+            {
+                // Debug.WriteLine($"QueueUserWorkItem error: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void SendResultToIOAsync(SerialPort sPort, bool bOk, IOPortParam ioParam)
+        {
+            try
+            {
+                Byte[] returnBytes;
+
+                if (bOk)
+                {
+                    // 第一次写入
+                    returnBytes = new byte[] { 0x01, 0x0f, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0xef, 0x57 };
+                    sPort.Write(returnBytes, 0, 10);
+
+                    // 等待
+                    Thread.Sleep(ioParam.IOTimeDelay);
+
+                    // 第二次写入
+                    returnBytes = HexStringToString("01 0f 00 00 00 01 01 00 2e 97", encode);
+                    sPort.Write(returnBytes, 0, 10);
+                }
+                else
+                {
+                    // 第一次写入
+                    returnBytes = HexStringToString("01 0f 00 01 00 01 01 01 d2 97", encode);
+                    sPort.Write(returnBytes, 0, 10);
+
+                    // 等待
+                    Thread.Sleep(ioParam.IOTimeDelay);
+
+                    // 第二次写入
+                    returnBytes = HexStringToString(" 01 0f 00 01 00 01 01 00 13 57", encode);
+                    sPort.Write(returnBytes, 0, 10);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 处理异常，可以记录日志
+                //  Debug.WriteLine($"SendResultToIOAsync operation error: {ex.Message}");
+            }
+        }
+       /* public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
+        {
+            if (!sPort.IsOpen)
+                return false;
             Byte[] returnBytes = { 0x01, 0x0f, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0xef, 0x57 };
-            if(bOk)
+            if (bOk)
             {
                 sPort.Write(returnBytes, 0, 10);
 
@@ -711,29 +779,29 @@ namespace CommonCls
             }
 
 
-            /* ClearOutput(sPort);
-       //      Thread.Sleep(50);
+            *//*//ClearOutput(sPort);
+            //      Thread.Sleep(50);
 
-             if (sPort == null || !sPort.IsOpen)
-                 return false;
-             try
-             {
-                 int ioPort = 0;
-                 if (bOk)
-                 {
-                      ioPort =  ioParam.OkOut-1; 
-                 }
-                 else
-                 {
-                       ioPort = ioParam.NGOut-1; 
-                 }
-                 returnBytes[3] =(Byte)(1 << ioPort);
-                 CalculateCRC(ref returnBytes);
-                 returnBytes[8] = 0xd2;
-                 returnBytes[9] = 0x97;
+            if (sPort == null || !sPort.IsOpen)
+                return false;
+            try
+            {
+                int ioPort = 0;
+                if (bOk)
+                {
+                    ioPort = ioParam.OkOut - 1;
+                }
+                else
+                {
+                    ioPort = ioParam.NGOut - 1;
+                }
+                returnBytes[3] = (Byte)(1 << ioPort);
+                CalculateCRC(ref returnBytes);
+                returnBytes[8] = 0xd2;
+                returnBytes[9] = 0x97;
 
 
-            sPort.Write(returnBytes, 0, 10);
+                sPort.Write(returnBytes, 0, 10);
 
                 Thread.Sleep(ioParam.IOTimeDelay);
                 ClearOutput(sPort);
@@ -741,12 +809,12 @@ namespace CommonCls
             catch
             {
                 return false;
-            }*/
+            }*//*
             return true;
         }
-
+*/
         //计算CRC校验码
-        private  void CalculateCRC(ref byte[] data)
+        private void CalculateCRC(ref byte[] data)
         {
             ushort crc = 0xFFFF;
             const ushort polynomial = 0xA001; // MODBUS标准多项式

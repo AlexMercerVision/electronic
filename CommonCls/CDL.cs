@@ -75,12 +75,11 @@ namespace CommonCls
               }
           }*/
        public DLParam dlParam=new DLParam();
-       
-         
+        CogRectangleAffine cogRect = new CogRectangleAffine();
+
         Process p = new Process();
         string path = "testpy.py";//待处理python文件的路径，本例中放在debug文件夹下
-        string sArguments;
-         
+       
 
         ///////////////////////////////////////////////////////////////////
         ///
@@ -94,43 +93,114 @@ namespace CommonCls
         [DllImport("model_infer.dll", EntryPoint = "Det_Test")] // Model unified initialization method: need yml、pdmodel、pdiparams
         public static extern int Det_Test();
 
-
-        int isBreakInfer = 0;
-        int infer_one_img_flag = 0;
-        int infer_many_img_flag = 0;
-        int is_infer = 0;
-       // ImgAcqFIFO acqFIFO = new ImgAcqFIFO();
+         
         public static IntPtr FloatToIntptr(float[] bytes)
         {
             GCHandle hObject = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             return hObject.AddrOfPinnedObject();
         }
 
+        #region  DL模型初始化，模型推理，模型销毁
+        //飞桨模型初始化
+        public int InitDL(DLParam dlParam)
+        {
+            string dir_path = null;
+            int dir_load_flag = 0;
+            string model_filename; // *.pdmodel
+            string params_filename;  // *.pdiparams
+            string cfg_file = null;  // *.yml
 
-        double det_threshold = 0.5;
+            this.dlParam = dlParam;
+
+            dir_path = dlParam.modelPath;
+            if (string.IsNullOrEmpty(dir_path))
+            {
+
+                return 1;
+            }
+
+            List<FileInfo> model_lst = new List<FileInfo>();
+            List<FileInfo> params_lst = new List<FileInfo>();
+            List<FileInfo> cfg_lst = new List<FileInfo>();
+            model_lst = getFile(dir_path, ".pdmodel", model_lst);
+            params_lst = getFile(dir_path, ".pdiparams", params_lst);
+            cfg_lst = getFile(dir_path, ".yml", cfg_lst);
+            if (cfg_lst.Count == 0)
+                cfg_lst = getFile(dir_path, ".yaml", cfg_lst);
+
+            if (model_lst.Count != 1 || params_lst.Count != 1)
+            {
+                return 2;
+            }
+
+            model_filename = model_lst[0].FullName;
+            params_filename = params_lst[0].FullName;
+
+            if (cfg_lst.Count == 0)
+            {
+                return 3;
+            }
+            else if (cfg_lst.Count > 2) // Excessive YML， > 2 
+            {
+                return 4;
+            }
+            else if (cfg_lst.Count == 2) // Processing for the case of multiple YML files
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    if (cfg_lst[i].Name == "model.yml" || cfg_lst[i].Name == "model.yaml")
+                    {
+                        cfg_file = cfg_lst[i].FullName;
+                        break;
+                    }
+                }
+            }
+            else if (cfg_lst.Count == 1)
+            {
+                cfg_file = cfg_lst[0].FullName;
+            }
 
 
+            byte[] paddlex_model_type = new byte[10];  // det/seg/clas + \0
+            string model_type = dlParam.modelType;
+            try
+            {
+
+                if (model_type == "mask")
+                {
+                    model_type = "paddlex";
+                }
+                InitModel(model_type, model_filename, params_filename, cfg_file, dlParam.bUseGPU, dlParam.gpuID, ref paddlex_model_type[0]);
+                //    int ret= Det_Test( );
+                has_model_init = true;
+            }
+            catch (Exception ex)
+            {
+
+                return 5;
+
+            }
+
+
+            return 0;
+        }
         // 用于启动时执行一次推理任务，第一次推理比较慢，在软件正式启动前执行  2024年7月22日
         public bool det_infer_img()
         {
-
             float[] resultlist = new float[600];
             IntPtr results = FloatToIntptr(resultlist);
             int[] boxesInfo = new int[1]; // 10 boundingbox
             byte[] labellist = new byte[1000];
-
             bool bSure = false;
             // int raise_ex_flag = 0;
             try
             {
-
                 Mat matRGBImg = new Mat(@"C:\Program Files\Cognex\VisionPro\Images\smiley.bmp");
 
                 byte[] bRGBData = new byte[matRGBImg.Total() * 3];
                 Marshal.Copy(matRGBImg.Data, bRGBData, 0, bRGBData.Length);
 
                 Det_ModelPredict(bRGBData, matRGBImg.Width, matRGBImg.Height, 3, results, boxesInfo, ref labellist[0]);
-
 
             }
             catch (Exception e)
@@ -143,7 +213,33 @@ namespace CommonCls
             return bSure;
         }
 
+        //用于检查深度学习模型中文件是否齐全
+        public List<FileInfo> getFile(string path, string extName, List<FileInfo> lst)
+        {
+            try
+            {
+                DirectoryInfo fdir = new DirectoryInfo(path);
+                FileInfo[] file = fdir.GetFiles();
+                //FileInfo[] file = Directory.GetFiles(path);
+                if (file.Length != 0)
+                {
+                    foreach (FileInfo f in file)
+                    {
+                        if (extName.ToLower().IndexOf(f.Extension.ToLower()) >= 0)
+                        {
+                            lst.Add(f);
+                        }
+                    }
+                }
+                return lst;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
+        bool has_model_init = false;
         public bool det_infer_img_En(HObject inputData, int Width, int Height, float fThreshold, float fThresholdPS, ref DLResult dlR)
         { 
 
@@ -183,23 +279,46 @@ namespace CommonCls
 
                     if(score> fThreshold)   //大于0.1 ,即作为待选
                     {
-                        CogRectangleAffine cogRect = new CogRectangleAffine();
                         cogRect.CenterX = resultlist[i * 6 + 2] + resultlist[i * 6 + 4] / 2;
                         cogRect.CenterY = resultlist[i * 6 + 3] + resultlist[i * 6 + 5] / 2;
                         cogRect.SideXLength = resultlist[i * 6 + 4];
                         cogRect.SideYLength = resultlist[i * 6 + 5];
-                        dlR.AL_Rect.Add(cogRect);
-                        dlR.AL_score.Add(score);
-                        if (predict_Label_List[i] == "liewen")
+                        
+                        if (predict_Label_List[i] == "liewen")  //显著缺陷
+                        {
                             dlR.AL_Type.Add(1);
-                        else if (predict_Label_List[i] == "posz")
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "posz")  //端头破损
+                        {
                             dlR.AL_Type.Add(2);
-                        else if (predict_Label_List[i] == "liewenWP")
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "liewenWP")  //部分未切
+                        {
                             dlR.AL_Type.Add(3);
-                        else if (predict_Label_List[i] == "poszWP")
-                            dlR.AL_Type.Add(4);
-                        else if (predict_Label_List[i] == "flaking")
-                            dlR.AL_Type.Add(5);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "poszWP")  //添加条件判断
+                        {
+                            if(score >Math.Min( fThreshold+0.05,0.9) )
+                            {
+                                if(cogRect.SideXLength>500 && cogRect.SideYLength>400)
+                                {
+                                    dlR.AL_Type.Add(4);
+                                    dlR.AL_Rect.Add(cogRect);
+                                    dlR.AL_score.Add(score);
+                                }
+                            }
+                            
+                        }
+
+
+                      /*  else if (predict_Label_List[i] == "flaking") //容易误识别的类别，屏蔽
+                            dlR.AL_Type.Add(5);*/
 
 
                         /*if (predict_Label_List[i] == "liewen" && score > fThreshold || (predict_Label_List[i] == "posz" && score > fThresholdPS))
@@ -226,128 +345,214 @@ namespace CommonCls
 
             return bSure;
         }
-         
 
-        public static List<FileInfo> getFile(string path, string extName, List<FileInfo> lst)
+        public byte[] ConvertGrayToBGR(byte[] grayData, int width, int height)
         {
+            int totalPixels = width * height;
+            byte[] bgrData = new byte[totalPixels * 3];
+
+            // 将灰度数据同时复制到三个位置
+            for (int channel = 0; channel < 3; channel++)
+            {
+                Buffer.BlockCopy(
+                    grayData,                    // 源数组
+                    0,                           // 源起始位置
+                    bgrData,                     // 目标数组
+                    totalPixels * channel,       // 目标起始位置（每个通道偏移totalPixels）
+                    totalPixels                  // 复制的字节数
+                );
+            }
+
+            // 注意：这种方法得到的是[BBB...GGG...RRR...]的布局
+            // 需要重新排列为[BGR BGR BGR...]的布局
+            return ReorderBGRChannels(bgrData, totalPixels);
+        }
+
+        private byte[] ReorderBGRChannels(byte[] planarBGR, int totalPixels)
+        {
+            byte[] interleavedBGR = new byte[totalPixels * 3];
+
+            for (int i = 0; i < totalPixels; i++)
+            {
+                interleavedBGR[i * 3] = planarBGR[i];                    // B
+                interleavedBGR[i * 3 + 1] = planarBGR[i + totalPixels];  // G
+                interleavedBGR[i * 3 + 2] = planarBGR[i + totalPixels * 2]; // R
+            }
+
+            return interleavedBGR;
+        }
+
+        //byte型灰度图像直接推理
+        public bool det_infer_img_ByteGray(byte[] grayData, int width, int height, float fThreshold, float fThresholdPS, ref DLResult dlR)
+        {
+            float[] resultlist = new float[600];
+            IntPtr results = FloatToIntptr(resultlist);
+            int[] boxesInfo = new int[1];
+            byte[] labellist = new byte[1000];
+            bool bSure = false;
+
             try
             {
-                DirectoryInfo fdir = new DirectoryInfo(path);
-                FileInfo[] file = fdir.GetFiles();
-                //FileInfo[] file = Directory.GetFiles(path);
-                if (file.Length != 0)
+                // 将灰度数据转换为BGR三通道数据
+                byte[] bgrData = ConvertGrayToBGR(grayData, width, height);
+
+                // 调用预测函数
+                Det_ModelPredict(bgrData, width, height, 3, results, boxesInfo, ref labellist[0]);
+                string strGet = Encoding.Default.GetString(labellist, 0, labellist.Length);
+                string[] predict_Label_List = strGet.Split(' ');
+                //  using OpenCvSharp.Mat mat = OpenCvSharp.Extensions.BitmapConverter.ToMat(bmp);
+                for (int i = 0; i < boxesInfo[0]; i++)
                 {
-                    foreach (FileInfo f in file)
+                    //     int labelindex = Convert.ToInt32(resultlist[i * 6 + 0]);
+                    float score = resultlist[i * 6 + 1];
+
+
+                    if (score > fThreshold)   //大于0.1 ,即作为待选
                     {
-                        if (extName.ToLower().IndexOf(f.Extension.ToLower()) >= 0)
+                        cogRect.CenterX = resultlist[i * 6 + 2] + resultlist[i * 6 + 4] / 2;
+                        cogRect.CenterY = resultlist[i * 6 + 3] + resultlist[i * 6 + 5] / 2;
+                        cogRect.SideXLength = resultlist[i * 6 + 4];
+                        cogRect.SideYLength = resultlist[i * 6 + 5];
+
+                        if (predict_Label_List[i] == "liewen")
                         {
-                            lst.Add(f);
+                            dlR.AL_Type.Add(1);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
                         }
+                        else if (predict_Label_List[i] == "posz")
+                        {
+                            dlR.AL_Type.Add(2);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "liewenWP")
+                        {
+                            dlR.AL_Type.Add(3);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "poszWP")
+                        {
+                            dlR.AL_Type.Add(4);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        } 
+                        /*  else if (predict_Label_List[i] == "flaking") //容易误识别的类别，屏蔽
+                              dlR.AL_Type.Add(5);*/ 
+                        /*if (predict_Label_List[i] == "liewen" && score > fThreshold || (predict_Label_List[i] == "posz" && score > fThresholdPS))
+                        {
+                            dlR.Al_bDiff.Add(false);
+                            bSure=true;
+                        }
+                        else
+                        {
+                            bSure = false;
+                            dlR.Al_bDiff.Add(true);
+                        }*/
                     }
+                    bSure = true;
                 }
-                return lst;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                throw ex;
-            }
-        }
-
-        bool has_model_init = false;
-        public int InitDL(DLParam dlParam)
-        {
-            string dir_path = null;
-            int dir_load_flag = 0;
-            string model_filename; // *.pdmodel
-            string params_filename;  // *.pdiparams
-            string cfg_file = null;  // *.yml
-
-            this.dlParam = dlParam;
-           
-            dir_path = dlParam.modelPath;
-            if (string.IsNullOrEmpty(dir_path))
-            {
-
-                return 1;
+                Console.WriteLine($"处理图片时发生错误: {e.Message}");
+                return false;
             } 
+            return bSure;
+             
+        }
+        
+        //byte型彩色图像直接推理
+        public bool det_infer_img_ByteColor(byte[] bgrData, int width, int height, float fThreshold, float fThresholdPS, ref DLResult dlR)
+        {
+            float[] resultlist = new float[600];
+            IntPtr results = FloatToIntptr(resultlist);
+            int[] boxesInfo = new int[1];
+            byte[] labellist = new byte[1000];
+            bool bSure = false;
 
-                List<FileInfo> model_lst = new List<FileInfo>();
-                List<FileInfo> params_lst = new List<FileInfo>();
-                List<FileInfo> cfg_lst = new List<FileInfo>();
-                model_lst = getFile(dir_path, ".pdmodel", model_lst);
-                params_lst = getFile(dir_path, ".pdiparams", params_lst);
-                cfg_lst = getFile(dir_path, ".yml", cfg_lst);
-                if (cfg_lst.Count == 0)
-                    cfg_lst = getFile(dir_path, ".yaml", cfg_lst);
+            try
+            { 
+                // 调用预测函数
+                Det_ModelPredict(bgrData, width, height, 3, results, boxesInfo, ref labellist[0]);
+                string strGet = Encoding.Default.GetString(labellist, 0, labellist.Length);
+                string[] predict_Label_List = strGet.Split(' ');
+                //  using OpenCvSharp.Mat mat = OpenCvSharp.Extensions.BitmapConverter.ToMat(bmp);
+                for (int i = 0; i < boxesInfo[0]; i++)
+                {
+                    //     int labelindex = Convert.ToInt32(resultlist[i * 6 + 0]);
+                    float score = resultlist[i * 6 + 1];
 
-                if (model_lst.Count != 1 || params_lst.Count != 1)
-                {
-                    return 2;
-                }
 
-                model_filename = model_lst[0].FullName;
-                params_filename = params_lst[0].FullName;
-
-                if (cfg_lst.Count == 0)
-                {
-                    return 3;
-                }
-                else if (cfg_lst.Count > 2) // Excessive YML， > 2 
-                {
-                    return 4;
-                }
-                else if (cfg_lst.Count == 2) // Processing for the case of multiple YML files
-                {
-                    for (int i = 0; i < 2; i++)
+                    if (score > fThreshold)   //大于0.1 ,即作为待选
                     {
-                        if (cfg_lst[i].Name == "model.yml" || cfg_lst[i].Name == "model.yaml")
+                        cogRect.CenterX = resultlist[i * 6 + 2] + resultlist[i * 6 + 4] / 2;
+                        cogRect.CenterY = resultlist[i * 6 + 3] + resultlist[i * 6 + 5] / 2;
+                        cogRect.SideXLength = resultlist[i * 6 + 4];
+                        cogRect.SideYLength = resultlist[i * 6 + 5];
+
+                        if (predict_Label_List[i] == "liewen")
                         {
-                            cfg_file = cfg_lst[i].FullName;
-                            break;
+                            dlR.AL_Type.Add(1);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
                         }
+                        else if (predict_Label_List[i] == "posz")
+                        {
+                            dlR.AL_Type.Add(2);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "liewenWP")
+                        {
+                            dlR.AL_Type.Add(3);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        else if (predict_Label_List[i] == "poszWP")
+                        {
+                            dlR.AL_Type.Add(4);
+                            dlR.AL_Rect.Add(cogRect);
+                            dlR.AL_score.Add(score);
+                        }
+                        /*  else if (predict_Label_List[i] == "flaking") //容易误识别的类别，屏蔽
+                              dlR.AL_Type.Add(5);*/
+                        /*if (predict_Label_List[i] == "liewen" && score > fThreshold || (predict_Label_List[i] == "posz" && score > fThresholdPS))
+                        {
+                            dlR.Al_bDiff.Add(false);
+                            bSure=true;
+                        }
+                        else
+                        {
+                            bSure = false;
+                            dlR.Al_bDiff.Add(true);
+                        }*/
                     }
+                    bSure = true;
                 }
-                else if (cfg_lst.Count == 1)
-                {
-                    cfg_file = cfg_lst[0].FullName;
-                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"处理图片时发生错误: {e.Message}");
+                return false;
+            }
+            return bSure;
 
-               
-                byte[] paddlex_model_type = new byte[10];  // det/seg/clas + \0
-                string model_type = dlParam.modelType;
-                try
-                { 
-
-                    if (model_type == "mask")
-                    {
-                        model_type = "paddlex"; 
-                    }
-                    InitModel(model_type, model_filename, params_filename, cfg_file, dlParam.bUseGPU, dlParam.gpuID, ref paddlex_model_type[0]);
-                //    int ret= Det_Test( );
-                    has_model_init = true;
-                }
-                catch (Exception ex)
-                {
-                    
-                   return 5;
-
-                }
-               
-            
-            return 0;
         }
 
+        //销毁深度学习模型
         public void CloseDL()
         {
              if(has_model_init)
                 DestructModel();
         }
-
+        #endregion
         ///////////////////////////////////////////////////////
         ///标注相关
         //////////////////////////////////////////////////////
         //************************************************
-       
+        #region
 
         public bool CreateRemarkXML_En(string strNullXMLName, string strSourceName, string strDestPath, DLResult dlRes)
         {
@@ -1031,8 +1236,8 @@ namespace CommonCls
 
             return intersectionArea / (areaA + areaB - intersectionArea);
         }
+        #endregion
 
-        
 
     }
 }

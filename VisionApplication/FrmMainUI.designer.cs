@@ -61,6 +61,27 @@ namespace VisionApplication
             this.menu_View_Layout5 = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_LayoutEq = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_Fit = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuUnion = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack_Det = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack_OK = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack_NG = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack_NG2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack_NO = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_FeedBack__Direct = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuTask_OK = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_NG = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_NG2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator15 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuTask_blow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_Clear = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_EnableTriggle = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuTask_Up = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_Down = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_Start = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuTask_Pause = new System.Windows.Forms.ToolStripMenuItem();
             this.menuDisp = new System.Windows.Forms.ToolStripMenuItem();
             this.menuDisp_Default = new System.Windows.Forms.ToolStripMenuItem();
             this.menuDisp_Grey = new System.Windows.Forms.ToolStripMenuItem();
@@ -101,27 +122,6 @@ namespace VisionApplication
             this.menuLight_StepAll = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.menuLight_Acq = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuUnion = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack_Det = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack_OK = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack_NG = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack_NG2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack_NO = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_FeedBack__Direct = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuTask_OK = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_NG = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_NG2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator15 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuTask_blow = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_Clear = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_EnableTriggle = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuTask_Up = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_Down = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_Start = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuTask_Pause = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTool = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTool_infer = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTool_RemarkManager = new System.Windows.Forms.ToolStripMenuItem();
@@ -187,6 +187,10 @@ namespace VisionApplication
             this.picSub2 = new System.Windows.Forms.PictureBox();
             this.picSub1 = new System.Windows.Forms.PictureBox();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.lblOut2 = new System.Windows.Forms.Label();
+            this.lblIn2 = new System.Windows.Forms.Label();
+            this.lblOut1 = new System.Windows.Forms.Label();
+            this.lblIn1 = new System.Windows.Forms.Label();
             this.btCam = new System.Windows.Forms.Button();
             this.label8 = new System.Windows.Forms.Label();
             this.btSpace = new System.Windows.Forms.Button();
@@ -195,6 +199,10 @@ namespace VisionApplication
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
+            this.label12 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
             this.btMachine = new System.Windows.Forms.Button();
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
@@ -373,6 +381,7 @@ namespace VisionApplication
             this.dataGridViewImageColumn5 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
+            this.timerIOOut = new System.Windows.Forms.Timer(this.components);
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -464,12 +473,12 @@ namespace VisionApplication
             this.menuManage,
             this.menuFile,
             this.menuWin,
+            this.menuUnion,
             this.menuDisp,
             this.menuXBType,
             this.menuTask,
             this.menuHelp,
             this.menuLight,
-            this.menuUnion,
             this.menuTool});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -714,6 +723,177 @@ namespace VisionApplication
             this.menu_View_Fit.Size = new System.Drawing.Size(160, 22);
             this.menu_View_Fit.Text = "图像适应窗口";
             this.menu_View_Fit.Click += new System.EventHandler(this.menu_View_Fit_Click);
+            // 
+            // menuUnion
+            // 
+            this.menuUnion.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuTask_FeedBack,
+            this.toolStripSeparator1,
+            this.menuTask_OK,
+            this.menuTask_NG,
+            this.menuTask_NG2,
+            this.toolStripSeparator15,
+            this.menuTask_blow,
+            this.menuTask_Clear,
+            this.menuTask_EnableTriggle,
+            this.toolStripSeparator5,
+            this.menuTask_Up,
+            this.menuTask_Down,
+            this.menuTask_Start,
+            this.menuTask_Pause});
+            this.menuUnion.Name = "menuUnion";
+            this.menuUnion.Size = new System.Drawing.Size(68, 22);
+            this.menuUnion.Text = "通信控制";
+            // 
+            // menuTask_FeedBack
+            // 
+            this.menuTask_FeedBack.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuTask_FeedBack_Det,
+            this.menuTask_FeedBack_OK,
+            this.menuTask_FeedBack_NG,
+            this.menuTask_FeedBack_NG2,
+            this.menuTask_FeedBack_NO,
+            this.menuTask_FeedBack__Direct});
+            this.menuTask_FeedBack.Name = "menuTask_FeedBack";
+            this.menuTask_FeedBack.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_FeedBack.Text = "自动反馈";
+            // 
+            // menuTask_FeedBack_Det
+            // 
+            this.menuTask_FeedBack_Det.Name = "menuTask_FeedBack_Det";
+            this.menuTask_FeedBack_Det.Size = new System.Drawing.Size(216, 22);
+            this.menuTask_FeedBack_Det.Text = "发送实际结果";
+            this.menuTask_FeedBack_Det.Click += new System.EventHandler(this.menuTask_FeedBack_Det_Click);
+            // 
+            // menuTask_FeedBack_OK
+            // 
+            this.menuTask_FeedBack_OK.Name = "menuTask_FeedBack_OK";
+            this.menuTask_FeedBack_OK.Size = new System.Drawing.Size(216, 22);
+            this.menuTask_FeedBack_OK.Text = "固定发送OK结果";
+            this.menuTask_FeedBack_OK.Click += new System.EventHandler(this.menuTask_FeedBack_OK_Click);
+            // 
+            // menuTask_FeedBack_NG
+            // 
+            this.menuTask_FeedBack_NG.Name = "menuTask_FeedBack_NG";
+            this.menuTask_FeedBack_NG.Size = new System.Drawing.Size(216, 22);
+            this.menuTask_FeedBack_NG.Text = "固定发送NG结果";
+            this.menuTask_FeedBack_NG.Click += new System.EventHandler(this.menuTask_FeedBack_NG_Click);
+            // 
+            // menuTask_FeedBack_NG2
+            // 
+            this.menuTask_FeedBack_NG2.Name = "menuTask_FeedBack_NG2";
+            this.menuTask_FeedBack_NG2.Size = new System.Drawing.Size(216, 22);
+            this.menuTask_FeedBack_NG2.Text = "固定发送NG结果(平口)";
+            this.menuTask_FeedBack_NG2.Visible = false;
+            this.menuTask_FeedBack_NG2.Click += new System.EventHandler(this.menuTask_FeedBack_NG2_Click);
+            // 
+            // menuTask_FeedBack_NO
+            // 
+            this.menuTask_FeedBack_NO.Name = "menuTask_FeedBack_NO";
+            this.menuTask_FeedBack_NO.Size = new System.Drawing.Size(216, 22);
+            this.menuTask_FeedBack_NO.Text = "不发送结果(等待手动发送)";
+            this.menuTask_FeedBack_NO.Visible = false;
+            this.menuTask_FeedBack_NO.Click += new System.EventHandler(this.menuTask_FeedBack_NO_Click);
+            // 
+            // menuTask_FeedBack__Direct
+            // 
+            this.menuTask_FeedBack__Direct.Name = "menuTask_FeedBack__Direct";
+            this.menuTask_FeedBack__Direct.Size = new System.Drawing.Size(216, 22);
+            this.menuTask_FeedBack__Direct.Text = "直通模式（不执行检测）";
+            this.menuTask_FeedBack__Direct.Visible = false;
+            this.menuTask_FeedBack__Direct.Click += new System.EventHandler(this.menuTask_FeedBack__Direct_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(181, 6);
+            // 
+            // menuTask_OK
+            // 
+            this.menuTask_OK.Name = "menuTask_OK";
+            this.menuTask_OK.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_OK.Text = "无缺陷反馈(OK)";
+            this.menuTask_OK.Click += new System.EventHandler(this.menuTask_OK_Click);
+            // 
+            // menuTask_NG
+            // 
+            this.menuTask_NG.Name = "menuTask_NG";
+            this.menuTask_NG.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_NG.Text = "有缺陷反馈(NG)";
+            this.menuTask_NG.Click += new System.EventHandler(this.menuTask_NG_Click);
+            // 
+            // menuTask_NG2
+            // 
+            this.menuTask_NG2.Name = "menuTask_NG2";
+            this.menuTask_NG2.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_NG2.Text = "有缺陷反馈（平口）";
+            this.menuTask_NG2.Visible = false;
+            this.menuTask_NG2.Click += new System.EventHandler(this.menuTask_NG2_Click);
+            // 
+            // toolStripSeparator15
+            // 
+            this.toolStripSeparator15.Name = "toolStripSeparator15";
+            this.toolStripSeparator15.Size = new System.Drawing.Size(181, 6);
+            // 
+            // menuTask_blow
+            // 
+            this.menuTask_blow.Name = "menuTask_blow";
+            this.menuTask_blow.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_blow.Text = "吹气";
+            this.menuTask_blow.Visible = false;
+            this.menuTask_blow.Click += new System.EventHandler(this.menuTask_blow_Click);
+            // 
+            // menuTask_Clear
+            // 
+            this.menuTask_Clear.Name = "menuTask_Clear";
+            this.menuTask_Clear.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_Clear.Text = "清除信号";
+            this.menuTask_Clear.Visible = false;
+            this.menuTask_Clear.Click += new System.EventHandler(this.menuTask_Clear_Click);
+            // 
+            // menuTask_EnableTriggle
+            // 
+            this.menuTask_EnableTriggle.Name = "menuTask_EnableTriggle";
+            this.menuTask_EnableTriggle.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_EnableTriggle.Text = "启用触发";
+            this.menuTask_EnableTriggle.Visible = false;
+            this.menuTask_EnableTriggle.Click += new System.EventHandler(this.menuTask_EnableTriggle_Click);
+            // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(181, 6);
+            this.toolStripSeparator5.Visible = false;
+            // 
+            // menuTask_Up
+            // 
+            this.menuTask_Up.Name = "menuTask_Up";
+            this.menuTask_Up.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_Up.Text = "红光打标";
+            this.menuTask_Up.Visible = false;
+            // 
+            // menuTask_Down
+            // 
+            this.menuTask_Down.Name = "menuTask_Down";
+            this.menuTask_Down.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_Down.Text = "飞行打标";
+            this.menuTask_Down.Visible = false;
+            // 
+            // menuTask_Start
+            // 
+            this.menuTask_Start.Name = "menuTask_Start";
+            this.menuTask_Start.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_Start.Text = "启动线体";
+            this.menuTask_Start.Visible = false;
+            this.menuTask_Start.Click += new System.EventHandler(this.menuTask_Start_Click);
+            // 
+            // menuTask_Pause
+            // 
+            this.menuTask_Pause.Name = "menuTask_Pause";
+            this.menuTask_Pause.Size = new System.Drawing.Size(184, 22);
+            this.menuTask_Pause.Text = "暂停线体";
+            this.menuTask_Pause.Visible = false;
+            this.menuTask_Pause.Click += new System.EventHandler(this.menuTask_Pause_Click);
             // 
             // menuDisp
             // 
@@ -1044,174 +1224,6 @@ namespace VisionApplication
             this.menuLight_Acq.Size = new System.Drawing.Size(172, 22);
             this.menuLight_Acq.Text = "打光同时采集图像";
             this.menuLight_Acq.Click += new System.EventHandler(this.menuLight_Acq_Click);
-            // 
-            // menuUnion
-            // 
-            this.menuUnion.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuTask_FeedBack,
-            this.toolStripSeparator1,
-            this.menuTask_OK,
-            this.menuTask_NG,
-            this.menuTask_NG2,
-            this.toolStripSeparator15,
-            this.menuTask_blow,
-            this.menuTask_Clear,
-            this.menuTask_EnableTriggle,
-            this.toolStripSeparator5,
-            this.menuTask_Up,
-            this.menuTask_Down,
-            this.menuTask_Start,
-            this.menuTask_Pause});
-            this.menuUnion.Name = "menuUnion";
-            this.menuUnion.Size = new System.Drawing.Size(68, 22);
-            this.menuUnion.Text = "通信控制";
-            // 
-            // menuTask_FeedBack
-            // 
-            this.menuTask_FeedBack.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuTask_FeedBack_Det,
-            this.menuTask_FeedBack_OK,
-            this.menuTask_FeedBack_NG,
-            this.menuTask_FeedBack_NG2,
-            this.menuTask_FeedBack_NO,
-            this.menuTask_FeedBack__Direct});
-            this.menuTask_FeedBack.Name = "menuTask_FeedBack";
-            this.menuTask_FeedBack.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_FeedBack.Text = "自动反馈";
-            // 
-            // menuTask_FeedBack_Det
-            // 
-            this.menuTask_FeedBack_Det.Name = "menuTask_FeedBack_Det";
-            this.menuTask_FeedBack_Det.Size = new System.Drawing.Size(216, 22);
-            this.menuTask_FeedBack_Det.Text = "发送实际结果";
-            this.menuTask_FeedBack_Det.Click += new System.EventHandler(this.menuTask_FeedBack_Det_Click);
-            // 
-            // menuTask_FeedBack_OK
-            // 
-            this.menuTask_FeedBack_OK.Name = "menuTask_FeedBack_OK";
-            this.menuTask_FeedBack_OK.Size = new System.Drawing.Size(216, 22);
-            this.menuTask_FeedBack_OK.Text = "固定发送OK结果";
-            this.menuTask_FeedBack_OK.Click += new System.EventHandler(this.menuTask_FeedBack_OK_Click);
-            // 
-            // menuTask_FeedBack_NG
-            // 
-            this.menuTask_FeedBack_NG.Name = "menuTask_FeedBack_NG";
-            this.menuTask_FeedBack_NG.Size = new System.Drawing.Size(216, 22);
-            this.menuTask_FeedBack_NG.Text = "固定发送NG结果(凹口)";
-            this.menuTask_FeedBack_NG.Click += new System.EventHandler(this.menuTask_FeedBack_NG_Click);
-            // 
-            // menuTask_FeedBack_NG2
-            // 
-            this.menuTask_FeedBack_NG2.Name = "menuTask_FeedBack_NG2";
-            this.menuTask_FeedBack_NG2.Size = new System.Drawing.Size(216, 22);
-            this.menuTask_FeedBack_NG2.Text = "固定发送NG结果(平口)";
-            this.menuTask_FeedBack_NG2.Click += new System.EventHandler(this.menuTask_FeedBack_NG2_Click);
-            // 
-            // menuTask_FeedBack_NO
-            // 
-            this.menuTask_FeedBack_NO.Name = "menuTask_FeedBack_NO";
-            this.menuTask_FeedBack_NO.Size = new System.Drawing.Size(216, 22);
-            this.menuTask_FeedBack_NO.Text = "不发送结果(等待手动发送)";
-            this.menuTask_FeedBack_NO.Click += new System.EventHandler(this.menuTask_FeedBack_NO_Click);
-            // 
-            // menuTask_FeedBack__Direct
-            // 
-            this.menuTask_FeedBack__Direct.Name = "menuTask_FeedBack__Direct";
-            this.menuTask_FeedBack__Direct.Size = new System.Drawing.Size(216, 22);
-            this.menuTask_FeedBack__Direct.Text = "直通模式（不执行检测）";
-            this.menuTask_FeedBack__Direct.Click += new System.EventHandler(this.menuTask_FeedBack__Direct_Click);
-            // 
-            // toolStripSeparator1
-            // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(181, 6);
-            // 
-            // menuTask_OK
-            // 
-            this.menuTask_OK.Name = "menuTask_OK";
-            this.menuTask_OK.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_OK.Text = "无缺陷反馈";
-            this.menuTask_OK.Click += new System.EventHandler(this.menuTask_OK_Click);
-            // 
-            // menuTask_NG
-            // 
-            this.menuTask_NG.Name = "menuTask_NG";
-            this.menuTask_NG.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_NG.Text = "有缺陷反馈";
-            this.menuTask_NG.Click += new System.EventHandler(this.menuTask_NG_Click);
-            // 
-            // menuTask_NG2
-            // 
-            this.menuTask_NG2.Name = "menuTask_NG2";
-            this.menuTask_NG2.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_NG2.Text = "有缺陷反馈（平口）";
-            this.menuTask_NG2.Visible = false;
-            this.menuTask_NG2.Click += new System.EventHandler(this.menuTask_NG2_Click);
-            // 
-            // toolStripSeparator15
-            // 
-            this.toolStripSeparator15.Name = "toolStripSeparator15";
-            this.toolStripSeparator15.Size = new System.Drawing.Size(181, 6);
-            // 
-            // menuTask_blow
-            // 
-            this.menuTask_blow.Name = "menuTask_blow";
-            this.menuTask_blow.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_blow.Text = "吹气";
-            this.menuTask_blow.Visible = false;
-            this.menuTask_blow.Click += new System.EventHandler(this.menuTask_blow_Click);
-            // 
-            // menuTask_Clear
-            // 
-            this.menuTask_Clear.Name = "menuTask_Clear";
-            this.menuTask_Clear.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_Clear.Text = "清除信号";
-            this.menuTask_Clear.Visible = false;
-            this.menuTask_Clear.Click += new System.EventHandler(this.menuTask_Clear_Click);
-            // 
-            // menuTask_EnableTriggle
-            // 
-            this.menuTask_EnableTriggle.Name = "menuTask_EnableTriggle";
-            this.menuTask_EnableTriggle.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_EnableTriggle.Text = "启用触发";
-            this.menuTask_EnableTriggle.Visible = false;
-            this.menuTask_EnableTriggle.Click += new System.EventHandler(this.menuTask_EnableTriggle_Click);
-            // 
-            // toolStripSeparator5
-            // 
-            this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(181, 6);
-            this.toolStripSeparator5.Visible = false;
-            // 
-            // menuTask_Up
-            // 
-            this.menuTask_Up.Name = "menuTask_Up";
-            this.menuTask_Up.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_Up.Text = "红光打标";
-            this.menuTask_Up.Visible = false;
-            // 
-            // menuTask_Down
-            // 
-            this.menuTask_Down.Name = "menuTask_Down";
-            this.menuTask_Down.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_Down.Text = "飞行打标";
-            this.menuTask_Down.Visible = false;
-            // 
-            // menuTask_Start
-            // 
-            this.menuTask_Start.Name = "menuTask_Start";
-            this.menuTask_Start.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_Start.Text = "启动线体";
-            this.menuTask_Start.Visible = false;
-            this.menuTask_Start.Click += new System.EventHandler(this.menuTask_Start_Click);
-            // 
-            // menuTask_Pause
-            // 
-            this.menuTask_Pause.Name = "menuTask_Pause";
-            this.menuTask_Pause.Size = new System.Drawing.Size(184, 22);
-            this.menuTask_Pause.Text = "暂停线体";
-            this.menuTask_Pause.Visible = false;
-            this.menuTask_Pause.Click += new System.EventHandler(this.menuTask_Pause_Click);
             // 
             // menuTool
             // 
@@ -1937,6 +1949,10 @@ namespace VisionApplication
             // splitContainer4.Panel1
             // 
             this.splitContainer4.Panel1.BackColor = System.Drawing.Color.White;
+            this.splitContainer4.Panel1.Controls.Add(this.lblOut2);
+            this.splitContainer4.Panel1.Controls.Add(this.lblIn2);
+            this.splitContainer4.Panel1.Controls.Add(this.lblOut1);
+            this.splitContainer4.Panel1.Controls.Add(this.lblIn1);
             this.splitContainer4.Panel1.Controls.Add(this.btCam);
             this.splitContainer4.Panel1.Controls.Add(this.label8);
             this.splitContainer4.Panel1.Controls.Add(this.btSpace);
@@ -1945,6 +1961,10 @@ namespace VisionApplication
             this.splitContainer4.Panel1.Controls.Add(this.label10);
             this.splitContainer4.Panel1.Controls.Add(this.label9);
             this.splitContainer4.Panel1.Controls.Add(this.label6);
+            this.splitContainer4.Panel1.Controls.Add(this.label15);
+            this.splitContainer4.Panel1.Controls.Add(this.label11);
+            this.splitContainer4.Panel1.Controls.Add(this.label12);
+            this.splitContainer4.Panel1.Controls.Add(this.label5);
             this.splitContainer4.Panel1.Controls.Add(this.label7);
             this.splitContainer4.Panel1.Controls.Add(this.btMachine);
             // 
@@ -1952,8 +1972,49 @@ namespace VisionApplication
             // 
             this.splitContainer4.Panel2.Controls.Add(this.splitContainer6);
             this.splitContainer4.Size = new System.Drawing.Size(511, 183);
-            this.splitContainer4.SplitterDistance = 142;
+            this.splitContainer4.SplitterDistance = 200;
             this.splitContainer4.TabIndex = 0;
+            // 
+            // lblOut2
+            // 
+            this.lblOut2.AutoSize = true;
+            this.lblOut2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOut2.Location = new System.Drawing.Point(156, 96);
+            this.lblOut2.Name = "lblOut2";
+            this.lblOut2.Size = new System.Drawing.Size(21, 19);
+            this.lblOut2.TabIndex = 46;
+            this.lblOut2.Text = "⭕️";
+            // 
+            // lblIn2
+            // 
+            this.lblIn2.AutoSize = true;
+            this.lblIn2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblIn2.Location = new System.Drawing.Point(156, 37);
+            this.lblIn2.Name = "lblIn2";
+            this.lblIn2.Size = new System.Drawing.Size(21, 19);
+            this.lblIn2.TabIndex = 46;
+            this.lblIn2.Text = "⭕️";
+            // 
+            // lblOut1
+            // 
+            this.lblOut1.AutoSize = true;
+            this.lblOut1.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOut1.ForeColor = System.Drawing.Color.Black;
+            this.lblOut1.Location = new System.Drawing.Point(126, 96);
+            this.lblOut1.Name = "lblOut1";
+            this.lblOut1.Size = new System.Drawing.Size(21, 19);
+            this.lblOut1.TabIndex = 46;
+            this.lblOut1.Text = "⭕️";
+            // 
+            // lblIn1
+            // 
+            this.lblIn1.AutoSize = true;
+            this.lblIn1.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblIn1.Location = new System.Drawing.Point(123, 37);
+            this.lblIn1.Name = "lblIn1";
+            this.lblIn1.Size = new System.Drawing.Size(21, 19);
+            this.lblIn1.TabIndex = 46;
+            this.lblIn1.Text = "⭕️";
             // 
             // btCam
             // 
@@ -2040,6 +2101,42 @@ namespace VisionApplication
             this.label6.TabIndex = 45;
             this.label6.Text = "相机";
             // 
+            // label15
+            // 
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(160, 75);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(17, 12);
+            this.label15.TabIndex = 45;
+            this.label15.Text = "Y2";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(158, 16);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(17, 12);
+            this.label11.TabIndex = 45;
+            this.label11.Text = "X2";
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Location = new System.Drawing.Point(124, 75);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(17, 12);
+            this.label12.TabIndex = 45;
+            this.label12.Text = "Y1";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(121, 16);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(17, 12);
+            this.label5.TabIndex = 45;
+            this.label5.Text = "X1";
+            // 
             // label7
             // 
             this.label7.AutoSize = true;
@@ -2074,8 +2171,8 @@ namespace VisionApplication
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
-            this.splitContainer6.Size = new System.Drawing.Size(365, 183);
-            this.splitContainer6.SplitterDistance = 179;
+            this.splitContainer6.Size = new System.Drawing.Size(307, 183);
+            this.splitContainer6.SplitterDistance = 277;
             this.splitContainer6.TabIndex = 0;
             // 
             // dgvLog
@@ -2095,7 +2192,7 @@ namespace VisionApplication
             this.dgvLog.RowHeadersWidth = 62;
             this.dgvLog.RowTemplate.Height = 23;
             this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dgvLog.Size = new System.Drawing.Size(179, 183);
+            this.dgvLog.Size = new System.Drawing.Size(277, 183);
             this.dgvLog.TabIndex = 0;
             // 
             // ClmnTime
@@ -4388,6 +4485,12 @@ namespace VisionApplication
             this.dataGridViewImageColumn7.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.dataGridViewImageColumn7.Width = 35;
             // 
+            // timerIOOut
+            // 
+            this.timerIOOut.Enabled = true;
+            this.timerIOOut.Interval = 300;
+            this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -4851,5 +4954,15 @@ namespace VisionApplication
         private System.Windows.Forms.Label label69;
         private System.Windows.Forms.Panel panel7;
         private System.Windows.Forms.ToolStripMenuItem menuWS_JobS;
+        private System.Windows.Forms.Label lblOut2;
+        private System.Windows.Forms.Label lblIn2;
+        private System.Windows.Forms.Label lblOut1;
+        private System.Windows.Forms.Label lblIn1;
+        private System.Windows.Forms.Label label15;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Label label12;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Timer timerIOOut;
+         
     }
 }

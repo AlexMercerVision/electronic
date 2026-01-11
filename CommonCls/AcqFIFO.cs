@@ -16,7 +16,7 @@ using Cognex.VisionPro.ImageProcessing;
 //using Cognex.VisionPro3D;
 using Cognex.VisionPro.Implementation;
 using Cognex.VisionPro.ImageFile;
-//using OpenCvSharp;
+using OpenCvSharp;
 
 namespace CommonCls
 {
@@ -31,8 +31,8 @@ namespace CommonCls
         int iCamType = 0;
         private int irtType = 0;    //旋转镜像类型
         int nRet = 0;
-        MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();  // 定义输出帧信息结构体
-        MyCamera.MV_FRAME_OUT stFrameInfo1 = new MyCamera.MV_FRAME_OUT();
+        public MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();  // 定义输出帧信息结构体
+        public MyCamera.MV_FRAME_OUT stFrameInfo1 = new MyCamera.MV_FRAME_OUT();
         IntPtr m_BufForDriver;
         UInt32 nPayloadSize = 0;
 
@@ -59,7 +59,7 @@ namespace CommonCls
      //   HObject[] hObjFXCM2 = new HObject[6];
         
         public HObject[,] hObjFXA = new HObject[maxCameraNum, 6];
-
+        public byte[][] bImgSrcData = new byte[maxCameraNum][];
         const int maxCameraNum = 5;
         //五个通道的灰度图
        public CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum];
@@ -367,7 +367,9 @@ namespace CommonCls
             {
                 if (iCamType == 0)
                 {
-                    nRet = camera2[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000); // m_BufForDriver为图像数据接收指针
+                    if (camera2 == null || camera2[iCamInd] == null)
+                        return null;
+                    nRet = camera2[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 1000); // m_BufForDriver为图像数据接收指针
 
                     if (nRet == MyCamera.MV_OK)
                     {
@@ -405,6 +407,7 @@ namespace CommonCls
 
         }
 
+        
         //从摄像头采集单帧图像
         CogImage8Grey cogImage8Grey = new CogImage8Grey();
         CogImage8Root cogImage8Root = new CogImage8Root();
@@ -724,7 +727,7 @@ namespace CommonCls
             }
           //  return true;
         }
-
+       
         //sr  2024年1月25日 删除当前数据  
         public bool DelOneGroupImageFile(bool bLive)
         {
@@ -1084,6 +1087,7 @@ namespace CommonCls
             }
 
         }
+        public string strErrInfo = "";
         //2025年4月21日
         public bool FXSurfaceAll(bool bRecord, bool[] bListProcess, int wsInd)
         {
@@ -1094,8 +1098,11 @@ namespace CommonCls
                 if (bListProcess[wsInd])
                 {
                     hObjFXA[wsInd, 0] = GrabOneFrameHObj(cup.p_CD.camInd[wsInd]);
-                    ci8gAcq[wsInd] = HObj2CogImage(hObjFXA[wsInd, 0]);
-                    ci8gAcq[wsInd] = CogFlipRotateIm(ci8gAcq[wsInd]);
+                  //  if(cup.p_VPPRTP.bVisionInfer)
+                    {
+                        ci8gAcq[wsInd] = HObj2CogImage(hObjFXA[wsInd, 0]);
+                        ci8gAcq[wsInd] = CogFlipRotateIm(ci8gAcq[wsInd]);
+                    }                   
                     Thread.Sleep(tWait);
 
                     if (bRecord)
@@ -1106,15 +1113,18 @@ namespace CommonCls
                 }
                 return true;
             }
-            catch
+            catch(Exception ex)
             {
+                strErrInfo = ex.Message;
                 return false;
             }
 
         }
+
+       
         //    string strDataPath =@"F:\st\WorkSpace\项目\万华匣钵缺陷检测\data\万华测试3\20220807\";
         //    string[] strSub = { "Main", "Sub1", "Sub2", "Sub3", "Sub4" };
-       
+
         Thread[] FXConstructThread =new Thread[maxCameraNum]  ;        //光度立体重构多个线程同步执行
         Thread saveFileThread;
         bool[] bFXRun = new bool[maxCameraNum];
@@ -1648,5 +1658,150 @@ namespace CommonCls
         }
         #endregion
 
+        #region  直接采集和保存byte[]型图像数据
+        //2026年1月8日 获取byte[]型数组
+        public bool AcqImgByte(bool bRecord, bool[] bListProcess, int wsInd)
+        {
+
+            int tWait = 5;
+            try
+            {
+                if (bListProcess[wsInd])
+                {
+                    GrabOneFrameByte(cup.p_CD.camInd[wsInd]);
+                    Thread.Sleep(tWait);
+
+                    if (bRecord)
+                    {
+                        saveFileThread = new Thread(SaveImageFormSrcImage);
+                        saveFileThread.Start();
+                    }
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+
+        }
+        //采集图像，byte[]型数据
+        public bool GrabOneFrameByte(int iCamInd)
+        {
+
+            try
+            {
+                if (iCamType == 0)
+                {
+                    nRet = camera2[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000); // m_BufForDriver为图像数据接收指针
+
+                    if (nRet == MyCamera.MV_OK)
+                    {
+                        IntPtrToByteArray(m_BufForDriverS[iCamInd], (int)nPayloadSizeS[iCamInd], bImgSrcData[iCamInd]);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 1000);
+                    if (nRet == MyCamera.MV_OK)
+                    {
+                        IntPtrToByteArray(stFrameInfo1.pBufAddr, (int)nPayloadSizeS[iCamInd], bImgSrcData[iCamInd]);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                }
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+            // PtrToObj(matImage.Ptr(), cup.p_HikPara.iPixelType);
+
+        }
+
+        public bool IntPtrToByteArray(IntPtr ptr, int length, byte[] byteArray)
+        {
+            if (ptr == IntPtr.Zero || length <= 0)
+            {
+                return false;
+            }
+            if (byteArray == null || byteArray.Length != length)
+                byteArray = new byte[length];
+            Marshal.Copy(ptr, byteArray, 0, length);
+            return true;
+        }
+
+        public void SaveImageFormSrcImage()
+        {
+
+            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");   //st 2023年1月25日  增加日期，以免名称冲突
+            string strImageFile;
+
+
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                strImageFile = strConSavePathS[i] + "\\" + cup.p_LI.strPrefix[i] + strTime + "_00" + ".jpg";
+                if (cup.p_CD.bListProcess[i] && bImgSrcData[i] != null)
+                {
+                    SaveByteArrayAsJpg_OpenCV(bImgSrcData[i], stFrameInfo.nWidth, stFrameInfo.nHeight, 1, strImageFile);
+                    //  HOperatorSet.WriteImage(hObjFXA[i, j], "jpg", 0, strImageFile);
+                }
+
+            }
+            //  return true;
+        }
+
+        // 方法1：已知图像尺寸和通道数
+        public bool SaveByteArrayAsJpg_OpenCV(byte[] imageData, int width, int height, int channels, string outputPath, int quality = 95)
+        {
+            try
+            {
+                // 确定Mat类型
+                MatType matType = GetMatType(channels);
+
+                // 创建Mat对象
+                using (Mat mat = new Mat(height, width, matType))
+                {
+                    // 将byte数组复制到Mat的Data指针
+                    Marshal.Copy(imageData, 0, mat.Data, imageData.Length);
+
+                    // 设置JPEG压缩参数（0-100，越高质量越好）
+                    int[] qualityParams = { (int)ImwriteFlags.JpegQuality, quality };
+
+                    // 保存为JPG
+                    return Cv2.ImWrite(outputPath, mat, qualityParams);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"保存图像失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 根据通道数确定Mat类型
+        private MatType GetMatType(int channels)
+        {
+            switch (channels)
+            {
+                case 1:
+                    return MatType.CV_8UC1;  // 灰度
+                case 3:
+                    return MatType.CV_8UC3;  // BGR彩色
+                case 4:
+                    return MatType.CV_8UC4;  // BGRA带透明度
+                default:
+                    throw new ArgumentException($"不支持的通道数: {channels}");
+            }
+        }
+        #endregion
     }
 }

@@ -599,6 +599,7 @@ namespace VisionApplication
             }
             else
             {
+                rts.initStatus.bCamInit = true;
                 toolBtSta_FromCam.Enabled = true;
                 toolBt_Record.Enabled = true;
             }
@@ -1511,7 +1512,7 @@ namespace VisionApplication
 
                     if (cup.p_CD.triggleCam == iCamIndex)
                     {
-                        //  SetTrigger(iCamIndex);    //** 默认不启用触发
+                           SetTrigger(iCamIndex);    //** 默认不启用触发
                     }
                 }
             }
@@ -1538,6 +1539,10 @@ namespace VisionApplication
                     {
                         camera2[iCamIndex].MV_CC_SetEnumValue_NET("TriggerSource", (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_LINE0);
                     }
+                }
+                else
+                {
+                    camera2[iCamIndex].MV_CC_SetEnumValue_NET("TriggerMode", (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF);
                 }
             }
             catch
@@ -1798,18 +1803,42 @@ namespace VisionApplication
             switch (rts.onLS.iFeedbackType)                  //启用了结果自动反馈
             {
                 case 1:
-                    csd.SendResultToIO(sPortCy, pmaRes.bOk, cup.p_IOPP);
+                   
+                    if(csd.SendResultToIO(sPortCy, pmaRes.bOk, cup.p_IOPP))
+                    {
+                        if (pmaRes.bOk)
+                            lblOut1.ForeColor = Color.Red;
+                        else
+                            lblOut2.ForeColor = Color.Red;
+                        if (!timerIOOut.Enabled)
+                            timerIOOut.Start();
+                    }
                     break;
-                case 2:                                           //固定反馈OK
-                    csd.SendResultToIO(sPortCy, true, cup.p_IOPP); 
+                case 2:
+                    //固定反馈OK
+                    
+                    if(csd.SendResultToIO(sPortCy, true, cup.p_IOPP))
+                    {
+                        lblOut1.ForeColor = Color.Red;
+                        if (!timerIOOut.Enabled)
+                            timerIOOut.Start();
+                    }
+                     
                     break;
                 case 3:
-                    csd.SendResultToIO(sPortCy, false, cup.p_IOPP); //固定反馈NG 
+                    
+                    if(csd.SendResultToIO(sPortCy, false, cup.p_IOPP)) //固定反馈NG 
+                    {
+                        lblOut2.ForeColor = Color.Red;
+                        if (!timerIOOut.Enabled)
+                            timerIOOut.Start();
+                    }
                     break; 
                 case 0:         //不反馈，等待手动
-                    break;
-                    
+                    break; 
             }
+            if (!timerIOOut.Enabled)
+                timerIOOut.Start();
         }
         private void menuTask_Clear_Click(object sender, EventArgs e)
         {
@@ -2021,7 +2050,7 @@ namespace VisionApplication
                 }
 
 
-                Thread.Sleep(200);
+                Thread.Sleep(20);
             }
 
         }
@@ -2143,7 +2172,7 @@ namespace VisionApplication
                 iProcess = 50;
                 fw.SetProgress(80, "正在搜索并初始化串口");
                 InitSerial();                                           //串口初始化
-                                                                        //    fw.SetProgress(90, "正在初始化算法");
+                InitTimer(); //IO口状态刷新                                                  //    fw.SetProgress(90, "正在初始化算法");
                 iProcess = 60;
                 fw.SetProgress(80, "正在初始化视图");
                 if (cup.p_VPPRTP.bDeepInfer || rts.initStatus.bVPPInit)
@@ -2178,7 +2207,7 @@ namespace VisionApplication
                 
                 vpWin.iModelRole = rts.iModelRole; 
 
-                fw.SetProgress(25, "UI初始化");
+                fw.SetProgress(95, "UI初始化");
                 InitParamUI();  //必要的参数初始化 
 
                 //  runonetime(); // 启动默认运行一次  2024年7月22日，处理运行初始化界面 
@@ -3582,7 +3611,7 @@ namespace VisionApplication
         //线体暂停
         private void menuTask_Pause_Click(object sender, EventArgs e)
         {
-            csd.MachineStartOrStop(sPortCy, false);
+          //  csd.MachineStartOrStop(sPortCy, false);
         }
         //检测反馈OK
         string strOrder = "";
@@ -3593,6 +3622,9 @@ namespace VisionApplication
             //  csd.SendResult(sPortCy, true);
             if (csd.SendResultToIO(sPortCy, true, cup.p_IOPP))
             {
+                lblOut1.ForeColor = Color.Red;
+                if(!timerIOOut.Enabled)
+                    timerIOOut.Start();
                 operLog.iEventStatus = 0;
             }
             else
@@ -3614,6 +3646,9 @@ namespace VisionApplication
             strOrder = "NG凹口";
             if (csd.SendResultToIO(sPortCy, false, cup.p_IOPP))
             {
+                lblOut2.ForeColor = Color.Red;
+                if (!timerIOOut.Enabled)
+                    timerIOOut.Start();
                 operLog.iEventStatus = 0;
             }
             else
@@ -4224,34 +4259,34 @@ namespace VisionApplication
                 btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.YellowLight;
                 toolTip1.SetToolTip(btSpace, "加载激光打标文件失败");
             }
-            /*DriveInfo di = new DriveInfo(path.Substring(0, 1)); //"path.Substring(0,1)
+            DriveInfo di = new DriveInfo(path.Substring(0, 1)); //"path.Substring(0,1)
             if (di.IsReady)
-            { 
-                long totalSize = di.TotalSize/1024/1024/1024;
+            {
+                long totalSize = di.TotalSize / 1024 / 1024 / 1024;
                 long FreeSize = di.TotalFreeSpace / 1024 / 1024 / 1024;
-                toolTip1.SetToolTip(btSpace, "剩余磁盘空间：" + FreeSize +"G");
+                toolTip1.SetToolTip(btSpace, "剩余磁盘空间：" + FreeSize + "G");
                 if (FreeSize > 40)
                 {
-                    rts.driveS = 0; 
-                     btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.GreenLight1;
+                    rts.driveS = 0;
+                    btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.GreenLight1;
                 }
                 else if (FreeSize > 10)
                 {
                     rts.driveS = 1;
-                     btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.YellowLight;
+                    btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.YellowLight;
                 }
                 else
                 {
                     rts.driveS = 2;
-                     btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.RedLight;
+                    btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.RedLight;
                 }
             }
             else
             {
                 rts.driveS = -1;
-                  btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.EventUn;
+                btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.EventUn;
                 toolTip1.SetToolTip(btSpace, "存储磁盘不存在或者磁盘异常");
-            }*/
+            }
 
             int iCamSuccNum = 0;
             int iCamFailNum = 0;
@@ -5178,8 +5213,18 @@ namespace VisionApplication
             TipInfo();
             sPortCy.DataReceived += new SerialDataReceivedEventHandler(PortGetCylinder);  //启用串口数据回调
 
+           
+        }
+        private void InitTimer()
+        {
+            // 初始化定时器
+            timerIOIn = new System.Timers.Timer(300);
+            timerIOIn.Elapsed += timerIOIn_Tick;
+            timerIOIn.AutoReset = false; // 只触发一次
+            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
         }
 
+        private System.Timers.Timer timerIOIn;
         //接受数据
         private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
         {
@@ -5227,9 +5272,15 @@ namespace VisionApplication
                 Byte bOrder = 0;
                 int OrderType = 0;
                 if (inf[4] == 1)
+                {
+                    lblIn1.ForeColor = Color.Red;
                     OrderType = 2;
+                }
                 if (inf[4] == 2)
+                {
+                    lblIn2.ForeColor = Color.Red;
                     OrderType = 4;
+                }
 
                 /*bOrder = (Byte)(1 << (cup.p_IOPP.AcqTrig - 1));
                 if ((inf[4] & bOrder) == bOrder)
@@ -5243,9 +5294,10 @@ namespace VisionApplication
                 bOrder = (Byte)(1 << (cup.p_IOPP.EndDetTrig - 1));
                 if ((inf[4] & bOrder) == bOrder)
                     OrderType = 4;*/
-                Thread.Sleep(10);
+                Thread.Sleep(100);
                 ExeIOTrig(OrderType);  //执行触发任务
-                
+                if (!timerIOIn.Enabled)
+                    timerIOIn.Start();
             }
             else
             {
@@ -5520,7 +5572,7 @@ namespace VisionApplication
             }
 
         }
-
+        //触发采集
         private void StartRun()
         {
             if (vpWin._iTaskType == 3 && !vpWin.bMainTaskFinished)
@@ -5540,8 +5592,8 @@ namespace VisionApplication
         private void StopRun()
         {
             vpWin._bContRun = false;
-            btFunRunCont.FlatStyle = FlatStyle.Popup;
-            btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;
+           /* btFunRunCont.FlatStyle = FlatStyle.Popup;
+            btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;*/
             //  btFunRunCont.Enabled = false;
             operLog.strOperEvent = "关闭连续运行";
             operLog.iEventStatus = 0;
@@ -5808,6 +5860,22 @@ namespace VisionApplication
             StartService("Cognex Security Service");
         }
 
+        private void timerIOOut_Tick(object sender, EventArgs e)
+        {
+           
+            lblOut1.ForeColor = Color.Black;
+            lblOut2.ForeColor = Color.Black;
+            //timerIOOut.Enabled = false;
+            timerIOOut.Stop();
+        }
+
+        private void timerIOIn_Tick(object sender, EventArgs e)
+        {
+            lblIn1.ForeColor = Color.Black;
+            lblIn2.ForeColor = Color.Black;
+            timerIOIn.Stop();
+        }
+
         //运行一次，产生新的图像列表
         public void RunAndUpdateThread()
         {
@@ -5878,7 +5946,7 @@ namespace VisionApplication
                     rts.iIsRunning = -1;
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "执行一次运行";
-                    operLog.strFailReason = "未知原因";
+                    operLog.strFailReason = vpWin.strErrInfo;
                     AddLog();
                     iErrExecuteTimes++;
                 }
@@ -5916,7 +5984,7 @@ namespace VisionApplication
             if(cup.p_RTSP.bUpdateIO)  //启用IO输出
             {
                 //只输出OK或者只输出NG
-                if((pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||  
+                if(/*(pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||*/  
                     (!pmaRes.bOk && cup.p_IOPP.NGOut!= 0) )
                 ExeIOOut();
             }
@@ -5925,7 +5993,7 @@ namespace VisionApplication
         delegateUIUpdate updateUItmp ; //将委托实例化
         public void RunContinuousThread()
         {
-            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
+            
             while (vpWin._bContRun)
             {
                 if (vpWin.RunOneTime(iJobIndex))

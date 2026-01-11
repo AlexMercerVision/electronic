@@ -924,7 +924,6 @@ namespace xbDefectDect
             this.cmbDefectClsTar.Name = "cmbDefectClsTar";
             this.cmbDefectClsTar.Size = new System.Drawing.Size(72, 20);
             this.cmbDefectClsTar.TabIndex = 40;
-            this.cmbDefectClsTar.SelectedIndexChanged += new System.EventHandler(this.cmbDefectCls_SelectedIndexChanged);
             // 
             // cmbDefectClsScr
             // 
@@ -941,7 +940,6 @@ namespace xbDefectDect
             this.cmbDefectClsScr.Name = "cmbDefectClsScr";
             this.cmbDefectClsScr.Size = new System.Drawing.Size(72, 20);
             this.cmbDefectClsScr.TabIndex = 40;
-            this.cmbDefectClsScr.SelectedIndexChanged += new System.EventHandler(this.cmbDefectCls_SelectedIndexChanged);
             // 
             // FrmLabelImage
             // 

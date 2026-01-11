@@ -74,7 +74,7 @@ namespace VisionControl
         int bRunOneTimeFinished = 0;
         private CUserParam cup = new CUserParam();
 
-        string strErrInfo;
+        public string strErrInfo;
         int iResCode, iDM0ResCode, iCM1ResCode, iCM2ResCode, iCM3ResCode, iCM4ResCode, xbType;
         public MyCamera.cbOutputExdelegate cbImage;
         //   private string[] strSubRecordsName;
@@ -348,7 +348,7 @@ namespace VisionControl
                     ResultLabel.Color = CogColorConstants.Green;
                     ResultLabel.Font = new Font("arial", 10);
                 }
-                else if (dlRes.AL_Type[i] == 5)
+                else if (dlRes.AL_Type[i] == 5)  //容易误判类别，屏蔽处理
                 {
                     dlRes.AL_Rect[i].Color = CogColorConstants.Green;
                     strGroupName = "flaking";
@@ -383,25 +383,34 @@ namespace VisionControl
             {
                 pmaRes.bOk = true;
             }
-            DirectShowImage();
+            //连续运行只更新NG图像和信号
+            if ( iTaskType!=3 || !pmaRes.bOk)
+             {
+                DirectShowImage();
 
-            if (iModelRole == 10)
-            {
-                AddGrap(cogRDMain, DL_result[iJobIndex]);
-                AddGrapOkNg(cogRDMain, pmaRes.bOk);
+                if (iModelRole == 10)
+                {
+                    AddGrap(cogRDMain, DL_result[iJobIndex]);
+                    AddGrapOkNg(cogRDMain, pmaRes.bOk);
+                }
+                else
+                {
+                    AddGrap(cogRDMainUser, DL_result[iJobIndex]);
+                    AddGrapOkNg(cogRDMainUser, pmaRes.bOk);
+                }
             }
-            else
-            {
-                AddGrap(cogRDMainUser, DL_result[iJobIndex]);
-                AddGrapOkNg(cogRDMainUser, pmaRes.bOk);
-            }
-
-
+                
+            
+            
             bRunOneTimeFinished = 2;
             // pmaRes.bOk = //(bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
             pmaRes.bLocated = true;
         }
+
+      
+
         int iDeepInferTime = 0;
+      //  public string strErrReson = "";
         public bool RunOneTime(int iJobIndex)
         {
             infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始  
@@ -409,7 +418,11 @@ namespace VisionControl
             if (cup.p_VPPRTP.bVisionInfer)
             {
                 if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
+                {
+                    strErrInfo = "JM状态非空闲";
                     return false;
+                }
+                    
             }
 
             if (mCurrentRunState != RunState.RunningContinuous)
@@ -455,6 +468,7 @@ namespace VisionControl
                     }
                     else
                     {
+                        strErrInfo = "图像采集异常:"+ acqFIFO.strErrInfo;
                         return false;
                     }
                 }
@@ -477,6 +491,7 @@ namespace VisionControl
                         }
                         else
                         {
+                            strErrInfo = "图像采集异常";
                             return false;
                         }
                     }
@@ -485,6 +500,7 @@ namespace VisionControl
             catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
             {
                 // do nothing in this case - we're already running
+                strErrInfo = "CogNotStoppedException";
                 return false;
             }
             catch (Cognex.VisionPro.Exceptions.CogException ex)
@@ -494,9 +510,13 @@ namespace VisionControl
                 strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }
+             infer_end_time = new TimeSpan(DateTime.Now.Ticks);
+             start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
+            cost_milliseconds = (int)start2end_time.TotalMilliseconds;
+
             return true; 
         }
-
+      
         //VP执行一次运算
         public bool RunOneTime()
         {
@@ -576,6 +596,10 @@ namespace VisionControl
                 strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }
+            infer_end_time = new TimeSpan(DateTime.Now.Ticks);
+            start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
+            cost_milliseconds = (int)start2end_time.TotalMilliseconds;
+
             return true;
 
         }
@@ -764,10 +788,7 @@ namespace VisionControl
 
 
 
-                     TimeSpan infer_end_time = new TimeSpan(DateTime.Now.Ticks);
-                     TimeSpan start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
-                     cost_milliseconds = (int)start2end_time.TotalMilliseconds;
-
+                    
                      ci8gAcq = acqFIFO._ci8gAcq;
                      ci8gFX = acqFIFO.ci8gAcqFX;
                      //   acqFIFO.SaveImage_ci8gAcq();Fr 
