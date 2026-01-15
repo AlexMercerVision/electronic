@@ -17,6 +17,7 @@ using Cognex.VisionPro;
  using HalconDotNet;
 using System.Xml;
 using CommonCls;
+using MvCamCtrl.NET;  // 海康相机
 
 namespace xbDefectDect
 {
@@ -1084,5 +1085,853 @@ namespace xbDefectDect
 
             comboBox_clicked = 0;
         }
+
+        /*  #region 从相机采集图像相关
+          // 新增：相机相关成员变量
+          private MyCamera[] cameras = new MyCamera[5];  // 支持最多5个相机
+          private int selectedCameraIndex = 0;
+          private bool[] cameraConnected = new bool[5];
+          private CameraStatus cs = new CameraStatus();  // 假设有CameraStatus类
+          private IntPtr[] bufferPointers = new IntPtr[5];
+          private uint[] payloadSizes = new uint[5];
+          private Thread cameraInferThread = null;
+          private volatile bool stopCameraInfer = false;
+          private bool cameraGrabbing = false;
+
+          // 新增：相机枚举和查询相关
+          private List<MyCamera.MV_CC_DEVICE_INFO> cameraDevices = new List<MyCamera.MV_CC_DEVICE_INFO>();
+          public ImgAcqFIFO AcqFIFO { get; set; }
+          // 新增：相机初始化状态
+          private enum CameraInitState
+          {
+              NotInitialized,
+              Initializing,
+              Initialized,
+              Error
+          }
+
+          private CameraInitState[] cameraInitStates = new CameraInitState[5];
+
+          // 在FrmDL.cs中添加相机查询方法
+
+          private List<string> QueryAvailableCameras()
+          {
+              List<string> cameraList = new List<string>();
+              cameraDevices.Clear();
+
+              try
+              {
+                  // 枚举所有可用相机设备
+                  MyCamera.MV_CC_DEVICE_INFO_LIST m_pDeviceList = new MyCamera.MV_CC_DEVICE_INFO_LIST();
+                  int nRet = MyCamera.MV_CC_EnumDevices_NET(MyCamera.MV_GIGE_DEVICE | MyCamera.MV_USB_DEVICE, ref m_pDeviceList);
+
+                  if (MyCamera.MV_OK != nRet)
+                  {
+                      MessageBox.Show($"枚举设备失败: {nRet}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                      return cameraList;
+                  }
+
+                  if (m_pDeviceList.nDeviceNum == 0)
+                  {
+                      MessageBox.Show("未找到任何相机设备", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                      return cameraList;
+                  }
+
+                  // 遍历所有设备并添加到列表
+                  for (int i = 0; i < m_pDeviceList.nDeviceNum; i++)
+                  {
+                      MyCamera.MV_CC_DEVICE_INFO deviceInfo = (MyCamera.MV_CC_DEVICE_INFO)
+                          Marshal.PtrToStructure(m_pDeviceList.pDeviceInfo[i], typeof(MyCamera.MV_CC_DEVICE_INFO));
+
+                      cameraDevices.Add(deviceInfo);
+
+                      string cameraName = "";
+                      if (deviceInfo.nTLayerType == MyCamera.MV_GIGE_DEVICE)
+                      {
+
+                       }
+                      else if (deviceInfo.nTLayerType == MyCamera.MV_USB_DEVICE)
+                      {
+                          // USB相机
+                          cameraName = $"USB相机{i + 1} - {deviceInfo.SpecialInfo.stUsb3VInfo.chModelName}";
+                      }
+
+                      cameraList.Add(cameraName);
+                      Console.WriteLine($"发现相机: {cameraName}");
+                  }
+              }
+              catch (Exception ex)
+              {
+                  MessageBox.Show($"查询相机时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+              }
+
+              return cameraList;
+          }
+
+          // 完整的相机初始化方法
+          private bool InitializeCamera(int cameraIndex, bool showErrors = true)
+          {
+              if (cameraIndex < 0 || cameraIndex >= cameraDevices.Count)
+              {
+                  if (showErrors)
+                      MessageBox.Show($"无效的相机索引: {cameraIndex}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                  return false;
+              }
+
+              try
+              {
+                  // 如果相机已经初始化，先关闭
+                  if (cameras[cameraIndex] != null && cameraInitStates[cameraIndex] == CameraInitState.Initialized)
+                  {
+                      CloseCamera(cameraIndex);
+                      Thread.Sleep(200);  // 等待关闭完成
+                  }
+
+                  cameraInitStates[cameraIndex] = CameraInitState.Initializing;
+
+                  // 1. 创建相机对象
+                  cameras[cameraIndex] = new MyCamera();
+
+                  // 2. 创建设备
+                  int nRet = cameras[cameraIndex].MV_CC_CreateDevice_NET(ref cameraDevices[cameraIndex]);
+                  if (nRet != MyCamera.MV_OK)
+                  {
+                      if (showErrors)
+                          MessageBox.Show($"创建设备失败: {nRet}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                      cameraInitStates[cameraIndex] = CameraInitState.Error;
+                      return false;
+                  }
+
+                  // 3. 打开设备
+                  nRet = cameras[cameraIndex].MV_CC_OpenDevice_NET();
+                  if (nRet != MyCamera.MV_OK)
+                  {
+                      if (showErrors)
+                          MessageBox.Show($"打开设备失败: {nRet}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                      cameraInitStates[cameraIndex] = CameraInitState.Error;
+                      return false;
+                  }
+
+                  // 4. 检测网络带宽（仅GigE相机）
+                  if (cameraDevices[cameraIndex].nTLayerType == MyCamera.MV_GIGE_DEVICE)
+                  {
+                      nRet = cameras[cameraIndex].MV_CC_GetOptimalPacketSize_NET();
+                      if (nRet < 0)
+                      {
+                          if (showErrors)
+                              MessageBox.Show($"获取最佳包大小失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                      }
+                  }
+
+                  // 5. 设置触发模式为Off（连续采集）
+                  nRet = cameras[cameraIndex].MV_CC_SetEnumValue_NET("TriggerMode", 0);
+                  if (nRet != MyCamera.MV_OK && showErrors)
+                  {
+                      MessageBox.Show($"设置触发模式失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  }
+
+                  // 6. 设置采集模式为连续采集
+                  nRet = cameras[cameraIndex].MV_CC_SetEnumValue_NET("AcquisitionMode", 2);
+                  if (nRet != MyCamera.MV_OK && showErrors)
+                  {
+                      MessageBox.Show($"设置采集模式失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  }
+
+                  // 7. 设置自动曝光为Off
+                  nRet = cameras[cameraIndex].MV_CC_SetEnumValue_NET("ExposureAuto", 0);
+                  if (nRet != MyCamera.MV_OK && showErrors)
+                  {
+                      MessageBox.Show($"设置自动曝光失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  }
+
+                  // 8. 设置曝光时间（根据配置）
+                  float exposureTime = cup.p_HikPara.fExposureTime;  // 假设有配置参数
+                  nRet = cameras[cameraIndex].MV_CC_SetFloatValue_NET("ExposureTime", exposureTime);
+                  if (nRet != MyCamera.MV_OK && showErrors)
+                  {
+                      MessageBox.Show($"设置曝光时间失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  }
+
+                  // 9. 设置增益（根据配置）
+                  float gain = cup.p_HikPara.fGain;  // 假设有配置参数
+                  nRet = cameras[cameraIndex].MV_CC_SetFloatValue_NET("Gain", gain);
+                  if (nRet != MyCamera.MV_OK && showErrors)
+                  {
+                      MessageBox.Show($"设置增益失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  }
+
+                  // 10. 设置像素格式为Mono8（灰度）
+                  nRet = cameras[cameraIndex].MV_CC_SetEnumValue_NET("PixelFormat", 0x01080001);  // Mono8
+                  if (nRet != MyCamera.MV_OK && showErrors)
+                  {
+                      MessageBox.Show($"设置像素格式失败: {nRet}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  }
+
+                  // 11. 获取图像大小，分配缓冲区
+                  MyCamera.MVCC_INTVALUE width = new MyCamera.MVCC_INTVALUE();
+                  MyCamera.MVCC_INTVALUE height = new MyCamera.MVCC_INTVALUE();
+                  MyCamera.MVCC_ENUMVALUE pixelFormat = new MyCamera.MVCC_ENUMVALUE();
+
+                  cameras[cameraIndex].MV_CC_GetIntValue_NET("Width", ref width);
+                  cameras[cameraIndex].MV_CC_GetIntValue_NET("Height", ref height);
+                  cameras[cameraIndex].MV_CC_GetEnumValue_NET("PixelFormat", ref pixelFormat);
+
+                  uint imageSize = (uint)(width.nCurValue * height.nCurValue);
+                  if (pixelFormat.nCurValue == 0x01080001)  // Mono8
+                  {
+                      // 8位灰度图像
+                      payloadSizes[cameraIndex] = imageSize;
+                  }
+                  else if (pixelFormat.nCurValue == 0x01080002)  // Mono10
+                  {
+                      // 10位灰度图像（实际存储可能是2字节）
+                      payloadSizes[cameraIndex] = imageSize * 2;
+                  }
+                  else
+                  {
+                      payloadSizes[cameraIndex] = imageSize * 2;  // 默认按最大可能分配
+                  }
+
+                  // 分配缓冲区
+                  if (bufferPointers[cameraIndex] != IntPtr.Zero)
+                  {
+                      Marshal.FreeHGlobal(bufferPointers[cameraIndex]);
+                  }
+                  bufferPointers[cameraIndex] = Marshal.AllocHGlobal((int)payloadSizes[cameraIndex]);
+
+                  // 12. 开始采集
+                  nRet = cameras[cameraIndex].MV_CC_StartGrabbing_NET();
+                  if (nRet != MyCamera.MV_OK)
+                  {
+                      if (showErrors)
+                          MessageBox.Show($"开始采集失败: {nRet}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                      cameraInitStates[cameraIndex] = CameraInitState.Error;
+                      return false;
+                  }
+
+                  // 13. 预热：采集并丢弃前几帧
+                  Console.WriteLine("相机预热中...");
+                  for (int i = 0; i < 5; i++)
+                  {
+                      var frame = GrabSingleFrameFromCamera(cameraIndex, 500);
+                      if (frame == null && i == 0)
+                      {
+                          // 第一次采集失败，可能是相机需要更多时间
+                          Thread.Sleep(200);
+                          continue;
+                      }
+                      Thread.Sleep(50);
+                  }
+                  Console.WriteLine("相机预热完成");
+
+                  // 14. 更新状态
+                  cameraInitStates[cameraIndex] = CameraInitState.Initialized;
+                  cameraConnected[cameraIndex] = true;
+
+                  // 15. 更新UI
+             //     UpdateCameraStatusUI(cameraIndex, true);
+
+                  return true;
+              }
+              catch (Exception ex)
+              {
+                  cameraInitStates[cameraIndex] = CameraInitState.Error;
+                  if (showErrors)
+                      MessageBox.Show($"初始化相机时出错: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                  return false;
+              }
+          }
+
+          // 关闭相机
+          private void CloseCamera(int cameraIndex)
+          {
+              try
+              {
+                  if (cameras[cameraIndex] != null)
+                  {
+                      // 停止采集
+                      if (cameraGrabbing)
+                      {
+                          cameras[cameraIndex].MV_CC_StopGrabbing_NET();
+                          cameraGrabbing = false;
+                      }
+
+                      // 关闭设备
+                      cameras[cameraIndex].MV_CC_CloseDevice_NET();
+
+                      // 销毁设备
+                      cameras[cameraIndex].MV_CC_DestroyDevice_NET();
+                      cameras[cameraIndex] = null;
+                  }
+
+                  // 释放缓冲区
+                  if (bufferPointers[cameraIndex] != IntPtr.Zero)
+                  {
+                      Marshal.FreeHGlobal(bufferPointers[cameraIndex]);
+                      bufferPointers[cameraIndex] = IntPtr.Zero;
+                  }
+
+                  cameraConnected[cameraIndex] = false;
+                  cameraInitStates[cameraIndex] = CameraInitState.NotInitialized;
+
+                  // 更新UI
+               //   UpdateCameraStatusUI(cameraIndex, false);
+              }
+              catch (Exception ex)
+              {
+                  Console.WriteLine($"关闭相机时出错: {ex.Message}");
+              }
+          }
+          // 从相机采集单帧图像
+          private CogImage8Grey GrabSingleFrameFromCamera(int cameraIndex, int timeoutMs = 1000)
+          {
+              if (cameras[cameraIndex] == null || cameraInitStates[cameraIndex] != CameraInitState.Initialized)
+              {
+                  Console.WriteLine($"相机{cameraIndex}未初始化");
+                  return null;
+              }
+
+              try
+              {
+                  MyCamera.MV_FRAME_OUT_INFO_EX frameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();
+
+                  // 获取一帧图像
+                  int nRet = cameras[cameraIndex].MV_CC_GetOneFrameTimeout_NET(
+                      bufferPointers[cameraIndex],
+                      payloadSizes[cameraIndex],
+                      ref frameInfo,
+                      (uint)timeoutMs);
+
+                  if (nRet == MyCamera.MV_OK)
+                  {
+                      // 创建CogImage8Grey图像
+                      CogImage8Root cogImage8Root = new CogImage8Root();
+                      cogImage8Root.Initialize(
+                          (int)frameInfo.nWidth,
+                          (int)frameInfo.nHeight,
+                          bufferPointers[cameraIndex],
+                          (int)frameInfo.nWidth,
+                          null);
+
+                      CogImage8Grey cogImage8Grey = new CogImage8Grey();
+                      cogImage8Grey.SetRoot(cogImage8Root);
+
+                      return cogImage8Grey.Copy();
+                  }
+                  else if (nRet == MyCamera.MV_E_CALLORDER)
+                  {
+                      // 调用顺序错误，尝试重新开始采集
+                      Console.WriteLine($"相机{cameraIndex}调用顺序错误，重新初始化...");
+                      cameras[cameraIndex].MV_CC_StopGrabbing_NET();
+                      Thread.Sleep(100);
+                      cameras[cameraIndex].MV_CC_StartGrabbing_NET();
+                      Thread.Sleep(100);
+                  }
+                  else if (nRet == MyCamera.MV_E_TIMEOUT)
+                  {
+                      Console.WriteLine($"相机{cameraIndex}采集超时");
+                  }
+                  else
+                  {
+                      Console.WriteLine($"相机{cameraIndex}采集失败，错误代码: {nRet}");
+                  }
+              }
+              catch (Exception ex)
+              {
+                  Console.WriteLine($"采集图像时出错: {ex.Message}");
+              }
+
+              return null;
+          }
+
+          // 带重试机制的采集
+          private CogImage8Grey GrabFrameWithRetry(int cameraIndex, int maxRetries = 3)
+          {
+              CogImage8Grey image = null;
+              int retryCount = 0;
+
+              while (retryCount < maxRetries && image == null)
+              {
+                  image = GrabSingleFrameFromCamera(cameraIndex, 1000);
+                  if (image == null)
+                  {
+                      retryCount++;
+                      Console.WriteLine($"相机{cameraIndex}第{retryCount}次重试采集...");
+                      Thread.Sleep(100);
+
+                      // 如果是最后一次重试失败，尝试重新初始化相机
+                      if (retryCount == maxRetries)
+                      {
+                          Console.WriteLine($"相机{cameraIndex}采集失败，尝试重新初始化...");
+                          if (ReinitializeCamera(cameraIndex))
+                          {
+                              // 重新初始化成功后再次尝试采集
+                              image = GrabSingleFrameFromCamera(cameraIndex, 1000);
+                          }
+                      }
+                  }
+              }
+
+              return image;
+          }
+
+          // 重新初始化相机
+          private bool ReinitializeCamera(int cameraIndex)
+          {
+              try
+              {
+                  CloseCamera(cameraIndex);
+                  Thread.Sleep(500);
+                  return InitializeCamera(cameraIndex, false);  // 不显示错误信息
+              }
+              catch (Exception ex)
+              {
+                  Console.WriteLine($"重新初始化相机失败: {ex.Message}");
+                  return false;
+              }
+          }
+          // 相机推理线程方法
+          private void CameraInferThreadProc()
+          {
+              stopCameraInfer = false;
+              int consecutiveFailures = 0;
+              const int maxConsecutiveFailures = 5;
+
+              while (!stopCameraInfer)
+              {
+                  try
+                  {
+                      // 1. 从相机采集图像
+                      CogImage8Grey cameraImage = GrabFrameWithRetry(selectedCameraIndex, 2);
+
+                      if (cameraImage == null)
+                      {
+                          consecutiveFailures++;
+                          Console.WriteLine($"相机采集失败，连续失败次数: {consecutiveFailures}");
+
+                          if (consecutiveFailures >= maxConsecutiveFailures)
+                          {
+                              // 连续失败太多，重新初始化相机
+                              Console.WriteLine("连续采集失败过多，尝试重新初始化相机...");
+                              this.Invoke(new Action(() =>
+                              {
+                                  ReinitializeCamera(selectedCameraIndex);
+                              }));
+                              consecutiveFailures = 0;
+                              Thread.Sleep(1000);
+                          }
+                          continue;
+                      }
+
+                      consecutiveFailures = 0;  // 重置失败计数
+
+                      // 2. 显示原始图像
+                      this.Invoke(new Action(() =>
+                      {
+                          cogRDSource.Image = cameraImage;
+                      }));
+
+                      // 3. 转换为推理需要的格式
+                      byte[] imageData = ConvertCogImageToByteArray(cameraImage, out int width, out int height);
+
+                      if (imageData != null && has_model_init == 1)
+                      {
+                          // 4. 执行推理
+                          PerformInferenceOnImageData(imageData, width, height);
+                      }
+
+                      // 5. 控制推理速度
+                      int delayMs = (int)numericUpDown1.Value;
+                      if (delayMs > 0)
+                      {
+                          Thread.Sleep(delayMs);
+                      }
+                  }
+                  catch (ThreadAbortException)
+                  {
+                      break;
+                  }
+                  catch (Exception ex)
+                  {
+                      Console.WriteLine($"相机推理线程出错: {ex.Message}");
+                      Thread.Sleep(100);
+                  }
+              }
+          }
+
+          // 开始相机推理
+          private void StartCameraInfer()
+          {
+              if (cameraInferThread != null && cameraInferThread.IsAlive)
+              {
+                  MessageBox.Show("相机推理已在运行", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                  return;
+              }
+
+              if (!cameraConnected[selectedCameraIndex])
+              {
+                  MessageBox.Show("请先初始化相机", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  return;
+              }
+
+              if (has_model_init != 1)
+              {
+                  MessageBox.Show("请先初始化模型", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                  return;
+              }
+
+              stopCameraInfer = false;
+              cameraInferThread = new Thread(CameraInferThreadProc);
+              cameraInferThread.IsBackground = true;
+              cameraInferThread.Start();
+
+            //  UpdateInferButtonState(true);
+          }
+
+          // 停止相机推理
+          private void StopCameraInfer()
+          {
+              stopCameraInfer = true;
+
+              if (cameraInferThread != null && cameraInferThread.IsAlive)
+              {
+                  if (!cameraInferThread.Join(1000))
+                  {
+                      cameraInferThread.Abort();
+                  }
+                  cameraInferThread = null;
+              }
+
+            //  UpdateInferButtonState(false);
+          }
+
+          // 转换CogImage为字节数组
+          private byte[] ConvertCogImageToByteArray(CogImage8Grey image, out int width, out int height)
+          {
+              width = 0;
+              height = 0;
+
+              try
+              {
+                  // 获取图像尺寸
+                  CogImage8Root root = (CogImage8Root)image.GetRoot();
+                  width = root.Width;
+                  height = root.Height;
+
+                  // 分配字节数组
+                  byte[] imageData = new byte[width * height];
+
+                  // 复制图像数据
+                  IntPtr srcPtr = root.PixelDataPtr;
+                  Marshal.Copy(srcPtr, imageData, 0, imageData.Length);
+
+                  return imageData;
+              }
+              catch (Exception ex)
+              {
+                  Console.WriteLine($"转换图像数据失败: {ex.Message}");
+                  return null;
+              }
+          }
+
+          // 执行推理的核心函数
+          private void PerformInferenceOnImageData(byte[] imageData, int width, int height)
+          {
+              try
+              {
+                  if (imageData == null || imageData.Length == 0)
+                  {
+                      Console.WriteLine("图像数据为空");
+                      return;
+                  }
+
+                  // 获取推理开始时间
+                  DateTime startTime = DateTime.Now;
+
+                  // 根据模型类型执行不同的推理
+                  if (model_type == "det")  // 检测模型
+                  {
+                      PerformDetectionInference(imageData, width, height);
+                  }
+                  else if (model_type == "seg")  // 分割模型
+                  {
+                      PerformSegmentationInference(imageData, width, height);
+                  }
+                  else if (model_type == "clas")  // 分类模型
+                  {
+                      PerformClassificationInference(imageData, width, height);
+                  }
+                  else if (model_type == "mask")  // MaskRCNN模型
+                  {
+                      PerformMaskInference(imageData, width, height);
+                  }
+                  else
+                  {
+                      Console.WriteLine($"不支持的模型类型: {model_type}");
+                      return;
+                  }
+
+                  // 计算推理时间
+                  TimeSpan inferenceTime = DateTime.Now - startTime;
+
+                  // 更新状态栏显示推理速度
+                  this.Invoke(new Action(() =>
+                  {
+                      StripStatus_InferSpeed.Text = $"{inferenceTime.TotalMilliseconds:F1}ms";
+                  }));
+              }
+              catch (Exception ex)
+              {
+                  Console.WriteLine($"推理过程中出错: {ex.Message}");
+              }
+          }
+
+          // 目标检测推理
+          private void PerformDetectionInference(byte[] imageData, int width, int height)
+          {
+              try
+              {
+                  // 准备推理输出
+                  float[] resultlist = new float[600];
+                  IntPtr results = FloatToIntptr(resultlist);
+                  int[] boxesInfo = new int[1];
+                  byte[] labellist = new byte[1000];
+
+                  // 将灰度图转换为BGR（如果模型需要3通道）
+                  byte[] bgrData = null;
+                  int channels = 1;
+
+                  if (model_type == "det" || model_type == "mask")
+                  {
+                      // 检测和MaskRCNN模型通常需要3通道输入
+                      bgrData = ConvertGrayToBGR(imageData, width, height);
+                      channels = 3;
+                  }
+                  else
+                  {
+                      bgrData = imageData;
+                      channels = 1;
+                  }
+
+                  // 调用DLL中的推理函数
+                  int ret = Det_ModelPredict(bgrData, width, height, channels, results, boxesInfo, ref labellist[0]);
+
+                  if (ret != 0)
+                  {
+                      Console.WriteLine($"推理失败，返回码: {ret}");
+                      return;
+                  }
+
+                  // 解析推理结果
+                  string strGet = System.Text.Encoding.Default.GetString(labellist, 0, labellist.Length);
+                  string[] predict_Label_List = strGet.TrimEnd('\0').Split(' ');
+
+                  // 创建推理结果对象
+                  DLResult dlRes = new DLResult();
+                  dlRes.AL_Rect = new List<CogRectangleAffine>();
+                  dlRes.AL_score = new List<float>();
+                  dlRes.AL_Type = new List<int>();
+
+                  // 解析检测框
+                  for (int i = 0; i < boxesInfo[0]; i++)
+                  {
+                      int labelindex = Convert.ToInt32(resultlist[i * 6 + 0]);
+                      float score = resultlist[i * 6 + 1];
+                      float left = resultlist[i * 6 + 2];
+                      float top = resultlist[i * 6 + 3];
+                      float right = resultlist[i * 6 + 4];  // det -- right down
+                      float down = resultlist[i * 6 + 5];
+
+                      if (score > det_threshold)
+                      {
+                          CogRectangleAffine cogRect = new CogRectangleAffine();
+                          cogRect.CenterX = left + (right - left) / 2;
+                          cogRect.CenterY = top + (down - top) / 2;
+                          cogRect.SideXLength = right - left;
+                          cogRect.SideYLength = down - top;
+
+                          dlRes.AL_Rect.Add(cogRect);
+                          dlRes.AL_score.Add(score);
+
+                          // 根据标签名称设置类型
+                          if (i < predict_Label_List.Length)
+                          {
+                              string labelName = predict_Label_List[i];
+                              int typeId = GetLabelTypeId(labelName);
+                              dlRes.AL_Type.Add(typeId);
+                          }
+                          else
+                          {
+                              dlRes.AL_Type.Add(0);  // 未知类型
+                          }
+                      }
+                  }
+
+                  // 在UI线程上更新显示结果
+                  this.Invoke(new Action(() =>
+                  {
+                      // 确保cogRDTarget有图像
+                      if (cogRDTarget.Image == null)
+                      {
+                          // 如果需要，可以创建临时图像显示
+                          // 或者保持之前的图像
+                      }
+
+                      // 添加检测框到显示
+                      AddGrap(cogRDTarget, dlRes);
+
+                      // 更新状态信息
+                      UpdateInferenceStatus(dlRes);
+                  }));
+
+                  // 如果需要保存XML文件
+                  if (bSaveXml && dlRes.AL_Rect.Count > 0 || bSavePosiXml && dlRes.AL_Rect.Count == 0)
+                  {
+                      SaveInferenceResultAsXml(dlRes, width, height);
+                  }
+              }
+              catch (Exception ex)
+              {
+                  Console.WriteLine($"检测推理出错: {ex.Message}");
+              }
+          }
+          private void inferFromCogImage(CogImage8Grey cogImage)
+        {
+            // 将CogImage8Grey转换为Mat（灰度）
+            Bitmap bmp = cogImage.ToBitmap();
+            Mat matGray = OpenCvSharp.Extensions.BitmapConverter.ToMat(bmp);
+            int width = matGray.Width;
+            int height = matGray.Height;
+
+            Mat matRGBImg = new Mat();
+            Cv2.CvtColor(matGray, matRGBImg, ColorConversionCodes.GRAY2BGR);
+            byte[] bRGBData = new byte[matGray.Total() * 3];
+            Marshal.Copy(matRGBImg.Data, bRGBData, 0, bRGBData.Length);
+
+            // 以下代码与inferSetImage方法中的推理部分相同
+            float[] resultlist = new float[600];
+            IntPtr results = FloatToIntptr(resultlist);
+            int[] boxesInfo = new int[1];
+            byte[] labellist = new byte[1000];
+
+            TimeSpan infer_start_time = new TimeSpan(DateTime.Now.Ticks);
+
+            try
+            {
+                int ret = Det_ModelPredict(bRGBData, width, height, 3, results, boxesInfo, ref labellist[0]);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+            TimeSpan infer_end_time = new TimeSpan(DateTime.Now.Ticks);
+
+            string strGet = System.Text.Encoding.Default.GetString(labellist, 0, labellist.Length);
+            string[] predict_Label_List = strGet.Split(' ');
+
+            dlRes = new DLResult();
+            dlRes.AL_Rect = new List<CogRectangleAffine>();
+            dlRes.AL_score = new List<float>();
+            dlRes.AL_Type = new List<int>();
+            for (int i = 0; i < boxesInfo[0]; i++)
+            {
+                int labelindex = Convert.ToInt32(resultlist[i * 6 + 0]);
+                float score = resultlist[i * 6 + 1];
+                float left = resultlist[i * 6 + 2];
+                float top = resultlist[i * 6 + 3];
+                float right = resultlist[i * 6 + 4];  // det -- right down
+                float down = resultlist[i * 6 + 5];
+
+                if (score > det_threshold)
+                {
+                    var text_size = Cv2.GetTextSize($"{predict_Label_List[i]}-{labelindex}-{score:f2}",
+                                     HersheyFonts.HersheySimplex, 1, 2, out int baseline);
+                    int left_down_x = (int)left + 22;
+                    int left_down_y = (int)top + text_size.Height;
+
+
+                    CogRectangleAffine cogRect = new CogRectangleAffine();
+                    cogRect.CenterX = resultlist[i * 6 + 2] + resultlist[i * 6 + 4] / 2;
+                    cogRect.CenterY = resultlist[i * 6 + 3] + resultlist[i * 6 + 5] / 2;
+                    cogRect.SideXLength = resultlist[i * 6 + 4];
+                    cogRect.SideYLength = resultlist[i * 6 + 5];
+
+                    dlRes.AL_Rect.Add(cogRect);
+                    dlRes.AL_score.Add(score);
+                    if (predict_Label_List[i] == "liewen")
+                        dlRes.AL_Type.Add(1);
+                    else if (predict_Label_List[i] == "posz")
+                        dlRes.AL_Type.Add(2);
+                    else if (predict_Label_List[i] == "liewenWP")
+                        dlRes.AL_Type.Add(3);
+                    else if (predict_Label_List[i] == "poszWP")
+                        dlRes.AL_Type.Add(4);
+                    else if (predict_Label_List[i] == "flaking")
+                        dlRes.AL_Type.Add(5);
+
+                }
+            }
+            AddGrap(cogRDTarget, dlRes);
+
+            TimeSpan start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
+            double cost_milliseconds = start2end_time.TotalMilliseconds;
+
+            StripStatus_InferSpeed.Text = ((int)cost_milliseconds).ToString();
+        }
+
+       
+          */
+        private void menu_Cam_1_Click(object sender, EventArgs e)
+        {
+           /* selectedCameraIndex = 0;
+            bool success = InitializeCamera(selectedCameraIndex); 
+            if (success)
+            {
+                MessageBox.Show("相机初始化成功", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }*/
+        }
+    
+    
+ 
+
+        private void menu_Cam_2_Click(object sender, EventArgs e)
+        {
+            /* selectedCameraIndex = 1;
+             bool success = InitializeCamera(selectedCameraIndex);
+
+             if (success)
+             {
+                 MessageBox.Show("相机初始化成功", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+             }
+             *//*if (has_model_init != 1)
+             {
+                 MessageBox.Show("请先初始化模型");
+                 return;
+             }
+             if (AcqFIFO == null)
+             {
+                 MessageBox.Show("相机未初始化");
+                 return;
+             }
+             // 采集一帧图像
+             CogImage8Grey cogImage = AcqFIFO.GrabOneFrameCog(1); // 假设采集第一个相机
+             if (cogImage == null)
+             {
+                 MessageBox.Show("采集图像失败");
+                 return;
+             }
+             // 显示源图像
+             cogRDSource.Image = cogImage;
+             // 进行推理
+             inferFromCogImage(cogImage);*/
+        }
+
+
+        private void CamConn_Click(object sender, EventArgs e)
+        {
+
+        }
+        
     }
 }

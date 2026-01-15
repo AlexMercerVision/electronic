@@ -2258,7 +2258,7 @@ namespace VisionApplication
             while (vpWin != null && !vpWin.bMainTaskFinished && count < 50)
             {
                 count++;
-                Thread.Sleep(100);
+                Thread.Sleep(20);
             }
 
             CloseCam();

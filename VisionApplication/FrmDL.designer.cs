@@ -53,18 +53,21 @@ namespace xbDefectDect
             this.checkBox2 = new System.Windows.Forms.CheckBox();
             this.checkBox3 = new System.Windows.Forms.CheckBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.menu_Model = new System.Windows.Forms.ToolStripMenuItem();
-            this.menu_Model_Init = new System.Windows.Forms.ToolStripMenuItem();
-            this.menu_Model_Destroy = new System.Windows.Forms.ToolStripMenuItem();
-            this.menu_Model_ModelPath = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_File = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_File_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_File_LoadDir = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_File_SaveXMLPath = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Model = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Model_Init = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Model_Destroy = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Model_ModelPath = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_Infer = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_Infer_Start = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_Infer_Pauss = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_Infer_Stop = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Cam = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Cam_1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Cam_2 = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.StripStatus_modelStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
@@ -85,6 +88,7 @@ namespace xbDefectDect
             this.toolPause = new System.Windows.Forms.ToolStripButton();
             this.toolStop = new System.Windows.Forms.ToolStripButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.CamConn = new System.Windows.Forms.ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
@@ -339,14 +343,45 @@ namespace xbDefectDect
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menu_Model,
             this.menu_File,
-            this.menu_Infer});
+            this.menu_Model,
+            this.menu_Infer,
+            this.menu_Cam});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1083, 25);
             this.menuStrip1.TabIndex = 34;
             this.menuStrip1.Text = "menuStrip1";
+            // 
+            // menu_File
+            // 
+            this.menu_File.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menu_File_LoadFile,
+            this.menu_File_LoadDir,
+            this.menu_File_SaveXMLPath});
+            this.menu_File.Name = "menu_File";
+            this.menu_File.Size = new System.Drawing.Size(44, 21);
+            this.menu_File.Text = "文件";
+            // 
+            // menu_File_LoadFile
+            // 
+            this.menu_File_LoadFile.Name = "menu_File_LoadFile";
+            this.menu_File_LoadFile.Size = new System.Drawing.Size(172, 22);
+            this.menu_File_LoadFile.Text = "加载文件";
+            this.menu_File_LoadFile.Click += new System.EventHandler(this.menu_File_LoadFile_Click);
+            // 
+            // menu_File_LoadDir
+            // 
+            this.menu_File_LoadDir.Name = "menu_File_LoadDir";
+            this.menu_File_LoadDir.Size = new System.Drawing.Size(172, 22);
+            this.menu_File_LoadDir.Text = "加载文件夹";
+            this.menu_File_LoadDir.Click += new System.EventHandler(this.menu_File_LoadDir_Click);
+            // 
+            // menu_File_SaveXMLPath
+            // 
+            this.menu_File_SaveXMLPath.Name = "menu_File_SaveXMLPath";
+            this.menu_File_SaveXMLPath.Size = new System.Drawing.Size(172, 22);
+            this.menu_File_SaveXMLPath.Text = "推理结果保存路径";
             // 
             // menu_Model
             // 
@@ -379,36 +414,6 @@ namespace xbDefectDect
             this.menu_Model_ModelPath.Text = "设置模型路径";
             this.menu_Model_ModelPath.Click += new System.EventHandler(this.menu_Model_ModelPath_Click);
             // 
-            // menu_File
-            // 
-            this.menu_File.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menu_File_LoadFile,
-            this.menu_File_LoadDir,
-            this.menu_File_SaveXMLPath});
-            this.menu_File.Name = "menu_File";
-            this.menu_File.Size = new System.Drawing.Size(44, 21);
-            this.menu_File.Text = "文件";
-            // 
-            // menu_File_LoadFile
-            // 
-            this.menu_File_LoadFile.Name = "menu_File_LoadFile";
-            this.menu_File_LoadFile.Size = new System.Drawing.Size(172, 22);
-            this.menu_File_LoadFile.Text = "加载文件";
-            this.menu_File_LoadFile.Click += new System.EventHandler(this.menu_File_LoadFile_Click);
-            // 
-            // menu_File_LoadDir
-            // 
-            this.menu_File_LoadDir.Name = "menu_File_LoadDir";
-            this.menu_File_LoadDir.Size = new System.Drawing.Size(172, 22);
-            this.menu_File_LoadDir.Text = "加载文件夹";
-            this.menu_File_LoadDir.Click += new System.EventHandler(this.menu_File_LoadDir_Click);
-            // 
-            // menu_File_SaveXMLPath
-            // 
-            this.menu_File_SaveXMLPath.Name = "menu_File_SaveXMLPath";
-            this.menu_File_SaveXMLPath.Size = new System.Drawing.Size(172, 22);
-            this.menu_File_SaveXMLPath.Text = "推理结果保存路径";
-            // 
             // menu_Infer
             // 
             this.menu_Infer.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -439,6 +444,29 @@ namespace xbDefectDect
             this.menu_Infer_Stop.Size = new System.Drawing.Size(124, 22);
             this.menu_Infer_Stop.Text = "停止推理";
             this.menu_Infer_Stop.Click += new System.EventHandler(this.menu_Infer_Stop_Click);
+            // 
+            // menu_Cam
+            // 
+            this.menu_Cam.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menu_Cam_1,
+            this.menu_Cam_2});
+            this.menu_Cam.Name = "menu_Cam";
+            this.menu_Cam.Size = new System.Drawing.Size(44, 21);
+            this.menu_Cam.Text = "相机";
+            // 
+            // menu_Cam_1
+            // 
+            this.menu_Cam_1.Name = "menu_Cam_1";
+            this.menu_Cam_1.Size = new System.Drawing.Size(180, 22);
+            this.menu_Cam_1.Text = "相机1";
+            this.menu_Cam_1.Click += new System.EventHandler(this.menu_Cam_1_Click);
+            // 
+            // menu_Cam_2
+            // 
+            this.menu_Cam_2.Name = "menu_Cam_2";
+            this.menu_Cam_2.Size = new System.Drawing.Size(180, 22);
+            this.menu_Cam_2.Text = "相机2";
+            this.menu_Cam_2.Click += new System.EventHandler(this.menu_Cam_2_Click);
             // 
             // statusStrip1
             // 
@@ -535,7 +563,8 @@ namespace xbDefectDect
             this.toolStripSeparator1,
             this.toolStart,
             this.toolPause,
-            this.toolStop});
+            this.toolStop,
+            this.CamConn});
             this.toolStrip.Location = new System.Drawing.Point(0, 25);
             this.toolStrip.Name = "toolStrip";
             this.toolStrip.Size = new System.Drawing.Size(1083, 48);
@@ -632,6 +661,16 @@ namespace xbDefectDect
             this.groupBox1.TabIndex = 37;
             this.groupBox1.TabStop = false;
             // 
+            // CamConn
+            // 
+            this.CamConn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.CamConn.Image = ((System.Drawing.Image)(resources.GetObject("CamConn.Image")));
+            this.CamConn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.CamConn.Name = "CamConn";
+            this.CamConn.Size = new System.Drawing.Size(23, 45);
+            this.CamConn.Text = "toolStripButton1";
+            this.CamConn.Click += new System.EventHandler(this.CamConn_Click);
+            // 
             // FrmDL
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -726,6 +765,10 @@ namespace xbDefectDect
         private System.Windows.Forms.ToolStripButton toolPause;
         private System.Windows.Forms.ToolStripButton toolStop;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem menu_Cam;
+        private System.Windows.Forms.ToolStripMenuItem menu_Cam_1;
+        private System.Windows.Forms.ToolStripMenuItem menu_Cam_2;
+        private System.Windows.Forms.ToolStripButton CamConn;
     }
 }
 

@@ -17,6 +17,7 @@ using Cognex.VisionPro.ImageProcessing;
 using Cognex.VisionPro.Implementation;
 using Cognex.VisionPro.ImageFile;
 using OpenCvSharp;
+using MvCamCtrl.NET;  // 添加海康相机引用
 
 namespace CommonCls
 {

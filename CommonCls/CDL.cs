@@ -1249,6 +1249,254 @@ namespace CommonCls
         }
         #endregion
 
+        #region
+        /// <summary>
+        /// 从文件中读取预定义的类别列表
+        /// </summary>
+        /// <param name="classesFilePath">类别文件路径</param>
+        /// <returns>类别列表</returns>
+        public  List<string> LoadPredefinedClasses(string classesFilePath)
+        {
+            try
+            {
+                if (!File.Exists(classesFilePath))
+                {
+                    Console.WriteLine($"警告: 类别文件 {classesFilePath} 不存在");
+                    return new List<string>();
+                }
 
+                var classes = File.ReadAllLines(classesFilePath)
+                    .Where(line => !string.IsNullOrWhiteSpace(line))
+                    .Select(line => line.Trim())
+                    .ToList();
+
+                Console.WriteLine($"已从 {classesFilePath} 加载 {classes.Count} 个类别");
+                return classes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"加载类别文件失败: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        private static List<string> _classList = new List<string>();
+ 
+
+        /// <summary>
+        /// 将 YOLO 格式 TXT 转换为 XML 格式（使用 CDL 类中的 DLResult 结构）
+        /// </summary>
+        public   bool ConvertYoloToXml(string txtPath, string imageWidth, string imageHeight,
+                                           string imageName, string outputPath = null)
+        {
+            try
+            {
+                // 如果未指定输出路径，则使用相同目录下同名 XML 文件
+                if (string.IsNullOrEmpty(outputPath))
+                    outputPath = Path.ChangeExtension(txtPath, ".xml");
+
+                // 读取 YOLO 文件
+                var lines = File.ReadAllLines(txtPath);
+
+                // 解析图像尺寸
+                int width = int.Parse(imageWidth);
+                int height = int.Parse(imageHeight);
+
+                // 创建 DLResult 结构
+                DLResult dlResult = new DLResult
+                {
+                    AL_Rect = new List<CogRectangleAffine>(),
+                    AL_score = new List<float>(),
+                    AL_Type = new List<int>(),
+                    Al_bDiff = new List<bool>()
+                };
+
+                // 解析 YOLO 格式数据
+                foreach (var line in lines)
+                {
+                    var parts = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                 //   var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 5) continue;
+
+                    int classId = int.Parse(parts[0]);
+                    float centerX = float.Parse(parts[1]);
+                    float centerY = float.Parse(parts[2]);
+                    float boxWidth = float.Parse(parts[3]);
+                    float boxHeight = float.Parse(parts[4]);
+
+                    // 检查类别ID是否有效
+                    if (classId < 0 || classId >= _classList.Count)
+                    {
+                        Console.WriteLine($"警告: 无效的类别ID {classId}，跳过此对象");
+                        continue;
+                    }
+
+                    // 转换为绝对像素坐标
+                    int xmin = (int)((centerX - boxWidth / 2) * width);
+                    int ymin = (int)((centerY - boxHeight / 2) * height);
+                    int xmax = (int)((centerX + boxWidth / 2) * width);
+                    int ymax = (int)((centerY + boxHeight / 2) * height);
+
+                    // 边界检查
+                    xmin = Math.Max(0, Math.Min(width - 1, xmin));
+                    ymin = Math.Max(0, Math.Min(height - 1, ymin));
+                    xmax = Math.Max(xmin + 1, Math.Min(width - 1, xmax));
+                    ymax = Math.Max(ymin + 1, Math.Min(height - 1, ymax));
+
+                    // 创建矩形
+                    CogRectangleAffine rect = new CogRectangleAffine();
+                    rect.CenterX = centerX * width;
+                    rect.CenterY = centerY * height;
+                    rect.SideXLength = boxWidth * width;
+                    rect.SideYLength = boxHeight * height;
+
+                    // 添加到结果
+                    dlResult.AL_Rect.Add(rect);
+                    dlResult.AL_Type.Add(classId + 1); // CDL 中类型从1开始
+                    dlResult.AL_score.Add(0.95f); // YOLO 格式不包含分数，使用默认值
+                    dlResult.Al_bDiff.Add(false); // 默认不是难例
+                }
+
+                // 使用 CDL 中的方法创建 XML
+                string strDestPath = txtPath + "\\" + imageName + ".xml";
+                CreateRemarkXML_EN("NullMark_00.xml", imageName + ".jpg", strDestPath, dlResult);
+                return true;
+                //return cdl.CreateRemarkXML_En(GetTemplateXmlPath(), imageName, outputPath, dlResult);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"YOLO转XML失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 将 XML 格式转换为 YOLO 格式 TXT
+        /// </summary>
+        public   bool ConvertXmlToYolo(string xmlPath, string classesFilePath = null,
+                                           string outputPath = null)
+        {
+            try
+            {
+                // 加载类别文件
+                if (!string.IsNullOrEmpty(classesFilePath))
+                    LoadPredefinedClasses(classesFilePath);
+
+                // 如果未指定输出路径，则使用相同目录下同名 TXT 文件
+                if (string.IsNullOrEmpty(outputPath))
+                    outputPath = Path.ChangeExtension(xmlPath, ".txt");
+
+                // 使用 CDL 中的方法读取 XML
+                CDL cdl = new CDL();
+                DLResult dlResult = new DLResult
+                {
+                    AL_Rect = new List<CogRectangleAffine>(),
+                    AL_score = new List<float>(),
+                    AL_Type = new List<int>(),
+                    Al_bDiff = new List<bool>()
+                };
+
+                string imageName = Path.GetFileNameWithoutExtension(xmlPath);
+                string xmlDir = Path.GetDirectoryName(xmlPath);
+                cdl.ReadRemarkXML_En(imageName, xmlDir, ref dlResult);
+
+                // 获取图像尺寸
+                int width = 0, height = 0;
+                try
+                {
+                    XmlDocument xmlDoc = new XmlDocument();
+                    xmlDoc.Load(xmlPath);
+                    XmlNode sizeNode = xmlDoc.SelectSingleNode("annotation/size");
+                    if (sizeNode != null)
+                    {
+                        width = int.Parse(sizeNode.SelectSingleNode("width").InnerText);
+                        height = int.Parse(sizeNode.SelectSingleNode("height").InnerText);
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("警告: 无法从XML获取图像尺寸，使用默认值5472x3648");
+                    width = 5472;
+                    height = 3648;
+                }
+
+                // 转换为 YOLO 格式
+                List<string> yoloLines = new List<string>();
+
+                for (int i = 0; i < dlResult.AL_Rect.Count; i++)
+                {
+                    var rect = dlResult.AL_Rect[i];
+                    int typeIndex = dlResult.AL_Type[i] - 1; // CDL 中类型从1开始，YOLO 从0开始
+
+                    // 检查类型索引是否有效
+                    if (typeIndex < 0 || typeIndex >= _classList.Count)
+                    {
+                        Console.WriteLine($"警告: 无效的类型索引 {typeIndex}，跳过此对象");
+                        continue;
+                    }
+
+                    // 计算归一化坐标
+                    float centerX = (float)((rect.CornerYX + rect.CornerXX) / 2.0 / width);
+                    float centerY = (float)((rect.CornerXY + rect.CornerYY) / 2.0 / height);
+                    float boxWidth = (float)((rect.CornerXX - rect.CornerYX) / width);
+                    float boxHeight = (float)((rect.CornerYY - rect.CornerXY) / height);
+
+                    // 限制在0-1范围内
+                    centerX = Math.Max(0, Math.Min(1, centerX));
+                    centerY = Math.Max(0, Math.Min(1, centerY));
+                    boxWidth = Math.Max(0.001f, Math.Min(1, boxWidth));
+                    boxHeight = Math.Max(0.001f, Math.Min(1, boxHeight));
+
+                    // 添加 YOLO 格式行
+                    yoloLines.Add($"{typeIndex} {centerX:F6} {centerY:F6} {boxWidth:F6} {boxHeight:F6}");
+                }
+
+                // 保存 TXT 文件
+                File.WriteAllLines(outputPath, yoloLines);
+                Console.WriteLine($"已转换: {xmlPath} -> {outputPath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"XML转YOLO失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 批量转换
+        /// </summary>
+        public   void BatchConvert(string sourceDir, string targetFormat,
+                                       string classesFilePath, string imageSize = "5472,3648")
+        {
+            if (targetFormat.ToUpper() == "VOC" || targetFormat.ToUpper() == "XML")
+            {
+                // 转换所有 TXT 到 XML
+                var txtFiles = Directory.GetFiles(sourceDir, "*.txt");
+                var sizeParts = imageSize.Split(',');
+                int width = int.Parse(sizeParts[0]);
+                int height = int.Parse(sizeParts[1]);
+
+                foreach (var txtFile in txtFiles)
+                {
+                    string imageName = Path.GetFileNameWithoutExtension(txtFile);
+                    ConvertYoloToXml(txtFile, width.ToString(), height.ToString(), imageName);
+                }
+            }
+            else if (targetFormat.ToUpper() == "YOLO" || targetFormat.ToUpper() == "TXT")
+            {
+                // 转换所有 XML 到 TXT
+                var xmlFiles = Directory.GetFiles(sourceDir, "*.xml");
+                foreach (var xmlFile in xmlFiles)
+                {
+                    ConvertXmlToYolo(xmlFile, classesFilePath);
+                }
+            }
+        }
+
+        
+ 
+
+        #endregion
     }
 }
