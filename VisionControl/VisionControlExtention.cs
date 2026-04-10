@@ -385,7 +385,7 @@ namespace VisionControl
                 pmaRes.bOk = true;
             }
             //连续运行只更新NG图像和信号
-            if ( iTaskType!=3 || !pmaRes.bOk)
+          //  if ( iTaskType!=3 || !pmaRes.bOk)
              {
                 DirectShowImage();
 

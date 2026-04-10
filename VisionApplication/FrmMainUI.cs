@@ -6044,7 +6044,7 @@ namespace VisionApplication
                     pmaRes = vpWin._PMARes;
                     if(!pmaRes.bOk)
                     {
-                        vpWin._bContRun = false;
+                      //  vpWin._bContRun = false;
                     }
                     if (this.InvokeRequired)
                     {

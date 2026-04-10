@@ -23,6 +23,8 @@ namespace CommonCls
 {
     public class ImgAcqFIFO
     {
+        const int maxCameraNum = 5;
+
         //多通道摄像头组
         MyCamera[] camera2 = new MyCamera[maxCameraNum];
         //单个摄像头使用，FrmCam_Debug 调试使用
@@ -61,7 +63,7 @@ namespace CommonCls
         
         public HObject[,] hObjFXA = new HObject[maxCameraNum, 6];
         public byte[][] bImgSrcData = new byte[maxCameraNum][];
-        const int maxCameraNum = 5;
+        
         //五个通道的灰度图
        public CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum];
         //五个通道的光度图
