@@ -186,6 +186,7 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
+           // camera2[icamSelectInd]
             cup.p_Cam[icamSelectInd].iSharp = (uint)nudSharp.Value;
             bool bSucc = hIKVisionCamera.SetSharpness(ref cup.p_Cam[icamSelectInd].iSharp, camera2[icamSelectInd]);
             if (bSucc)

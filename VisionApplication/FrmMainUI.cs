@@ -111,7 +111,7 @@ namespace VisionApplication
         UInt32[] nPayloadSizeS = new UInt32[maxCameraNum];      //采集数据长度
         int mainWindWidth, mainWindHeight;
         UInt32[] m_nBufSizeForDriver = new UInt32[maxCameraNum];
-        IntPtr m_BufForDriver;
+        
 
 
         HObject hobjImg = new HObject();
@@ -357,9 +357,7 @@ namespace VisionApplication
 
         //采集类初始化
         private void InitAcqFIFOParam()
-        {
-            acqFIFO._Buff = m_BufForDriver;
-            acqFIFO._PayloadSize = nPayloadSize;
+        { 
             acqFIFO.SetBuff(m_BufForDriverS, nPayloadSizeS);
             acqFIFO._HikCam = camera2;
             acqFIFO.CogFlipRotateImInit();
@@ -1059,9 +1057,16 @@ namespace VisionApplication
             }
 
             camera2 = hIKVisionCamera.CameraInit(iCamInd, ref rts.cs.iStatus);
-
+            if (camera2[iCamInd] == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "相机初始化失败";
+                operLog.strFailReason = "异常错误";
+                AddLog();
+                return false;
+            }
             //获取图像大小
-            if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) != 0)
+            if ( camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) != 0)
             {
                 iCamType = 1;
                 nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
@@ -1274,7 +1279,7 @@ namespace VisionApplication
                 if (!bNormal || iNeedCamNum > cameraNum)
                 {
                     iInitType = -2;
-                    goto outofInit;
+                //    goto outofInit;
                 }
 
                 //创建相机连接
@@ -1426,10 +1431,7 @@ namespace VisionApplication
                         hikCanGrab = false;
                         hikGrabThread.Join();
                     }
-                    if (m_BufForDriver != IntPtr.Zero)
-                    {
-                        Marshal.Release(m_BufForDriver);
-                    }
+                     
 
                     hIKVisionCamera.MultiDestroyCamera();
                 }
@@ -1615,44 +1617,8 @@ namespace VisionApplication
                 }
             }
         }
-        //黑白图像，直接转为HObject格式
-        private HObject GrabOneFrameHObj(int iCamInd)
-        {
-            HImage image = new HImage();
-            if (iCamType == 0)
-            {
-                nRet = camera2[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriver, nPayloadSize, ref stFrameInfo, 10000); // m_BufForDriver为图像数据接收指针
-
-
-                if (nRet == MyCamera.MV_OK)
-                {
-                    image.GenImage1("byte", (int)stFrameInfo.nWidth, (int)stFrameInfo.nHeight, m_BufForDriver);
-                    //  Marshal.Copy(m_BufForDriver, byteImage, 0, (int)nPayloadSize);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 1000);
-                if (nRet == MyCamera.MV_OK)
-                {
-
-                    image.GenImage1("byte", (int)stFrameInfo1.stFrameInfo.nWidth, (int)stFrameInfo1.stFrameInfo.nHeight, stFrameInfo1.pBufAddr);
-                    //  Marshal.Copy(stFrameInfo1.pBufAddr, byteImage, 0, (int)nPayloadSize);
-                }
-                else
-                {
-                    return null;
-                }
-
-            }
-            return image;
-            // PtrToObj(matImage.Ptr(), cup.p_HikPara.iPixelType);
-
-        }
+         
+        
         #endregion
 
         #region 自定义操作区

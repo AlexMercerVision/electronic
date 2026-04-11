@@ -50,7 +50,7 @@ namespace VisionControl
         CogImage8Grey ci8g_record, ci8g_preview, cigAcq;
         CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum];
         CogImage8Grey[] ci8gFX = new CogImage8Grey[maxCameraNum];
-        HObject[] hObjFX = new HObject[6];              //光度立体产生的图像
+      //  HObject[] hObjFX = new HObject[6];              //光度立体产生的图像
 
 
         HTuple WindowHandleSub1 = -1, WindowHandleSub2 = -1;
@@ -857,12 +857,12 @@ namespace VisionControl
             {
                 ci8gFX[i] = new CogImage8Grey();
             }
-            for (int i = 0; i < 6; i++)
+           /* for (int i = 0; i < 6; i++)
             {
                 hObjFX[i] = new HObject();
-            }
+            }*/
             acqFIFO._ci8gAcq = ci8gAcq;
-            acqFIFO._hObj = hObjFX;
+           // acqFIFO._hObj = hObjFX;
             for (int i = 0; i < maxCameraNum; i++)
             {
                 DL_result[i].AL_Rect = new List<CogRectangleAffine>();
@@ -2174,16 +2174,19 @@ namespace VisionControl
                 if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
                 {
                     bTaskFinish[wsInd] = false;
-                    ci8gAcq[wsInd] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
-                }
-
-
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[wsInd] != null)  //启用的检测面才做采集
+                    if(acqFIFO.nChannelNum[wsInd] == 0 || acqFIFO.nChannelNum[wsInd]==3)
+                    {
+                        acqFIFO.GrabOneFrameCogColor(cup.p_CD.camInd[wsInd]);
+                    }
+                    else
+                        ci8gAcq[wsInd] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
+                } 
+                if (cup.p_CD.bListProcess[wsInd] )  //启用的检测面才做采集
                 {
                     if (iModelRole == 10)
                     {
-                       //  cogRDMain.Display.ima
-                        cogRDMain.Display.Image = ci8gAcq[wsInd];
+                        //  cogRDMain.Display.ima
+                        cogRDMain.Display.Image =acqFIFO.ci24ColorAcq[wsInd];// ci8gAcq[wsInd];
                         cogRDMain.Display.Fit(true);
                     }
                     else

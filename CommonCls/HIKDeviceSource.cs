@@ -163,19 +163,19 @@ namespace CommonCls
             if (count > MaxCameraNum)
                 throw new ArgumentOutOfRangeException(nameof(count), $"相机数量不能超过 {MaxCameraNum}");
 
-            _cameraCount = count;
-            for (int i = 0; i < count; i++)
+             _cameraCount = count;
+            for (int index = 0; index < count; index++)
             {
-                status[i] = 0; // 默认失败
+                status[index] = 0; // 默认失败
                 var device = (MyCamera.MV_CC_DEVICE_INFO)Marshal.PtrToStructure(
-                    _deviceList.pDeviceInfo[i], typeof(MyCamera.MV_CC_DEVICE_INFO));
+                    _deviceList.pDeviceInfo[index], typeof(MyCamera.MV_CC_DEVICE_INFO));
 
-                if (_cameraArray[i] == null)
-                    _cameraArray[i] = new MyCamera();
+                if (_cameraArray[index] == null)
+                    _cameraArray[index] = new MyCamera();
 
-                if (InitializeCamera(_cameraArray[i], device))
+                if (InitializeCamera(_cameraArray[index], device))
                 {
-                    status[i] = 1;
+                    status[index] = 1;
                 }
             }
             return _cameraArray;
@@ -236,17 +236,7 @@ namespace CommonCls
         }
 
         /// <summary>
-        /// 检查指定索引的相机是否仍处于连接状态。
-        /// </summary>
-        public bool IsCamConn(int index)
-        {
-            if (index < 0 || index >= _cameraCount || _cameraArray[index] == null)
-                return false;
-            return _cameraArray[index].MV_CC_IsDeviceConnected_NET();
-        }
-
-        /// <summary>
-        /// 销毁所有已初始化的多相机对象。
+        /// 销毁所有已初始化的多相机对象
         /// </summary>
         public void MultiDestroyCamera()
         {
@@ -262,6 +252,16 @@ namespace CommonCls
             }
             _cameraCount = 0;
         }
+        /// <summary>
+        /// 检查指定索引的相机是否仍处于连接状态。
+        /// </summary>
+        public bool IsCamConn(int index)
+        {
+            if (index < 0 || index >= _cameraCount || _cameraArray[index] == null)
+                return false;
+            return _cameraArray[index].MV_CC_IsDeviceConnected_NET();
+        }
+
 
         #region 参数设置与获取
 
@@ -498,7 +498,27 @@ namespace CommonCls
                 format = 0;
             return ret;
         }
+        // 获取参数
+        public void GetParam(ref string gain, ref string exposure, MyCamera cam)
+        {
 
+
+            MyCamera.MVCC_FLOATVALUE stParam = new MyCamera.MVCC_FLOATVALUE();
+            // 获取曝光值
+            int nRet = cam.MV_CC_GetFloatValue_NET("Gain", ref stParam);
+            // int nRet = cam.MV_CC_GetFloatValue("Gain", ref stParam);
+
+            if (MyCamera.MV_OK == nRet)
+            {
+                gain = stParam.fCurValue.ToString("F0");
+            }
+            // 获取增益
+            nRet = cam.MV_CC_GetFloatValue_NET("ExposureTime", ref stParam);
+            if (MyCamera.MV_OK == nRet)
+            {
+                exposure = stParam.fCurValue.ToString("F0");
+            }
+        }
         /// <summary>
         /// 获取 ROI 区域参数（OffsetX, OffsetY, Width, Height）。
         /// </summary>
