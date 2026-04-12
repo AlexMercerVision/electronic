@@ -280,7 +280,7 @@ namespace CommonCls
                     pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;
                     break;
                 case 1:
-                    pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed;
+                    pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed;
                     break;
                 default:
                     pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;

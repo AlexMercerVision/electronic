@@ -53,6 +53,8 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].iExposeTime = (float)nudExposure.Value;
             bool bSucc = hIKVisionCamera.SetExposure(ref cup.p_Cam[icamSelectInd].iExposeTime, camera2[icamSelectInd]);
             if (bSucc)
@@ -73,6 +75,8 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].iExposeTime = tbExposure.Value;
             bool bSucc = hIKVisionCamera.SetExposure(ref cup.p_Cam[icamSelectInd].iExposeTime, camera2[icamSelectInd]);
             if (bSucc)
@@ -92,6 +96,8 @@ namespace VisionApplication
         private void chkAutoExposure_Click(object sender, EventArgs e)
         {
             if (icamSelectInd < 0)
+                return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
                 return;
             if (chkAutoExposure.Checked)
             {
@@ -124,6 +130,8 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].dGain = (float)tbGain.Value / 10;
 
             bool bSucc = hIKVisionCamera.SetGain(ref cup.p_Cam[icamSelectInd].dGain, camera2[icamSelectInd]);
@@ -145,6 +153,8 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].dGain = (float)nudGain.Value;
             bool bSucc = hIKVisionCamera.SetGain(ref cup.p_Cam[icamSelectInd].dGain, camera2[icamSelectInd]);
             if (bSucc)
@@ -164,6 +174,8 @@ namespace VisionApplication
         private void tbSharp_ValueChanged(object sender, EventArgs e)
         {
             if (icamSelectInd < 0)
+                return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
                 return;
             cup.p_Cam[icamSelectInd].iSharp = (uint)tbSharp.Value;
             bool bSucc = hIKVisionCamera.SetSharpness(ref cup.p_Cam[icamSelectInd].iSharp, camera2[icamSelectInd]);
@@ -186,8 +198,10 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
-           // camera2[icamSelectInd]
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].iSharp = (uint)nudSharp.Value;
+
             bool bSucc = hIKVisionCamera.SetSharpness(ref cup.p_Cam[icamSelectInd].iSharp, camera2[icamSelectInd]);
             if (bSucc)
             {
@@ -206,6 +220,8 @@ namespace VisionApplication
         private void tbGamma_ValueChanged(object sender, EventArgs e)
         {
             if (icamSelectInd < 0)
+                return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
                 return;
             cup.p_Cam[icamSelectInd].dGamma = (float)tbGamma.Value / 10;
             bool bSucc = hIKVisionCamera.SetGamma(ref cup.p_Cam[icamSelectInd].dGamma, camera2[icamSelectInd]);
@@ -228,6 +244,8 @@ namespace VisionApplication
         {
             if (icamSelectInd < 0)
                 return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].dGamma = (float)nudGamma.Value;
             bool bSucc = hIKVisionCamera.SetGamma(ref cup.p_Cam[icamSelectInd].dGamma, camera2[icamSelectInd]);
             if (bSucc)
@@ -248,6 +266,8 @@ namespace VisionApplication
         private void tbContrast_ValueChanged(object sender, EventArgs e)
         {
             if (icamSelectInd < 0)
+                return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
                 return;
             cup.p_Cam[icamSelectInd].iBrightness = (uint)tbBirghtness.Value;
             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
@@ -274,6 +294,8 @@ namespace VisionApplication
             // tbBirghtness.Value = (int)nudContrast.Value;
             if (icamSelectInd < 0)
                 return;
+            if (camera2 == null || camera2[icamSelectInd] == null)
+                return;
             cup.p_Cam[icamSelectInd].iBrightness = (uint)nudContrast.Value;
             hIKVisionCamera.StopGrabbing(icamSelectInd);
             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
@@ -299,6 +321,8 @@ namespace VisionApplication
         {
             if (icamSelectInd >= 0)
             {
+                if (camera2 == null || camera2[icamSelectInd] == null)
+                    return;
                 hIKVisionCamera.StopGrabbing(icamSelectInd);
 
                 cup.p_Cam[icamSelectInd].iMonoType = cmbPixelFormat.SelectedIndex;
@@ -306,10 +330,33 @@ namespace VisionApplication
                     cmbPixelFormat.SelectedIndex = 0;
                 bool bSucc = hIKVisionCamera.SetPixelFormat(ref cup.p_Cam[icamSelectInd].iMonoType, camera2[icamSelectInd]);
 
-                if (bSucc)
+                //修改图像色彩格式，重新分配空间
+                if (bSucc)  
                 {
                     operLog.iEventStatus = 0;
                     operLog.strFailReason = "";
+                    string strRes = cmbResulation.Text;
+                    int ind = strRes.IndexOf('*');
+                    cup.p_Cam[icamSelectInd].iWidth = uint.Parse(strRes.Substring(0, ind));
+                    cup.p_Cam[icamSelectInd].iHeight = uint.Parse(strRes.Substring(ind + 1, strRes.Length - ind - 1));
+
+
+                    if (cmbPixelFormat.SelectedIndex == 0 )
+                    {
+                        nPayloadSizeS[icamSelectInd] = cup.p_Cam[icamSelectInd].iWidth* cup.p_Cam[icamSelectInd].iHeight;                        
+                    }
+                    else
+                    {
+                        nPayloadSizeS[icamSelectInd] = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
+                    }
+                    if (m_BufForDriverS[icamSelectInd] != IntPtr.Zero)
+                    {
+                        Marshal.Release(m_BufForDriverS[icamSelectInd]);
+                    }
+                    m_nBufSizeForDriver[icamSelectInd] = nPayloadSizeS[icamSelectInd];
+                    m_BufForDriverS[icamSelectInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[icamSelectInd]);
+                    acqFIFO.SetBuff(m_BufForDriverS[icamSelectInd], nPayloadSizeS[icamSelectInd], icamSelectInd);
+                    
                 }
                 else
                 {
@@ -327,6 +374,8 @@ namespace VisionApplication
             //  int icamInd = cbDeviceList.SelectedIndex;
             if (icamSelectInd >= 0)
             {
+                if (camera2 == null || camera2[icamSelectInd] == null)
+                    return;
                 hIKVisionCamera.StopGrabbing(icamSelectInd);
                 string strRes = cmbResulation.Text;
                 int ind = strRes.IndexOf('*');
@@ -337,6 +386,23 @@ namespace VisionApplication
 
                 if (bSucc)
                 {
+                    if (cmbPixelFormat.SelectedIndex == 0)
+                    {
+                        nPayloadSizeS[icamSelectInd] = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight;
+                    }
+                    else
+                    {
+                        nPayloadSizeS[icamSelectInd] = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
+                    }
+                    if (m_BufForDriverS[icamSelectInd] != IntPtr.Zero)
+                    {
+                        Marshal.Release(m_BufForDriverS[icamSelectInd]);
+                    }
+                    m_nBufSizeForDriver[icamSelectInd] = nPayloadSizeS[icamSelectInd];
+                    m_BufForDriverS[icamSelectInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[icamSelectInd]);
+                    acqFIFO.SetBuff(m_BufForDriverS[icamSelectInd], nPayloadSizeS[icamSelectInd], icamSelectInd);
+
+
                     operLog.iEventStatus = 0;
                     operLog.strFailReason = "";
                 }
@@ -356,6 +422,8 @@ namespace VisionApplication
             int icamInd = cbDeviceList.SelectedIndex;
             if (icamInd >= 0)
             {
+                if (camera2 == null || camera2[icamInd] == null)
+                    return;
                 hIKVisionCamera.GetROIParam(cup.p_Cam[icamInd], camera2[icamInd]);
 
                 numROIOffSetX.Value = cup.p_Cam[icamInd].iROI[0];
@@ -370,6 +438,8 @@ namespace VisionApplication
             int icamInd = cbDeviceList.SelectedIndex;
             if (icamInd >= 0)
             {
+                if (camera2 == null || camera2[icamInd] == null)
+                    return;
                 cup.p_Cam[icamInd].iROI[0] = (uint)numROIOffSetX.Value;
                 cup.p_Cam[icamInd].iROI[1] = (uint)numROIOffSetY.Value;
                 cup.p_Cam[icamInd].iROI[2] = (uint)numROIWidth.Value;
@@ -459,10 +529,12 @@ namespace VisionApplication
                         nudExposure.Value = (decimal)cup.p_Cam[icamInd].iExposeTime;
                         nudGain.Value = (decimal)cup.p_Cam[icamInd].dGain;
                         nudGamma.Value = (decimal)cup.p_Cam[icamInd].dGamma;
-                        if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)
-                            cmbPixelFormat.SelectedIndex = cup.p_Cam[icamInd].iMonoType;
                         string strRes = cup.p_Cam[icamInd].iWidth.ToString() + "* " + cup.p_Cam[icamInd].iHeight.ToString();
                         cmbResulation.Text = strRes;
+
+                        if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)
+                            cmbPixelFormat.SelectedIndex = cup.p_Cam[icamInd].iMonoType;
+                       
 
                         switch (cup.p_Cam[icamInd].iRotateType)
                         {
@@ -501,7 +573,7 @@ namespace VisionApplication
                 }
             }
         }
-        int icamSelectInd = -1;
+      
         //手动设置相机参数，（可去掉）
         private void bnSetParam_Click(object sender, EventArgs e)
         {
@@ -549,7 +621,7 @@ namespace VisionApplication
         }
         #endregion
         #region  模板匹配参数设置
-        PMAlignParam pmaParam = new PMAlignParam();
+      
         //从UI界面更新参数到VP中PMA
         private void UpdatePMAParamFromUI()
         {
@@ -798,15 +870,7 @@ namespace VisionApplication
 
         //激光视觉标定
         //
-        #region  显示9点标定数据
-        double[] dCalibPoint = new double[36];
-        double[] dCalibPointIm = new double[18];
-        double[] dCalibPointLaser = new double[18];
-        // calibTemplateParam calTP = new calibTemplateParam();
-        calibBlobParam cbp = new calibBlobParam();
-        CalibRes cr = new CalibRes();
-        int featurePointNum = 9;
-        #endregion
+       
 
         #region  //9点标定模板分割 
         private void UpdateLaserVisionCalibParam2UIFromVP()
@@ -1049,8 +1113,7 @@ namespace VisionApplication
 
         //blob工具高级设置
         #region
-        CogBlobEditV2 blobV2;
-        bool bBlobEdit = false;
+      
         private void btCalibBlobParam_Click(object sender, EventArgs e)
         {
             bBlobEdit = !bBlobEdit;
@@ -1240,9 +1303,7 @@ namespace VisionApplication
 
         #region  对象操作
 
-        private LoadingForm loadingForm;
-
-        int iEntIndex = -1;
+       
 
         //获取图像
 

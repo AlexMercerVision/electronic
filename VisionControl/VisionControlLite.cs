@@ -36,7 +36,7 @@ namespace VisionControl
                     {
                         if (cup.p_VPPRTP.bDeepInfer)   //从GPU实时推理
                         {
-                            DLinfer();
+                            DLInfer(iJobIndex);
                             DLInferResProcess();
                             iDeepInferTime++;
                         }

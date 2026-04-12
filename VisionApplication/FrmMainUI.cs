@@ -41,126 +41,149 @@ namespace VisionApplication
 
     public partial class FrmMainUI : Form  
     {
-        Frm_Welcome fw;
-        
-        Protect mPasswordFile = new Protect("C:\\Users\\GearDet\\authentication.txt");
+        #region       
+        // 1. 常量
+        private const int maxCameraNum = 5;                     // 最大支持的相机数量（工位数量）
 
-        //用户参数
-        CUserParam cup = new CUserParam();
-        //文件操作类
-        FileOper fo = new FileOper();
-        //操作日志
-        OperLog operLog = new OperLog();
+        // 2. 字段 - UI相关
+        private Frm_Welcome fw;                                 // 欢迎窗体对象，用于显示启动进度
+        private Protect mPasswordFile = new Protect("C:\\Users\\GearDet\\authentication.txt");  // 授权文件保护类
 
-        //VP检测结果
-        DetectionResult dr = new DetectionResult();
+        // 3. 字段 - 核心业务对象
+        private CUserParam cup = new CUserParam();              // 用户配置参数
+        private FileOper fo = new FileOper();                   // 文件操作辅助类
+        private OperLog operLog = new OperLog();                // 操作日志记录对象
+        private DetectionResult dr = new DetectionResult();    // 视觉检测结果
+        private CSerialDef csd = new CSerialDef();              // 串口通信辅助类
+        private SerialPort sPortMain = new SerialPort();        // 主光源串口
+        private SerialPort sPortCy = new SerialPort();          // IO通信串口
+        private SerialPort[] sPortSub = new SerialPort[2];      // 侧面光源串口数组(2个)
+        private SerialPort[] sPortAll = new SerialPort[4];      // 所有串口数组(4个)
+        private int[] serialInd = { 0, 1, 2, 3 };               // 串口索引数组
 
+        // 4. 字段 - 文件回放
+        private int iFileIndex = 0, iNextFileIndex = 0;        // 当前、下一个回放文件索引
+        private int iFileGroupLen = 0;                          // 回放文件组的总数量
+        private int iPerGroupLen = 1;                           // 每组图像包含的文件数量（普通1，光度立体6）
+        private string[][] strFiles = new string[maxCameraNum][]; // 回放文件路径数组
 
-        //串口操作相关
-        CSerialDef csd = new CSerialDef();
-        SerialPort sPortMain = new SerialPort();    //主光源控制器串口
-        SerialPort[] sPortSub = new SerialPort[2];  //侧面光源控制器串口
-        SerialPort sPortCy = new SerialPort();       //IO口通信串口
-        int[] serialInd = { 0, 1, 2, 3 };
-        SerialPort[] sPortAll = new SerialPort[4];  //全部串口放在一个变量数组里面管理
+        // 5. 字段 - 线程
+        private Thread contThread = null, oneTimeThread = null; // 连续、单次运行线程
+        private Thread UpdateThread = null;                     // 更新VP记录清单线程
+        private Thread fxRestThread = null;                     // 光度立体重构线程
+        private Thread UIStartThread = null;                    // 启动界面线程
+        private Thread hikGrabThread = null;                    // 海康相机图像采集线程
+        private Thread LaserMarkThread = null;                  // 激光标刻线程
+        private Thread jczPipThread = null;                     // 金橙子板卡管道通信线程
+        private Thread queryEntThread = null;                   // 查询实体信息线程
+        private Thread ReLoadThread = null;                     // 重新加载资源线程
 
-        //执行检测相关
+        // 6. 字段 - 相机采集
+        private bool chooseHIK, hikCanGrab;                     // 是否选用海康相机、是否允许采集
+        private ImgAcqFIFO acqFIFO = new ImgAcqFIFO();          // 图像采集FIFO封装类
+        private HIKVisionCamera hIKVisionCamera = new HIKVisionCamera(); // 海康相机操作类
+        private MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX(); // 帧信息
+        private MyCamera[] camera2 = null;                      // 相机设备对象数组
+        private MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE(); // 整数值参数
+        private MyCamera.MV_FRAME_OUT stFrameInfo1 = new MyCamera.MV_FRAME_OUT(); // 帧信息（备用）
+        private int nRet = 0;                                   // SDK返回值
+        private UInt32 nPayloadSize = 0;                        // 单帧图像数据字节数
+        private int iCamType = 0;                               // 相机类型
+        private List<string> items;                             // 枚举到的相机名称列表
+        private IntPtr[] m_BufForDriverS = new IntPtr[maxCameraNum]; // 驱动缓冲区指针数组
+        private UInt32[] nPayloadSizeS = new UInt32[maxCameraNum];   // 每个相机的载荷大小数组
+        private UInt32[] m_nBufSizeForDriver = new UInt32[maxCameraNum]; // 每个相机缓冲区大小数组
+        private int mainWindWidth, mainWindHeight;              // 主窗口显示区域尺寸
+        private IntPtr m_BufForDriver;                          // 单相机驱动缓冲区指针（未使用）
+        private HObject hobjImg = new HObject();                // Halcon图像对象
 
-        int iFileIndex = 0, iNextFileIndex = 0;
-        int iFileGroupLen = 0;
-        int iPerGroupLen = 1;   //每组图像文件数量，  一般情况为1， 光度立体图为6
+        // 7. 字段 - 状态标志
+        private uint cameraNum = 0;                             // 实际搜索到的相机数量
+        private int iUsedCamraNum = 2;                          // 实际启用的相机数量
+        private int[] iEventStatus = new int[6];                // 各相机事件状态
+        private string[] strStatus = new string[12];            // 统计信息字符串数组
+        private int iShowType = 0;                              // 显示类型（0默认/1灰度/2光度/3PMA）
+        private int iCurrentIndex, iNextIndex;                  // 当前、下一个图像索引（IDB模式）
+        private int iLayoutType = 1;                            // 窗口布局类型
+        private bool bVPPParamChanged = false;                  // VisionPro参数改变标志
+        private RunTimeStatus rts = new RunTimeStatus();        // 运行时状态
+        private AlignImParam alImParam = new AlignImParam();    // 图像对齐参数
+        private CDL cdl = new CDL();                            // 深度学习推理类
+        private ResultInfo strResInfo = new ResultInfo();       // 结果信息
+        private DetStat detStat = new DetStat();                // 检测统计
 
-        //  string[] strDirectSub = { "Main", "Sub1", "Sub2", "Sub3", "Sub4" };
-        string[][] strFiles = new string[maxCameraNum][];  //回放文件数组
+        // 8. 字段 - PMAlign编辑
+        private bool bPMAEdit = false;                          // PMAlign编辑模式标志
+        private int iTmpType = 0;                               // 临时任务类型
+        private bool bTrig = false;                             // 触发模式标志
+        private CogPMAlignEditV2 pmaV2 = new CogPMAlignEditV2(); // PMAlign编辑控件
 
-        #region  执行线程
-        Thread contThread = null, oneTimeThread = null;     //连续执行与单次执行线程
-        Thread UpdateThread = null;                         //更新VP记录清单线程
-        Thread fxRestThread = null;
-     //   private delegate void UpdateUI();                   // 声明委托，用于更新界面
-        Thread UIStartThread = null;                        //启动界面线程 
-        Thread hikGrabThread = null;                        //图像采集线程
-        Thread LaserMarkThread = null;
-        Thread jczPipThread = null;
-        Thread queryEntThread = null;
-        Thread ReLoadThread = null;
+        // 9. 字段 - Blob编辑
+        private CogBlobEditV2 blobV2;                           // Blob分析编辑控件
+        private bool bBlobEdit = false;                         // Blob编辑模式标志
+
+        // 10. 字段 - 其他标志
+        private bool bVPWinAttached = false;                    // VisionPro控件是否已添加到窗体
+        private bool bLoadFinish = false;                       // 主窗体加载完成标志
+        private bool bfirstTime = true;                         // 定时器首次触发标志
+        private bool bSingleFrameModel = false;                 // 单帧模式标志
+        private bool bLoadVPRes = false;                        // 是否直接加载已有VP结果
+        private bool bCrackPlayback = false;                    // 回放破解模式标志
+        private string strPlaybackFileList = "";                // 回放文件列表路径
+        private int iProcess = 0;                               // 启动进度百分比
+        private System.Timers.Timer timerIOIn;                  // IO输入检测定时器
+        private string[] strPortName;                           // 系统可用串口名称数组
+        private List<int> comInd = new List<int>();              // 排序后的串口COM号列表
+
+        // 11. 字段 - 统计相关
+        private int iAcquisitionsTimes = 0;                     // 图像采集总次数
+        private int iErrAcquisitionsTimes = 0;                  // 采集失败次数
+        private int iErrExecuteTimes = 0;                       // 检测执行失败次数
+        private int iJobIndex = 0;                              // 当前选择的作业索引
+
+        // 12. 字段 - 标定相关
+        private PMARes pmaRes;                                  // PMAlign模板匹配结果
+        private string strLogPath = "";                         // 日志文件保存路径
+        private string strOrder = "";                           // 当前执行的指令
+        private int icamSelectInd = -1;                         // 当前选中的相机索引（UI用）
+        private PMAlignParam pmaParam = new PMAlignParam();     // PMAlign参数
+        private double[] dCalibPoint = new double[36];          // 标定点数据（图像坐标+物理坐标）
+        private double[] dCalibPointIm = new double[18];        // 图像坐标（9点）
+        private double[] dCalibPointLaser = new double[18];     // 激光坐标（9点）
+        private calibBlobParam cbp = new calibBlobParam();      // Blob标定参数
+        private CalibRes cr = new CalibRes();                   // 标定计算结果
+        private int featurePointNum = 9;                        // 特征点数量
+        private LoadingForm loadingForm;                        // 加载提示窗体
+        private int iEntIndex = -1;                             // 实体索引
+
+        // 13. 委托
+        private delegate void delegateUIUpdate();                // 委托：更新UI
+        private delegateUIUpdate updateUItmp;                   // 委托实例（未初始化，默认为null）
         #endregion
 
-        #region  图像采集相关
-        bool chooseHIK, hikCanGrab;
-        ImgAcqFIFO acqFIFO = new ImgAcqFIFO();              //图像采集封装类
-        HIKVisionCamera hIKVisionCamera = new HIKVisionCamera();  //海康相机操作类
-        //Hik 相机相关参数
-        MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();  // 定义输出帧信息结构体
+        // 14. 构造函数
+        public FrmMainUI()
+        { 
+            try
+            {
+                /* FileInfo fiN = new FileInfo("CommonCls.dll");
+                 FileInfo fiO = new FileInfo("C:\\Program Files\\Cognex\\VisionPro\\ReferencedAssemblies\\CommonCls.dll");
+                 if (fiN.LastWriteTime != fiO.LastWriteTime)
+                     File.Copy("CommonCls.dll", "C:\\Program Files\\Cognex\\VisionPro\\ReferencedAssemblies\\CommonCls.dll", true);
+       */
+            }
+            catch
+            {
+                //   File.Copy("CommonCls.dll", "C:\\Program Files\\Cognex\\VisionPro\\ReferencedAssemblies\\CommonCls.dll", true);
+            } 
+            CheckForIllegalCrossThreadCalls = false;
 
-        MyCamera[] camera2 = null;
+            InitializeComponent(); 
+            InitUserParam(); 
+        }
 
-        MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
-        MyCamera.MV_FRAME_OUT stFrameInfo1 = new MyCamera.MV_FRAME_OUT();
-        int nRet = 0;
-        UInt32 nPayloadSize = 0;
-        int iCamType = 0;
-
-        List<string> items;                                 //相机名称
-
-
-
-        //采集公共变量
-
-        IntPtr[] m_BufForDriverS = new IntPtr[maxCameraNum];    //采集数据缓存区
-        UInt32[] nPayloadSizeS = new UInt32[maxCameraNum];      //采集数据长度
-        int mainWindWidth, mainWindHeight;
-        UInt32[] m_nBufSizeForDriver = new UInt32[maxCameraNum];
-        
-
-
-        HObject hobjImg = new HObject();
-        #endregion  图像采集相关
-
-        #region   状态及标志相关
-        const int maxCameraNum = 5;
-        uint cameraNum = 0;
-        int iUsedCamraNum = 2;
-
-        int[] iEventStatus = new int[6];
-        string[] strStatus = new string[12];
-        //   int iTaskType = -1;      //0：采集单帧图像  1：实时预览图像  2：单帧运行   3：连续运行
-        //  CameraStatus cs = new CameraStatus();   //相机状态
-
-
-        //  bool bTrigg = false;  //启用触发模式
-        // int iTaskType = 0;
-        int iShowType = 0;  //0:默认显示，1：灰度图显示  2：光度图显示
-                            //    private string[] strSubRecordsName;
-                            //  public int iModelRole = 0;  //用户身份
-
-        //  int iVPPStatus = 0;  //VPP文件是否正确加载 
-        int iCurrentIndex, iNextIndex;
-        int iLayoutType = 1;
-
-        bool bVPPParamChanged = false;
-        //   int iRunStatus = 0;            //运行状态
-        //   bool bFeedback = true;
-        //    int iFeedbackType = 0;   //0：不反馈   1：实际结果  2：OK  3：NG 
-        // bool bDeepInfer = true; //是否启用深度推理  检测VP算法时可以关闭深度推理 
-        // InitStatus initStatus = new InitStatus();
-        RunTimeStatus rts = new RunTimeStatus();   //运行状态，用于向控制中心传达当前系统的实时状态
-
-        AlignImParam alImParam = new AlignImParam();
-        #endregion   状态及标志相关
-        //深度学习推理相关
-        CDL cdl = new CDL();
-
-        //获取记录清单
-
-        /// <summary 日志记录相关
-        ResultInfo strResInfo = new ResultInfo();
-        /// </summary>
-        /// 
-
-
-
-      
+        // 15. 初始化方法
+        #region 初始化相关
         //保存用户参数
         private void SaveUserParam()
         {
@@ -178,9 +201,7 @@ namespace VisionApplication
             }
 
         }
-
-
-        #region 初始化相关
+         
         //窗口布局初始化  主窗体加载以及窗体大小调整时调用
         private void ViewLayout()
         {
@@ -240,9 +261,7 @@ namespace VisionApplication
             }
             return strErr;
         }
-        //VisionControl初始化
-        bool bVPWinAttached = false;  //视图控件是否已经加载进来
-     
+        
         private void LoadVPFile(bool bReLoad)  //2025年10月4日  修改
         {
             string strVPPFile = "";
@@ -574,8 +593,7 @@ namespace VisionApplication
             
 
         }
-     //   OnLineStatus onLS = new OnLineStatus();
-        DetStat detStat = new DetStat();
+    
 
         // 验证相机是否都处于就位状态
         private void CheckCamPrepared()
@@ -1037,99 +1055,7 @@ namespace VisionApplication
             }
         }
 
-        //初始化单个相机， 轮询检测过程使用
-        private bool InitCamInd(int ind)
-        {
-            bool bSucc = false;
-            int iCamInd = cup.p_CD.camInd[ind];
-            // if (cup.p_CD.bListProcess[i] && iCamInd < cameraNum)
-            {
-                if (cup.p_Cam[iCamInd].strCamName != items[iCamInd])
-                {
-                    cup.p_Cam[iCamInd].strCamName = items[iCamInd];
-                    // rts.cs.iStatus[iCamInd] = -1;  //相机序列号有变化，需要提示
-                    operLog.iEventStatus = 0;
-                    operLog.strOperEvent = "相机" + (ind + 1).ToString() + "发生更换";
-                    operLog.strFailReason = cup.p_Cam[iCamInd].strCamName + "->" + items[iCamInd];
-                    AddLog();
-
-                }
-            }
-
-            camera2 = hIKVisionCamera.CameraInit(iCamInd, ref rts.cs.iStatus);
-            if (camera2[iCamInd] == null)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "相机初始化失败";
-                operLog.strFailReason = "异常错误";
-                AddLog();
-                return false;
-            }
-            //获取图像大小
-            if ( camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) != 0)
-            {
-                iCamType = 1;
-                nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
-                nPayloadSizeS[iCamInd] = stFrameInfo1.stFrameInfo.nFrameLen;
-            }
-            else
-            {
-                nRet = MyCamera.MV_OK;
-                nPayloadSizeS[iCamInd] = stParam.nCurValue;
-            }
-
-            if (MyCamera.MV_OK != nRet)
-            {  //获取图像大小信息失败  
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "检测位" + (ind + 1).ToString() + "获取相机数据量";
-                operLog.strFailReason = "异常错误";
-                AddLog();
-                return false;
-            }
-            else
-            {
-                rts.cs.iStatus[iCamInd] = 1;
-
-            }
-
-            if (!SetCamParam(iCamInd))  //设置参数
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "设置相机参数";
-                operLog.strFailReason = "异常错误";
-                AddLog();
-                return false;
-            }
-            else
-            {
-                rts.cs.iStatus[iCamInd] = 2;
-            }
-
-            //分配数据空间
-            if (nPayloadSizeS[iCamInd] > m_nBufSizeForDriver[iCamInd])
-            {
-                if (m_BufForDriverS[iCamInd] != IntPtr.Zero)
-                {
-                    Marshal.Release(m_BufForDriverS[iCamInd]);
-                }
-                m_nBufSizeForDriver[iCamInd] = nPayloadSizeS[iCamInd];
-                m_BufForDriverS[iCamInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[iCamInd]);
-            }
-
-            if (m_BufForDriverS[iCamInd] == IntPtr.Zero)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "分配数据空间";
-                operLog.strFailReason = "异常错误";
-                AddLog();
-            }
-            else
-            {
-                rts.cs.iStatus[iCamInd] = 3;
-            }
-            return bSucc;
-
-        }
+       
 
         private void ProcessInitCamStatus(int iInitType)
         {
@@ -1249,7 +1175,303 @@ namespace VisionApplication
         }
 
         //初始化摄像头
+        //初始化单个相机， 轮询检测过程使用
+        private bool InitCamInd(int ind)
+        {
+            bool bSucc = false;
+            int iCamInd = cup.p_CD.camInd[ind];
+            // if (cup.p_CD.bListProcess[i] && iCamInd < cameraNum)
+            {
+                if (cup.p_Cam[iCamInd].strCamName != items[iCamInd])
+                {
+                    cup.p_Cam[iCamInd].strCamName = items[iCamInd];
+                    // rts.cs.iStatus[iCamInd] = -1;  //相机序列号有变化，需要提示
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "相机" + (ind + 1).ToString() + "发生更换";
+                    operLog.strFailReason = cup.p_Cam[iCamInd].strCamName + "->" + items[iCamInd];
+                    AddLog();
+
+                }
+            }
+
+            camera2 = hIKVisionCamera.CameraInit(iCamInd, ref rts.cs.iStatus);
+            if (camera2[iCamInd] == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "相机初始化失败";
+                operLog.strFailReason = "异常错误";
+                AddLog();
+                return false;
+            }
+            //获取图像大小
+            if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) != 0)
+            {
+                iCamType = 1;
+                nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
+                nPayloadSizeS[iCamInd] = stFrameInfo1.stFrameInfo.nFrameLen;
+            }
+            else
+            {
+                nRet = MyCamera.MV_OK;
+                nPayloadSizeS[iCamInd] = stParam.nCurValue;
+            }
+
+            if (MyCamera.MV_OK != nRet)
+            {  //获取图像大小信息失败  
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "检测位" + (ind + 1).ToString() + "获取相机数据量";
+                operLog.strFailReason = "异常错误";
+                AddLog();
+                return false;
+            }
+            else
+            {
+                rts.cs.iStatus[iCamInd] = 1;
+
+            }
+
+            if (!SetCamParam(iCamInd))  //设置参数
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "设置相机参数";
+                operLog.strFailReason = "异常错误";
+                AddLog();
+                return false;
+            }
+            else
+            {
+                rts.cs.iStatus[iCamInd] = 2;
+            }
+
+            //分配数据空间
+            if (nPayloadSizeS[iCamInd] > m_nBufSizeForDriver[iCamInd])
+            {
+                if (m_BufForDriverS[iCamInd] != IntPtr.Zero)
+                {
+                    Marshal.Release(m_BufForDriverS[iCamInd]);
+                }
+                m_nBufSizeForDriver[iCamInd] = nPayloadSizeS[iCamInd];
+                m_BufForDriverS[iCamInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[iCamInd]);
+            }
+
+            if (m_BufForDriverS[iCamInd] == IntPtr.Zero)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "分配数据空间";
+                operLog.strFailReason = "异常错误";
+                AddLog();
+            }
+            else
+            {
+                rts.cs.iStatus[iCamInd] = 3;
+            }
+            return bSucc;
+
+        }
+        /// <summary>
+        /// 初始化所有摄像头：枚举设备、创建连接、获取载荷大小、设置参数、分配缓冲区
+        /// </summary>
         private void InitCam()
+        {
+            int iInitType = 0;          // 0:正常初始化 -1:没有可用相机 -2:相机编号超限 -3:获取载荷失败 -4:设置参数失败 -5:分配内存失败 -6:其他异常
+            bool bNeedCleanup = false;  // 标记是否需要清理已分配的资源
+
+            // 1. 检查是否有可用相机
+            if (cameraNum < 1)
+            {
+                iInitType = -1;
+                goto outofInit;
+            } 
+            try
+            {
+                // 2. 枚举相机，获取名称列表
+                items = hIKVisionCamera.EnumDevices();
+
+                // 3. 检查用户配置的相机编号是否有效
+                int iNeedCamNum = 0;
+                bool bValidIndices = true;
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                    {
+                        iNeedCamNum++;
+                        if (cup.p_CD.camInd[i] >= cameraNum)
+                        {
+                            bValidIndices = false;
+                            operLog.strFailReason = $"检测位{i + 1}配置的相机索引{cup.p_CD.camInd[i]}超出实际相机数量{cameraNum}";
+                        }
+                    }
+                }
+                if (!bValidIndices || iNeedCamNum > cameraNum)
+                {
+                    iInitType = -2;
+                    goto outofInit;     // 立即退出，避免数组越界
+                }
+
+                // 4. 创建相机连接对象数组
+                camera2 = hIKVisionCamera.MultiCameraInit((int)cameraNum, ref rts.cs.iStatus);
+
+                // 5. 获取每个相机的载荷大小（PayloadSize）
+                bool bPayloadOk = true;
+                for (int ind = 0; ind < maxCameraNum; ind++)
+                {
+                    if (!cup.p_CD.bListProcess[ind])
+                        continue;
+
+                    int iCamInd = cup.p_CD.camInd[ind];
+                    if (camera2[iCamInd] == null)
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"检测位{ind + 1}相机初始化返回null";
+                        operLog.strFailReason = "相机连接失败";
+                        AddLog();
+                        bPayloadOk = false;
+                        continue;
+                    }
+                    /* nRet = camera2[iCamInd].MV_CC_GetIntValue_NET(handle, "PayloadSize", &stIntValue);
+                     if (nRet == MV_OK)
+                     {
+                         printf("单帧图像数据大小: %d 字节\n", stIntValue.nCurValue);
+                     }*/
+                   // MVCC_INTVALUE stIntValue = { 0 };
+
+                    // 优先通过标准属性获取PayloadSize
+                    if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) == MyCamera.MV_OK)
+                    {
+                        nPayloadSizeS[iCamInd] = stParam.nCurValue;
+                        rts.cs.iStatus[iCamInd] = 1;
+                    }
+                    else
+                    {
+                        // 属性不支持时，直接报错，不再尝试抓图（避免长时间阻塞）
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"检测位{ind + 1}获取相机PayloadSize失败";
+                        operLog.strFailReason = "相机可能不支持该属性或未正确配置";
+                        AddLog();
+                        bPayloadOk = false;
+                    }
+                }
+                if (!bPayloadOk)
+                {
+                    iInitType = -3;
+                    goto outofInit;
+                }
+
+                // 6. 设置相机参数（曝光、增益、ROI等）
+                bool bSetParamOk = true;
+                for (int ind = 0; ind < maxCameraNum; ind++)
+                {
+                    if (!cup.p_CD.bListProcess[ind])
+                        continue;
+
+                    int iCamInd = cup.p_CD.camInd[ind];
+                    if (!SetCamParam(iCamInd))
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败";
+                        operLog.strFailReason = "异常错误";
+                        AddLog();
+                        bSetParamOk = false;
+                    }
+                    else
+                    {
+                        rts.cs.iStatus[iCamInd] = 2;
+                    }
+                }
+                if (!bSetParamOk)
+                {
+                    iInitType = -4;
+                    goto outofInit;
+                }
+
+                // 7. 分配图像数据缓冲区（非托管内存）
+                bool bAllocOk = true;
+                for (int ind = 0; ind < maxCameraNum; ind++)
+                {
+                    if (!cup.p_CD.bListProcess[ind])
+                        continue;
+
+                    int iCamInd = cup.p_CD.camInd[ind];
+                    uint neededSize = nPayloadSizeS[iCamInd];
+
+                    if (neededSize > m_nBufSizeForDriver[iCamInd])
+                    {
+                        // 释放旧的缓冲区（使用正确的释放函数）
+                        if (m_BufForDriverS[iCamInd] != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(m_BufForDriverS[iCamInd]);
+                            m_BufForDriverS[iCamInd] = IntPtr.Zero;
+                        }
+                        // 分配新的缓冲区
+                        m_BufForDriverS[iCamInd] = Marshal.AllocHGlobal((int)neededSize);
+                        if (m_BufForDriverS[iCamInd] == IntPtr.Zero)
+                        {
+                            operLog.iEventStatus = -1;
+                            operLog.strOperEvent = $"检测位{ind + 1}分配内存失败";
+                            operLog.strFailReason = $"需要{neededSize}字节";
+                            AddLog();
+                            bAllocOk = false;
+                        }
+                        else
+                        {
+                            m_nBufSizeForDriver[iCamInd] = neededSize;
+                            rts.cs.iStatus[iCamInd] = 3;
+                        }
+                    }
+                    else
+                    {
+                        // 已有足够大小的缓冲区，直接复用
+                        rts.cs.iStatus[iCamInd] = 3;
+                    }
+                }
+                if (!bAllocOk)
+                {
+                    iInitType = -5;
+                    goto outofInit;
+                }
+
+                // 初始化成功标志
+                bNeedCleanup = false;   // 全部成功，无需清理
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "相机初始化异常";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+                iInitType = -6;
+                bNeedCleanup = true;
+            }
+
+            outofInit:
+            // 如果初始化失败且已经分配了部分内存，需要释放已分配的资源
+            if (bNeedCleanup || (iInitType < 0 && iInitType != -1))
+            {
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (m_BufForDriverS[i] != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(m_BufForDriverS[i]);
+                        m_BufForDriverS[i] = IntPtr.Zero;
+                        m_nBufSizeForDriver[i] = 0;
+                    }
+                }
+            }
+
+            // 统一处理初始化结果状态
+            ProcessInitCamStatus(iInitType);
+        }
+
+        private void Reallocate(int iCamInd)
+        {
+            // 优先通过标准属性获取PayloadSize
+            if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) == MyCamera.MV_OK)
+            {
+                nPayloadSizeS[iCamInd] = stParam.nCurValue;
+                rts.cs.iStatus[iCamInd] = 1;
+            }
+        }
+       /* private void InitCam()
         {
             int iInitType = 0; //0：正常初始化   -1：没有可用相机
 
@@ -1413,10 +1635,9 @@ namespace VisionApplication
             }
 
         outofInit:
-            ProcessInitCamStatus(iInitType);
+            ProcessInitCamStatus(iInitType); 
 
-
-        }
+        }*/
         //关闭设备
         private void StopDevice()
         {
@@ -1696,9 +1917,7 @@ namespace VisionApplication
             AddLog();
         }
 
-        //显示日志
-        string strLogPath = "";
-        PMARes pmaRes;
+       
         private void AnaEvent()
         {
             pmaRes = vpWin._PMARes;
@@ -1975,7 +2194,7 @@ namespace VisionApplication
         }
 
 
-        int iProcess = 0;
+        
         private void StartWelcome()
         {
             fw = new Frm_Welcome();
@@ -2071,36 +2290,8 @@ namespace VisionApplication
             operLog.strFailReason = iModelRole.ToString();
             AddLog();
         }
-        public FrmMainUI()
-        {
-            //  this.Visible = false;
-
-            try
-            {
-                /* FileInfo fiN = new FileInfo("CommonCls.dll");
-                 FileInfo fiO = new FileInfo("C:\\Program Files\\Cognex\\VisionPro\\ReferencedAssemblies\\CommonCls.dll");
-                 if (fiN.LastWriteTime != fiO.LastWriteTime)
-                     File.Copy("CommonCls.dll", "C:\\Program Files\\Cognex\\VisionPro\\ReferencedAssemblies\\CommonCls.dll", true);
-       */
-            }
-            catch
-            {
-                //   File.Copy("CommonCls.dll", "C:\\Program Files\\Cognex\\VisionPro\\ReferencedAssemblies\\CommonCls.dll", true);
-            }
-
-            CheckForIllegalCrossThreadCalls = false;
-
-            InitializeComponent();
-
-
-
-            //   this.Visible = false;
-            InitUserParam();
-
-
-        }
-
-        bool bLoadFinish = false;
+        
+ 
         private void FrmMainUI_Load(object sender, EventArgs e)
         {
 
@@ -2295,15 +2486,7 @@ namespace VisionApplication
             InitVisionControl();
         }
 
-        //  int iRecordIndex = -1;
-        //   bool bFoundTargetImage = false;
-        //    bool bTaskFinish = true;
-        bool bPMAEdit = false;
-        int iTmpType = 0;
-
-
-        bool bTrig = false;
-        CogPMAlignEditV2 pmaV2 = new CogPMAlignEditV2();
+       
         private void btFun_Click(object sender, EventArgs e)
         {
             //未登录，禁止操作
@@ -3581,8 +3764,7 @@ namespace VisionApplication
         {
           //  csd.MachineStartOrStop(sPortCy, false);
         }
-        //检测反馈OK
-        string strOrder = "";
+         
         private void menuTask_OK_Click(object sender, EventArgs e)
         {
             operLog.strOperEvent = "OK反馈";
@@ -3865,7 +4047,7 @@ namespace VisionApplication
             AddLog();
         }
 
-        bool bSingleFrameModel = false;  //单帧模式
+       
         private void menuTask_SingleFrame_Click(object sender, EventArgs e)
         {
             if (!bSingleFrameModel)
@@ -4113,7 +4295,7 @@ namespace VisionApplication
 
         }
 
-        bool bfirstTime = true;
+       
         private void timer1_Tick(object sender, EventArgs e)
         {          
             if (iProcess < 100)
@@ -4652,12 +4834,7 @@ namespace VisionApplication
             }
             AddLog();
         }
-
-     
-
-        bool bCrackPlayback = false;
-
-        string strPlaybackFileList = "";
+         
         private void menuTask_CrackPlayback_Click(object sender, EventArgs e)
         {
 
@@ -4803,7 +4980,7 @@ namespace VisionApplication
             InitCheckStatus();
         }
         //直接加载结果
-        bool bLoadVPRes = false;
+       
         private void menuTask_LoadRes_Click(object sender, EventArgs e)
         {
             bLoadVPRes = !bLoadVPRes;
@@ -4951,10 +5128,7 @@ namespace VisionApplication
 
 
         #region   
-        //改变状态
-        int iAcquisitionsTimes = 0;
-        int iErrAcquisitionsTimes = 0;
-        int iErrExecuteTimes = 0;
+        
         private void UpdateStatisticsForJob(int i)
         {
             // don't update statistics when showing live video
@@ -5067,10 +5241,7 @@ namespace VisionApplication
             //    AddLog();
             return bSucc;
         }
-
-        string[] strPortName;
-        //    List<string> strPortNameTmp = new List<string>();
-        List<int> comInd = new List<int>();
+         
         private void PortProc(ref string[] strPortName)
         {
             if (strPortName == null || strPortName.Length == 0)
@@ -5191,8 +5362,7 @@ namespace VisionApplication
             timerIOIn.AutoReset = false; // 只触发一次
             updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
         }
-
-        private System.Timers.Timer timerIOIn;
+ 
         //接受数据
         private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
         {
@@ -5407,11 +5577,14 @@ namespace VisionApplication
             if (cup.p_VPPRTP.bAcqFromCam)  //实时采集
             {
                 rts.dtLastAcq = DateTime.Now;
-                bRet = vpWin.PreViewOneImage(cup.p_VPPRTP.iXBType);
-                if (!bRet)
+                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
                 {
-                    
-                    operLog.strFailReason = "采集异常错误";
+                    if(cup.p_CD.bListProcess[wsInd])
+                        bRet = vpWin.PreViewOneImage(wsInd);
+                    if (!bRet)
+                    {
+                        operLog.strFailReason = "采集异常错误";
+                    }
                 }
             }
             else if (!bSingleFrameModel)  //回放模式
@@ -5421,18 +5594,33 @@ namespace VisionApplication
                 vpWin.iFileIndex = iFileIndex;
                 if (!bCrackPlayback)
                     iNextFileIndex = (++iNextFileIndex) % iFileGroupLen;
-                bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, cup.p_VPPRTP.iXBType);
-                operLog.strOperEvent = "采集图像";
-                operLog.strFailReason = "回放异常错误";
 
+                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                {
+                    if (cup.p_CD.bListProcess[wsInd])
+                        bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, wsInd);
+                    if (!bRet)
+                    {
+                        operLog.strFailReason = "回放异常错误";
+                    }
+                } 
             }
             else
             {
                 iFileIndex = iNextFileIndex;
                 iFileIndex = iFileIndex % (iFileGroupLen * 6);
-                bRet = vpWin.PreViewOneImageFromFile(iFileIndex, true, cup.p_VPPRTP.iXBType);
+
+                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                {
+                    if (cup.p_CD.bListProcess[wsInd])
+                        bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, wsInd);
+                    if (!bRet)
+                    {
+                        operLog.strFailReason = "回放异常错误";
+                    }
+                }  
                 iNextFileIndex = (iFileIndex + 1) % (iFileGroupLen * 6);
-                //    iFileIndex++;
+                
             }
 
             if (bRet)
@@ -5817,7 +6005,7 @@ namespace VisionApplication
             UpdateThread.Start();
         }
 
-        int iJobIndex = 0;  
+         
         private void menuWSJobS_Click(object sender, EventArgs e)
         {
             menuWS_Job1.Checked = false;
@@ -5918,7 +6106,7 @@ namespace VisionApplication
                   operLog.strOperEvent = "启动一次运行";
                   operLog.strFailReason = "";
                   AddLog();*/
-                if (vpWin.RunOneTime(iJobIndex))
+                if (vpWin.RunOneTimeSplite())
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 10;
@@ -5967,8 +6155,7 @@ namespace VisionApplication
             /*UpdateUIThread = new Thread(UpdateUIExe);
             UpdateUIThread.Start();*/ 
         }
-         
-        public delegate void delegateUIUpdate();
+        
         private void UpdateUIExe()
         {
             UpdateStatisticsForJob(0);  //更新统计数据
@@ -5985,8 +6172,7 @@ namespace VisionApplication
                 ExeIOOut();
             }
         }
-
-        delegateUIUpdate updateUItmp ; //将委托实例化
+  
         public void RunContinuousThread()
         {
             updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
