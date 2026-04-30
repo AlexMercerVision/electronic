@@ -382,6 +382,20 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
+            this.menuLaser = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_RedBoundary = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_RedCountour = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_RedEnt = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_MarkEnt = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_Loop = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuParam = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_ShowEntList = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_ShowMarkImage = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_EditEnt = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_ShowMsgList = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaserFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_SaveFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -470,6 +484,9 @@ namespace VisionApplication
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuCam,
+            this.menuLaserFile,
+            this.menuLaser,
+            this.menuParam,
             this.menuManage,
             this.menuFile,
             this.menuWin,
@@ -4491,6 +4508,108 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
+            // menuLaser
+            // 
+            this.menuLaser.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuLaser_RedBoundary,
+            this.menuLaser_RedCountour,
+            this.menuLaser_RedEnt,
+            this.menuLaser_MarkEnt,
+            this.menuLaser_Loop});
+            this.menuLaser.Name = "menuLaser";
+            this.menuLaser.Size = new System.Drawing.Size(44, 22);
+            this.menuLaser.Text = "激光";
+            // 
+            // menuLaser_RedBoundary
+            // 
+            this.menuLaser_RedBoundary.Name = "menuLaser_RedBoundary";
+            this.menuLaser_RedBoundary.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_RedBoundary.Text = "红光边界";
+            // 
+            // menuLaser_RedCountour
+            // 
+            this.menuLaser_RedCountour.Name = "menuLaser_RedCountour";
+            this.menuLaser_RedCountour.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_RedCountour.Text = "红光轮廓";
+            // 
+            // menuLaser_RedEnt
+            // 
+            this.menuLaser_RedEnt.Name = "menuLaser_RedEnt";
+            this.menuLaser_RedEnt.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_RedEnt.Text = "红光对象";
+            // 
+            // menuLaser_MarkEnt
+            // 
+            this.menuLaser_MarkEnt.Name = "menuLaser_MarkEnt";
+            this.menuLaser_MarkEnt.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_MarkEnt.Text = "激光标刻对象";
+            // 
+            // menuLaser_Loop
+            // 
+            this.menuLaser_Loop.Name = "menuLaser_Loop";
+            this.menuLaser_Loop.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_Loop.Text = "连续";
+            // 
+            // menuParam
+            // 
+            this.menuParam.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuEnt_ShowEntList,
+            this.menuEnt_ShowMarkImage,
+            this.menuEnt_EditEnt,
+            this.menuEnt_ShowMsgList});
+            this.menuParam.Name = "menuParam";
+            this.menuParam.Size = new System.Drawing.Size(68, 22);
+            this.menuParam.Text = "激光对象";
+            // 
+            // menuEnt_ShowEntList
+            // 
+            this.menuEnt_ShowEntList.Checked = true;
+            this.menuEnt_ShowEntList.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.menuEnt_ShowEntList.Name = "menuEnt_ShowEntList";
+            this.menuEnt_ShowEntList.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_ShowEntList.Text = "显示对象清单";
+            // 
+            // menuEnt_ShowMarkImage
+            // 
+            this.menuEnt_ShowMarkImage.Checked = true;
+            this.menuEnt_ShowMarkImage.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.menuEnt_ShowMarkImage.Name = "menuEnt_ShowMarkImage";
+            this.menuEnt_ShowMarkImage.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_ShowMarkImage.Text = "显示标刻图像";
+            // 
+            // menuEnt_EditEnt
+            // 
+            this.menuEnt_EditEnt.Name = "menuEnt_EditEnt";
+            this.menuEnt_EditEnt.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_EditEnt.Text = "编辑对象清单";
+            // 
+            // menuEnt_ShowMsgList
+            // 
+            this.menuEnt_ShowMsgList.Name = "menuEnt_ShowMsgList";
+            this.menuEnt_ShowMsgList.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_ShowMsgList.Text = "显示消息清单";
+            // 
+            // menuLaserFile
+            // 
+            this.menuLaserFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuLaser_LoadFile,
+            this.menuLaser_SaveFile});
+            this.menuLaserFile.Name = "menuLaserFile";
+            this.menuLaserFile.Size = new System.Drawing.Size(44, 22);
+            this.menuLaserFile.Text = "文件";
+            // 
+            // menuLaser_LoadFile
+            // 
+            this.menuLaser_LoadFile.Name = "menuLaser_LoadFile";
+            this.menuLaser_LoadFile.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_LoadFile.Text = "加载激光文件";
+            // 
+            // menuLaser_SaveFile
+            // 
+            this.menuLaser_SaveFile.Name = "menuLaser_SaveFile";
+            this.menuLaser_SaveFile.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_SaveFile.Text = "保存激光文件";
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -4963,6 +5082,19 @@ namespace VisionApplication
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Timer timerIOOut;
-         
+        private System.Windows.Forms.ToolStripMenuItem menuLaserFile;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_LoadFile;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_SaveFile;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_RedBoundary;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_RedCountour;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_RedEnt;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_MarkEnt;
+        private System.Windows.Forms.ToolStripMenuItem menuLaser_Loop;
+        private System.Windows.Forms.ToolStripMenuItem menuParam;
+        private System.Windows.Forms.ToolStripMenuItem menuEnt_ShowEntList;
+        private System.Windows.Forms.ToolStripMenuItem menuEnt_ShowMarkImage;
+        private System.Windows.Forms.ToolStripMenuItem menuEnt_EditEnt;
+        private System.Windows.Forms.ToolStripMenuItem menuEnt_ShowMsgList;
     }
 }

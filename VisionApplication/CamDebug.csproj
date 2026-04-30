@@ -55,11 +55,11 @@
     </Reference>
     <Reference Include="CommonCls, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\WorkSpace\项目\激光除胶\LaserMarker\bin\CommonCls.dll</HintPath>
+      <HintPath>..\bin\CommonCls.dll</HintPath>
     </Reference>
-    <Reference Include="MvCameraControl.Net, Version=3.4.0.1, Culture=neutral, PublicKeyToken=52fddfb3f94be800, processorArchitecture=AMD64">
+    <Reference Include="MvCameraControl.Net, Version=3.4.0.1, Culture=neutral, PublicKeyToken=52fddfb3f94be800, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\dll\Hik\MvCameraControl.Net.dll</HintPath>
+      <HintPath>..\bin\MvCameraControl.Net.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

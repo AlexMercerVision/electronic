@@ -63,7 +63,7 @@
     <OutputPath>..\bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
@@ -142,6 +142,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\bin\MvCameraControl.Net.dll</HintPath>
     </Reference>
+    <Reference Include="PipeChanel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\PipeChanel.dll</HintPath>
+    </Reference>
     <Reference Include="SunnyUI, Version=3.3.9.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\bin\SunnyUI.dll</HintPath>
@@ -199,6 +203,9 @@
       <DependentUpon>FrmMainUI.cs</DependentUpon>
     </Compile>
     <Compile Include="FrmMainUIExtention.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmMain_Laser.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Frm_RuntimeSet.cs">

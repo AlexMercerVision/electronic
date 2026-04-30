@@ -504,7 +504,7 @@ namespace VisionApplication
                         cbDeviceList.SelectedIndex = 0;
                     }
                 }
-                catch
+                catch(Exception ex)
                 {
                     MessageBox.Show("枚举设备失败！", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
