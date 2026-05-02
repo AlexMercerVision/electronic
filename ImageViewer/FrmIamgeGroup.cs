@@ -605,6 +605,7 @@ namespace xbDefectDect
                         cogRDSub4.Visible = false;
                         cogRDSubFX.Visible = false;
                         break;
+
                     case 5:
                         cogRDMain.Left = 0;
                         cogRDMain.Top = 0;

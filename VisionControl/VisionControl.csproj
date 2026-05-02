@@ -188,6 +188,12 @@
     <Compile Include="VisionControlLite.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="VisionControl_Laser.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="VisionControl_Laser.Designer.cs">
+      <DependentUpon>VisionControl_Laser.cs</DependentUpon>
+    </Compile>
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>

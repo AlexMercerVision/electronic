@@ -139,7 +139,7 @@ namespace VisionApplication
         private int iAcquisitionsTimes = 0;                     // 图像采集总次数
         private int iErrAcquisitionsTimes = 0;                  // 采集失败次数
         private int iErrExecuteTimes = 0;                       // 检测执行失败次数
-        private int iJobIndex = 0;                              // 当前选择的作业索引
+                                  // 当前选择的作业索引
 
         // 12. 字段 - 标定相关
         private PMARes pmaRes;                                  // PMAlign模板匹配结果
@@ -533,7 +533,7 @@ namespace VisionApplication
                     iUsedCamraNum++;
             }
             iLayoutType = cup.p_VPPRTP.iLayoutType;
-            if (iLayoutType != 3 && iLayoutType != 5 && iLayoutType != 1)
+            if (iLayoutType != 1 && iLayoutType != 2 && iLayoutType != 3 && iLayoutType != 4 && iLayoutType != 5)
                 iLayoutType = 3;
             rts.cs.iStatus = new int[maxCameraNum];
             serialInd = cup.p_SD.serInd;
@@ -3586,8 +3586,15 @@ namespace VisionApplication
                 case 1:
                     menu_View_Layout1.Checked = true;
                     break;
+                case 2:
+                    menu_View_Layout2.Checked = true;
+                    break;
                 case 3:
                     menu_View_Layout3.Checked = true;
+                    break;
+                case 4:                              // 新增
+                    menu_View_Layout4.Checked = true;
+                  
                     break;
                 case 5:
                     menu_View_Layout5.Checked = true;
@@ -3699,18 +3706,50 @@ namespace VisionApplication
             vpWin.ViewLayout(1);
             iLayoutType = 1;
             menu_View_Layout1.Checked = true;
+            menu_View_Layout2.Checked = false;
+            menu_View_Layout4.Checked = false;
             menu_View_Layout3.Checked = false;
             menu_View_Layout5.Checked = false;
             cup.p_VPPRTP.iLayoutType = iLayoutType;
             SaveUserParam();
         }
+        private void menu_View_Layout2_Click(object sender, EventArgs e)
+        {
+            vpWin.ViewLayout(2);
+            iLayoutType = 2;
 
+            menu_View_Layout1.Checked = false;
+            menu_View_Layout2.Checked = true;
+            menu_View_Layout3.Checked = false;
+            menu_View_Layout4.Checked = false;
+            menu_View_Layout5.Checked = false;
+
+            cup.p_VPPRTP.iLayoutType = iLayoutType;
+            SaveUserParam();
+        }
+
+        private void menu_View_Layout4_Click(object sender, EventArgs e)
+        {
+            vpWin.ViewLayout(4);
+            iLayoutType = 4;
+
+            menu_View_Layout1.Checked = false;
+            menu_View_Layout2.Checked = false;
+            menu_View_Layout3.Checked = false;
+            menu_View_Layout4.Checked = true;
+            menu_View_Layout5.Checked = false;
+
+            cup.p_VPPRTP.iLayoutType = iLayoutType;
+            SaveUserParam();
+        }
 
         private void menu_View_Layout3_Click(object sender, EventArgs e)
         {
             vpWin.ViewLayout(3);
             iLayoutType = 3;
             menu_View_Layout1.Checked = false;
+            menu_View_Layout2.Checked = false;
+            menu_View_Layout4.Checked = false;
             menu_View_Layout3.Checked = true;
             menu_View_Layout5.Checked = false;
             cup.p_VPPRTP.iLayoutType = iLayoutType;
@@ -3721,6 +3760,8 @@ namespace VisionApplication
             vpWin.ViewLayout(5);
             iLayoutType = 5;
             menu_View_Layout1.Checked = false;
+            menu_View_Layout2.Checked = false;
+            menu_View_Layout4.Checked = false;
             menu_View_Layout3.Checked = false;
             menu_View_Layout5.Checked = true;
             cup.p_VPPRTP.iLayoutType = iLayoutType;
@@ -5003,15 +5044,7 @@ namespace VisionApplication
             }
 
         }
-        private void btFunParam_Click(object sender, EventArgs e)
-        {
-            /*  if (!LaserCondiction(4))
-                  return;
-
-              iLaserWorkingType = 4;
-              lczParam.cmdType = 40;  //参数设置 
-              pipeClient.SendParam(lczParam);*/
-        }
+        
 
         private void menuTool_LightDebug_Click(object sender, EventArgs e)
         {
@@ -6005,30 +6038,7 @@ namespace VisionApplication
             UpdateThread.Start();
         }
 
-         
-        private void menuWSJobS_Click(object sender, EventArgs e)
-        {
-            menuWS_Job1.Checked = false;
-            menuWS_Job2.Checked = false;
-            menuWS_Job3.Checked = false;
-            menuWS_JobS.Checked = false;
-            ((ToolStripMenuItem)sender).Checked = true;
-            switch (((ToolStripMenuItem)sender).Name)
-            {
-                case "menuWS_Job1":
-                    iJobIndex = 0;
-                    break;
-                case "menuWS_Job2":
-                    iJobIndex = 1;
-                    break;
-                case "menuWS_Job3":
-                    iJobIndex =2;
-                    break;
-                case "menuWS_Jobs":
-                    iJobIndex = -1;
-                    break;
-            }
-        }
+       
 
         public void StartService(string serviceName)
         {
@@ -6043,6 +6053,8 @@ namespace VisionApplication
         {
             StartService("Cognex Security Service");
         }
+
+      
 
         private void timerIOOut_Tick(object sender, EventArgs e)
         {

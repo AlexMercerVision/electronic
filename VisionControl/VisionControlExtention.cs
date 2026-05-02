@@ -2475,8 +2475,58 @@ namespace VisionControl
 
                         cogRDSub1.Visible = true;
                         cogRDSub2.Visible = true;
+
                         /*cogRDSub3.Visible = false;
                         cogRDSub4.Visible = false;*/
+                        break;
+                    case 2:
+                        mainWindWidth = this.Width - 2;
+                        mainWindHeight = this.Height - 2;
+                        // 左右各半
+                        cogRDMain.Left = 1;
+                        cogRDMain.Top = 1;
+                        cogRDMain.Width = mainWindWidth / 2;
+                        cogRDMain.Height = mainWindHeight;
+
+                        cogRDSub1.Left = cogRDMain.Right + 1;
+                        cogRDSub1.Top = cogRDMain.Top;
+                        cogRDSub1.Width = mainWindWidth / 2;
+                        cogRDSub1.Height = mainWindHeight;
+
+                        cogRDSub1.Visible = true;
+                       // cogRDSub2.Visible = false;
+                        // cogRDSub3.Visible = false;  // 隐藏多余窗口
+                        // cogRDSub4.Visible = false;
+                        break;
+
+                    case 4:
+                        mainWindWidth = this.Width - 2;
+                        mainWindHeight = this.Height - 2;
+                        // 左侧主窗口占2/3，右侧三个子窗口垂直等分
+                        cogRDMain.Left = 1;
+                        cogRDMain.Top = 1;
+                        cogRDMain.Width = mainWindWidth * 2 / 3;
+                        cogRDMain.Height = mainWindHeight;
+
+                        cogRDSub1.Left = cogRDMain.Right + 1;
+                        cogRDSub1.Top = cogRDMain.Top;
+                        cogRDSub1.Width = mainWindWidth / 3;
+                        cogRDSub1.Height = mainWindHeight / 3;
+
+                        picSub1.Left = cogRDMain.Right + 1;
+                        picSub1.Top = cogRDMain.Top + mainWindHeight / 3 + 1;
+                        picSub1.Width = mainWindWidth / 3;
+                        picSub1.Height = mainWindHeight / 3;
+                        
+                        picSub2.Left = cogRDMain.Right + 1;
+                        picSub2.Top = cogRDMain.Top + 2 * mainWindHeight / 3 + 1;
+                        picSub2.Width = mainWindWidth / 3;
+                        picSub2.Height = mainWindHeight / 3;
+
+                        cogRDSub1.Visible = true;
+                        picSub1.Visible = true;
+                        picSub2.Visible = true;
+                        // cogRDSub4.Visible = false;
                         break;
                         /*case 5:
 
@@ -2581,6 +2631,54 @@ namespace VisionControl
                         picSub1.Height = mainWindHeight / 2;
                         picSub1.Left = cogRDSub2.Right + 1;
 
+                        break;
+                    case 2:
+                        mainWindWidth = this.Width - 2;
+                        mainWindHeight = this.Height - 2;
+
+                        cogRDMain.Left = 1;
+                        cogRDMain.Top = 1;
+                        cogRDMain.Width = mainWindWidth / 2;
+                        cogRDMain.Height = mainWindHeight;
+
+                        cogRDSub1.Left = cogRDMain.Right + 1;
+                        cogRDSub1.Top = 1;
+                        cogRDSub1.Width = mainWindWidth / 2;
+                        cogRDSub1.Height = mainWindHeight;
+
+                        cogRDSub1.Visible = true;
+                      //  cogRDSub2.Visible = false;
+                        // cogRDSub3.Visible = false;
+                        break;
+
+                    case 4:
+                        mainWindWidth = this.Width - 2;
+                        mainWindHeight = this.Height - 2;
+
+                        cogRDMain.Left = 1;
+                        cogRDMain.Top = 1;
+                        cogRDMain.Width = mainWindWidth / 2;
+                        cogRDMain.Height = mainWindHeight / 2;
+
+                        cogRDSub1.Left = cogRDMain.Right + 1;
+                        cogRDSub1.Top = cogRDMain.Top;
+                        cogRDSub1.Width = mainWindWidth / 2;
+                        cogRDSub1.Height = mainWindHeight / 2;
+
+                        picSub1.Left = cogRDMain.Left;
+                        picSub1.Top = cogRDMain.Bottom + 1;
+                        picSub1.Width = mainWindWidth / 2;
+                        picSub1.Height = mainWindHeight / 2;
+
+                        picSub2.Left = cogRDMain.Right + 1;
+                        picSub2.Top = cogRDMain.Bottom + 1;
+                        picSub2.Width = mainWindWidth / 2;
+                        picSub2.Height = mainWindHeight / 2;
+
+                        cogRDSub1.Visible = true;
+                        picSub1.Visible = true;
+                        picSub2.Visible = true;
+                        // cogRDSub4.Visible = false;
                         break;
                         /*case 5:
                             mainWindWidth = this.Width - 4;
@@ -3723,304 +3821,6 @@ namespace VisionControl
 
         #endregion
        
-
-        #region  9点标定
-        //////////////////////////////////////////
-        ///9点标定
-        ///
-        int iJobIndex = 0;
-        public void _9PointMark()
-        {
-            iJobIndex = 1;
-            //  mJM.Job(0).Run();
-        }
-
-        //从VP9点标定工具中获取9点标定的数据
-        public bool GetCalibPoint(ref double[] dCoor)
-        {
-            try
-            {
-                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-                int nP = calib_NP2NP.Calibration.NumPoints;
-                if (dCoor == null || dCoor.Length != nP * 4)
-                {
-                    dCoor = new double[nP * 4];
-                }
-                for (int i = 0; i < nP; i++)
-                {
-                    dCoor[i * 4] = calib_NP2NP.Calibration.GetUncalibratedPointX(i);
-                    dCoor[i * 4 + 1] = calib_NP2NP.Calibration.GetUncalibratedPointY(i);
-                    dCoor[i * 4 + 2] = calib_NP2NP.Calibration.GetRawCalibratedPointX(i);
-                    dCoor[i * 4 + 3] = calib_NP2NP.Calibration.GetRawCalibratedPointY(i);
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-                return false;
-            }
-
-
-            // calib_NP2NP.Calibration.
-        }
-        //设置VP9点标定工具中的坐标数据
-        public void SetCalibPoint(double[] dCoor)
-        {
-            try
-            {
-                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-                int nP = dCoor.Length / 4;
-                calib_NP2NP.Calibration.NumPoints = nP;
-                //  calib_NP2NP.Calibration.
-                for (int i = 0; i < nP; i++)
-                {
-                    //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
-                    calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
-                    calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
-                    calib_NP2NP.Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
-                    calib_NP2NP.Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-        }
-
-        //设置blob分析模板参数
-        public void SetCalibBlobParam(calibBlobParam cbp)
-        {
-            try
-            {
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-                cbt.RunParams.SegmentationParams.Polarity = cbp.bPolarity ? CogBlobSegmentationPolarityConstants.LightBlobs : CogBlobSegmentationPolarityConstants.DarkBlobs;
-                cbt.RunParams.SegmentationParams.Mode = cbp.iSegType == 0 ? CogBlobSegmentationModeConstants.HardFixedThreshold : CogBlobSegmentationModeConstants.HardDynamicThreshold;
-                cbt.RunParams.SegmentationParams.HardFixedThreshold = cbp.iThre;
-                cbt.RunParams.RunTimeMeasures[0].Measure = CogBlobMeasureConstants.Area;
-                cbt.RunParams.RunTimeMeasures[0].FilterMode = CogBlobFilterModeConstants.IncludeBlobsInRange;
-                cbt.RunParams.RunTimeMeasures[0].FilterRangeLow = cbp.iAreaMin;
-                cbt.RunParams.RunTimeMeasures[0].FilterRangeHigh = cbp.iAreaMax;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-        }
-        //获取blob分析模板参数
-        public void GetCalibBlobParam(ref calibBlobParam cbp)
-        {
-            try
-            {
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-                cbp.bPolarity = cbt.RunParams.SegmentationParams.Polarity == CogBlobSegmentationPolarityConstants.LightBlobs ? true : false;
-                cbp.iSegType = cbt.RunParams.SegmentationParams.Mode == CogBlobSegmentationModeConstants.HardFixedThreshold ? 0 : 1;
-                cbp.iThre = cbt.RunParams.SegmentationParams.HardFixedThreshold;
-                cbp.iAreaMin = (int)cbt.RunParams.RunTimeMeasures[0].FilterRangeLow;
-                cbp.iAreaMax = (int)cbt.RunParams.RunTimeMeasures[0].FilterRangeHigh;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-        }
-        public bool Get9PointCalibRes(ref CalibRes calibRes)
-        {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-            try
-            {
-                //  CalibRes calibRes = new CalibRes();
-                calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
-                calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
-                CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
-
-                calibRes.dTR = calibrationTransform.Rotation;
-                calibRes.dTX = calibrationTransform.TranslationX;
-                calibRes.dTY = calibrationTransform.TranslationY;
-                calibRes.dXYRatio = calibrationTransform.Aspect;
-                calibRes.dScale = calibrationTransform.Scaling;
-                calibRes.dSkew = calibrationTransform.Skew;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-                return false;
-            }
-        }
-        //使用VP9点标定工具进行9点标定
-        public CalibRes _9PointCalib(double[] dCoor)
-        {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-            int nP = dCoor.Length / 4;
-            calib_NP2NP.Calibration.NumPoints = nP;
-            //  calib_NP2NP.Calibration.
-            for (int i = 0; i < nP; i++)
-            {
-                //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
-                calib_NP2NP.Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
-                calib_NP2NP.Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
-            }
-            try
-            {
-                calib_NP2NP.Calibration.Calibrate();
-                CalibRes calibRes = new CalibRes();
-                calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
-                calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
-                CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
-
-                calibRes.dTR = calibrationTransform.Rotation;
-                calibRes.dTX = calibrationTransform.TranslationX;
-                calibRes.dTY = calibrationTransform.TranslationY;
-                calibRes.dXYRatio = calibrationTransform.Aspect;
-                calibRes.dScale = calibrationTransform.Scaling;
-                calibRes.dSkew = calibrationTransform.Skew;
-                return calibRes;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-                return new CalibRes();
-            }
-
-        }
-
-        //使用VP9点标定工具进行9点标定，图像坐标与激光坐标分开传入
-        public CalibRes _9PointCalib2(double[] dCoorIm, double[] dCoorLaser)
-        {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-            int nP = dCoorIm.Length / 2;
-            calib_NP2NP.Calibration.NumPoints = nP;
-            for (int i = 0; i < nP; i++)
-            {
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoorIm[i * 2]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorIm[i * 2 + 1]);
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoorLaser[i * 2]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorLaser[i * 2 + 1]);
-            }
-
-            calib_NP2NP.Calibration.Calibrate();
-            CalibRes calibRes = new CalibRes();
-            calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
-            calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
-            CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
-            calibRes.dTR = calibrationTransform.Rotation;
-            calibRes.dTX = calibrationTransform.TranslationX;
-            calibRes.dTY = calibrationTransform.TranslationY;
-            calibRes.dXYRatio = calibrationTransform.Aspect;
-            calibRes.dScale = calibrationTransform.Scaling;
-            calibRes.dSkew = calibrationTransform.Skew;
-            return calibRes;
-        }
-
-        //设置图像并执行blob分析
-        public void SetCalibBlobImage(CogImage8Grey calibIm)
-        {
-            try
-            {
-
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-                cbt.InputImage = calibIm;
-                ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
-                mJM.Job(1).Run();
-                Thread.Sleep(500);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-            //  calibIm.Run();
-        }
-
-        //获取9点标定  特征点坐标
-        List<double> listCoord = new List<double>();
-        public bool GetCalibBlobCoord(int row, int col, ref double[] dCoor)
-        {
-            try
-            {
-
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
-                int pointNum = row * col;
-                int count = cbt.Results.GetBlobs().Count;
-                if (count != pointNum)
-                    return false;
-                else
-                {
-                    // double[,] dCoord = new double[9, 2];
-                    listCoord = (mJM.Job(1).VisionTool as CogToolGroup).GetScriptTerminalData("Coord") as List<double>;
-                    if (listCoord == null || listCoord.Count / 2 != pointNum)
-                        return false;
-                    if (dCoor == null || dCoor.Length != count * 2)
-                    {
-                        dCoor = new double[count * 2];
-                    }
-                    for (int i = 0; i < count; i++)
-                    {
-                        dCoor[i * 2] = listCoord[i * 2];
-                        dCoor[i * 2 + 1] = listCoord[i * 2 + 1];
-                        // dCoor[i * 2] = cbt.Results.GetBlobs()[i].CenterOfMassX;
-                        //  dCoor[i * 2+1] = cbt.Results.GetBlobs()[i].CenterOfMassY;
-                    }
-
-                    _2DCoordSort(row, col, dCoor);  //二维数组排序
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-                return false;
-            }
-        }
-        //二维数组排序
-        private void _2DCoordSort(int row, int col, double[] dCoor)
-        {
-            int count = row * col;
-            //先按照Y坐标排序
-            for (int i = 0; i < count; i++)
-            {
-                for (int j = i + 1; j < count; j++)
-                {
-                    if (dCoor[2 * j + 1] < dCoor[2 * i + 1])
-                    {
-                        double tmpX = dCoor[2 * i];
-                        double tmpY = dCoor[2 * i + 1];
-
-                        dCoor[2 * i] = dCoor[2 * j];
-                        dCoor[2 * i + 1] = dCoor[2 * j + 1];
-
-                        dCoor[2 * j] = tmpX;
-                        dCoor[2 * j + 1] = tmpY;
-                    }
-                }
-            }
-
-            //再每行按照X坐标排序
-            for (int r = 0; r < row; r++)
-            {
-                for (int i = col * r; i < col * (r + 1); i++)
-                {
-                    for (int j = i + 1; j < col * (r + 1); j++)
-                    {
-                        if (dCoor[2 * j] < dCoor[2 * i])
-                        {
-                            double tmpX = dCoor[2 * i];
-                            double tmpY = dCoor[2 * i + 1];
-
-                            dCoor[2 * i] = dCoor[2 * j];
-                            dCoor[2 * i + 1] = dCoor[2 * j + 1];
-
-                            dCoor[2 * j] = tmpX;
-                            dCoor[2 * j + 1] = tmpY;
-                        }
-                    }
-                }
-            }
-
-        }
-        #endregion
 
         
     }

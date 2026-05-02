@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using PipeChanel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Cognex.VisionPro.PMAlign;
+using Cognex.VisionPro.Blob;
 
 namespace VisionApplication
 {
@@ -52,7 +54,28 @@ namespace VisionApplication
         string[] strEntName;
         int[] iPenNum;
         LCZControlParam lczParam = new LCZControlParam();
+        // ========== 多板卡支持新增字段 ==========
+        /// <summary>
+        /// 当前选中的激光板卡号（0 或 1），所有后续命令都会发送到该板卡。
+        /// 默认值为 0。
+        /// </summary>
+        int currentCardSN = 0;
+      //  private   int iJobIndex =>ref currentCardSN;
+        internal ref int iJobIndex => ref currentCardSN;
+        //    ref int iJobIndex = ref currentCardSN;   // alias 是 original 的别名
 
+        /// <summary>
+        /// 切换当前操作的激光板卡。
+        /// 调用后，所有激光命令将自动使用新板卡号。
+        /// </summary>
+        /// <param name="cardSN">板卡号，必须为 0 或 1</param>
+        public void SwitchCard(int cardSN)
+        {
+            if (cardSN < 0 || cardSN > 1)
+                throw new ArgumentException("板卡号必须为0或1");
+            currentCardSN = cardSN;
+            // 可在此处更新 UI 状态，例如按钮文字或板卡状态指示灯
+        }
         //启动一个JCZ服务进程，同时获取该进程的句柄
         public IntPtr StartProcessAndGetHandle(string exePath, string windowTitle)
         {
@@ -76,6 +99,7 @@ namespace VisionApplication
         }
         private bool StartJCZ()
         {
+         
             // 查找JCZ服务进程
             Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
 
@@ -153,62 +177,14 @@ namespace VisionApplication
 
         }
         int bInitJCZ = 0;
+        /// <summary>
+        /// 初始化 JCZ 服务与管道连接（不含板卡初始化）。
+        /// 启动服务进程、建立命名管道，并注册事件回调。
+        /// </summary>
         private void InitJCZ()
         {
-
-            bool bStartJCZ = StartJCZ();          // 第一步启动X86 服务端
-
-            if (bStartJCZ)
-            {
-                try
-                {
-                    if (pipeClient == null)   //第二步  建立管道连接
-                    {
-                        pipeClient = new Pipechanel(1, "PipeClient", "PipeServer");
-                        Pipechanel.msgParamReceived += new PipeMsg.PipeMsgParamEventHandler(Pipechanel_msgReceived);
-                    }
-                    else  //如果已经存在如何处理
-                    {
-                    }
-                }
-                catch (Exception ex)
-                {
-                    bInitJCZ = -3;
-                    operLog.strFailReason = ex.ToString();
-                }
-                if (bInitJCZ == 0)
-                {
-                    // 第三步  查询板卡是否正确初始化
-                    lczParam.cmdType = 100;
-
-
-                    lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");  //"route.ezd"
-
-                    lczParam.ind1 = alImParam.width;
-                    lczParam.ind2 = alImParam.height;
-                    lczParam.dParam1 = alImParam.dCenX;
-                    lczParam.dParam2 = alImParam.dCenY;
-                    lczParam.dParam3 = alImParam.dWidth;
-                    lczParam.dParam4 = alImParam.dHeight;
-
-                    lczParam.ind3 = 0;
-                    bCmdEnd = false;
-                    pipeClient.SendParam(lczParam);
-                    int iCount = 0;
-                    while (!bCmdEnd && iCount < 20)
-                    {
-                        Thread.Sleep(5);
-                        iCount++;
-                    }
-
-                }
-                else
-                {
-                    operLog.strFailReason = "板卡初始化失败";
-                }
-
-            }
-            else
+            bool bStartJCZ = StartJCZ();          // 第一步：启动 X86 服务端
+            if (!bStartJCZ)
             {
                 bInitJCZ = -3;
                 operLog.iEventStatus = -4;
@@ -217,14 +193,24 @@ namespace VisionApplication
                 return;
             }
 
-            //    if (rts.initStatus.bJCZ == 0)
-            operLog.iEventStatus = rts.initStatus.bJCZ;
-            operLog.dtOperTime = DateTime.Now;
-            operLog.strOperEvent = "初始化板卡";
-            AddLog();
+            try
+            {
+                if (pipeClient == null)   // 第二步：建立管道连接
+                {
+                    pipeClient = new Pipechanel(1, "PipeClient", "PipeServer");
+                    Pipechanel.msgParamReceived += new PipeMsg.PipeMsgParamEventHandler(Pipechanel_msgReceived);
+                }
+            }
+            catch (Exception ex)
+            {
+                bInitJCZ = -3;
+                operLog.strFailReason = ex.ToString();
+            }
 
-            // bInitJCZ = rts.initStatus.bJCZ;
-            //  return bInitJCZ;
+            // 服务启动成功，管道已连接，等待后续具体板卡初始化命令
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "服务端与管道初始化完成";
+            AddLog();
         }
         bool bRespond = false;
         public string GetErrorText(int nErr)
@@ -258,7 +244,34 @@ namespace VisionApplication
             return "参数输入错误";
         }
 
+        /// <summary>
+        /// 查询当前选中板卡的初始化状态（命令码 100）。
+        /// 服务端会返回板卡初始化状态并将对象信息下发。
+        /// </summary>
+        public void QueryCardStatus()
+        {
+            if (pipeClient == null) return;
 
+            lczParam.cmdType = 100;
+            lczParam.cardSN = currentCardSN;           // 指定板卡号
+            lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");
+            lczParam.ind1 = alImParam.width;
+            lczParam.ind2 = alImParam.height;
+            lczParam.dParam1 = alImParam.dCenX;
+            lczParam.dParam2 = alImParam.dCenY;
+            lczParam.dParam3 = alImParam.dWidth;
+            lczParam.dParam4 = alImParam.dHeight;
+            lczParam.ind3 = 0;
+
+            bCmdEnd = false;
+            pipeClient.SendParam(lczParam);
+            int iCount = 0;
+            while (!bCmdEnd && iCount < 20)
+            {
+                Thread.Sleep(5);
+                iCount++;
+            }
+        }
         private void CMDAna(LCZControlParam lczParam)
         {
             //测试
@@ -614,37 +627,31 @@ namespace VisionApplication
             bCmdEnd = true;  //管道通信结束
 
         }
-
+        // 查询所有对象信息，每次发送前设置当前板卡号
         private void QueryEntInfo()
         {
-            if (strEntName == null || strEntName.Length <= 0)
-                return;
+            if (strEntName == null || strEntName.Length <= 0) return;
             for (int i = 0; i < strEntName.Length; i++)
             {
-                //第三步  查询文件对象
                 lczParam.cmdType = 7;
-                // lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");  //"route.ezd"
+                lczParam.cardSN = currentCardSN;   // 【多卡】指定板卡
                 lczParam.ind2 = i;
                 bCmdEnd = false;
-                if (pipeClient != null)
-                    pipeClient.SendParam(lczParam);
+                if (pipeClient != null) pipeClient.SendParam(lczParam);
                 int count = 0;
-                while (!bCmdEnd && count < 40)
-                {
-                    Thread.Sleep(5);
-                    count++;
-                }
+                while (!bCmdEnd && count < 40) { Thread.Sleep(5); count++; }
                 Thread.Sleep(30);
             }
         }
 
-        //移动旋转复位
+        // 移动旋转复位
         private void ResetLaserEnt()
         {
             bCmdEnd = false;
             lczParam.cmdType = 27;
-            lczParam.dParam3 = 0;   //旋转中心X
-            lczParam.dParam4 = 0;   //旋转中心Y
+            lczParam.cardSN = currentCardSN;   // 【多卡】
+            lczParam.dParam3 = 0;
+            lczParam.dParam4 = 0;
             lczParam.dParam1 = 0.003;
             lczParam.dParam2 = 0.003;
             lczParam.dParam5 = 0;
@@ -652,72 +659,53 @@ namespace VisionApplication
         }
         //2025年6月12日 ， 在执行完视觉检测后启动激光加工
 
-
+        // 重新加载模板文件
         private void ReLoadTemplate()
         {
             lczParam.cmdType = 4;
-            lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd");  //"route.ezd"
+            lczParam.cardSN = currentCardSN;   // 【多卡】
+            lczParam.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd");
             lczParam.ind3 = 0;
             bCmdEnd = false;
             pipeClient.SendParam(lczParam);
             int count = 0;
-            while (!bCmdEnd && count < 10)
-            {
-                Thread.Sleep(10);
-                count++;
-            }
-            //   QueryEntInfo();
+            while (!bCmdEnd && count < 10) { Thread.Sleep(10); count++; }
         }
+        // 视觉检测后执行激光加工（示例已加卡号）
         private void LaserMarkAfterVisionDet()
         {
-            //根据视觉检测结果调整目标姿态
-
             bCmdEnd = false;
             lczParam.cmdType = 27;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             lczParam.ind3 = 0;
-            lczParam.dParam3 = 0;// 0.163;   //旋转中心X
-            lczParam.dParam4 = 0;// -0.089;   //旋转中心Y
-            if (pmaRes.bLocated)  //如果正确定位，则按照实际定位结果
+            lczParam.dParam3 = 0;
+            lczParam.dParam4 = 0;
+            if (pmaRes.bLocated)
             {
                 lczParam.dParam1 = pmaRes.dTX;
                 lczParam.dParam2 = pmaRes.dTY;
                 lczParam.dParam5 = pmaRes.dTR;
             }
-            else                //否则不执行标刻对象平移旋转操作
+            else
             {
                 lczParam.dParam1 = 0;
                 lczParam.dParam2 = 0;
                 lczParam.dParam5 = 0;
             }
             pipeClient.SendParam(lczParam);
-            while (!bCmdEnd)
-            {
-                Thread.Sleep(5);
-            }
+            while (!bCmdEnd) { Thread.Sleep(5); }
 
-            //启动激光加工
-            //判断当前加工文件是否为route.ezd文件
             if (lczParam.strFileName.IndexOf("route.ezd") < 0)
-            {
                 ReLoadTemplate();
-            }
 
             bCmdEnd = false;
             lczParam.cmdType = 10;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             lczParam.ind3 = 0;
-            //弹出等待框
-            // loadingForm = new LoadingForm();
-            // var showLoadingTask = Task.Run(() => loadingForm.ShowDialog());
             pipeClient.SendParam(lczParam);
-            while (!bCmdEnd)
-            {
-                Thread.Sleep(5);
-            }
-            //  loadingForm.SafeClose();
-            //标刻完成发送反馈
+            while (!bCmdEnd) { Thread.Sleep(5); }
             csd.SendResult(sPortCy, true, 0);
         }
-
         //激光工作条件判断
         public bool LaserCondiction(int iType)
         {
@@ -788,6 +776,7 @@ namespace VisionApplication
             return true;
         }
 
+        // 设置 JCZServer 界面布局（已加卡号）
         private void JCZServerLayout()
         {
             try
@@ -798,6 +787,7 @@ namespace VisionApplication
                 lczParam.dParam4 = menuEnt_ShowMsgList.Checked ? 1 : 0;
 
                 lczParam.cmdType = 90;
+                lczParam.cardSN = currentCardSN;   // 【多卡】
                 pipeClient.SendParam(lczParam);
             }
             catch (Exception ex)
@@ -852,40 +842,25 @@ namespace VisionApplication
                 vpWin.bMainTaskFinished = true;
             }
         }
-        
+
         #endregion
 
-        #region 
+        #region 按钮事件（均已添加卡号设置）
         private void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
         {
             jczPipThread = new Thread(InitJCZ);
             jczPipThread.Start();
         }
+
         private void btRedLight_Preview_Click(object sender, EventArgs e)
         {
-            if (!LaserCondiction(2))
-                return;
-            /*if (rts.initStatus.bJCZ != 0)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "红光预览";
-                operLog.strFailReason = "板卡未初始化";
-                AddLog();
-                return;
-            }
-            if (!vpWin.bMainTaskFinished)
-            {
-                operLog.strOperEvent = "红光预览";
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "当前任务没有结束";
-                AddLog();
-                return;
-            }*/
+            if (!LaserCondiction(2)) return;
             if (btRedLight_Preview.FlatStyle == FlatStyle.Popup)
             {
                 iLaserWorkingType = 2;
                 lczParam.cmdType = 12;
                 lczParam.bOpen = true;
+                lczParam.cardSN = currentCardSN;   // 【多卡】
                 pipeClient.SendParam(lczParam);
                 btRedLight_Preview.FlatStyle = FlatStyle.Flat;
             }
@@ -894,6 +869,7 @@ namespace VisionApplication
                 iLaserWorkingType = 0;
                 lczParam.cmdType = 12;
                 lczParam.bOpen = false;
+                lczParam.cardSN = currentCardSN;   // 【多卡】
                 pipeClient.SendParam(lczParam);
                 btRedLight_Preview.FlatStyle = FlatStyle.Popup;
             }
@@ -901,36 +877,13 @@ namespace VisionApplication
 
         private void btFunMark_Click(object sender, EventArgs e)
         {
-            if (!LaserCondiction(1))
-                return;
-            /*if (rts.initStatus.bJCZ != 0)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "激光标刻";
-                operLog.strFailReason = "板卡未初始化";
-                AddLog();
-                return;
-            }
-            if (iLaserWorkingType != 0)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "激光标刻";
-                operLog.strFailReason = "其它任务未结束";
-                AddLog();
-                return;
-            }
-            if (!vpWin.bMainTaskFinished && rts.onLS.bLock)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "当前任务没有结束";
-                AddLog();
-                return;
-            }*/
+            if (!LaserCondiction(1)) return;
             if (btFunMark.FlatStyle == FlatStyle.Popup)
             {
                 iLaserWorkingType = 1;
                 lczParam.cmdType = 110;
                 lczParam.ind1 = 0;
+                lczParam.cardSN = currentCardSN;   // 【多卡】
                 pipeClient.SendParam(lczParam);
                 btFunMark.FlatStyle = FlatStyle.Flat;
             }
@@ -938,94 +891,78 @@ namespace VisionApplication
 
         private void btFunParam_Click(object sender, EventArgs e)
         {
-            if (!LaserCondiction(4))
-                return;
-
+            if (!LaserCondiction(4)) return;
             iLaserWorkingType = 4;
-            lczParam.cmdType = 40;  //参数设置 
+            lczParam.cmdType = 40;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
         private void menuLaser_LoadFile_Click(object sender, EventArgs e)
         {
-
-            if (pipeClient == null)
-                return;
-            if (!LaserCondiction(5))
-                return;
+            if (pipeClient == null) return;
+            if (!LaserCondiction(5)) return;
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
             openFileDialog1.Filter = "(*.ezd)|*.*";
             DialogResult load = openFileDialog1.ShowDialog();
             string filename = openFileDialog1.FileName;
-
-            if (load != DialogResult.OK || string.IsNullOrEmpty(filename))
-            {
-                MessageBox.Show("未选择文件！", "提示");
-            }
-            else
+            if (load == DialogResult.OK && !string.IsNullOrEmpty(filename))
             {
                 lczParam.strFileName = filename;
                 lczParam.cmdType = 4;
                 lczParam.ind3 = 0;
+                lczParam.cardSN = currentCardSN;   // 【多卡】
                 pipeClient.SendParam(lczParam);
             }
         }
+
         private void menuLaser_SaveFile_Click(object sender, EventArgs e)
         {
-            if (pipeClient == null)
-                return;
-            if (!LaserCondiction(5))
-                return;
-
+            if (pipeClient == null) return;
+            if (!LaserCondiction(5)) return;
             lczParam.cmdType = 5;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
         private void menuLaser_RedBoundary_Click(object sender, EventArgs e)
         {
-            if (pipeClient == null)
-                return;
-            if (!LaserCondiction(2))
-                return;
+            if (pipeClient == null) return;
+            if (!LaserCondiction(2)) return;
             lczParam.cmdType = 12;
             lczParam.bOpen = menuLaser_Loop.Checked;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
         private void menuLaser_RedCountour_Click(object sender, EventArgs e)
         {
-            if (pipeClient == null)
-                return;
-            if (!LaserCondiction(3))
-                return;
+            if (pipeClient == null) return;
+            if (!LaserCondiction(3)) return;
             lczParam.cmdType = 13;
             lczParam.bOpen = menuLaser_Loop.Checked;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
         private void menuLaser_RedEnt_Click(object sender, EventArgs e)
         {
-            if (pipeClient == null)
-                return;
-            if (!LaserCondiction(3))
-                return;
-
-            //   lczParam.ind1 = iEntIndex;
+            if (pipeClient == null) return;
+            if (!LaserCondiction(3)) return;
             lczParam.strEntyName = strEntName[iEntIndex];
             lczParam.bOpen = menuLaser_Loop.Checked;
             lczParam.cmdType = 22;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
         private void menuLaser_MarkEnt_Click(object sender, EventArgs e)
         {
-            if (pipeClient == null)
-                return;
-            if (!LaserCondiction(1))
-                return;
-
+            if (pipeClient == null) return;
+            if (!LaserCondiction(1)) return;
             lczParam.strEntyName = strEntName[iEntIndex];
             lczParam.cmdType = 21;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
@@ -1036,26 +973,49 @@ namespace VisionApplication
             {
                 lczParam.cmdType = 12;
                 lczParam.bOpen = false;
+                lczParam.cardSN = currentCardSN;   // 【多卡】
                 pipeClient.SendParam(lczParam);
             }
         }
 
+
+        private void menuWSJobS_Click(object sender, EventArgs e)
+        {
+            menuWS_Job1.Checked = false;
+            menuWS_Job2.Checked = false;
+            menuWS_Job3.Checked = false;
+            menuWS_JobS.Checked = false;
+            ((ToolStripMenuItem)sender).Checked = true;
+            switch (((ToolStripMenuItem)sender).Name)
+            {
+                case "menuWS_Job1":
+                    iJobIndex = 0;
+                    SwitchCard(0);
+                    break;
+                case "menuWS_Job2":
+                    iJobIndex = 1;
+                    SwitchCard(1);
+                    break;
+                case "menuWS_Job3":
+                    iJobIndex = 2;
+                    break;
+                case "menuWS_Jobs":
+                    iJobIndex = -1;
+                    break;
+            }
+        }
+        // 界面布局相关
         private void menuEnt_ShowEntList_Click(object sender, EventArgs e)
         {
             menuEnt_ShowEntList.Checked = !menuEnt_ShowEntList.Checked;
-            if (!menuEnt_ShowEntList.Checked)
-            {
-                menuEnt_EditEnt.Checked = false;
-            }
+            if (!menuEnt_ShowEntList.Checked) menuEnt_EditEnt.Checked = false;
             JCZServerLayout();
         }
+
         private void menuEnt_ShowMarkImage_Click(object sender, EventArgs e)
         {
             menuEnt_ShowMarkImage.Checked = !menuEnt_ShowMarkImage.Checked;
-            if (!menuEnt_ShowMarkImage.Checked)
-            {
-                menuEnt_EditEnt.Checked = false;
-            }
+            if (!menuEnt_ShowMarkImage.Checked) menuEnt_EditEnt.Checked = false;
             JCZServerLayout();
         }
 
@@ -1076,21 +1036,23 @@ namespace VisionApplication
             JCZServerLayout();
         }
 
+        // 复位到原点
         private void toolBt_Len2Ori_Click(object sender, EventArgs e)
         {
             lczParam.cmdType = 15;
             lczParam.dParam1 = 0;
             lczParam.dParam2 = 0;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
 
-        //停止激光和红光
+        // 停止激光和红光
         private void toolBt_StopLaser_Click(object sender, EventArgs e)
         {
             lczParam.cmdType = 11;
+            lczParam.cardSN = currentCardSN;   // 【多卡】
             pipeClient.SendParam(lczParam);
         }
-
 
         #endregion
 

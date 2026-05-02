@@ -37,6 +37,25 @@ namespace VisionApplication
             this.menuCam_Close = new System.Windows.Forms.ToolStripMenuItem();
             this.menuCam_Connect = new System.Windows.Forms.ToolStripMenuItem();
             this.menuCam_Set = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaserFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_SaveFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuXBType = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_Job1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_Job2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_Job3 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuWS_JobS = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_RedBoundary = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_RedCountour = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_RedEnt = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_MarkEnt = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_Loop = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuParam = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_ShowEntList = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_ShowMarkImage = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_EditEnt = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuEnt_ShowMsgList = new System.Windows.Forms.ToolStripMenuItem();
             this.menuManage = new System.Windows.Forms.ToolStripMenuItem();
             this.menuManage_UserLogin = new System.Windows.Forms.ToolStripMenuItem();
             this.menuManage_UserLogout = new System.Windows.Forms.ToolStripMenuItem();
@@ -89,11 +108,6 @@ namespace VisionApplication
             this.menuDisp_PMA = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.menuDisp_Update = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuXBType = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuWS_Job1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuWS_Job2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuWS_Job3 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuWS_JobS = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTask = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTask_AcqOneImage = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTask_RunOneTime = new System.Windows.Forms.ToolStripMenuItem();
@@ -175,6 +189,8 @@ namespace VisionApplication
             this.toolStripStatus_inferTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_ExcuteTimes = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.btFunMark = new System.Windows.Forms.Button();
+            this.btRedLight_Preview = new System.Windows.Forms.Button();
             this.picLogo = new System.Windows.Forms.PictureBox();
             this.btFunSet = new System.Windows.Forms.Button();
             this.btFun_Preview = new System.Windows.Forms.Button();
@@ -382,20 +398,8 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
-            this.menuLaser = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_RedBoundary = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_RedCountour = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_RedEnt = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_MarkEnt = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_Loop = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuParam = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuEnt_ShowEntList = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuEnt_ShowMarkImage = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuEnt_EditEnt = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuEnt_ShowMsgList = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaserFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_SaveFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_View_Layout4 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_View_Layout2 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -485,6 +489,7 @@ namespace VisionApplication
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuCam,
             this.menuLaserFile,
+            this.menuXBType,
             this.menuLaser,
             this.menuParam,
             this.menuManage,
@@ -492,7 +497,6 @@ namespace VisionApplication
             this.menuWin,
             this.menuUnion,
             this.menuDisp,
-            this.menuXBType,
             this.menuTask,
             this.menuHelp,
             this.menuLight,
@@ -543,6 +547,158 @@ namespace VisionApplication
             this.menuCam_Set.Text = "摄像头参数设置";
             this.menuCam_Set.Click += new System.EventHandler(this.menuCam_Set_Click);
             // 
+            // menuLaserFile
+            // 
+            this.menuLaserFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuLaser_LoadFile,
+            this.menuLaser_SaveFile});
+            this.menuLaserFile.Name = "menuLaserFile";
+            this.menuLaserFile.Size = new System.Drawing.Size(44, 22);
+            this.menuLaserFile.Text = "文件";
+            // 
+            // menuLaser_LoadFile
+            // 
+            this.menuLaser_LoadFile.Name = "menuLaser_LoadFile";
+            this.menuLaser_LoadFile.Size = new System.Drawing.Size(148, 22);
+            this.menuLaser_LoadFile.Text = "加载激光文件";
+            this.menuLaser_LoadFile.Click += new System.EventHandler(this.menuLaser_LoadFile_Click);
+            // 
+            // menuLaser_SaveFile
+            // 
+            this.menuLaser_SaveFile.Name = "menuLaser_SaveFile";
+            this.menuLaser_SaveFile.Size = new System.Drawing.Size(148, 22);
+            this.menuLaser_SaveFile.Text = "保存激光文件";
+            this.menuLaser_SaveFile.Click += new System.EventHandler(this.menuLaser_SaveFile_Click);
+            // 
+            // menuXBType
+            // 
+            this.menuXBType.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuWS_Job1,
+            this.menuWS_Job2,
+            this.menuWS_Job3,
+            this.menuWS_JobS});
+            this.menuXBType.Name = "menuXBType";
+            this.menuXBType.Size = new System.Drawing.Size(44, 22);
+            this.menuXBType.Text = "工位";
+            // 
+            // menuWS_Job1
+            // 
+            this.menuWS_Job1.Name = "menuWS_Job1";
+            this.menuWS_Job1.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_Job1.Text = "A面（板卡1）";
+            this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
+            // 
+            // menuWS_Job2
+            // 
+            this.menuWS_Job2.Name = "menuWS_Job2";
+            this.menuWS_Job2.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_Job2.Text = "B面（板卡2）";
+            this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
+            // 
+            // menuWS_Job3
+            // 
+            this.menuWS_Job3.Name = "menuWS_Job3";
+            this.menuWS_Job3.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_Job3.Text = "C面";
+            this.menuWS_Job3.Visible = false;
+            this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
+            // 
+            // menuWS_JobS
+            // 
+            this.menuWS_JobS.Name = "menuWS_JobS";
+            this.menuWS_JobS.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_JobS.Text = "同步";
+            // 
+            // menuLaser
+            // 
+            this.menuLaser.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuLaser_RedBoundary,
+            this.menuLaser_RedCountour,
+            this.menuLaser_RedEnt,
+            this.menuLaser_MarkEnt,
+            this.menuLaser_Loop});
+            this.menuLaser.Name = "menuLaser";
+            this.menuLaser.Size = new System.Drawing.Size(44, 22);
+            this.menuLaser.Text = "激光";
+            // 
+            // menuLaser_RedBoundary
+            // 
+            this.menuLaser_RedBoundary.Name = "menuLaser_RedBoundary";
+            this.menuLaser_RedBoundary.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_RedBoundary.Text = "红光边界";
+            this.menuLaser_RedBoundary.Click += new System.EventHandler(this.menuLaser_RedBoundary_Click);
+            // 
+            // menuLaser_RedCountour
+            // 
+            this.menuLaser_RedCountour.Name = "menuLaser_RedCountour";
+            this.menuLaser_RedCountour.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_RedCountour.Text = "红光轮廓";
+            this.menuLaser_RedCountour.Click += new System.EventHandler(this.menuLaser_RedCountour_Click);
+            // 
+            // menuLaser_RedEnt
+            // 
+            this.menuLaser_RedEnt.Name = "menuLaser_RedEnt";
+            this.menuLaser_RedEnt.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_RedEnt.Text = "红光对象";
+            this.menuLaser_RedEnt.Click += new System.EventHandler(this.menuLaser_RedEnt_Click);
+            // 
+            // menuLaser_MarkEnt
+            // 
+            this.menuLaser_MarkEnt.Name = "menuLaser_MarkEnt";
+            this.menuLaser_MarkEnt.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_MarkEnt.Text = "激光标刻对象";
+            this.menuLaser_MarkEnt.Click += new System.EventHandler(this.menuLaser_MarkEnt_Click);
+            // 
+            // menuLaser_Loop
+            // 
+            this.menuLaser_Loop.Name = "menuLaser_Loop";
+            this.menuLaser_Loop.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_Loop.Text = "连续";
+            this.menuLaser_Loop.Click += new System.EventHandler(this.menuLaser_Loop_Click);
+            // 
+            // menuParam
+            // 
+            this.menuParam.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuEnt_ShowEntList,
+            this.menuEnt_ShowMarkImage,
+            this.menuEnt_EditEnt,
+            this.menuEnt_ShowMsgList});
+            this.menuParam.Name = "menuParam";
+            this.menuParam.Size = new System.Drawing.Size(68, 22);
+            this.menuParam.Text = "激光对象";
+            // 
+            // menuEnt_ShowEntList
+            // 
+            this.menuEnt_ShowEntList.Checked = true;
+            this.menuEnt_ShowEntList.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.menuEnt_ShowEntList.Name = "menuEnt_ShowEntList";
+            this.menuEnt_ShowEntList.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_ShowEntList.Text = "显示对象清单";
+            this.menuEnt_ShowEntList.Click += new System.EventHandler(this.menuEnt_ShowEntList_Click);
+            // 
+            // menuEnt_ShowMarkImage
+            // 
+            this.menuEnt_ShowMarkImage.Checked = true;
+            this.menuEnt_ShowMarkImage.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.menuEnt_ShowMarkImage.Name = "menuEnt_ShowMarkImage";
+            this.menuEnt_ShowMarkImage.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_ShowMarkImage.Text = "显示标刻图像";
+            this.menuEnt_ShowMarkImage.Click += new System.EventHandler(this.menuEnt_ShowMarkImage_Click);
+            // 
+            // menuEnt_EditEnt
+            // 
+            this.menuEnt_EditEnt.Name = "menuEnt_EditEnt";
+            this.menuEnt_EditEnt.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_EditEnt.Text = "编辑对象清单";
+            this.menuEnt_EditEnt.Click += new System.EventHandler(this.menuEnt_EditEnt_Click);
+            // 
+            // menuEnt_ShowMsgList
+            // 
+            this.menuEnt_ShowMsgList.Name = "menuEnt_ShowMsgList";
+            this.menuEnt_ShowMsgList.Size = new System.Drawing.Size(180, 22);
+            this.menuEnt_ShowMsgList.Text = "显示消息清单";
+            this.menuEnt_ShowMsgList.Click += new System.EventHandler(this.menuEnt_ShowMsgList_Click);
+            // 
             // menuManage
             // 
             this.menuManage.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -558,35 +714,35 @@ namespace VisionApplication
             // menuManage_UserLogin
             // 
             this.menuManage_UserLogin.Name = "menuManage_UserLogin";
-            this.menuManage_UserLogin.Size = new System.Drawing.Size(160, 22);
+            this.menuManage_UserLogin.Size = new System.Drawing.Size(180, 22);
             this.menuManage_UserLogin.Text = "用户登录";
             this.menuManage_UserLogin.Click += new System.EventHandler(this.menuManage_UserLogin_Click);
             // 
             // menuManage_UserLogout
             // 
             this.menuManage_UserLogout.Name = "menuManage_UserLogout";
-            this.menuManage_UserLogout.Size = new System.Drawing.Size(160, 22);
+            this.menuManage_UserLogout.Size = new System.Drawing.Size(180, 22);
             this.menuManage_UserLogout.Text = "用户注销";
             this.menuManage_UserLogout.Click += new System.EventHandler(this.menuManage_UserLogout_Click);
             // 
             // menuManage_User
             // 
             this.menuManage_User.Name = "menuManage_User";
-            this.menuManage_User.Size = new System.Drawing.Size(160, 22);
+            this.menuManage_User.Size = new System.Drawing.Size(180, 22);
             this.menuManage_User.Text = "用户管理";
             this.menuManage_User.Click += new System.EventHandler(this.menuManage_User_Click);
             // 
             // menuManage_authorize
             // 
             this.menuManage_authorize.Name = "menuManage_authorize";
-            this.menuManage_authorize.Size = new System.Drawing.Size(160, 22);
+            this.menuManage_authorize.Size = new System.Drawing.Size(180, 22);
             this.menuManage_authorize.Text = "授权管理";
             this.menuManage_authorize.Click += new System.EventHandler(this.menuManage_authorize_Click);
             // 
             // menuManage_SuperOrNormal
             // 
             this.menuManage_SuperOrNormal.Name = "menuManage_SuperOrNormal";
-            this.menuManage_SuperOrNormal.Size = new System.Drawing.Size(160, 22);
+            this.menuManage_SuperOrNormal.Size = new System.Drawing.Size(180, 22);
             this.menuManage_SuperOrNormal.Text = "切换至普通用户";
             this.menuManage_SuperOrNormal.Visible = false;
             this.menuManage_SuperOrNormal.Click += new System.EventHandler(this.menuManage_SuperOrNormal_Click);
@@ -607,33 +763,33 @@ namespace VisionApplication
             // menuFile_SaveDirectory
             // 
             this.menuFile_SaveDirectory.Name = "menuFile_SaveDirectory";
-            this.menuFile_SaveDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_SaveDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_SaveDirectory.Text = "打开存储文件夹";
             this.menuFile_SaveDirectory.Click += new System.EventHandler(this.menuFile_SaveDirectory_Click);
             // 
             // menuFile_PlaybackDirectory
             // 
             this.menuFile_PlaybackDirectory.Name = "menuFile_PlaybackDirectory";
-            this.menuFile_PlaybackDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_PlaybackDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_PlaybackDirectory.Text = "打开回放文件夹";
             this.menuFile_PlaybackDirectory.Click += new System.EventHandler(this.menuFile_PlaybackDirectory_Click);
             // 
             // menuFile_ResultDirectory
             // 
             this.menuFile_ResultDirectory.Name = "menuFile_ResultDirectory";
-            this.menuFile_ResultDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_ResultDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_ResultDirectory.Text = "打开模型文件夹";
             this.menuFile_ResultDirectory.Click += new System.EventHandler(this.menuFile_ResultDirectory_Click);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(157, 6);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(177, 6);
             // 
             // menuFile_LogDirectory
             // 
             this.menuFile_LogDirectory.Name = "menuFile_LogDirectory";
-            this.menuFile_LogDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_LogDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_LogDirectory.Text = "打开标刻文件夹";
             this.menuFile_LogDirectory.Visible = false;
             this.menuFile_LogDirectory.Click += new System.EventHandler(this.menuFile_LogDirectory_Click);
@@ -641,7 +797,7 @@ namespace VisionApplication
             // menuFile_UpdatePlaybackDirectory
             // 
             this.menuFile_UpdatePlaybackDirectory.Name = "menuFile_UpdatePlaybackDirectory";
-            this.menuFile_UpdatePlaybackDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_UpdatePlaybackDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_UpdatePlaybackDirectory.Text = "更新回放数据";
             this.menuFile_UpdatePlaybackDirectory.Visible = false;
             this.menuFile_UpdatePlaybackDirectory.Click += new System.EventHandler(this.menuFile_UpdatePlaybackDirectory_Click);
@@ -664,7 +820,7 @@ namespace VisionApplication
             this.menu_View_EventStatus.Checked = true;
             this.menu_View_EventStatus.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_EventStatus.Name = "menu_View_EventStatus";
-            this.menu_View_EventStatus.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_EventStatus.Size = new System.Drawing.Size(180, 22);
             this.menu_View_EventStatus.Text = "状态标志";
             this.menu_View_EventStatus.Click += new System.EventHandler(this.menu_View_EventStatus_Click);
             // 
@@ -673,7 +829,7 @@ namespace VisionApplication
             this.menu_View_SystemLog.Checked = true;
             this.menu_View_SystemLog.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_SystemLog.Name = "menu_View_SystemLog";
-            this.menu_View_SystemLog.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_SystemLog.Size = new System.Drawing.Size(180, 22);
             this.menu_View_SystemLog.Text = "操作日志";
             this.menu_View_SystemLog.Click += new System.EventHandler(this.menu_View_SystemLog_Click);
             // 
@@ -682,7 +838,7 @@ namespace VisionApplication
             this.menu_View_ResultStatics.Checked = true;
             this.menu_View_ResultStatics.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_ResultStatics.Name = "menu_View_ResultStatics";
-            this.menu_View_ResultStatics.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_ResultStatics.Size = new System.Drawing.Size(180, 22);
             this.menu_View_ResultStatics.Text = "参数设置";
             this.menu_View_ResultStatics.Click += new System.EventHandler(this.menu_View_ResultStatics_Click);
             // 
@@ -691,7 +847,7 @@ namespace VisionApplication
             this.menu_View_LaserWin.Checked = true;
             this.menu_View_LaserWin.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_LaserWin.Name = "menu_View_LaserWin";
-            this.menu_View_LaserWin.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_LaserWin.Size = new System.Drawing.Size(180, 22);
             this.menu_View_LaserWin.Text = "激光标刻服务端";
             this.menu_View_LaserWin.Visible = false;
             // 
@@ -699,45 +855,47 @@ namespace VisionApplication
             // 
             this.menu_View_Layout.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menu_View_Layout1,
+            this.menu_View_Layout2,
             this.menu_View_Layout3,
+            this.menu_View_Layout4,
             this.menu_View_Layout5,
             this.menu_View_LayoutEq});
             this.menu_View_Layout.Name = "menu_View_Layout";
-            this.menu_View_Layout.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_Layout.Size = new System.Drawing.Size(180, 22);
             this.menu_View_Layout.Text = "窗口布局";
             // 
             // menu_View_Layout1
             // 
             this.menu_View_Layout1.Name = "menu_View_Layout1";
-            this.menu_View_Layout1.Size = new System.Drawing.Size(124, 22);
-            this.menu_View_Layout1.Text = "布局1";
+            this.menu_View_Layout1.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Layout1.Text = "布局1（1窗口）";
             this.menu_View_Layout1.Click += new System.EventHandler(this.menu_View_Layout1_Click);
             // 
             // menu_View_Layout3
             // 
             this.menu_View_Layout3.Name = "menu_View_Layout3";
-            this.menu_View_Layout3.Size = new System.Drawing.Size(124, 22);
-            this.menu_View_Layout3.Text = "布局2";
+            this.menu_View_Layout3.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Layout3.Text = "布局3（3窗口）";
             this.menu_View_Layout3.Click += new System.EventHandler(this.menu_View_Layout3_Click);
             // 
             // menu_View_Layout5
             // 
             this.menu_View_Layout5.Name = "menu_View_Layout5";
-            this.menu_View_Layout5.Size = new System.Drawing.Size(124, 22);
-            this.menu_View_Layout5.Text = "布局3";
+            this.menu_View_Layout5.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Layout5.Text = "布局5（5窗口）";
             this.menu_View_Layout5.Click += new System.EventHandler(this.menu_View_Layout5_Click);
             // 
             // menu_View_LayoutEq
             // 
             this.menu_View_LayoutEq.Name = "menu_View_LayoutEq";
-            this.menu_View_LayoutEq.Size = new System.Drawing.Size(124, 22);
+            this.menu_View_LayoutEq.Size = new System.Drawing.Size(180, 22);
             this.menu_View_LayoutEq.Text = "均衡排布";
             this.menu_View_LayoutEq.Click += new System.EventHandler(this.menu_View_LayoutEq_Click);
             // 
             // menu_View_Fit
             // 
             this.menu_View_Fit.Name = "menu_View_Fit";
-            this.menu_View_Fit.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_Fit.Size = new System.Drawing.Size(180, 22);
             this.menu_View_Fit.Text = "图像适应窗口";
             this.menu_View_Fit.Click += new System.EventHandler(this.menu_View_Fit_Click);
             // 
@@ -931,81 +1089,42 @@ namespace VisionApplication
             this.menuDisp_Default.Checked = true;
             this.menuDisp_Default.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuDisp_Default.Name = "menuDisp_Default";
-            this.menuDisp_Default.Size = new System.Drawing.Size(124, 22);
+            this.menuDisp_Default.Size = new System.Drawing.Size(180, 22);
             this.menuDisp_Default.Text = "全局图";
             this.menuDisp_Default.Click += new System.EventHandler(this.menuDisp_Default_Click);
             // 
             // menuDisp_Grey
             // 
             this.menuDisp_Grey.Name = "menuDisp_Grey";
-            this.menuDisp_Grey.Size = new System.Drawing.Size(124, 22);
+            this.menuDisp_Grey.Size = new System.Drawing.Size(180, 22);
             this.menuDisp_Grey.Text = "局部图";
             this.menuDisp_Grey.Click += new System.EventHandler(this.menuDisp_Grey_Click);
             // 
             // menuDisp_FX
             // 
             this.menuDisp_FX.Name = "menuDisp_FX";
-            this.menuDisp_FX.Size = new System.Drawing.Size(124, 22);
+            this.menuDisp_FX.Size = new System.Drawing.Size(180, 22);
             this.menuDisp_FX.Text = "上边缘";
             this.menuDisp_FX.Click += new System.EventHandler(this.menuDisp_FX_Click);
             // 
             // menuDisp_PMA
             // 
             this.menuDisp_PMA.Name = "menuDisp_PMA";
-            this.menuDisp_PMA.Size = new System.Drawing.Size(124, 22);
+            this.menuDisp_PMA.Size = new System.Drawing.Size(180, 22);
             this.menuDisp_PMA.Text = "下边缘";
             this.menuDisp_PMA.Click += new System.EventHandler(this.menuDisp_PMA_Click);
             // 
             // toolStripSeparator8
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(121, 6);
+            this.toolStripSeparator8.Size = new System.Drawing.Size(177, 6);
             // 
             // menuDisp_Update
             // 
             this.menuDisp_Update.Name = "menuDisp_Update";
-            this.menuDisp_Update.Size = new System.Drawing.Size(124, 22);
+            this.menuDisp_Update.Size = new System.Drawing.Size(180, 22);
             this.menuDisp_Update.Text = "更新记录";
             this.menuDisp_Update.Click += new System.EventHandler(this.menuDisp_Update_Click);
-            // 
-            // menuXBType
-            // 
-            this.menuXBType.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuWS_Job1,
-            this.menuWS_Job2,
-            this.menuWS_Job3,
-            this.menuWS_JobS});
-            this.menuXBType.Name = "menuXBType";
-            this.menuXBType.Size = new System.Drawing.Size(44, 22);
-            this.menuXBType.Text = "工位";
-            this.menuXBType.Visible = false;
-            // 
-            // menuWS_Job1
-            // 
-            this.menuWS_Job1.Name = "menuWS_Job1";
-            this.menuWS_Job1.Size = new System.Drawing.Size(107, 22);
-            this.menuWS_Job1.Text = "工位1";
-            this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
-            // 
-            // menuWS_Job2
-            // 
-            this.menuWS_Job2.Name = "menuWS_Job2";
-            this.menuWS_Job2.Size = new System.Drawing.Size(107, 22);
-            this.menuWS_Job2.Text = "工位2";
-            this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
-            // 
-            // menuWS_Job3
-            // 
-            this.menuWS_Job3.Name = "menuWS_Job3";
-            this.menuWS_Job3.Size = new System.Drawing.Size(107, 22);
-            this.menuWS_Job3.Text = "工位3";
-            this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
-            // 
-            // menuWS_JobS
-            // 
-            this.menuWS_JobS.Name = "menuWS_JobS";
-            this.menuWS_JobS.Size = new System.Drawing.Size(107, 22);
-            this.menuWS_JobS.Text = "同步";
             // 
             // menuTask
             // 
@@ -1756,6 +1875,8 @@ namespace VisionApplication
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.BackColor = System.Drawing.SystemColors.Control;
+            this.splitContainer1.Panel1.Controls.Add(this.btFunMark);
+            this.splitContainer1.Panel1.Controls.Add(this.btRedLight_Preview);
             this.splitContainer1.Panel1.Controls.Add(this.picLogo);
             this.splitContainer1.Panel1.Controls.Add(this.btFunSet);
             this.splitContainer1.Panel1.Controls.Add(this.btFun_Preview);
@@ -1769,6 +1890,41 @@ namespace VisionApplication
             this.splitContainer1.Size = new System.Drawing.Size(986, 777);
             this.splitContainer1.SplitterDistance = 108;
             this.splitContainer1.TabIndex = 8;
+            // 
+            // btFunMark
+            // 
+            this.btFunMark.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btFunMark.FlatAppearance.BorderSize = 4;
+            this.btFunMark.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btFunMark.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btFunMark.ForeColor = System.Drawing.Color.Red;
+            this.btFunMark.Image = ((System.Drawing.Image)(resources.GetObject("btFunMark.Image")));
+            this.btFunMark.Location = new System.Drawing.Point(6, 465);
+            this.btFunMark.Name = "btFunMark";
+            this.btFunMark.Size = new System.Drawing.Size(100, 90);
+            this.btFunMark.TabIndex = 5;
+            this.btFunMark.Text = "激光标刻";
+            this.btFunMark.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btFunMark.UseVisualStyleBackColor = true;
+            this.btFunMark.Click += new System.EventHandler(this.btFunMark_Click);
+            // 
+            // btRedLight_Preview
+            // 
+            this.btRedLight_Preview.BackColor = System.Drawing.Color.White;
+            this.btRedLight_Preview.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btRedLight_Preview.FlatAppearance.BorderSize = 4;
+            this.btRedLight_Preview.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btRedLight_Preview.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btRedLight_Preview.ForeColor = System.Drawing.Color.Red;
+            this.btRedLight_Preview.Image = ((System.Drawing.Image)(resources.GetObject("btRedLight_Preview.Image")));
+            this.btRedLight_Preview.Location = new System.Drawing.Point(6, 377);
+            this.btRedLight_Preview.Name = "btRedLight_Preview";
+            this.btRedLight_Preview.Size = new System.Drawing.Size(100, 90);
+            this.btRedLight_Preview.TabIndex = 6;
+            this.btRedLight_Preview.Text = "红光预览";
+            this.btRedLight_Preview.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btRedLight_Preview.UseVisualStyleBackColor = false;
+            this.btRedLight_Preview.Click += new System.EventHandler(this.btRedLight_Preview_Click);
             // 
             // picLogo
             // 
@@ -1790,7 +1946,7 @@ namespace VisionApplication
             this.btFunSet.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunSet.ForeColor = System.Drawing.Color.Red;
             this.btFunSet.Image = ((System.Drawing.Image)(resources.GetObject("btFunSet.Image")));
-            this.btFunSet.Location = new System.Drawing.Point(3, 382);
+            this.btFunSet.Location = new System.Drawing.Point(6, 549);
             this.btFunSet.Name = "btFunSet";
             this.btFunSet.Size = new System.Drawing.Size(100, 90);
             this.btFunSet.TabIndex = 0;
@@ -4508,107 +4664,19 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
-            // menuLaser
+            // menu_View_Layout4
             // 
-            this.menuLaser.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuLaser_RedBoundary,
-            this.menuLaser_RedCountour,
-            this.menuLaser_RedEnt,
-            this.menuLaser_MarkEnt,
-            this.menuLaser_Loop});
-            this.menuLaser.Name = "menuLaser";
-            this.menuLaser.Size = new System.Drawing.Size(44, 22);
-            this.menuLaser.Text = "激光";
+            this.menu_View_Layout4.Name = "menu_View_Layout4";
+            this.menu_View_Layout4.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Layout4.Text = "布局4（4窗口）";
+            this.menu_View_Layout4.Click += new System.EventHandler(this.menu_View_Layout4_Click);
             // 
-            // menuLaser_RedBoundary
+            // menu_View_Layout2
             // 
-            this.menuLaser_RedBoundary.Name = "menuLaser_RedBoundary";
-            this.menuLaser_RedBoundary.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_RedBoundary.Text = "红光边界";
-            // 
-            // menuLaser_RedCountour
-            // 
-            this.menuLaser_RedCountour.Name = "menuLaser_RedCountour";
-            this.menuLaser_RedCountour.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_RedCountour.Text = "红光轮廓";
-            // 
-            // menuLaser_RedEnt
-            // 
-            this.menuLaser_RedEnt.Name = "menuLaser_RedEnt";
-            this.menuLaser_RedEnt.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_RedEnt.Text = "红光对象";
-            // 
-            // menuLaser_MarkEnt
-            // 
-            this.menuLaser_MarkEnt.Name = "menuLaser_MarkEnt";
-            this.menuLaser_MarkEnt.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_MarkEnt.Text = "激光标刻对象";
-            // 
-            // menuLaser_Loop
-            // 
-            this.menuLaser_Loop.Name = "menuLaser_Loop";
-            this.menuLaser_Loop.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_Loop.Text = "连续";
-            // 
-            // menuParam
-            // 
-            this.menuParam.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuEnt_ShowEntList,
-            this.menuEnt_ShowMarkImage,
-            this.menuEnt_EditEnt,
-            this.menuEnt_ShowMsgList});
-            this.menuParam.Name = "menuParam";
-            this.menuParam.Size = new System.Drawing.Size(68, 22);
-            this.menuParam.Text = "激光对象";
-            // 
-            // menuEnt_ShowEntList
-            // 
-            this.menuEnt_ShowEntList.Checked = true;
-            this.menuEnt_ShowEntList.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.menuEnt_ShowEntList.Name = "menuEnt_ShowEntList";
-            this.menuEnt_ShowEntList.Size = new System.Drawing.Size(180, 22);
-            this.menuEnt_ShowEntList.Text = "显示对象清单";
-            // 
-            // menuEnt_ShowMarkImage
-            // 
-            this.menuEnt_ShowMarkImage.Checked = true;
-            this.menuEnt_ShowMarkImage.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.menuEnt_ShowMarkImage.Name = "menuEnt_ShowMarkImage";
-            this.menuEnt_ShowMarkImage.Size = new System.Drawing.Size(180, 22);
-            this.menuEnt_ShowMarkImage.Text = "显示标刻图像";
-            // 
-            // menuEnt_EditEnt
-            // 
-            this.menuEnt_EditEnt.Name = "menuEnt_EditEnt";
-            this.menuEnt_EditEnt.Size = new System.Drawing.Size(180, 22);
-            this.menuEnt_EditEnt.Text = "编辑对象清单";
-            // 
-            // menuEnt_ShowMsgList
-            // 
-            this.menuEnt_ShowMsgList.Name = "menuEnt_ShowMsgList";
-            this.menuEnt_ShowMsgList.Size = new System.Drawing.Size(180, 22);
-            this.menuEnt_ShowMsgList.Text = "显示消息清单";
-            // 
-            // menuLaserFile
-            // 
-            this.menuLaserFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuLaser_LoadFile,
-            this.menuLaser_SaveFile});
-            this.menuLaserFile.Name = "menuLaserFile";
-            this.menuLaserFile.Size = new System.Drawing.Size(44, 22);
-            this.menuLaserFile.Text = "文件";
-            // 
-            // menuLaser_LoadFile
-            // 
-            this.menuLaser_LoadFile.Name = "menuLaser_LoadFile";
-            this.menuLaser_LoadFile.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_LoadFile.Text = "加载激光文件";
-            // 
-            // menuLaser_SaveFile
-            // 
-            this.menuLaser_SaveFile.Name = "menuLaser_SaveFile";
-            this.menuLaser_SaveFile.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_SaveFile.Text = "保存激光文件";
+            this.menu_View_Layout2.Name = "menu_View_Layout2";
+            this.menu_View_Layout2.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Layout2.Text = "布局2（2窗口）";
+            this.menu_View_Layout2.Click += new System.EventHandler(this.menu_View_Layout2_Click);
             // 
             // FrmMainUI
             // 
@@ -5096,5 +5164,9 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripMenuItem menuEnt_ShowMarkImage;
         private System.Windows.Forms.ToolStripMenuItem menuEnt_EditEnt;
         private System.Windows.Forms.ToolStripMenuItem menuEnt_ShowMsgList;
+        private System.Windows.Forms.Button btFunMark;
+        private System.Windows.Forms.Button btRedLight_Preview;
+        private System.Windows.Forms.ToolStripMenuItem menu_View_Layout4;
+        private System.Windows.Forms.ToolStripMenuItem menu_View_Layout2;
     }
 }
