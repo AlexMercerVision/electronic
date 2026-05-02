@@ -60,7 +60,7 @@ namespace VisionApplication
         public bool bMaskChanged = false;
         public string strVPPFileName;
         int iLSInd=0;  //光源序号
-        const int maxCameraNum =5;
+        const int maxCameraNum =2;
         int iLastcmbRecordType = 0;
 
         int iLastCMIndex = 0;

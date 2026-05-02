@@ -43,7 +43,7 @@ namespace VisionApplication
     {
         #region       
         // 1. 常量
-        private const int maxCameraNum = 5;                     // 最大支持的相机数量（工位数量）
+        private const int maxCameraNum = 2;                     // 最大支持的相机数量（工位数量）
 
         // 2. 字段 - UI相关
         private Frm_Welcome fw;                                 // 欢迎窗体对象，用于显示启动进度
@@ -139,10 +139,10 @@ namespace VisionApplication
         private int iAcquisitionsTimes = 0;                     // 图像采集总次数
         private int iErrAcquisitionsTimes = 0;                  // 采集失败次数
         private int iErrExecuteTimes = 0;                       // 检测执行失败次数
-                                  // 当前选择的作业索引
+                                                                // 当前选择的作业索引
 
         // 12. 字段 - 标定相关
-        private PMARes pmaRes;                                  // PMAlign模板匹配结果
+        private PMARes[] pmaRes = new PMARes[maxCameraNum];     // PMAlign模板匹配结果
         private string strLogPath = "";                         // 日志文件保存路径
         private string strOrder = "";                           // 当前执行的指令
         private int icamSelectInd = -1;                         // 当前选中的相机索引（UI用）
@@ -399,7 +399,7 @@ namespace VisionApplication
                 vpWin.SetGUIShow(0);
                 vpWin._cameraNum = cameraNum;
                 vpWin.SetAcqFIFO(acqFIFO);
-
+                vpWin.JobResultReady += OnJobResultReady;
                 vpWin.InitBG();
                 operLog.iEventStatus = 0;
             }
@@ -1917,11 +1917,19 @@ namespace VisionApplication
             AddLog();
         }
 
-       
-        private void AnaEvent()
+        private void AnaEventForJob(int jobIndex)
         {
-            pmaRes = vpWin._PMARes;
-            if (!pmaRes.bOk)
+            bool ok = pmaRes[jobIndex].bOk;
+            string faceName = (jobIndex == 0) ? "A面" : "B面";
+            operLog.strOperEvent = $"{faceName} 检测完成";
+            operLog.iEventStatus = ok ? 2 : -2;
+            operLog.strFailReason = ok ? "OK" : "NG";
+            AddLog();
+        }
+       /* private void AnaEvent()
+        {
+            pmaRes[currentCardSN] = vpWin._PMARes[currentCardSN];
+            if (!pmaRes[currentCardSN].bOk)
             {
                 operLog.iEventStatus = -2;
                 operLog.strOperEvent = "完成一次运行";
@@ -1933,55 +1941,9 @@ namespace VisionApplication
                 operLog.iEventStatus = 2;
                 operLog.strOperEvent = "完成一次运行";
                 operLog.strFailReason = "检测结果：OK";
-                /*operLog.strFailReason = "分数:" + pmaRes.dPMAScore.ToString("0.00")
-                    + "，X:" + pmaRes.dTX.ToString("0.00") + "，Y:" + pmaRes.dTY.ToString("0.00")
-                    + "，R:" + pmaRes.dTR.ToString("0.00");*/
                 AddLog();
-            }
-
-
-
-            /*int iResCode = vpWin._iResCode;
-            int[] c = new int[maxCameraNum];
-            iEventStatus[maxCameraNum] = 0;
-            dr.xbType = vpWin._xbType;
-            if (dr.xbType == 1)
-                textBox_JobN_xbType.Text = "凹口匣钵";
-            else if(dr.xbType == 2)
-                textBox_JobN_xbType.Text = "平口匣钵";
-            else
-                textBox_JobN_xbType.Text = "";
-            for (int i=0;i<maxCameraNum;i++)
-            {
-                c[i] = iResCode % 10;
-                iResCode= iResCode /10;
-                iEventStatus[i] = c[i];
-
-                dr.iPlaneIndex[i] = c[i];
-                if (c[i] > iEventStatus[maxCameraNum])
-                    iEventStatus[maxCameraNum] = c[i];
-            }
- pmaRes = vpWin._PMARes;
-            rts.iEventStatus = iEventStatus;
-            //st 2022年11月2日 结果反馈
-       
-            strResInfo.iInd = iFileIndex;
-            strResInfo.strTime = acqFIFO.strTime;
-            strResInfo.strResCode = vpWin._iResCode.ToString();
-            strResInfo.strMark = "0";
-            if(strLogPath=="")
-            { 
-                strLogPath = cup.p_Paf.strLogPath + "\\" + DateTime.Now.ToString("yyyyMMddHHmmss") +"_"+ Path.GetFileName(cup.p_Paf.strPlaybackPath) + ".txt";
-            }
-           if(! fo.WriteMark(strLogPath, strResInfo))
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "保存结果";
-                AddLog();
-            }*/
-
-
-        }
+            } 
+        }*/
         //2025年10月7日  执行一次运算输出IO信号
         private void ExeIOOut()
         {
@@ -1989,9 +1951,9 @@ namespace VisionApplication
             {
                 case 1:
                    
-                    if(csd.SendResultToIO(sPortCy, pmaRes.bOk, cup.p_IOPP))
+                    if(csd.SendResultToIO(sPortCy, pmaRes[currentCardSN].bOk, cup.p_IOPP))
                     {
-                        if (pmaRes.bOk)
+                        if (pmaRes[currentCardSN].bOk)
                             lblOut1.ForeColor = Color.Red;
                         else
                             lblOut2.ForeColor = Color.Red;
@@ -6083,7 +6045,7 @@ namespace VisionApplication
                     vpWin.bChkSubrecord = false;
                     if (vpWin.RunOneTime())
                     {
-                        while (vpWin._bRunOneTimeFinished != 2)
+                        while (vpWin._bRunOneTimeFinished[iJobIndex] != 2)
                         {
                             Thread.Sleep(10);
                         }
@@ -6118,16 +6080,16 @@ namespace VisionApplication
                   operLog.strOperEvent = "启动一次运行";
                   operLog.strFailReason = "";
                   AddLog();*/
-                if (vpWin.RunOneTimeSplite())
+                if (vpWin.RunOneTimeSplite(iJobIndex))
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 10;
-                    while (vpWin._bRunOneTimeFinished != 2 && count< maxTimes)
+                    while (vpWin._bRunOneTimeFinished[iJobIndex] != 2 && count< maxTimes)
                     {
                         Thread.Sleep(10);
                         count++;
                     }
-                    vpWin._bRunOneTimeFinished = 2;  //强制结束
+                    vpWin._bRunOneTimeFinished[iJobIndex] = 2;  //强制结束
                       pmaRes = vpWin._PMARes;
                   /*  if (rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
                         LaserMarkAfterVisionDet(); */ //2025年6月12日，检测完毕后启动激光标刻
@@ -6142,7 +6104,7 @@ namespace VisionApplication
                     rts.iIsRunning = -1;
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "执行一次运行";
-                    operLog.strFailReason = vpWin.strErrInfo;
+                    operLog.strFailReason = vpWin.strErrInfo[iJobIndex];
                     AddLog();
                     iErrExecuteTimes++;
                 }
@@ -6173,14 +6135,14 @@ namespace VisionApplication
             UpdateStatisticsForJob(0);  //更新统计数据
             if (cup.p_RTSP.bUpdateRecord)
             {                
-                AnaEvent();
+                AnaEventForJob(iJobIndex);
                 //AddEventLog(iEventStatus);  //已取消颜色显示
             }
             if(cup.p_RTSP.bUpdateIO)  //启用IO输出
             {
                 //只输出OK或者只输出NG
                 if(/*(pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||*/  
-                    (!pmaRes.bOk && cup.p_IOPP.NGOut!= 0) )
+                    (!pmaRes[currentCardSN].bOk && cup.p_IOPP.NGOut!= 0) )
                 ExeIOOut();
             }
         }
@@ -6195,7 +6157,7 @@ namespace VisionApplication
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5;
                     //2025年10月8日 此处条件不完全正确，待修改
-                    while (/*vpWin.mCurrentRunState != 0*/vpWin._bRunOneTimeFinished != 2 && count < maxTimes)
+                    while (/*vpWin.mCurrentRunState != 0*/vpWin._bRunOneTimeFinished[iJobIndex] != 2 && count < maxTimes)
                     {
                         Thread.Sleep(5);
                         count++;
@@ -6204,9 +6166,9 @@ namespace VisionApplication
                     {
 
                     }*/
-                    vpWin._bRunOneTimeFinished = 2;  //强制结束
-                    pmaRes = vpWin._PMARes;
-                    if(!pmaRes.bOk)
+                    vpWin._bRunOneTimeFinished[iJobIndex] = 2;  //强制结束
+                    pmaRes[currentCardSN] = vpWin._PMARes[currentCardSN];
+                    if(!pmaRes[currentCardSN].bOk)
                     {
                       //  vpWin._bContRun = false;
                     }

@@ -528,7 +528,11 @@ namespace VisionControl
         {
             // handles:
             //   - gui updates for job run commands issued via IO
-            bRunOneTimeFinished = 1;
+            CogJob job = sender as CogJob;
+            if (job == null) return;
+            int idx = Utility.GetJobIndexFromName(mJM, job.Name);
+            if (idx >= 0 && idx < maxCameraNum)
+                bRunOneTimeFinished[idx] = 1;
             try
             {
                 //2025年10月8日  该回调中不涉及到GUI更新，尝试去掉委托
@@ -564,9 +568,24 @@ namespace VisionControl
             }
             catch { }
         }
+        // mJM_UserResultAvailable 中直接使用返回值
+        private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
+        {
+            int? jobIdx = HandleUserResults();
+            int idx = jobIdx.Value;  // 从 HandleUserResults 获得
+            if (jobIdx.HasValue)
+            {
+                RunOneTimeFinished(jobIdx.Value);
+                
+                infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
+                start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
+                cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
+                JobResultReady?.Invoke(jobIdx.Value);
+            }
+        }
 
         //任务运行结果可用时回调，单次运行每个job被回调1次
-        private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
+       /* private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
         {
             HandleUserResults();
             RunOneTimeFinished(iCurrentJobIndex);
@@ -575,7 +594,10 @@ namespace VisionControl
             infer_end_time = new TimeSpan(DateTime.Now.Ticks);
             start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
             cost_milliseconds = (int)start2end_time.TotalMilliseconds;
-        }
+
+            // 触发分面结果通知
+            JobResultReady?.Invoke(iCurrentJobIndex);
+        }*/
 
         //任务运行 时回调，单次运行每个job被回调1次
         private void cogJobResultHistory_CurrentItemChanged(object sender, System.EventArgs e)
@@ -793,7 +815,26 @@ namespace VisionControl
       
         int iCurrentJobIndex = -1;
         //  mHistoryCollection 更新记录
-        private void HandleUserResults()
+        private int? HandleUserResults()
+        {
+            ICogRecord result = mJM.UserResult();
+            if (result != null)
+            {
+                string jobName = (string)result.SubRecords["JobName"].Content;
+                int jobIndex = Utility.GetJobIndexFromName(mJM, jobName);
+                if (jobIndex >= 0)
+                {
+                    mHistoryCollection[jobIndex].Clear();
+                    mHistoryCollection[jobIndex].AddNewUserResult(result);
+                    VisionControlUserResultAvailable?.Invoke(this, new VisionControlUserResultAvailableEventArgs(jobIndex, result));
+                    lock (mMinimumGuiPeriodTimer) { mHaveUnpaintedResults = true; }
+                    return jobIndex;
+                }
+            }
+            return null;
+        }
+
+        /*private void HandleUserResults()
         {
             // take the latest result and push it into a queue
 
@@ -823,7 +864,7 @@ namespace VisionControl
                     }
                 }
             }
-        }
+        }*/
 
         //获取结果状态
         public bool bLoadVPRes = true;
@@ -833,9 +874,9 @@ namespace VisionControl
         {
             try
             {
-                bRunOneTimeFinished = 2;
-                pmaRes.bOk = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
-                pmaRes.bLocated = true;
+                bRunOneTimeFinished[iJobIndex] = 2;
+                pmaRes[iJobIndex].bOk = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
+                pmaRes[iJobIndex].bLocated = true;
                 /* if (!pmaRes.bLocated)
                  {
                      iReject++; 

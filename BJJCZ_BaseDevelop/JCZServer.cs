@@ -35,7 +35,7 @@ namespace BJJCZ_BaseDevelop
         string[] strEntName;
         int[] iPenNo;
         int iEntCount = 0;
-        Bitmap imLaserRoute;
+        Bitmap[] imLaserRoute=new Bitmap[2];
         bool bContinue = false;
         bool bInMark = false;
         bool bInRed = false;
@@ -71,12 +71,12 @@ namespace BJJCZ_BaseDevelop
         {
             // 导出预览图需要用到当前卡号，从 lczParam 获取
             int card = lczParam.cardSN;
-            imLaserRoute = ((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card, alImParam.width, alImParam.height,
+            imLaserRoute[card] = ((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card, alImParam.width, alImParam.height,
                 alImParam.dCenX, alImParam.dCenY, alImParam.dWidth / alImParam.width));
             if (imLaserRoute != null)
             {
-                string strName = @"routeExport" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".png";
-                imLaserRoute.Save(strName, ImageFormat.Png);
+                string strName = @"routeExport" +card.ToString()+ DateTime.Now.ToString("yyyyMMddHHmmss") + ".png";
+                imLaserRoute[card].Save(strName, ImageFormat.Png);
             }
         }
 
@@ -206,12 +206,12 @@ namespace BJJCZ_BaseDevelop
                             AddMsg($"对象名[{i}]-->{strEntName[i]}");
                         }
                         UpdateEntTable();
-                        imLaserRoute = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
+                        imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
                             alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
                             alImParam.dWidth / alImParam.width));
-                        if (imLaserRoute == null)
-                            imLaserRoute = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                        mergeImg();
+                        if (imLaserRoute[card] == null)
+                            imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
+                        mergeImg(card);
                     }
                     break;
 
@@ -228,12 +228,12 @@ namespace BJJCZ_BaseDevelop
                     lczParam.nErr = nErr;
                     lczParam.ind1 = iEntCount;
                     pipeServerUser.SendParam(lczParam);
-                    imLaserRoute = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
+                    imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
                         alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
                         alImParam.dWidth / alImParam.width));
-                    if (imLaserRoute == null)
-                        imLaserRoute = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                    mergeImg();
+                    if (imLaserRoute[card] == null)
+                        imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
+                    mergeImg(card);
                     break;
 
                 case 7:     // 查询文件指定对象
@@ -264,12 +264,12 @@ namespace BJJCZ_BaseDevelop
                     break;
 
                 case 9:     // 输出Ezd预览图
-                    imLaserRoute = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
+                    imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
                         alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
                         alImParam.dWidth / alImParam.width));
-                    if (imLaserRoute == null)
-                        imLaserRoute = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                    mergeImg();
+                    if (imLaserRoute[card] == null)
+                        imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
+                    mergeImg(card);
                     break;
 
                 case 10:    // 激光标刻（全部对象）
@@ -684,12 +684,12 @@ namespace BJJCZ_BaseDevelop
         #region 辅助函数
         private void RefreshPreview(int card)
         {
-            imLaserRoute = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
+            imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
                 alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
                 alImParam.dWidth / alImParam.width));
-            if (imLaserRoute == null)
-                imLaserRoute = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-            mergeImg();
+            if (imLaserRoute[card] == null)
+                imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
+            mergeImg(card);
         }
 
         private void ViewChange()
@@ -731,7 +731,8 @@ namespace BJJCZ_BaseDevelop
         }
 
         // 图像处理相关方法（保持不变）
-        Bitmap originalImage = new Bitmap(@".\data\sourceBGImg.bmp");
+        Bitmap[] originalImage  = new Bitmap[2];
+         
         public Bitmap MakeWhiteTransparent(Bitmap originalImage, float tolerance = 10f)
         {
             if (originalImage == null)
@@ -782,16 +783,21 @@ namespace BJJCZ_BaseDevelop
         }
 
 
-        private void mergeImg()
+        private void mergeImg(int card)
         {
-            if (originalImage == null || imLaserRoute == null) return;
+            if(originalImage[0]==null)
+                originalImage[0] = new Bitmap(@".\data\sourceBGImgA.bmp");
+            if (originalImage[1] == null)
+                originalImage[1] = new Bitmap(@".\data\sourceBGImgB.bmp");
+
+            if (originalImage[card] == null || imLaserRoute[card] == null) return;
             Bitmap finalImage = new Bitmap(alImParam.width, alImParam.height);
             using (Graphics g = Graphics.FromImage(finalImage))
             {
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                g.DrawImage(originalImage, 0, 0, alImParam.width, alImParam.height);
-                g.DrawImage(imLaserRoute, 0, 0);
+                g.DrawImage(originalImage[card], 0, 0, alImParam.width, alImParam.height);
+                g.DrawImage(imLaserRoute[card], 0, 0);
             }
             finalImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
             pictureBox1.Image = finalImage;

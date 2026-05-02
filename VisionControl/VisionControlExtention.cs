@@ -43,7 +43,7 @@ namespace VisionControl
         #region  变量定义
         //   CDL_Predict cdl_Predict = new CDL_Predict();
         public int iReject = 0;
-        const int maxCameraNum = 5;
+        const int maxCameraNum = 2;
         ImgAcqFIFO acqFIFO = new ImgAcqFIFO();
         Thread contThread = null;
         bool bContRun = false;
@@ -71,10 +71,10 @@ namespace VisionControl
         CogImageFile mImageFile = new CogImageFile();
         bool bRecord = false;
         int[] iEventStatus = new int[6];
-        int bRunOneTimeFinished = 0;
+        int[] bRunOneTimeFinished = new int[maxCameraNum];
         private CUserParam cup = new CUserParam();
 
-        public string strErrInfo;
+        public string[] strErrInfo = new string[maxCameraNum];
         int iResCode, iDM0ResCode, iCM1ResCode, iCM2ResCode, iCM3ResCode, iCM4ResCode, xbType;
         public MyCamera.cbOutputExdelegate cbImage;
         //   private string[] strSubRecordsName;
@@ -94,8 +94,8 @@ namespace VisionControl
         DLResult[] DL_result = new DLResult[maxCameraNum];
 
 
-        private PMARes pmaRes;
-        public PMARes _PMARes
+        private PMARes[] pmaRes=new PMARes[maxCameraNum];
+        public PMARes[] _PMARes
         {
             get { return pmaRes; }
             set { pmaRes = value; }
@@ -156,7 +156,7 @@ namespace VisionControl
             get { return bRecord; }
             set { bRecord = value; }
         }
-        public int _bRunOneTimeFinished
+        public int[] _bRunOneTimeFinished
         {
             get { return bRunOneTimeFinished; }
             set { bRunOneTimeFinished = value; }
@@ -171,15 +171,15 @@ namespace VisionControl
             set { cameraNum = value; }
         }
 
-        public int cost_milliseconds;
-        TimeSpan infer_start_time;
-        TimeSpan infer_end_time;
-        TimeSpan start2end_time;
+        public int[] cost_milliseconds = new int[maxCameraNum];
+        TimeSpan[] infer_start_time=new TimeSpan[maxCameraNum];
+        TimeSpan[] infer_end_time = new TimeSpan[maxCameraNum];
+        TimeSpan[] start2end_time = new TimeSpan[maxCameraNum];
 
 
         //深度学习相关
-       // public bool bDeepInfer = true; //是否启用深度推理  检测VP算法时可以关闭深度推理
-    //    public CDL cdl = new CDL();
+        // public bool bDeepInfer = true; //是否启用深度推理  检测VP算法时可以关闭深度推理
+        //    public CDL cdl = new CDL();
         #endregion
 
 
@@ -382,11 +382,11 @@ namespace VisionControl
 
             if (DL_result[iJobIndex].AL_Rect.Count > 0)
             {
-                pmaRes.bOk = false;
+                pmaRes[iJobIndex].bOk = false;
             }
             else
             {
-                pmaRes.bOk = true;
+                pmaRes[iJobIndex].bOk = true;
             }
             //连续运行只更新NG图像和信号
             //  if ( iTaskType!=3 || !pmaRes.bOk)
@@ -412,11 +412,11 @@ namespace VisionControl
 
             if (DL_result[iJobIndex].AL_Rect.Count > 0)
             {
-                pmaRes.bOk = false;
+                pmaRes[iJobIndex].bOk = false;
             }
             else
             {
-                pmaRes.bOk = true;
+                pmaRes[iJobIndex].bOk = true;
             }
             //连续运行只更新NG图像和信号
             //  if ( iTaskType!=3 || !pmaRes.bOk)
@@ -428,18 +428,30 @@ namespace VisionControl
         }
 
 
+        // 新增事件，参数为 Job 索引
+        public event Action<int> JobResultReady;
+
+        // 新增获取方法
+        public PMARes GetJobResult(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                return new PMARes();
+            return pmaRes[jobIndex];
+        }
+
+
         int iDeepInferTime = 0;
       //  public string strErrReson = "";
 
         //每通道独立执行运行
-        public bool RunOneTimeSplite()
+        public bool RunOneTimeSplite(int iJobIndex)
         {            
             if (cup.p_VPPRTP.bVisionInfer)
             {
                 //2026年4月12日 应判断单个通道的空闲状态
                 if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
                 {
-                    strErrInfo = "JM状态非空闲";
+                    strErrInfo[iJobIndex] = "JM状态非空闲";
                     return false;
                 }
             }
@@ -455,24 +467,25 @@ namespace VisionControl
             }
 
             inactiveTime = 0;       //只要运行了，就将不活跃次数置零
-            bRunOneTimeFinished = 0;
+            bRunOneTimeFinished[iJobIndex] = 0;
 
-            infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始
+            infer_start_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks); //计时开始
             //各通道时间统一
             acqFIFO.strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
 
             //2026年4月12日 设置线程运行  
-            for (int i=0;i<maxCameraNum;i++)
-            {
-                if(cup.p_CD.bListProcess[i])                   
-                   RunOneTime(i);
-            }
+            RunOneTime(iJobIndex);
+            /*  for (int i=0;i<maxCameraNum;i++)
+              {
+                  if(cup.p_CD.bListProcess[i])                   
+                     RunOneTime(i);
+              }*/
             iDeepInferTime++;
 
-            bRunOneTimeFinished = 2;
-            infer_end_time = new TimeSpan(DateTime.Now.Ticks);
-            start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
-            cost_milliseconds = (int)start2end_time.TotalMilliseconds;
+            bRunOneTimeFinished[iJobIndex] = 2;
+            infer_end_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks);
+            start2end_time[iJobIndex] = infer_end_time[iJobIndex].Subtract(infer_start_time[iJobIndex]).Duration();
+            cost_milliseconds[iJobIndex] = (int)start2end_time[iJobIndex].TotalMilliseconds;
 
 
             return true;
@@ -497,7 +510,7 @@ namespace VisionControl
                                 DLInfer(iJobIndex);
                             else
                                 DLInferOffLine(iJobIndex);
-                            pmaRes.bLocated = true;
+                            pmaRes[iJobIndex].bLocated = true;
                         }
                         else if(cup.p_VPPRTP.bVisionInfer)
                         {
@@ -510,7 +523,7 @@ namespace VisionControl
                     }
                     else
                     {
-                        strErrInfo = "图像采集异常:"+ acqFIFO.strErrInfo;
+                        strErrInfo[iJobIndex] = "图像采集异常:"+ acqFIFO.strErrInfo;
                         return false;
                     }
                 }
@@ -538,17 +551,17 @@ namespace VisionControl
                     }
                 }*/
             }
-            catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
+            catch (Cognex.VisionPro.Exceptions.CogNotStoppedException ex)
             {
                 // do nothing in this case - we're already running
-                strErrInfo = "CogNotStoppedException";
+                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }
             catch (Cognex.VisionPro.Exceptions.CogException ex)
             {
                 if (mCurrentRunState != RunState.RunningContinuous)
                     mCurrentRunState = RunState.Stopped;
-                strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }          
             return true; 
@@ -557,7 +570,7 @@ namespace VisionControl
         //VP执行一次运算
         public bool RunOneTime()
         {
-            infer_start_time = new TimeSpan(DateTime.Now.Ticks); //计时开始
+            infer_start_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks); //计时开始
 
 
             if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
@@ -600,7 +613,7 @@ namespace VisionControl
 
                         SetVPPImage();
 
-                        bRunOneTimeFinished = 0;
+                        bRunOneTimeFinished[iJobIndex] = 0;
                         Thread.Sleep(10);  //st** 20220804
                         iJobIndex = 0;
                         mJM.Job(0).Run();
@@ -630,12 +643,12 @@ namespace VisionControl
             {
                 if (mCurrentRunState != RunState.RunningContinuous)
                     mCurrentRunState = RunState.Stopped;
-                strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }
-            infer_end_time = new TimeSpan(DateTime.Now.Ticks);
-            start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
-            cost_milliseconds = (int)start2end_time.TotalMilliseconds;
+            infer_end_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks);
+            start2end_time[iJobIndex] = infer_end_time[iJobIndex].Subtract(infer_start_time[iJobIndex]).Duration();
+            cost_milliseconds[iJobIndex] = (int)start2end_time[iJobIndex].TotalMilliseconds;
 
             return true;
 
@@ -690,7 +703,7 @@ namespace VisionControl
                 catch (Cognex.VisionPro.Exceptions.CogException ex)
                 {
                     mCurrentRunState = RunState.Stopped;
-                    strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                    strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 }
                 return true;
             }
@@ -1343,7 +1356,7 @@ namespace VisionControl
             try
             {
                 //设置训练参数
-                CogPMAlignTool pma = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
                 pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
                 pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
@@ -1398,6 +1411,67 @@ namespace VisionControl
                 MessageBox.Show(ex.Message.ToString());
             }
         }
+        public void SetPMAParam(PMAlignParam pmaParam, int jobIndex)
+        {
+            try
+            {
+                //设置训练参数
+                CogPMAlignTool pma = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
+                pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
+                pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
+                pma.Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
+                pma.Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
+                pma.Pattern.IgnorePolarity = pmaParam.TrainPolarity;
+                switch (pmaParam.TrainAlg)
+                {
+                    case 0:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
+                        break;
+                    case 1:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
+                        break;
+                    case 2:
+                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
+                        break;
+                }
+                //设置运行参数
+
+                switch (pmaParam.RunAlg)
+                {
+                    case 0:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
+                        break;
+                    case 1:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
+                        break;
+                    case 2:
+                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
+                        break;
+                }
+                pma.RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
+                pma.RunParams.ScoreUsingClutter = pmaParam.RunArt;
+                pma.RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
+                pma.RunParams.ContrastThreshold = pmaParam.RunConstractThre;
+                pma.RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
+                pma.RunParams.AcceptThreshold = pmaParam.RunScoreThre;
+                if (pmaParam.RunEnableAngle)
+                {
+                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
+                }
+                else
+                {
+                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
+                }
+                pma.RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
+                pma.RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+
         public void GetAlignRegion(ref AlignImParam alImParam)
         {
             try
@@ -1423,7 +1497,34 @@ namespace VisionControl
             }
 
         }
-        public void GetPMAParam(ref PMAlignParam pmaParam)
+
+        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
+        {
+            try
+            {
+                CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                alImParam.dCenX = cogTrans.Region.CenterX;
+                alImParam.dCenY = cogTrans.Region.CenterY;
+                alImParam.dWidth = cogTrans.Region.SideXLength;
+                alImParam.dHeight = cogTrans.Region.SideYLength;
+
+                cogTrans.Run();
+                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                alImParam.width = cogIm.Width;
+                alImParam.height = cogIm.Height;
+                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
+                mImageFile.Append(cogIm);
+                mImageFile.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+
+        }
+
+       /* public void GetPMAParam(ref PMAlignParam pmaParam)
         {
             //获取训练参数
             try
@@ -1462,8 +1563,47 @@ namespace VisionControl
             {
                 MessageBox.Show(ex.Message.ToString());
             }
-        }
+        }*/
+        public void GetPMAParam(ref PMAlignParam pmaParam, int jobIndex)
+        {
+            //获取训练参数
+            try
+            {
+                CogPMAlignTool pma = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pmaParam.TrainAutoGrun = pma.Pattern.GrainLimitAutoSelect;
+                pmaParam.TrainCoarse = pma.Pattern.GrainLimitCoarse;
+                pmaParam.TrainFine = pma.Pattern.GrainLimitFine;
+                pmaParam.TrainEdgeThre = pma.Pattern.EdgeThreshold;
+                pmaParam.TrainAutoEdgeThre = pma.Pattern.AutoEdgeThresholdEnabled;
+                pmaParam.TrainPolarity = pma.Pattern.IgnorePolarity;
+                pmaParam.TrainAlg = (int)pma.Pattern.TrainAlgorithm;
+                if (pmaParam.TrainAlg > 2 || pmaParam.TrainAlg < 0)
+                    pmaParam.TrainAlg = 2;
 
+                //获取运行参数
+                pmaParam.RunAlg = (int)pma.RunParams.RunAlgorithm;
+                if (pmaParam.RunAlg > 2 || pmaParam.RunAlg < 0)
+                    pmaParam.RunAlg = 2;
+
+                pmaParam.RunAutoEdgeThre = pma.RunParams.AutoEdgeThresholdEnabled;
+                pmaParam.RunArt = pma.RunParams.ScoreUsingClutter;
+                pmaParam.RunEdgeThre = pma.RunParams.EdgeThreshold;
+                pmaParam.RunConstractThre = pma.RunParams.ContrastThreshold;
+                pmaParam.RunSearchNum = pma.RunParams.ApproximateNumberToFind;
+                pmaParam.RunScoreThre = pma.RunParams.AcceptThreshold;
+
+                if (pma.RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
+                    pmaParam.RunEnableAngle = true;
+                else
+                    pmaParam.RunEnableAngle = false;
+                pmaParam.RunAngleD = pma.RunParams.ZoneAngle.Low * 180 / Math.PI;
+                pmaParam.RunAngleU = pma.RunParams.ZoneAngle.High * 180 / Math.PI;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
         #endregion
 
         #region  相机触发采集，以及由触发采集执行运算
@@ -1631,7 +1771,7 @@ namespace VisionControl
                     }
                 }
 
-                bRunOneTimeFinished = 0;
+                bRunOneTimeFinished[iJobIndex] = 0;
                 iJobIndex = 0;
                 mJM.Job(0).Run();
 
@@ -1644,7 +1784,7 @@ namespace VisionControl
             {
                 if (mCurrentRunState != RunState.RunningContinuous)
                     mCurrentRunState = RunState.Stopped;
-                strErrInfo = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }
             return true;
@@ -2363,7 +2503,7 @@ namespace VisionControl
                         cogRDMainUser.Image = ci8gAcq[wsInd];
                         cogRDMainUser.Fit(true);
                     }
-                    SetCalibBlobImage(ci8gAcq[wsInd]);
+                    SetCalibBlobImage(ci8gAcq[wsInd], wsInd);
 
                 }
                 //存储 
@@ -2504,7 +2644,7 @@ namespace VisionControl
                         mainWindHeight = this.Height - 2;
                         // 左侧主窗口占2/3，右侧三个子窗口垂直等分
                         cogRDMain.Left = 1;
-                        cogRDMain.Top = 1;
+                        cogRDMain.Top = 0;
                         cogRDMain.Width = mainWindWidth * 2 / 3;
                         cogRDMain.Height = mainWindHeight;
 
@@ -2519,7 +2659,7 @@ namespace VisionControl
                         picSub1.Height = mainWindHeight / 3;
                         
                         picSub2.Left = cogRDMain.Right + 1;
-                        picSub2.Top = cogRDMain.Top + 2 * mainWindHeight / 3 + 1;
+                        picSub2.Top = cogRDMain.Top + 2 * mainWindHeight / 3 + 2;
                         picSub2.Width = mainWindWidth / 3;
                         picSub2.Height = mainWindHeight / 3;
 
@@ -3172,7 +3312,7 @@ namespace VisionControl
         private void cogRecordsDisplay()
         {
             //待修改，如果定位失败，要更新主界面图像
-            if (!pmaRes.bLocated)
+            if (!pmaRes[iJobIndex].bLocated)
             {
                 DirectShowImage();
 
@@ -3406,7 +3546,7 @@ namespace VisionControl
                             {
                                 cogRDMain.Display.Image = cogImg;
                                 AddGrap(cogRDMain, DL_result[iJobIndex]);
-                                AddGrapOkNg(cogRDMain, pmaRes.bOk);
+                                AddGrapOkNg(cogRDMain, pmaRes[iJobIndex].bOk);
 
                                 cogRDMain.Display.Fit(true);
                             }
@@ -3414,20 +3554,20 @@ namespace VisionControl
                             {
                                 cogRDMainUser.Image = cogImg;
                                 AddGrap(cogRDMainUser, DL_result[iJobIndex]);
-                                AddGrapOkNg(cogRDMainUser, pmaRes.bOk);
+                                AddGrapOkNg(cogRDMainUser, pmaRes[iJobIndex].bOk);
                                 cogRDMainUser.Fit(true);
                             }
                             break;
                         case 1:
                             cogRDSub1.Image = cogImg;
                             AddGrap(cogRDSub1, DL_result[iJobIndex]);
-                            AddGrapOkNg(cogRDSub1, pmaRes.bOk);
+                            AddGrapOkNg(cogRDSub1, pmaRes[iJobIndex].bOk);
                             cogRDSub1.Fit(true);
                             break;
                         case 2:
                             cogRDSub2.Image = cogImg;
                             AddGrap(cogRDSub2, DL_result[iJobIndex]);
-                            AddGrapOkNg(cogRDSub2, pmaRes.bOk);
+                            AddGrapOkNg(cogRDSub2, pmaRes[iJobIndex].bOk);
                             cogRDSub2.Fit(true);
                             break;
                             /* case 3:

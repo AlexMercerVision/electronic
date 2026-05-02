@@ -93,26 +93,26 @@ namespace VisionControl
         {
             if (DL_result[iJobIndex].AL_Rect.Count > 0)
             {
-                pmaRes.bOk = false;
+                pmaRes[iJobIndex].bOk = false;
                 //只更新NG图像和信号
                 DirectShowImage();
                 if (iModelRole == 10)
                 {
                     AddGrap(cogRDMain, DL_result[iJobIndex]);
-                    AddGrapOkNg(cogRDMain, pmaRes.bOk);
+                    AddGrapOkNg(cogRDMain, pmaRes[iJobIndex].bOk);
                 }
                 else
                 {
                     AddGrap(cogRDMainUser, DL_result[iJobIndex]);
-                    AddGrapOkNg(cogRDMainUser, pmaRes.bOk);
+                    AddGrapOkNg(cogRDMainUser, pmaRes[iJobIndex].bOk);
                 }
             }
             else
             {
-                pmaRes.bOk = true;
+                pmaRes[iJobIndex].bOk = true;
             }
             bRunOneTimeFinished = 2;
-            pmaRes.bLocated = true;
+            pmaRes[iJobIndex].bLocated = true;
         }
         /// <summary>
         /// 将灰度图像数据显示在PictureBox上

@@ -13,7 +13,7 @@ namespace CommonCls
     public class HIKVisionCamera : MyCamera
     {
         // 常量定义
-        private const int MaxCameraNum = 5;               // 最大支持相机数量
+        private const int MaxCameraNum = 2;               // 最大支持相机数量
         private const int ParamSetDelayMs = 10;           // 设置参数时的延迟（毫秒）
 
         // 字段

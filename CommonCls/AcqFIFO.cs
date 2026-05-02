@@ -22,7 +22,7 @@ namespace CommonCls
         #region 常量与配置字段
 
         /// <summary>最大相机数量</summary>
-        private const int maxCameraNum = 5;
+        private const int maxCameraNum = 2;
 
         /// <summary>默认线程等待时间（毫秒）</summary>
         private const int DefaultWaitMs = 5;

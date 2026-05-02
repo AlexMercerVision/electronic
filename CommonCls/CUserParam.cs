@@ -427,7 +427,7 @@ namespace CommonCls
     [Serializable]
     public class CUserParam
     {
-        const int maxCameraNum = 5;
+        const int maxCameraNum = 2;
         public CameraParam[] p_Cam = new CameraParam[maxCameraNum];
         public PathAndFile p_Paf = new PathAndFile();
         public FXParam p_FX = new FXParam(); 

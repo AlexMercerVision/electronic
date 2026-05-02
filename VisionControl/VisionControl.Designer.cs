@@ -59,9 +59,9 @@ namespace VisionControl
             // 
             this.picSub1.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.picSub1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.picSub1.Location = new System.Drawing.Point(638, 33);
+            this.picSub1.Location = new System.Drawing.Point(616, 3);
             this.picSub1.Name = "picSub1";
-            this.picSub1.Size = new System.Drawing.Size(302, 309);
+            this.picSub1.Size = new System.Drawing.Size(213, 155);
             this.picSub1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.picSub1.TabIndex = 0;
             this.picSub1.TabStop = false;
@@ -86,9 +86,9 @@ namespace VisionControl
             // 
             this.picSub2.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.picSub2.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.picSub2.Location = new System.Drawing.Point(788, 387);
+            this.picSub2.Location = new System.Drawing.Point(667, 379);
             this.picSub2.Name = "picSub2";
-            this.picSub2.Size = new System.Drawing.Size(271, 335);
+            this.picSub2.Size = new System.Drawing.Size(232, 128);
             this.picSub2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.picSub2.TabIndex = 0;
             this.picSub2.TabStop = false;
@@ -103,7 +103,7 @@ namespace VisionControl
             this.cogRDSub2.ColorMapUpperRoiLimit = 1D;
             this.cogRDSub2.DoubleTapZoomCycleLength = 2;
             this.cogRDSub2.DoubleTapZoomSensitivity = 2.5D;
-            this.cogRDSub2.Location = new System.Drawing.Point(610, 330);
+            this.cogRDSub2.Location = new System.Drawing.Point(464, 245);
             this.cogRDSub2.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
             this.cogRDSub2.MouseWheelSensitivity = 1D;
             this.cogRDSub2.Name = "cogRDSub2";
@@ -121,12 +121,12 @@ namespace VisionControl
             this.cogRDSub1.ColorMapUpperRoiLimit = 1D;
             this.cogRDSub1.DoubleTapZoomCycleLength = 2;
             this.cogRDSub1.DoubleTapZoomSensitivity = 2.5D;
-            this.cogRDSub1.Location = new System.Drawing.Point(616, -1);
+            this.cogRDSub1.Location = new System.Drawing.Point(608, 3);
             this.cogRDSub1.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
             this.cogRDSub1.MouseWheelSensitivity = 1D;
             this.cogRDSub1.Name = "cogRDSub1";
             this.cogRDSub1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("cogRDSub1.OcxState")));
-            this.cogRDSub1.Size = new System.Drawing.Size(302, 325);
+            this.cogRDSub1.Size = new System.Drawing.Size(302, 259);
             this.cogRDSub1.TabIndex = 31;
             this.cogRDSub1.DoubleClick += new System.EventHandler(this.cogRDSub1_DoubleClick);
             // 
@@ -168,7 +168,6 @@ namespace VisionControl
             this.Name = "VisionControl";
             this.Size = new System.Drawing.Size(913, 643);
             this.Load += new System.EventHandler(this.VisionControl_Load);
-            //this.SizeChanged += new System.EventHandler(this.VisionControl_SizeChanged);
             ((System.ComponentModel.ISupportInitialize)(this.applicationErrorProvider)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picSub1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picSub2)).EndInit();

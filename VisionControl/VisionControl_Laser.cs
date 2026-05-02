@@ -29,11 +29,11 @@ namespace VisionControl
         }
 
         //从VP9点标定工具中获取9点标定的数据
-        public bool GetCalibPoint(ref double[] dCoor)
+        public bool GetCalibPoint(ref double[] dCoor, int jobIndex = 0)
         {
             try
             {
-                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
                 int nP = calib_NP2NP.Calibration.NumPoints;
                 if (dCoor == null || dCoor.Length != nP * 4)
                 {
@@ -58,11 +58,11 @@ namespace VisionControl
             // calib_NP2NP.Calibration.
         }
         //设置VP9点标定工具中的坐标数据
-        public void SetCalibPoint(double[] dCoor)
+        public void SetCalibPoint(double[] dCoor, int jobIndex = 0)
         {
             try
             {
-                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
                 int nP = dCoor.Length / 4;
                 calib_NP2NP.Calibration.NumPoints = nP;
                 //  calib_NP2NP.Calibration.
@@ -82,11 +82,11 @@ namespace VisionControl
         }
 
         //设置blob分析模板参数
-        public void SetCalibBlobParam(calibBlobParam cbp)
+        public void SetCalibBlobParam(calibBlobParam cbp, int jobIndex = 0)
         {
             try
             {
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
                 cbt.RunParams.SegmentationParams.Polarity = cbp.bPolarity ? CogBlobSegmentationPolarityConstants.LightBlobs : CogBlobSegmentationPolarityConstants.DarkBlobs;
                 cbt.RunParams.SegmentationParams.Mode = cbp.iSegType == 0 ? CogBlobSegmentationModeConstants.HardFixedThreshold : CogBlobSegmentationModeConstants.HardDynamicThreshold;
                 cbt.RunParams.SegmentationParams.HardFixedThreshold = cbp.iThre;
@@ -101,11 +101,11 @@ namespace VisionControl
             }
         }
         //获取blob分析模板参数
-        public void GetCalibBlobParam(ref calibBlobParam cbp)
+        public void GetCalibBlobParam(ref calibBlobParam cbp, int jobIndex = 0)
         {
             try
             {
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
                 cbp.bPolarity = cbt.RunParams.SegmentationParams.Polarity == CogBlobSegmentationPolarityConstants.LightBlobs ? true : false;
                 cbp.iSegType = cbt.RunParams.SegmentationParams.Mode == CogBlobSegmentationModeConstants.HardFixedThreshold ? 0 : 1;
                 cbp.iThre = cbt.RunParams.SegmentationParams.HardFixedThreshold;
@@ -117,9 +117,9 @@ namespace VisionControl
                 MessageBox.Show(ex.Message.ToString());
             }
         }
-        public bool Get9PointCalibRes(ref CalibRes calibRes)
+        public bool Get9PointCalibRes(ref CalibRes calibRes, int jobIndex = 0)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             try
             {
                 //  CalibRes calibRes = new CalibRes();
@@ -142,9 +142,9 @@ namespace VisionControl
             }
         }
         //使用VP9点标定工具进行9点标定
-        public CalibRes _9PointCalib(double[] dCoor)
+        public CalibRes _9PointCalib(double[] dCoor, int jobIndex = 0)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoor.Length / 4;
             calib_NP2NP.Calibration.NumPoints = nP;
             //  calib_NP2NP.Calibration.
@@ -181,9 +181,9 @@ namespace VisionControl
         }
 
         //使用VP9点标定工具进行9点标定，图像坐标与激光坐标分开传入
-        public CalibRes _9PointCalib2(double[] dCoorIm, double[] dCoorLaser)
+        public CalibRes _9PointCalib2(double[] dCoorIm, double[] dCoorLaser, int jobIndex = 0)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoorIm.Length / 2;
             calib_NP2NP.Calibration.NumPoints = nP;
             for (int i = 0; i < nP; i++)
@@ -209,15 +209,15 @@ namespace VisionControl
         }
 
         //设置图像并执行blob分析
-        public void SetCalibBlobImage(CogImage8Grey calibIm)
+        public void SetCalibBlobImage(CogImage8Grey calibIm, int jobIndex = 0)
         {
             try
             {
 
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
                 cbt.InputImage = calibIm;
-                ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
-                mJM.Job(1).Run();
+                ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
+                mJM.Job(jobIndex).Run();
                 Thread.Sleep(500);
             }
             catch (Exception ex)
@@ -229,12 +229,12 @@ namespace VisionControl
 
         //获取9点标定  特征点坐标
         List<double> listCoord = new List<double>();
-        public bool GetCalibBlobCoord(int row, int col, ref double[] dCoor)
+        public bool GetCalibBlobCoord(int row, int col, ref double[] dCoor, int jobIndex = 0)
         {
             try
             {
 
-                CogBlobTool cbt = (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
                 int pointNum = row * col;
                 int count = cbt.Results.GetBlobs().Count;
                 if (count != pointNum)
@@ -242,7 +242,7 @@ namespace VisionControl
                 else
                 {
                     // double[,] dCoord = new double[9, 2];
-                    listCoord = (mJM.Job(1).VisionTool as CogToolGroup).GetScriptTerminalData("Coord") as List<double>;
+                    listCoord = (mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Coord") as List<double>;
                     if (listCoord == null || listCoord.Count / 2 != pointNum)
                         return false;
                     if (dCoor == null || dCoor.Length != count * 2)
