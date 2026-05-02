@@ -9,57 +9,498 @@ using System.Windows.Forms;
 using System.IO.Pipes;
 using System.IO;
 using System.Threading;
-using PipeChanel;
+using PipeChanel;                     // 管道通信库
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 
 namespace BJJCZ_BaseDevelop
 {
+    /// <summary>
+    /// 图像对齐参数（由客户端发送，用于预览图与背景叠加）
+    /// </summary>
     public struct AlignImParam
     {
         public int width;            // 像素宽度
         public int height;          // 像素高度
-        public double dCenX;        // 激光坐标系下 中心坐标X
-        public double dCenY;        // 激光坐标系下 中心坐标Y
-        public double dWidth;       // 激光坐标系下 图像宽度
-        public double dHeight;      // 激光坐标系下 高度
+        public double dCenX;        // 激光坐标系中心 X
+        public double dCenY;        // 激光坐标系中心 Y
+        public double dWidth;       // 激光坐标系图像宽度
+        public double dHeight;      // 激光坐标系图像高度
     }
 
+    /// <summary>
+    /// JCZServer 主窗体。作为双板卡激光标刻的服务端，监听两条独立的命名管道，
+    /// 分别处理板卡 0 和板卡 1 的命令，并维护各自的状态。
+    /// </summary>
     public partial class JCZServer : Form
     {
-        Pipechanel pipeServerUser;
-        LCZControlParam lczParam = new LCZControlParam();
+        // =============== 双管道服务端 ===============
+        private Pipechanel pipeServer0;      // 对应板卡 0 的服务端
+        private Pipechanel pipeServer1;      // 对应板卡 1 的服务端
 
-        int JczInitErr = 0;
-        int nErr = 0;
-        string[] strEntName;
-        int[] iPenNo;
-        int iEntCount = 0;
-        Bitmap[] imLaserRoute=new Bitmap[2];
-        bool bContinue = false;
-        bool bInMark = false;
-        bool bInRed = false;
-        HatchParam hp = new HatchParam(1);
-        LaserpenParam pP = new LaserpenParam(1);
-        AlignImParam alImParam = new AlignImParam();
+        // =============== 按板卡拆分状态（索引0为板卡0, 1为板卡1） ===============
+        private int[] JczInitErrs = new int[2] { -1, -1 };     // 初始化错误码
+        private int[] nEntNums = new int[2];                   // 对象数量
+        private string[][] strEntNames = new string[2][];      // 对象名称列表
+        private int[][] iPenNos = new int[2][];                // 笔号列表
+        private int[] iEntIndices = new int[2] { -1, -1 };     // 当前选中的实体索引
+        private bool[] bInMark = new bool[2];                  // 是否正在标刻
+        private bool[] bInRed = new bool[2];                   // 是否正在红光预览
+        private Bitmap[] imLaserRoute = new Bitmap[2];         // 激光路线预览图（透明背景）
+        private Bitmap[] originalImage = new Bitmap[2];        // 原始背景图
 
-        #region 加载软件
+        // =============== 共享参数（非实时，单线程访问）===============
+        private AlignImParam alImParam = new AlignImParam();   // 预览对齐参数
+        private HatchParam hp = new HatchParam(1);             // 填充参数临时对象
+        private LaserpenParam pP = new LaserpenParam(1);      // 激光笔参数临时对象
+
+        private int currentCard = 0;    // 当前正在处理的板卡号（用于 UI 更新）
+        private int lastCmdCard = 0;    // 最后一个命令对应的板卡号
+
+        // =============== 构造函数 ===============
         public JCZServer()
         {
             InitializeComponent();
-            pipeServerUser = new Pipechanel(1, "PipeServer", "PipeClient");
-            Pipechanel.msgParamReceived += new PipeMsg.PipeMsgParamEventHandler(Pipechanel_msgReceived);
+
+            // 创建两个管道服务端实例，分别对应板卡0和板卡1
+            pipeServer0 = new Pipechanel(0, "PipeServer0", "PipeClient0");
+            pipeServer1 = new Pipechanel(0, "PipeServer1", "PipeClient1");
+
+            // 静态事件只能订阅一次，我们通过 sender 区分来源
+            Pipechanel.msgParamReceived += Pipechanel_msgReceived;
         }
 
+        // =============== 窗体加载 ===============
         private void JCZServer_Load(object sender, EventArgs e)
         {
             JCZServerIcon.Visible = true;
-            // 不再自动初始化单卡，等待客户端发送卡号后再初始化
-            AddMsg("等待管道链接");
+            AddMsg("双管道服务端启动完成，等待板卡0/1连接");
         }
-        #endregion
 
-        #region 界面及菜单操作
+        // =============== 管道消息接收 ===============
+        /// <summary>
+        /// 管道消息回调（由于Pipechanel为静态事件，所有管道实例共享此回调）
+        /// 通过 sender 参数确定触发消息的管道实例，进而得到板卡号
+        /// </summary>
+        private void Pipechanel_msgReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
+        {
+            // 此方法已保证在 UI 线程执行（Pipechanel 内部 Invoke）
+            Pipechanel pipe = sender as Pipechanel;
+            int card = 0;
+            if (pipe == pipeServer0) card = 0;
+            else if (pipe == pipeServer1) card = 1;
+            else return;
+
+            LCZControlParam param = e.receivedMsg;
+            // 强制修正卡号，防止客户端传入不规范的值
+            param.cardSN = card;
+            currentCard = card;
+            lastCmdCard = card;
+
+            // 执行命令
+            CMDAna(param);
+        }
+
+        // =============== 日志 ===============
+        private void AddMsg(string txtMsg)
+        {
+            mainMsgBox.BeginInvoke((MethodInvoker)delegate
+            {
+                mainMsgBox.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + txtMsg + Environment.NewLine);
+                mainMsgBox.SelectionStart = mainMsgBox.Text.Length;
+                mainMsgBox.ScrollToCaret();
+            });
+        }
+
+        // =============== 核心命令解析 ===============
+        /// <summary>
+        /// 解析并执行客户端发来的命令，调用对应的 JczLmc 函数，并通过管道返回结果。
+        /// 所有涉及板卡的操作都使用 param.cardSN 确定目标板卡。
+        /// </summary>
+        private void CMDAna(LCZControlParam param)
+        {
+            int card = param.cardSN;
+            int nErr = 0;
+            bool needResponse = true;   // 是否在末尾统一发送响应
+
+            // 未初始化的板卡只允许执行少数命令
+            if (JczInitErrs[card] != 0 &&
+                param.cmdType != 0 && param.cmdType != 1 &&
+                param.cmdType != 2 && param.cmdType != 37 &&
+                param.cmdType != 90 && param.cmdType != 42 &&
+                param.cmdType != 100)
+            {
+                param.nErr = 11;    // 未初始化错误码
+                SendResponse(param);
+                AddMsg($"卡{card} 未初始化，拒绝执行命令 {param.cmdType}");
+                return;
+            }
+
+            switch (param.cmdType)
+            {
+                case 0:     // 查询板卡初始化状态
+                case 100:   // 同 0，并尝试加载指定文件
+                    nErr = JczInitErrs[card];
+                    if (nErr == 0)
+                    {
+                        nErr = JczLmc.Imc1_LoadEzdFile(card, param.strFileName);
+                        if (nErr == 0)
+                        {
+                            // 重新读取对象列表
+                            nEntNums[card] = JczLmc.Imc1_GetEntityCount(card);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
+                                iPenNos[card][i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                            }
+                            UpdateEntTable(card);
+                            RefreshPreview(card);
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card} 加载文件失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                    }
+                    break;
+
+                case 1:     // 初始化板卡
+                    nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
+                    JczInitErrs[card] = nErr;
+                    AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
+                    break;
+
+                case 2:     // 关闭板卡
+                    nErr = JczLmc.Imc1_Close();
+                    JczInitErrs[card] = nErr;
+                    AddMsg($"卡{card} 关闭 -> {JczLmc.GetErrorText(nErr)}");
+                    break;
+
+                case 3:     // 开关激光器
+                    nErr = JczLmc.Imc1_LaserOn(card, param.bOpen);
+                    AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
+                    break;
+
+                case 4:     // 加载 EZD 文件
+                    nErr = JczLmc.Imc1_LoadEzdFile(card, param.strFileName);
+                    if (nErr == 0)
+                    {
+                        nEntNums[card] = JczLmc.Imc1_GetEntityCount(card);
+                        strEntNames[card] = new string[nEntNums[card]];
+                        iPenNos[card] = new int[nEntNums[card]];
+                        for (int i = 0; i < nEntNums[card]; i++)
+                        {
+                            strEntNames[card][i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
+                            iPenNos[card][i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                        }
+                        UpdateEntTable(card);
+                        RefreshPreview(card);
+                    }
+                    AddMsg($"卡{card} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
+                    break;
+
+                case 5:     // 保存文件
+                    nErr = JczLmc.Imc1_SaveEntLibToFile(card, param.strFileName);
+                    AddMsg($"卡{card} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
+                    break;
+
+                case 6:     // 加载文件并逐个返回对象信息
+                    nErr = JczLmc.Imc1_LoadEzdFile(card, param.strFileName);
+                    nEntNums[card] = JczLmc.Imc1_GetEntityCount(card);
+                    strEntNames[card] = new string[nEntNums[card]];
+                    iPenNos[card] = new int[nEntNums[card]];
+                    param.nErr = nErr;
+                    param.ind1 = nEntNums[card];
+                    SendResponse(param);
+                    for (int i = 0; i < nEntNums[card]; i++)
+                    {
+                        strEntNames[card][i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
+                        iPenNos[card][i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                        param.strEntyName = strEntNames[card][i];
+                        param.ind2 = i;
+                        param.dParam1 = iPenNos[card][i];
+                        SendResponse(param);
+                        Thread.Sleep(5);
+                    }
+                    RefreshPreview(card);
+                    needResponse = false;
+                    break;
+
+                case 7:     // 查询单个对象信息
+                    if (param.ind2 >= 0 && param.ind2 < nEntNums[card])
+                    {
+                        param.strEntyName = strEntNames[card][param.ind2];
+                        param.dParam1 = iPenNos[card][param.ind2];
+                        param.nErr = 0;
+                        SendResponse(param);
+                        needResponse = false;
+                    }
+                    else param.nErr = 18;
+                    break;
+
+                case 10:    // 开始标刻（全部对象）
+                case 110:   // 同 10，但先清除旋转平移量
+                    if (!bInMark[card])
+                    {
+                        if (param.cmdType == 110) JczLmc.Imc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
+                        var worker = new BackgroundWorker();
+                        worker.DoWork += (s, ev) =>
+                        {
+                            bInMark[card] = true;
+                            nErr = JczLmc.Imc1_Mark(card, false);
+                            bInMark[card] = false;
+                            AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
+                            var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true };
+                            SendResponse(result);
+                        };
+                        worker.RunWorkerAsync();
+                        needResponse = false;
+                    }
+                    else param.nErr = 19;
+                    break;
+
+                case 11:    // 停止加工/红光
+                    nErr = JczLmc.Imc1_StopMark(card);
+                    bInRed[card] = false;
+                    break;
+
+                case 12:    // 红光预览边界（连续）
+                case 13:    // 红光预览轮廓（连续）
+                    if (!bInMark[card])
+                    {
+                        if (bInRed[card]) { JczLmc.Imc1_StopMark(card); bInRed[card] = false; Thread.Sleep(50); }
+                        if (param.bOpen)
+                        {
+                            bInRed[card] = true;
+                            var workerRed = new BackgroundWorker();
+                            workerRed.DoWork += (s, ev) =>
+                            {
+                                while (param.bOpen && bInRed[card])
+                                {
+                                    if (param.cmdType == 12) JczLmc.Imc1_RedLightMark(card);
+                                    else JczLmc.Imc1_RedLightMarkContourByEnt(card, null);
+                                    Thread.Sleep(10);
+                                }
+                                bInRed[card] = false;
+                            };
+                            workerRed.RunWorkerAsync();
+                        }
+                    }
+                    break;
+
+                case 15:    // 移动振镜到指定位置
+                    nErr = JczLmc.Imc1_GotoPos(card, param.dParam1, param.dParam2);
+                    break;
+
+                case 21:    // 标刻指定实体
+                    if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
+                        nErr = JczLmc.Imc1_MarkEntity(card, strEntNames[card][iEntIndices[card]]);
+                    else nErr = 18;
+                    break;
+
+                case 22:    // 红光预览指定实体（连续）
+                    if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
+                    {
+                        if (!bInMark[card])
+                        {
+                            if (bInRed[card]) { JczLmc.Imc1_StopMark(card); bInRed[card] = false; }
+                            if (param.bOpen)
+                            {
+                                bInRed[card] = true;
+                                string entName = strEntNames[card][iEntIndices[card]];
+                                var workerEntRed = new BackgroundWorker();
+                                workerEntRed.DoWork += (s, ev) =>
+                                {
+                                    while (param.bOpen && bInRed[card])
+                                    {
+                                        JczLmc.Imc1_RedLightMarkContourByEnt(card, entName);
+                                        Thread.Sleep(10);
+                                    }
+                                    bInRed[card] = false;
+                                };
+                                workerEntRed.RunWorkerAsync();
+                            }
+                        }
+                    }
+                    break;
+
+                case 23:    // 旋转实体
+                    if (param.ind1 < strEntNames[card]?.Length)
+                        nErr = JczLmc.Imc1_RotateEnt(card, strEntNames[card][param.ind1],
+                                                     param.dParam3, param.dParam4, param.dParam5);
+                    RefreshPreview(card);
+                    break;
+
+                case 24:    // 移动实体
+                    if (param.ind1 < strEntNames[card]?.Length)
+                        nErr = JczLmc.Imc1_MoveEnt(card, strEntNames[card][param.ind1],
+                                                   param.dParam1, param.dParam2);
+                    RefreshPreview(card);
+                    break;
+
+                case 25:    // 缩放实体
+                    if (param.ind1 < strEntNames[card]?.Length)
+                        nErr = JczLmc.Imc1_ScaleEnt(card, strEntNames[card][param.ind1],
+                                                    param.dParam1, param.dParam2,
+                                                    param.dParam3, param.dParam4);
+                    RefreshPreview(card);
+                    break;
+
+                case 27:    // 设置全局旋转平移量（标刻时生效）
+                    nErr = JczLmc.Imc1_SetRotateMoveParam(card, param.dParam1, param.dParam2,
+                                                          param.dParam3, param.dParam4, param.dParam5);
+                    break;
+
+                case 28:    // 群组/解组
+                    if (param.bOpen)
+                        nErr = JczLmc.Imc1_GroupEnt2(card, strEntNames[card],
+                                                     strEntNames[card].Length, "grpEnt", 2);
+                    else
+                        nErr = JczLmc.Imc1_UnGroupEnt(card, "grpEnt");
+                    break;
+
+                case 40:    // 打开设备配置对话框
+                    nErr = JczLmc.Imc1_SetDevCfg(card);
+                    break;
+
+                case 42:    // 更新对齐参数
+                    alImParam.width = param.ind1;
+                    alImParam.height = param.ind2;
+                    alImParam.dCenX = param.dParam1;
+                    alImParam.dCenY = param.dParam2;
+                    alImParam.dWidth = param.dParam3;
+                    alImParam.dHeight = param.dParam4;
+                    break;
+
+                case 90:    // 界面布局控制
+                    splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
+                    splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
+                    splitContainer1.Panel1Collapsed = (param.dParam1 == 0 && param.dParam2 == 0);
+                    splitContainer3.Panel1Collapsed = (param.dParam3 == 0);
+                    splitContainer3.Panel2Collapsed = (param.dParam4 == 0);
+                    splitContainer1.Panel2Collapsed = (param.dParam3 == 0 && param.dParam4 == 0);
+                    break;
+
+                default:
+                    nErr = 20;  // 未知命令
+                    break;
+            }
+
+            if (needResponse)
+            {
+                param.nErr = nErr;
+                SendResponse(param);
+            }
+        }
+
+        // =============== 发送响应 ===============
+        /// <summary>
+        /// 根据板卡号选择对应的管道服务端，将结果参数发送回客户端。
+        /// </summary>
+        private void SendResponse(LCZControlParam param)
+        {
+            Pipechanel server = (param.cardSN == 0) ? pipeServer0 : pipeServer1;
+            server.SendParam(param);
+        }
+
+        // =============== 预览图刷新 ===============
+        private void RefreshPreview(int card)
+        {
+            imLaserRoute[card] = MakeWhiteTransparent(
+                (Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card, alImParam.width, alImParam.height,
+                    alImParam.dCenX, alImParam.dCenY, alImParam.dWidth / alImParam.width));
+            if (imLaserRoute[card] == null)
+                imLaserRoute[card] = MakeWhiteTransparent(
+                    (Bitmap)Image.FromFile(@".\data\route.png"), 50);
+            mergeImg(card);
+        }
+
+        /// <summary>
+        /// 将图片中的白色（接近白色）部分变为透明，保留标刻线条。
+        /// </summary>
+        /// <param name="original">原始图像</param>
+        /// <param name="tolerance">颜色容差（0-255*3），越大越容易变透明</param>
+        private Bitmap MakeWhiteTransparent(Bitmap original, float tolerance = 10f)
+        {
+            if (original == null) return null;
+            Bitmap transparentImage = new Bitmap(alImParam.width, alImParam.height, PixelFormat.Format32bppArgb);
+
+            BitmapData data = transparentImage.LockBits(
+                new Rectangle(0, 0, alImParam.width, alImParam.height),
+                ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)data.Scan0;
+                for (int y = 0; y < Math.Min(data.Height, original.Height); y++)
+                {
+                    for (int x = 0; x < Math.Min(data.Width, original.Width); x++)
+                    {
+                        int index = y * data.Stride + x * 4;
+                        Color pixel = original.GetPixel(x, y);
+                        float diff = Math.Abs(pixel.R - 255) + Math.Abs(pixel.G - 255) + Math.Abs(pixel.B - 255);
+                        if (diff <= tolerance)
+                        {
+                            ptr[index + 3] = 0; // 完全透明
+                        }
+                        else
+                        {
+                            ptr[index + 3] = 255; // 不透明
+                        }
+                    }
+                }
+            }
+            transparentImage.UnlockBits(data);
+            return transparentImage;
+        }
+
+        /// <summary>
+        /// 将原始背景图与透明化的激光路线图叠加，并旋转 90° 后显示在 pictureBox1 中。
+        /// </summary>
+        private void mergeImg(int card)
+        {
+            // 如果尚未加载背景图，则加载（不同板卡可能使用不同背景）
+            if (originalImage[card] == null)
+            {
+                string bgFile = (card == 0) ? @".\data\sourceBGImgA.bmp" : @".\data\sourceBGImgB.bmp";
+                if (File.Exists(bgFile))
+                    originalImage[card] = new Bitmap(bgFile);
+                else
+                    originalImage[card] = new Bitmap(alImParam.width, alImParam.height); // 黑色备用
+            }
+
+            if (originalImage[card] == null || imLaserRoute[card] == null) return;
+
+            Bitmap finalImage = new Bitmap(alImParam.width, alImParam.height);
+            using (Graphics g = Graphics.FromImage(finalImage))
+            {
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(originalImage[card], 0, 0, alImParam.width, alImParam.height);
+                g.DrawImage(imLaserRoute[card], 0, 0);
+            }
+            finalImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
+            pictureBox1.Image = finalImage;
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+        }
+
+        // =============== 实体表格更新 ===============
+        private void UpdateEntTable(int card)
+        {
+            dgvEnt.Rows.Clear();
+            for (int i = 0; i < nEntNums[card]; i++)
+            {
+                dgvEnt.Rows.Add();
+                dgvEnt.Rows[i].Cells[0].Value = true;
+                dgvEnt.Rows[i].Cells[1].Value = strEntNames[card][i];
+                dgvEnt.Rows[i].Cells[2].Value = "轮廓";
+                dgvEnt.Rows[i].Cells[3].Value = iPenNos[card][i].ToString();
+                dgvEnt.Rows[i].HeaderCell.Value = (i + 1).ToString();
+            }
+        }
+
+        // =============== 界面事件 ===============
         private void menuSplit_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
@@ -69,31 +510,29 @@ namespace BJJCZ_BaseDevelop
 
         private void menuExport_Click(object sender, EventArgs e)
         {
-            // 导出预览图需要用到当前卡号，从 lczParam 获取
-            int card = lczParam.cardSN;
-            imLaserRoute[card] = ((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card, alImParam.width, alImParam.height,
-                alImParam.dCenX, alImParam.dCenY, alImParam.dWidth / alImParam.width));
-            if (imLaserRoute != null)
+            int card = currentCard;
+            if (imLaserRoute[card] != null)
             {
-                string strName = @"routeExport" +card.ToString()+ DateTime.Now.ToString("yyyyMMddHHmmss") + ".png";
-                imLaserRoute[card].Save(strName, ImageFormat.Png);
+                string name = $"routeExport{card}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                imLaserRoute[card].Save(name, ImageFormat.Png);
+                AddMsg($"导出预览图 -> {name}");
             }
         }
 
-        private void menuControl_Click(object sender, EventArgs e) { }
+        private void menuControl_Click(object sender, EventArgs e)
+        {
+            // 预留
+        }
 
         private void menuExitApp_Click(object sender, EventArgs e)
         {
             try
             {
-                int nErr = JczLmc.Imc1_Close();
-                AddMsg("关闭板卡-->" + JczLmc.GetErrorText(nErr));
-                Application.Exit();
+                JczLmc.Imc1_Close();
+                AddMsg("关闭所有板卡");
             }
-            catch
-            {
-                Application.Exit();
-            }
+            catch { }
+            Application.Exit();
         }
 
         private void JCZServer_FormClosing(object sender, FormClosingEventArgs e)
@@ -122,908 +561,85 @@ namespace BJJCZ_BaseDevelop
             this.WindowState = FormWindowState.Normal;
             this.ShowInTaskbar = true;
         }
-        #endregion
-
-        #region 管道通信及消息分析
-        private void Pipechanel_msgReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
-        {
-            this.Invoke(new MethodInvoker(delegate
-            {
-                lczParam = e.receivedMsg;
-                CMDAna(lczParam);
-            }));
-        }
-
-        private void AddMsg(string txtMsg)
-        {
-            mainMsgBox.BeginInvoke((MethodInvoker)delegate
-            {
-                mainMsgBox.AppendText(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + txtMsg + Environment.NewLine);
-                mainMsgBox.SelectionStart = mainMsgBox.Text.Length;
-                mainMsgBox.ScrollToCaret();
-            });
-        }
-
-        private void CMDAna(LCZControlParam lczParam)
-        {
-            // 获取卡序号，若未提供则默认为0
-            int card = lczParam.cardSN;
-            if (card < 0) card = 0;
-
-            // 板卡未初始化时，仅允许查询初始化状态、初始化、关闭、界面布局等命令
-            if (JczInitErr != 0 && lczParam.cmdType != 0 && lczParam.cmdType != 1
-                && lczParam.cmdType != 2 && lczParam.cmdType != 37
-                && lczParam.cmdType != 90 && lczParam.cmdType != 42)
-            {
-                lczParam.nErr = 11;
-                pipeServerUser.SendParam(lczParam);
-                AddMsg("板卡未初始化，错误-->" + JczLmc.GetErrorText(lczParam.nErr));
-                return;
-            }
-
-            switch (lczParam.cmdType)
-            {
-                case 0:     // 查询初始化状态
-                    lczParam.cmdType = 0;
-                    nErr = JczInitErr;
-                    break;
-
-                case 1:     // 板卡初始化（指定卡号）
-                    nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
-                    JczInitErr = nErr;
-                    if (nErr == 0)
-                        AddMsg($"卡{card} 板卡初始化成功");
-                    else
-                        AddMsg($"卡{card} 初始化板卡失败-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 2:     // 板卡关闭（注意：关闭函数无卡号，但会释放所有资源）
-                    nErr = JczLmc.Imc1_Close();
-                    AddMsg($"卡{card} 关闭板卡-->{JczLmc.GetErrorText(nErr)}");
-                    JczInitErr = nErr;
-                    break;
-
-                case 3:     // 打开/关闭激光器
-                    nErr = JczLmc.Imc1_LaserOn(card, lczParam.bOpen);
-                    if (lczParam.bOpen)
-                        AddMsg($"卡{card} 打开激光器-->{JczLmc.GetErrorText(nErr)}");
-                    else
-                        AddMsg($"卡{card} 关闭激光器-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 4:     // 加载ezd文件（并获取对象列表）
-                    nErr = JczLmc.Imc1_LoadEzdFile(card, lczParam.strFileName);
-                    AddMsg($"卡{card} 加载文件-->{JczLmc.GetErrorText(nErr)}");
-                    if (nErr == 0)
-                    {
-                        iEntCount = JczLmc.Imc1_GetEntityCount(card);
-                        strEntName = new string[iEntCount];
-                        iPenNo = new int[iEntCount];
-                        for (int i = 0; i < iEntCount; i++)
-                        {
-                            strEntName[i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                            iPenNo[i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntName[i]);
-                            AddMsg($"对象名[{i}]-->{strEntName[i]}");
-                        }
-                        UpdateEntTable();
-                        imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
-                            alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
-                            alImParam.dWidth / alImParam.width));
-                        if (imLaserRoute[card] == null)
-                            imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                        mergeImg(card);
-                    }
-                    break;
-
-                case 5:     // 保存ezd文件
-                    nErr = JczLmc.Imc1_SaveEntLibToFile(card, lczParam.strFileName);
-                    AddMsg($"卡{card} 保存文件-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 6:     // 加载ezd文件并返回对象列表（与case4类似，但会通过管道逐个发送对象）
-                    nErr = JczLmc.Imc1_LoadEzdFile(card, lczParam.strFileName);
-                    AddMsg($"卡{card} 加载文件-->{JczLmc.GetErrorText(nErr)}");
-                    iEntCount = JczLmc.Imc1_GetEntityCount(card);
-                    strEntName = new string[iEntCount];
-                    lczParam.nErr = nErr;
-                    lczParam.ind1 = iEntCount;
-                    pipeServerUser.SendParam(lczParam);
-                    imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
-                        alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
-                        alImParam.dWidth / alImParam.width));
-                    if (imLaserRoute[card] == null)
-                        imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                    mergeImg(card);
-                    break;
-
-                case 7:     // 查询文件指定对象
-                    lczParam.nErr = 0;
-                    lczParam.ind1 = iEntCount;
-                    int ind = lczParam.ind2;
-                    if (ind < iEntCount && ind >= 0)
-                    {
-                        lczParam.strEntyName = strEntName[ind];
-                        lczParam.dParam1 = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntName[ind]);
-                        pipeServerUser.SendParam(lczParam);
-                    }
-                    break;
-
-                case 8:     // 查询文件所有对象
-                    lczParam.nErr = 0;
-                    lczParam.ind1 = iEntCount;
-                    for (int i = 0; i < iEntCount; i++)
-                    {
-                        strEntName[i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                        AddMsg($"对象名-->{strEntName[i]}");
-                        lczParam.strEntyName = strEntName[i];
-                        lczParam.ind2 = i;
-                        lczParam.dParam1 = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntName[i]);
-                        pipeServerUser.SendParam(lczParam);
-                        Thread.Sleep(20);
-                    }
-                    break;
-
-                case 9:     // 输出Ezd预览图
-                    imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
-                        alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
-                        alImParam.dWidth / alImParam.width));
-                    if (imLaserRoute[card] == null)
-                        imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                    mergeImg(card);
-                    break;
-
-                case 10:    // 激光标刻（全部对象）
-                    if (!backgroundWorker1.IsBusy)
-                    {
-                        lczParam.bOpen = false;
-                        backgroundWorker1.RunWorkerAsync(card);
-                    }
-                    break;
-
-                case 11:    // 停止激光加工
-                    nErr = JczLmc.Imc1_StopMark(card);
-                    AddMsg($"卡{card} 停止激光加工-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 12:    // 连续红光预览（轮廓）
-                case 13:
-                    if (!bInMark)
-                    {
-                        if (!bInRed)
-                        {
-                            if (!backgroundWorker1.IsBusy)
-                                backgroundWorker1.RunWorkerAsync(card);
-                        }
-                        else
-                        {
-                            bool bCont = lczParam.bOpen;
-                            lczParam.bOpen = false;
-                            Thread.Sleep(200);
-                            lczParam.bOpen = bCont;
-                            if (!backgroundWorker1.IsBusy)
-                                backgroundWorker1.RunWorkerAsync(card);
-                        }
-                    }
-                    break;
-
-                case 15:    // 移动振镜至指定位置
-                    nErr = JczLmc.Imc1_GotoPos(card, lczParam.dParam1, lczParam.dParam2);
-                    AddMsg($"卡{card} 移动振镜-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 16:    // 查询振镜位置
-                    nErr = JczLmc.Imc1_GetCurCoor(card, ref lczParam.dParam1, ref lczParam.dParam2);
-                    AddMsg($"卡{card} 查询振镜位置-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 21:    // 标刻指定对象
-                    try
-                    {
-                        if (iEntIndex >= 0 && iEntIndex < strEntName.Length)
-                        {
-                            string ent = string.IsNullOrEmpty(lczParam.strEntyName) ? strEntName[iEntIndex] : lczParam.strEntyName;
-                            nErr = JczLmc.Imc1_MarkEntity(card, ent);
-                            AddMsg($"卡{card} 激光加工对象[{ent}]-->{JczLmc.GetErrorText(nErr)}");
-                        }
-                        else
-                            AddMsg("请选择有效对象-->");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"激光加工异常:{ex.Message}");
-                    }
-                    break;
-
-                case 22:    // 红光预览对象
-                    try
-                    {
-                        if (iEntIndex >= 0 && iEntIndex < strEntName.Length)
-                        {
-                            if (!bInMark && !bInRed && !backgroundWorker1.IsBusy)
-                                backgroundWorker1.RunWorkerAsync(card);
-                        }
-                        else
-                            AddMsg("请选择有效对象-->");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"红光预览异常:{ex.Message}");
-                    }
-                    break;
-
-                case 23:    // 旋转对象
-                    try
-                    {
-                        string ent = string.IsNullOrEmpty(lczParam.strEntyName) ? strEntName[lczParam.ind1] : lczParam.strEntyName;
-                        nErr = JczLmc.Imc1_RotateEnt(card, ent, lczParam.dParam3, lczParam.dParam4, lczParam.dParam5);
-                        AddMsg($"卡{card} 旋转对象-->{JczLmc.GetErrorText(nErr)}");
-                        RefreshPreview(card);
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"旋转对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 24:    // 移动对象
-                    try
-                    {
-                        string ent = string.IsNullOrEmpty(lczParam.strEntyName) ? strEntName[lczParam.ind1] : lczParam.strEntyName;
-                        nErr = JczLmc.Imc1_MoveEnt(card, ent, lczParam.dParam1, lczParam.dParam2);
-                        AddMsg($"卡{card} 移动对象-->{JczLmc.GetErrorText(nErr)}");
-                        RefreshPreview(card);
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"移动对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 25:    // 缩放对象
-                    try
-                    {
-                        string ent = string.IsNullOrEmpty(lczParam.strEntyName) ? strEntName[lczParam.ind1] : lczParam.strEntyName;
-                        nErr = JczLmc.Imc1_ScaleEnt(card, ent, lczParam.dParam1, lczParam.dParam2,
-                            lczParam.dParam3, lczParam.dParam4);
-                        AddMsg($"卡{card} 缩放对象-->{JczLmc.GetErrorText(nErr)}");
-                        RefreshPreview(card);
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"缩放对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 27:    // 设置全局旋转平移参数（加工时生效）
-                    try
-                    {
-                        nErr = JczLmc.Imc1_SetRotateMoveParam(card, lczParam.dParam1, lczParam.dParam2,
-                            lczParam.dParam3, lczParam.dParam4, lczParam.dParam5);
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"设置旋转平移异常:{ex.Message}");
-                    }
-                    break;
-
-                case 28:    // 群组/解组
-                    try
-                    {
-                        if (lczParam.bOpen)
-                        {
-                            // 将所有对象群组
-                            nErr = JczLmc.Imc1_GroupEnt2(card, strEntName, strEntName.Length, "grpEnt", 2);
-                        }
-                        else
-                        {
-                            nErr = JczLmc.Imc1_UnGroupEnt(card, "grpEnt");
-                        }
-                        AddMsg($"卡{card} 群组/解组-->{JczLmc.GetErrorText(nErr)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"群组/解组异常:{ex.Message}");
-                    }
-                    break;
-
-                case 31:    // 重命名对象
-                    try
-                    {
-                        string newName = string.IsNullOrEmpty(lczParam.strEntyName) ? "obj" + lczParam.ind1 : lczParam.strEntyName;
-                        nErr = JczLmc.Imc1_SetEntityName(card, lczParam.ind1, newName);
-                        AddMsg($"卡{card} 重命名对象-->{JczLmc.GetErrorText(nErr)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"重命名对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 32:    // 前移对象
-                    try
-                    {
-                        // 注意：此接口需要索引号，但多头库未提供 MoveEntityBefore，需要根据实际情况实现
-                        // 这里暂不实现，仅占位
-                        AddMsg("前移对象暂未实现");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"前移对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 33:    // 后移对象
-                    try
-                    {
-                        AddMsg("后移对象暂未实现");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"后移对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 34:    // 添加圆对象
-                    try
-                    {
-                        nErr = JczLmc.Imc1_AddCircleToLib(card, lczParam.dParam1, lczParam.dParam2,
-                            lczParam.dParam3, lczParam.strEntyName, lczParam.ind1);
-                        AddMsg($"卡{card} 添加圆对象-->{JczLmc.GetErrorText(nErr)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"添加圆对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 36:    // 设置填充参数（全局）
-                    try
-                    {
-                        nErr = JczLmc.Imc1_SetHatchParam(card, true, 1, 2, 1, 0, 0.05, 0, 0, 0, 1, 2, 1, 0, 0.05, 0, 0, 0);
-                        AddMsg($"卡{card} 设置填充参数-->{JczLmc.GetErrorText(nErr)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"设置填充参数异常:{ex.Message}");
-                    }
-                    break;
-
-                case 37:    // 获取/设置填充参数（对话框）
-                    if (lczParam.bOpen)  // 设置填充参数
-                    {
-                        try
-                        {
-                            GetHatchParam(card, ref hp);
-                            JczLmc.Imc1_UnHatchEnt(card, lczParam.strEntyName);
-                        }
-                        catch (Exception ex)
-                        {
-                            AddMsg($"获取填充参数失败:{ex.Message}");
-                        }
-                        try
-                        {
-                            FrmHatch fh = new FrmHatch(hp);
-                            fh.CardNumber = card;
-                            DialogResult dr = fh.ShowDialog();
-                            if (dr == DialogResult.OK || dr == DialogResult.Ignore)
-                            {
-                                hp = fh.hp;
-                                SetHatchParam(card, hp);
-                                JczLmc.Imc1_HatchEnt(card, lczParam.strEntyName, lczParam.strEntyName);
-                                nErr = JczLmc.Imc1_SaveEntLibToFile(card, lczParam.strFileName);
-                                AddMsg($"卡{card} 设置填充参数-->{JczLmc.GetErrorText(nErr)}");
-                            }
-                            else if (dr == DialogResult.Abort)  // 删除填充
-                            {
-                                JczLmc.Imc1_UnHatchEnt(card, lczParam.strEntyName);
-                                nErr = JczLmc.Imc1_SaveEntLibToFile(card, lczParam.strFileName);
-                                AddMsg($"卡{card} 删除填充-->{JczLmc.GetErrorText(nErr)}");
-                            }
-                            RefreshPreview(card);
-                        }
-                        catch (Exception ex)
-                        {
-                            AddMsg($"设置填充参数异常:{ex.ToString()}");
-                        }
-                    }
-                    else   // 获取填充参数
-                    {
-                        GetHatchParam(card, ref hp);
-                        AddMsg($"卡{card} 获取填充参数完成");
-                    }
-                    break;
-
-                case 38:    // 填充对象
-                    try
-                    {
-                        nErr = JczLmc.Imc1_HatchEnt(card, lczParam.strEntyName, lczParam.strEntyName + "Fill");
-                        AddMsg($"卡{card} 填充对象-->{JczLmc.GetErrorText(nErr)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"填充对象异常:{ex.Message}");
-                    }
-                    break;
-
-                case 40:    // 打开设备参数对话框
-                    nErr = JczLmc.Imc1_SetDevCfg(card);
-                    AddMsg($"卡{card} 参数设置-->{JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 41:    // 设置/获取激光笔参数
-                    if (lczParam.bOpen)
-                    {
-                        try
-                        {
-                            pP.nPenNo = lczParam.ind1;
-                            pP.pStrName = "";
-                            GetLaserPenParam(card, ref pP);
-                        }
-                        catch (Exception ex)
-                        {
-                            AddMsg($"获取激光笔参数异常:{ex.Message}");
-                        }
-                        try
-                        {
-                            FrmLaserPen fp = new FrmLaserPen(pP);
-                            fp.CardNumber = card;
-                            DialogResult dr = fp.ShowDialog();
-                            if (dr == DialogResult.OK)
-                            {
-                                pP = fp.pP;
-                                SetLaserPenParam(card, pP);
-                                AddMsg($"卡{card} 设置激光笔参数-->{JczLmc.GetErrorText(nErr)}");
-                            }
-                            RefreshPreview(card);
-                        }
-                        catch (Exception ex)
-                        {
-                            AddMsg($"设置激光笔参数异常:{ex.ToString()}");
-                        }
-                    }
-                    else
-                    {
-                        GetLaserPenParam(card, ref pP);
-                        AddMsg($"卡{card} 获取激光笔参数完成");
-                    }
-                    break;
-
-                case 42:    // 设置预览对齐参数
-                    alImParam.width = lczParam.ind1;
-                    alImParam.height = lczParam.ind2;
-                    alImParam.dCenX = lczParam.dParam1;
-                    alImParam.dCenY = lczParam.dParam2;
-                    alImParam.dWidth = lczParam.dParam3;
-                    alImParam.dHeight = lczParam.dParam4;
-                    break;
-
-                case 90:    // 界面布局显示控制
-                    ViewChange();
-                    break;
-
-                case 100:   // 查询初始化状态，并加载文件
-                    if (JczInitErr != 0)
-                        nErr = JczInitErr;
-                    else
-                    {
-                        nErr = JczLmc.Imc1_LoadEzdFile(card, lczParam.strFileName);
-                        AddMsg($"卡{card} 加载文件-->{JczLmc.GetErrorText(nErr)}");
-                        // 设置预览参数
-                        alImParam.width = lczParam.ind1;
-                        alImParam.height = lczParam.ind2;
-                        alImParam.dCenX = lczParam.dParam1;
-                        alImParam.dCenY = lczParam.dParam2;
-                        alImParam.dWidth = lczParam.dParam3;
-                        alImParam.dHeight = lczParam.dParam4;
-                        // 获取对象列表
-                        iEntCount = JczLmc.Imc1_GetEntityCount(card);
-                        strEntName = new string[iEntCount];
-                        iPenNo = new int[iEntCount];
-                        for (int i = 0; i < iEntCount; i++)
-                        {
-                            strEntName[i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                            iPenNo[i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntName[i]);
-                        }
-                        UpdateEntTable();
-                        pipeServerUser.SendParam(lczParam);
-                        RefreshPreview(card);
-                    }
-                    break;
-
-                case 101:   // 初始化板卡并加载文件
-                    nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
-                    JczInitErr = nErr;
-                    if (nErr != 0)
-                        AddMsg($"卡{card} 板卡初始化失败-->{JczLmc.GetErrorText(nErr)}");
-                    else
-                    {
-                        nErr = JczLmc.Imc1_LoadEzdFile(card, lczParam.strFileName);
-                        iEntCount = JczLmc.Imc1_GetEntityCount(card);
-                        strEntName = new string[iEntCount];
-                        lczParam.cmdType = 4;
-                        lczParam.nErr = 0;
-                        lczParam.ind1 = iEntCount;
-                        for (int i = 0; i < iEntCount; i++)
-                        {
-                            strEntName[i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                            lczParam.strEntyName = strEntName[i];
-                            lczParam.ind2 = i;
-                            lczParam.dParam1 = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntName[i]);
-                            pipeServerUser.SendParam(lczParam);
-                        }
-                        RefreshPreview(card);
-                        lczParam.cmdType = 101;
-                    }
-                    break;
-
-                case 110:   // 标刻前先清除旋转平移量，再执行标刻
-                    try
-                    {
-                        JczLmc.Imc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
-                        if (!backgroundWorker1.IsBusy)
-                        {
-                            lczParam.bOpen = false;
-                            backgroundWorker1.RunWorkerAsync(card);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        AddMsg($"标刻异常:{ex.Message}");
-                    }
-                    break;
-            }
-
-            if (lczParam.cmdType != 4 && lczParam.cmdType != 10 && lczParam.cmdType != 110)
-            {
-                lczParam.nErr = nErr;
-                pipeServerUser.SendParam(lczParam);
-            }
-        }
-        #endregion
-
-        #region 辅助函数
-        private void RefreshPreview(int card)
-        {
-            imLaserRoute[card] = MakeWhiteTransparent((Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card,
-                alImParam.width, alImParam.height, alImParam.dCenX, alImParam.dCenY,
-                alImParam.dWidth / alImParam.width));
-            if (imLaserRoute[card] == null)
-                imLaserRoute[card] = MakeWhiteTransparent((Bitmap)Image.FromFile(@".\data\route.png"), 50);
-            mergeImg(card);
-        }
-
-        private void ViewChange()
-        {
-            if (lczParam.dParam1 == 0)
-                splitContainer2.Panel1Collapsed = true;
-            else
-                splitContainer2.Panel1Collapsed = false;
-
-            if (lczParam.dParam2 == 0)
-                splitContainer2.Panel2Collapsed = true;
-            else
-                splitContainer2.Panel2Collapsed = false;
-
-            if (lczParam.dParam1 == 0 && lczParam.dParam2 == 0)
-                splitContainer1.Panel1Collapsed = true;
-            else
-                splitContainer1.Panel1Collapsed = false;
-
-            if (lczParam.dParam3 == 0)
-                splitContainer3.Panel1Collapsed = true;
-            else
-            {
-                splitContainer3.Panel1Collapsed = false;
-                splitContainer2.Panel1Collapsed = false;
-                splitContainer2.Panel2Collapsed = false;
-                splitContainer1.Panel1Collapsed = false;
-            }
-
-            if (lczParam.dParam4 == 0)
-                splitContainer3.Panel2Collapsed = true;
-            else
-                splitContainer3.Panel2Collapsed = false;
-
-            if (lczParam.dParam3 == 0 && lczParam.dParam4 == 0)
-                splitContainer1.Panel2Collapsed = true;
-            else
-                splitContainer1.Panel2Collapsed = false;
-        }
-
-        // 图像处理相关方法（保持不变）
-        Bitmap[] originalImage  = new Bitmap[2];
-         
-        public Bitmap MakeWhiteTransparent(Bitmap originalImage, float tolerance = 10f)
-        {
-            if (originalImage == null)
-                return null;
-            Bitmap transparentImage = new Bitmap(alImParam.width, alImParam.height, PixelFormat.Format32bppArgb);
-
-            // 使用LockBits高效处理像素
-            BitmapData data = transparentImage.LockBits(
-                new Rectangle(0, 0, alImParam.width, alImParam.height),
-                ImageLockMode.WriteOnly,
-                PixelFormat.Format32bppArgb
-            );
-
-            unsafe
-            {
-                byte* ptr = (byte*)data.Scan0;
-                for (int y = 0; y < Math.Min(data.Height, originalImage.Height); y++)
-                {
-                    for (int x = 0; x < Math.Min(data.Width, originalImage.Width); x++)
-                    {
-                        int index = y * data.Stride + x * 4;
-                        Color pixel = originalImage.GetPixel(x, y);
-
-                        // 计算颜色与白色的差值（RGB三通道总和）
-                        float colorDiff =
-                            Math.Abs(pixel.R - 255) +
-                            Math.Abs(pixel.G - 255) +
-                            Math.Abs(pixel.B - 255);
-
-                        // 如果差值在容差范围内，设为透明
-                        if (colorDiff <= tolerance)
-                        {
-                            ptr[index + 3] = 0; // Alpha通道设为0（透明）
-                        }
-                        else
-                        {
-                            /* ptr[index] = 0;     // Blue
-                             ptr[index + 1] = 0; // Green
-                             ptr[index + 2] = 255; // Red*/
-                            ptr[index + 3] = 255;     // Alpha（不透明）
-                        }
-                    }
-                }
-            }
-
-            transparentImage.UnlockBits(data);
-            return transparentImage;
-        }
-
-
-        private void mergeImg(int card)
-        {
-            if(originalImage[0]==null)
-                originalImage[0] = new Bitmap(@".\data\sourceBGImgA.bmp");
-            if (originalImage[1] == null)
-                originalImage[1] = new Bitmap(@".\data\sourceBGImgB.bmp");
-
-            if (originalImage[card] == null || imLaserRoute[card] == null) return;
-            Bitmap finalImage = new Bitmap(alImParam.width, alImParam.height);
-            using (Graphics g = Graphics.FromImage(finalImage))
-            {
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                g.DrawImage(originalImage[card], 0, 0, alImParam.width, alImParam.height);
-                g.DrawImage(imLaserRoute[card], 0, 0);
-            }
-            finalImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
-            pictureBox1.Image = finalImage;
-            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
-        }
-        #endregion
-
-        #region 填充与笔号参数辅助函数
-        private void GetHatchParam(int card, ref HatchParam hp)
-        {
-            nErr = JczLmc.Imc1_GetHatchEntParam2(card, lczParam.strEntyName,
-                ref hp.bEnableContour, 1, ref hp.bEnableHatch, ref hp.bContourFirst,
-                ref hp.nPenNo, ref hp.nHatchType, ref hp.bHatchAllCalc, ref hp.bHatchEdge,
-                ref hp.bHatchAverageLine, ref hp.dHatchAngle, ref hp.dHatchLineDist,
-                ref hp.dHatchEdgeDist, ref hp.dHatchStartOffset, ref hp.dHatchEndOffset,
-                ref hp.dHatchLineReduction, ref hp.dHatchLoopDist, ref hp.nEdgeLoop,
-                ref hp.bHatchLoopRev, ref hp.bHatchAutoRotate, ref hp.dHatchRotateAngle,
-                ref hp.bHatchCross, ref hp.nCycCount);
-        }
-
-        private void SetHatchParam(int card, HatchParam hp)
-        {
-            nErr = JczLmc.Imc1_SetHatchEntParam2(card, lczParam.strEntyName,
-                hp.bEnableContour, hp.nParamIndex, hp.bEnableHatch, hp.bContourFirst,
-                hp.nPenNo, hp.nHatchType, hp.bHatchAllCalc, hp.bHatchEdge, hp.bHatchAverageLine,
-                hp.dHatchAngle, hp.dHatchLineDist, hp.dHatchEdgeDist, hp.dHatchStartOffset,
-                hp.dHatchEndOffset, hp.dHatchLineReduction, hp.dHatchLoopDist, hp.nEdgeLoop,
-                hp.bHatchLoopRev, hp.bHatchAutoRotate, hp.dHatchRotateAngle, hp.bHatchCross, hp.nCycCount);
-        }
-
-        private void GetLaserPenParam(int card, ref LaserpenParam pP)
-        {
-            StringBuilder sb = new StringBuilder(pP.pStrName);
-            nErr = JczLmc.Imc1_GetPenParam4(card, pP.nPenNo, sb,
-                ref pP.clr, ref pP.bDisableMark, ref pP.bUseDefParam, ref pP.nMarkLoop,
-                ref pP.dMarkSpeed, ref pP.dPowerRatio, ref pP.dCurrent, ref pP.nFreq,
-                ref pP.dQPulseWidth, ref pP.nStartTC, ref pP.nLaserOffTC, ref pP.nEndTC,
-                ref pP.nPolyTC, ref pP.dJumpSpeed, ref pP.nMinJumpDelayTCUs, ref pP.nMaxJumpDelayTCUs,
-                ref pP.dJumpLengthLimit, ref pP.dPointTimeMs, ref pP.nSpiSpiContinueMode,
-                ref pP.nSpiWave, ref pP.nYagMarkMode, ref pP.bPulsePointMode, ref pP.nPulseNum,
-                ref pP.bEnableACCMode, ref pP.dEndComp, ref pP.dAccDist, ref pP.dBreakAngle,
-                ref pP.bWobbleMode, ref pP.bWobbleDiameter, ref pP.bWobbleDist);
-        }
-
-        private void SetLaserPenParam(int card, LaserpenParam pP)
-        {
-            nErr = JczLmc.Imc1_SetPenParam4(card, pP.nPenNo, pP.pStrName, pP.clr,
-                pP.bDisableMark, pP.bUseDefParam, pP.nMarkLoop, pP.dMarkSpeed, pP.dPowerRatio,
-                pP.dCurrent, pP.nFreq, pP.dQPulseWidth, pP.nStartTC, pP.nLaserOffTC,
-                pP.nEndTC, pP.nPolyTC, pP.dJumpSpeed, pP.nMinJumpDelayTCUs, pP.nMaxJumpDelayTCUs,
-                pP.dJumpLengthLimit, pP.dPointTimeMs, pP.nSpiSpiContinueMode, pP.nSpiWave,
-                pP.nYagMarkMode, pP.bPulsePointMode, pP.nPulseNum, pP.bEnableACCMode,
-                pP.dEndComp, pP.dAccDist, pP.dBreakAngle, pP.bWobbleMode, pP.bWobbleDiameter,
-                pP.bWobbleDist);
-        }
-        #endregion
-
-        #region 激光对象操作
-        private void UpdateEntTable()
-        {
-            dgvEnt.Rows.Clear();
-            for (int i = 0; i < iEntCount; i++)
-            {
-                dgvEnt.Rows.Add();
-                dgvEnt.Rows[i].Cells[0].Value = true;
-                dgvEnt.Rows[i].Cells[1].Value = strEntName[i];
-                dgvEnt.Rows[i].Cells[2].Value = "轮廓";
-                dgvEnt.Rows[i].Cells[3].Value = iPenNo[i].ToString();
-                dgvEnt.Rows[i].HeaderCell.Value = (i + 1).ToString();
-            }
-        }
-
-        private void btRenameEnt_Click(object sender, EventArgs e)
-        {
-            int card = lczParam.cardSN;
-            if (iEntIndex >= 0 && iEntIndex < strEntName.Length)
-            {
-                lczParam.cmdType = 31;
-                lczParam.ind1 = iEntIndex;
-                strEntName[iEntIndex] = txtEntName.Text.Trim();
-                lczParam.strEntyName = txtEntName.Text.Trim();
-                CMDAna(lczParam);
-                dgvEnt.Rows[iEntIndex].Cells[1].Value = lczParam.strEntyName;
-
-                lczParam.cmdType = 5;
-                CMDAna(lczParam);
-            }
-            else
-            {
-                MessageBox.Show("请选择正确的对象");
-            }
-        }
-
-        private void ReLoadRoute()
-        {
-            int card = lczParam.cardSN;
-            lczParam.cmdType = 28;
-            lczParam.bOpen = chkEntGroup.Checked;
-            CMDAna(lczParam);
-
-            // 先保存再加载
-            lczParam.cmdType = 5;
-            CMDAna(lczParam);
-            lczParam.cmdType = 4;
-            CMDAna(lczParam);
-        }
-
-        private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
-        {
-            for (int i = 0; i < strEntName.Length; i++)
-            {
-                if (string.IsNullOrEmpty(strEntName[i]))
-                {
-                    AddMsg("对象名称不能为空");
-                    return;
-                }
-            }
-            ReLoadRoute();
-        }
-
-        int iEntIndex = -1;
-
-        private void EntMvRoSc_Click(object sender, EventArgs e)
-        {
-            if (iEntIndex < 0 || iEntIndex >= strEntName.Length) return;
-            int card = lczParam.cardSN;
-            lczParam.ind1 = iEntIndex;
-            lczParam.strEntyName = strEntName[iEntIndex];
-            if (chkEntGroup.Checked)
-                lczParam.strEntyName = "grpEnt";
-
-            string BtName = ((PictureBox)sender).Name;
-            double dMvValue, dRoValue, dScaleValue, dCenX, dCenY;
-            bool bMvValue = double.TryParse(txtMv_Value.Text, out dMvValue);
-            bool bRoValue = double.TryParse(txtRo_Value.Text, out dRoValue);
-            bool bScaleValue = double.TryParse(txtScale_Value.Text, out dScaleValue);
-            bool bCenXValue = double.TryParse(txtRo_cenX.Text, out dCenX);
-            bool bCenYValue = double.TryParse(txtRo_cenY.Text, out dCenY);
-
-            if (!bMvValue && (BtName == "picMvLeft" || BtName == "picMvRight" || BtName == "picMvUp" || BtName == "picMvDown"))
-            {
-                MessageBox.Show("移动数值有误");
-                return;
-            }
-            if ((!bRoValue || !bCenXValue || !bCenYValue) && (BtName == "picRoClock" || BtName == "picRoCrossClock"))
-            {
-                MessageBox.Show("旋转数值或旋转中心有误");
-                return;
-            }
-            if ((!bScaleValue || !bCenXValue || !bCenYValue) && (BtName == "picScaleX" || BtName == "picScaleY"))
-            {
-                MessageBox.Show("缩放数值或缩放中心有误");
-                return;
-            }
-
-            switch (BtName)
-            {
-                case "picMvLeft":
-                    lczParam.cmdType = 24;
-                    lczParam.dParam1 = -dMvValue;
-                    lczParam.dParam2 = 0;
-                    break;
-                case "picMvRight":
-                    lczParam.cmdType = 24;
-                    lczParam.dParam1 = dMvValue;
-                    lczParam.dParam2 = 0;
-                    break;
-                case "picMvUp":
-                    lczParam.cmdType = 24;
-                    lczParam.dParam2 = dMvValue;
-                    lczParam.dParam1 = 0;
-                    break;
-                case "picMvDown":
-                    lczParam.cmdType = 24;
-                    lczParam.dParam2 = -dMvValue;
-                    lczParam.dParam1 = 0;
-                    break;
-                case "picRoClock":
-                    lczParam.cmdType = 23;
-                    lczParam.dParam3 = dCenX;
-                    lczParam.dParam4 = dCenY;
-                    lczParam.dParam5 = -dRoValue;
-                    break;
-                case "picRoCrossClock":
-                    lczParam.cmdType = 23;
-                    lczParam.dParam3 = dCenX;
-                    lczParam.dParam4 = dCenY;
-                    lczParam.dParam5 = dRoValue;
-                    break;
-                case "picScaleX":
-                    lczParam.cmdType = 25;
-                    lczParam.dParam1 = dCenX;
-                    lczParam.dParam2 = dCenY;
-                    lczParam.dParam3 = dScaleValue;
-                    lczParam.dParam4 = 1;
-                    break;
-                case "picScaleY":
-                    lczParam.cmdType = 25;
-                    lczParam.dParam1 = dCenX;
-                    lczParam.dParam2 = dCenY;
-                    lczParam.dParam3 = 1;
-                    lczParam.dParam4 = dScaleValue;
-                    break;
-            }
-            CMDAna(lczParam);
-
-            // 保存文件
-            lczParam.cmdType = 5;
-            CMDAna(lczParam);
-        }
 
         private void dgvEnt_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            iEntIndex = e.RowIndex >= 0 ? e.RowIndex : -1;
+            if (e.RowIndex >= 0)
+                iEntIndices[currentCard] = e.RowIndex;
         }
 
         private void dgvEnt_RowHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            iEntIndex = e.RowIndex >= 0 ? e.RowIndex : -1;
+            if (e.RowIndex >= 0)
+                iEntIndices[currentCard] = e.RowIndex;
         }
-        #endregion
 
-        #region 后台工作线程（标刻、红光预览）
+        private void btRenameEnt_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
+
+            string newName = txtEntName.Text.Trim();
+            if (string.IsNullOrEmpty(newName)) return;
+
+            // 通过内部命令重命名（不经过管道，直接操作 DLL）
+            LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 31, ind1 = iEntIndices[card], strEntyName = newName };
+            CMDAna(cmd);
+            strEntNames[card][iEntIndices[card]] = newName;
+            dgvEnt.Rows[iEntIndices[card]].Cells[1].Value = newName;
+
+            // 保存文件
+            cmd = new LCZControlParam { cardSN = card, cmdType = 5, strFileName = Path.Combine(Application.StartupPath, "route.ezd") };
+            CMDAna(cmd);
+        }
+
+        private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
+        {
+            LCZControlParam cmd = new LCZControlParam { cardSN = currentCard, cmdType = 28, bOpen = chkEntGroup.Checked };
+            CMDAna(cmd);
+        }
+
+        private void EntMvRoSc_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
+
+            PictureBox pic = sender as PictureBox;
+            if (pic == null) return;
+            string btnName = pic.Name;
+
+            LCZControlParam cmd = new LCZControlParam { cardSN = card, ind1 = iEntIndices[card] };
+            cmd.strEntyName = chkEntGroup.Checked ? "grpEnt" : strEntNames[card][iEntIndices[card]];
+
+            double moveVal = 0, rotateVal = 0, scaleVal = 0, cenX = 0, cenY = 0;
+            double.TryParse(txtMv_Value.Text, out moveVal);
+            double.TryParse(txtRo_Value.Text, out rotateVal);
+            double.TryParse(txtScale_Value.Text, out scaleVal);
+            double.TryParse(txtRo_cenX.Text, out cenX);
+            double.TryParse(txtRo_cenY.Text, out cenY);
+
+            switch (btnName)
+            {
+                case "picMvLeft": cmd.cmdType = 24; cmd.dParam1 = -moveVal; cmd.dParam2 = 0; break;
+                case "picMvRight": cmd.cmdType = 24; cmd.dParam1 = moveVal; cmd.dParam2 = 0; break;
+                case "picMvUp": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = moveVal; break;
+                case "picMvDown": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = -moveVal; break;
+                case "picRoClock": cmd.cmdType = 23; cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = -rotateVal; break;
+                case "picRoCrossClock": cmd.cmdType = 23; cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = rotateVal; break;
+                case "picScaleX": cmd.cmdType = 25; cmd.dParam1 = cenX; cmd.dParam2 = cenY; cmd.dParam3 = scaleVal; cmd.dParam4 = 1; break;
+                case "picScaleY": cmd.cmdType = 25; cmd.dParam1 = cenX; cmd.dParam2 = cenY; cmd.dParam3 = 1; cmd.dParam4 = scaleVal; break;
+            }
+            CMDAna(cmd);
+            // 自动保存
+            cmd = new LCZControlParam { cardSN = card, cmdType = 5 };
+            CMDAna(cmd);
+        }
+
+        #region
+
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            int card = (int)e.Argument;
+            /*int card = (int)e.Argument;
             if (lczParam.cmdType == 10 || lczParam.cmdType == 110)
             {
                 bInMark = true;
@@ -1065,8 +681,11 @@ namespace BJJCZ_BaseDevelop
                     Thread.Sleep(5);
                 } while (lczParam.bOpen && lczParam.cmdType == 22);
                 bInRed = false;
-            }
+            }*/
         }
         #endregion
     }
 }
+
+/*#region 后台工作线程（标刻、红光预览）
+*/
