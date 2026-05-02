@@ -185,9 +185,6 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility.cs" />
-    <Compile Include="VisionControlLite.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
     <Compile Include="VisionControl_Laser.cs">
       <SubType>UserControl</SubType>
     </Compile>
