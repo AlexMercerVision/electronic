@@ -779,15 +779,15 @@ namespace CommonCls
             p_LI.strCamPrefix = new string[maxCameraNum];
             p_LI.strCamPrefix[0] = "Main";
             p_LI.strCamPrefix[1] = "Sub1";
-            p_LI.strCamPrefix[2] = "Sub2";
-            p_LI.strCamPrefix[3] = "Sub3";
-            p_LI.strCamPrefix[4] = "Sub4";
+         //   p_LI.strCamPrefix[2] = "Sub2";
+        //    p_LI.strCamPrefix[3] = "Sub3";
+       //     p_LI.strCamPrefix[4] = "Sub4";
             p_LI.strPrefix = new string[maxCameraNum];
             p_LI.strPrefix[0] = "1#_Main_";
             p_LI.strPrefix[1] = "1#_Sub1_";
-            p_LI.strPrefix[2] = "1#_Sub2_";
-            p_LI.strPrefix[3] = "1#_Sub3_";
-            p_LI.strPrefix[4] = "1#_Sub4_";
+        //    p_LI.strPrefix[2] = "1#_Sub2_";
+         //   p_LI.strPrefix[3] = "1#_Sub3_";
+        //    p_LI.strPrefix[4] = "1#_Sub4_";
 
             p_LI.bPreType = 1;
         }
