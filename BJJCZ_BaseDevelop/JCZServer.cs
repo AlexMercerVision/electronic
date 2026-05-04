@@ -31,6 +31,7 @@ namespace BJJCZ_BaseDevelop
     /// <summary>
     /// JCZServer 主窗体。作为双板卡激光标刻的服务端，监听两条独立的命名管道，
     /// 分别处理板卡 0 和板卡 1 的命令，并维护各自的状态。
+    /// 当板卡连接失败时，自动进入模拟模式，正常响应客户端请求。
     /// </summary>
     public partial class JCZServer : Form
     {
@@ -39,7 +40,7 @@ namespace BJJCZ_BaseDevelop
         private Pipechanel pipeServer1;      // 对应板卡 1 的服务端
 
         // =============== 按板卡拆分状态（索引0为板卡0, 1为板卡1） ===============
-        private int[] JczInitErrs = new int[2] { -1, -1 };     // 初始化错误码
+        private int[] JczInitErrs = new int[2] { -1, -1 };     // 初始化错误码，-1为从未初始化
         private int[] nEntNums = new int[2];                   // 对象数量
         private string[][] strEntNames = new string[2][];      // 对象名称列表
         private int[][] iPenNos = new int[2][];                // 笔号列表
@@ -48,6 +49,10 @@ namespace BJJCZ_BaseDevelop
         private bool[] bInRed = new bool[2];                   // 是否正在红光预览
         private Bitmap[] imLaserRoute = new Bitmap[2];         // 激光路线预览图（透明背景）
         private Bitmap[] originalImage = new Bitmap[2];        // 原始背景图
+
+        // =============== 新增模拟模式支持 ===============
+        // 当板卡连接失败时，设为 true，此后所有命令均返回模拟成功结果
+        private bool[] bSimulateMode = new bool[2] { false, false };
 
         // =============== 共享参数（非实时，单线程访问）===============
         private AlignImParam alImParam = new AlignImParam();   // 预览对齐参数
@@ -63,8 +68,8 @@ namespace BJJCZ_BaseDevelop
             InitializeComponent();
 
             // 创建两个管道服务端实例，分别对应板卡0和板卡1
-            pipeServer0 = new Pipechanel(0, "PipeServer0", "PipeClient0");
-            pipeServer1 = new Pipechanel(0, "PipeServer1", "PipeClient1");
+            pipeServer0 = new Pipechanel(1, "PipeServer0", "PipeClient0");
+            pipeServer1 = new Pipechanel(1, "PipeServer1", "PipeClient1");
 
             // 静态事件只能订阅一次，我们通过 sender 区分来源
             Pipechanel.msgParamReceived += Pipechanel_msgReceived;
@@ -75,6 +80,32 @@ namespace BJJCZ_BaseDevelop
         {
             JCZServerIcon.Visible = true;
             AddMsg("双管道服务端启动完成，等待板卡0/1连接");
+
+            // 启动时尝试初始化板卡，若失败则分别进入模拟模式
+            TryInitializeCards();
+        }
+
+        /// <summary>
+        /// 尝试初始化两个板卡，失败时自动开启模拟模式。
+        /// </summary>
+        private void TryInitializeCards()
+        {
+            // 因为 JczLmc.InitializeCard 实际执行全局初始化（忽略 cardSN），
+            // 所以只需调用一次。成功则两个板卡均视为可用；失败则两个板卡均进入模拟。
+            int initResult = JczLmc.InitializeCard(0, Application.StartupPath, false, this.Handle);
+            if (initResult == 0)
+            {
+                JczInitErrs[0] = 0;
+                JczInitErrs[1] = 0;
+                AddMsg("板卡初始化成功，正常模式运行");
+            }
+            else
+            {
+                // 初始化失败，两个板卡均进入模拟模式
+                bSimulateMode[0] = true;
+                bSimulateMode[1] = true;
+                AddMsg($"板卡初始化失败({JczLmc.GetErrorText(initResult)})，已切换至模拟模式");
+            }
         }
 
         // =============== 管道消息接收 ===============
@@ -97,13 +128,14 @@ namespace BJJCZ_BaseDevelop
             currentCard = card;
             lastCmdCard = card;
 
-            // 执行命令
+            // 执行命令（如果处于模拟模式，则走模拟分支）
             CMDAna(param);
         }
 
         // =============== 日志 ===============
         private void AddMsg(string txtMsg)
         {
+            if (mainMsgBox.IsDisposed) return;
             mainMsgBox.BeginInvoke((MethodInvoker)delegate
             {
                 mainMsgBox.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + txtMsg + Environment.NewLine);
@@ -114,16 +146,24 @@ namespace BJJCZ_BaseDevelop
 
         // =============== 核心命令解析 ===============
         /// <summary>
-        /// 解析并执行客户端发来的命令，调用对应的 JczLmc 函数，并通过管道返回结果。
-        /// 所有涉及板卡的操作都使用 param.cardSN 确定目标板卡。
+        /// 解析并执行客户端发来的命令。
+        /// 如果对应板卡处于模拟模式，则直接返回模拟成功数据；
+        /// 否则调用 JczLmc 执行实际操作。
         /// </summary>
         private void CMDAna(LCZControlParam param)
         {
-            int card = param.cardSN;
-            int nErr = 0;
-            bool needResponse = true;   // 是否在末尾统一发送响应
+            int clientSeq = param.ind3;   // 保存客户端传来的序列号
 
-            // 未初始化的板卡只允许执行少数命令
+            int card = param.cardSN;
+
+            // 如果该板卡处于模拟模式，则所有命令均返回模拟结果
+            if (bSimulateMode[card])
+            {
+                SimulateCommand(param);
+                return;
+            }
+
+            // 未初始化的板卡只允许执行少数命令（模拟模式已提前拦截）
             if (JczInitErrs[card] != 0 &&
                 param.cmdType != 0 && param.cmdType != 1 &&
                 param.cmdType != 2 && param.cmdType != 37 &&
@@ -135,6 +175,9 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card} 未初始化，拒绝执行命令 {param.cmdType}");
                 return;
             }
+
+            int nErr = 0;
+            bool needResponse = true;
 
             switch (param.cmdType)
             {
@@ -165,10 +208,16 @@ namespace BJJCZ_BaseDevelop
                     }
                     break;
 
-                case 1:     // 初始化板卡
+                case 1:     // 初始化板卡（一般由启动时自动完成，这里作为手动初始化入口）
                     nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
                     JczInitErrs[card] = nErr;
                     AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
+                    if (nErr != 0)
+                    {
+                        // 初始化失败则进入模拟模式
+                        bSimulateMode[card] = true;
+                        AddMsg($"卡{card} 已切换至模拟模式");
+                    }
                     break;
 
                 case 2:     // 关闭板卡
@@ -244,6 +293,7 @@ namespace BJJCZ_BaseDevelop
                     if (!bInMark[card])
                     {
                         if (param.cmdType == 110) JczLmc.Imc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
+                        int markSeq = param.ind3;   // 保存序列号
                         var worker = new BackgroundWorker();
                         worker.DoWork += (s, ev) =>
                         {
@@ -251,7 +301,7 @@ namespace BJJCZ_BaseDevelop
                             nErr = JczLmc.Imc1_Mark(card, false);
                             bInMark[card] = false;
                             AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
-                            var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true };
+                            var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
                             SendResponse(result);
                         };
                         worker.RunWorkerAsync();
@@ -390,8 +440,76 @@ namespace BJJCZ_BaseDevelop
             if (needResponse)
             {
                 param.nErr = nErr;
+                param.ind3 = clientSeq;   // 强制恢复，防止被修改
                 SendResponse(param);
             }
+        }
+
+        /// <summary>
+        /// 模拟模式下的命令处理：直接返回成功结果，不进行任何硬件操作。
+        /// </summary>
+        private void SimulateCommand(LCZControlParam param)
+        {
+            int clientSeq = param.ind3;   // 在方法开始保存
+            int card = param.cardSN;
+            bool needResponse = true;
+
+            switch (param.cmdType)
+            {
+                case 0:
+                case 100:   // 查询初始化状态，模拟返回成功、0个对象
+                    param.nErr = 0;
+                    param.ind1 = 0;          // nEntNums
+                    param.strFileName = "";  // 无文件路径
+                    AddMsg($"卡{card} [模拟] 查询状态 -> 成功(0个对象)");
+                    break;
+
+                case 6:     // 加载文件并返回对象（模拟返回0个对象）
+                    param.nErr = 0;
+                    param.ind1 = 0;
+                    SendResponse(param);
+                    // 无需后续对象信息响应
+                    AddMsg($"卡{card} [模拟] 加载文件 -> 成功(0个对象)");
+                    needResponse = false;
+                    break;
+
+                case 10:
+                case 110:   // 标刻完成，模拟返回完成标志
+                    param.nErr = 0;
+                    param.bOpen = true;      // 正常完成标志
+                    AddMsg($"卡{card} [模拟] 标刻完成");
+                    break;
+
+                case 11:    // 停止加工
+                case 12:    // 红光预览边界
+                case 13:    // 红光轮廓
+                case 21:    // 标刻指定实体
+                case 22:    // 红光预览指定实体
+                case 15:    // 移动振镜
+                case 23:    // 旋转实体
+                case 24:    // 移动实体
+                case 25:    // 缩放实体
+                case 27:    // 设置全局旋转平移
+                case 28:    // 群组/解组
+                case 40:    // 参数设置（不实际操作）
+                case 42:    // 对齐参数（可接受）
+                case 90:    // 界面布局（可接受）
+                    param.nErr = 0;
+                    AddMsg($"卡{card} [模拟] 执行命令 {param.cmdType} -> 成功");
+                    break;
+
+                default:    // 未知命令，也返回成功
+                    param.nErr = 0;
+                    AddMsg($"卡{card} [模拟] 未知命令 {param.cmdType} -> 成功");
+                    break;
+            }
+
+            if (needResponse)
+            {
+                param.ind3 = clientSeq;   // 恢复
+                SendResponse(param);
+            }
+                 
         }
 
         // =============== 发送响应 ===============
@@ -407,6 +525,10 @@ namespace BJJCZ_BaseDevelop
         // =============== 预览图刷新 ===============
         private void RefreshPreview(int card)
         {
+            // 模拟模式下不刷新预览图
+            if (bSimulateMode[card])
+                return;
+
             imLaserRoute[card] = MakeWhiteTransparent(
                 (Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card, alImParam.width, alImParam.height,
                     alImParam.dCenX, alImParam.dCenY, alImParam.dWidth / alImParam.width));
@@ -419,8 +541,6 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 将图片中的白色（接近白色）部分变为透明，保留标刻线条。
         /// </summary>
-        /// <param name="original">原始图像</param>
-        /// <param name="tolerance">颜色容差（0-255*3），越大越容易变透明</param>
         private Bitmap MakeWhiteTransparent(Bitmap original, float tolerance = 10f)
         {
             if (original == null) return null;
@@ -460,6 +580,10 @@ namespace BJJCZ_BaseDevelop
         /// </summary>
         private void mergeImg(int card)
         {
+            // 模拟模式下不合并图像
+            if (bSimulateMode[card])
+                return;
+
             // 如果尚未加载背景图，则加载（不同板卡可能使用不同背景）
             if (originalImage[card] == null)
             {
@@ -481,6 +605,7 @@ namespace BJJCZ_BaseDevelop
                 g.DrawImage(imLaserRoute[card], 0, 0);
             }
             finalImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
+            if (pictureBox1.IsDisposed) return;
             pictureBox1.Image = finalImage;
             pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
         }
@@ -488,6 +613,10 @@ namespace BJJCZ_BaseDevelop
         // =============== 实体表格更新 ===============
         private void UpdateEntTable(int card)
         {
+            // 模拟模式下不更新表格
+            if (bSimulateMode[card])
+                return;
+
             dgvEnt.Rows.Clear();
             for (int i = 0; i < nEntNums[card]; i++)
             {
@@ -528,8 +657,9 @@ namespace BJJCZ_BaseDevelop
         {
             try
             {
-                JczLmc.Imc1_Close();
-                AddMsg("关闭所有板卡");
+                if (!bSimulateMode[0] && !bSimulateMode[1])
+                    JczLmc.Imc1_Close();
+                AddMsg("关闭所有板卡（模拟模式不执行硬件关闭）");
             }
             catch { }
             Application.Exit();
@@ -635,57 +765,11 @@ namespace BJJCZ_BaseDevelop
             CMDAna(cmd);
         }
 
-        #region
-
+        #region 后台工作线程（保留占位，不再使用）
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            /*int card = (int)e.Argument;
-            if (lczParam.cmdType == 10 || lczParam.cmdType == 110)
-            {
-                bInMark = true;
-                nErr = JczLmc.Imc1_Mark(card, false);
-                bInMark = false;
-                AddMsg($"卡{card} 激光加工完成-->{JczLmc.GetErrorText(nErr)}");
-
-                lczParam.nErr = nErr;
-                lczParam.bOpen = true;
-                pipeServerUser.SendParam(lczParam);
-            }
-            else if (lczParam.cmdType == 12)
-            {
-                bInRed = true;
-                do
-                {
-                    nErr = JczLmc.Imc1_RedLightMark(card);
-                    Thread.Sleep(5);
-                } while (lczParam.bOpen && lczParam.cmdType == 12);
-                bInRed = false;
-            }
-            else if (lczParam.cmdType == 13)
-            {
-                bInRed = true;
-                do
-                {
-                    nErr = JczLmc.Imc1_RedLightMarkContourByEnt(card, null);
-                    Thread.Sleep(5);
-                } while (lczParam.bOpen && lczParam.cmdType == 13);
-                bInRed = false;
-            }
-            else if (lczParam.cmdType == 22)
-            {
-                bInRed = true;
-                string ent = strEntName[iEntIndex];
-                do
-                {
-                    nErr = JczLmc.Imc1_RedLightMarkContourByEnt(card, ent);
-                    Thread.Sleep(5);
-                } while (lczParam.bOpen && lczParam.cmdType == 22);
-                bInRed = false;
-            }*/
+            // 此部分已由其他方式实现，保留以兼容设计器
         }
         #endregion
     }
 }
-
-/*#region 后台工作线程（标刻、红光预览）
-*/

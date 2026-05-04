@@ -397,6 +397,9 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
+            this.toolBt_Len2Ori = new System.Windows.Forms.ToolStripButton();
+            this.toolBt_JCZ_Conn = new System.Windows.Forms.ToolStripButton();
+            this.toolBt_StopLaser = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -577,21 +580,21 @@ namespace VisionApplication
             // menuWS_Job1
             // 
             this.menuWS_Job1.Name = "menuWS_Job1";
-            this.menuWS_Job1.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_Job1.Size = new System.Drawing.Size(151, 22);
             this.menuWS_Job1.Text = "A面（板卡1）";
             this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job2
             // 
             this.menuWS_Job2.Name = "menuWS_Job2";
-            this.menuWS_Job2.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_Job2.Size = new System.Drawing.Size(151, 22);
             this.menuWS_Job2.Text = "B面（板卡2）";
             this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job3
             // 
             this.menuWS_Job3.Name = "menuWS_Job3";
-            this.menuWS_Job3.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_Job3.Size = new System.Drawing.Size(151, 22);
             this.menuWS_Job3.Text = "C面";
             this.menuWS_Job3.Visible = false;
             this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
@@ -599,7 +602,7 @@ namespace VisionApplication
             // menuWS_JobS
             // 
             this.menuWS_JobS.Name = "menuWS_JobS";
-            this.menuWS_JobS.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_JobS.Size = new System.Drawing.Size(151, 22);
             this.menuWS_JobS.Text = "同步";
             // 
             // menuLaser
@@ -1438,12 +1441,15 @@ namespace VisionApplication
             this.toolStripSeparator2,
             this.toolBt_Record,
             this.toolStripSeparator9,
+            this.toolBt_JCZ_Conn,
+            this.toolBt_Len2Ori,
+            this.toolBt_StopLaser,
             this.toolStripSeparator10,
             this.toolBt_ConnSer,
             this.toolBtSta_Triggle,
+            this.toolStripSeparator3,
             this.toolBt_LS,
             this.toolStripSeparator11,
-            this.toolStripSeparator3,
             this.toolBt_RuntimeSet,
             this.toolStripSeparator17,
             this.toolStripSeparator16,
@@ -1937,7 +1943,7 @@ namespace VisionApplication
             this.picLogo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.picLogo.BackColor = System.Drawing.Color.White;
             this.picLogo.Image = ((System.Drawing.Image)(resources.GetObject("picLogo.Image")));
-            this.picLogo.Location = new System.Drawing.Point(5, 815);
+            this.picLogo.Location = new System.Drawing.Point(5, 860);
             this.picLogo.Name = "picLogo";
             this.picLogo.Size = new System.Drawing.Size(100, 55);
             this.picLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -4630,6 +4636,37 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
+            // toolBt_Len2Ori
+            // 
+            this.toolBt_Len2Ori.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBt_Len2Ori.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_Len2Ori.Image")));
+            this.toolBt_Len2Ori.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBt_Len2Ori.Name = "toolBt_Len2Ori";
+            this.toolBt_Len2Ori.Size = new System.Drawing.Size(36, 42);
+            this.toolBt_Len2Ori.ToolTipText = "振镜复位";
+            this.toolBt_Len2Ori.Click += new System.EventHandler(this.toolBt_Len2Ori_Click);
+            // 
+            // toolBt_JCZ_Conn
+            // 
+            this.toolBt_JCZ_Conn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBt_JCZ_Conn.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_JCZ_Conn.Image")));
+            this.toolBt_JCZ_Conn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBt_JCZ_Conn.Name = "toolBt_JCZ_Conn";
+            this.toolBt_JCZ_Conn.Size = new System.Drawing.Size(36, 42);
+            this.toolBt_JCZ_Conn.Text = "暂停";
+            this.toolBt_JCZ_Conn.ToolTipText = "连接板卡";
+            this.toolBt_JCZ_Conn.Click += new System.EventHandler(this.toolBt_JCZ_Conn_Click);
+            // 
+            // toolBt_StopLaser
+            // 
+            this.toolBt_StopLaser.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBt_StopLaser.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_StopLaser.Image")));
+            this.toolBt_StopLaser.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBt_StopLaser.Name = "toolBt_StopLaser";
+            this.toolBt_StopLaser.Size = new System.Drawing.Size(36, 42);
+            this.toolBt_StopLaser.ToolTipText = "停止标刻";
+            this.toolBt_StopLaser.Click += new System.EventHandler(this.toolBt_StopLaser_Click);
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -5113,5 +5150,8 @@ namespace VisionApplication
         private System.Windows.Forms.Button btRedLight_Preview;
         private System.Windows.Forms.ToolStripMenuItem menu_View_Layout4;
         private System.Windows.Forms.ToolStripMenuItem menu_View_Layout2;
+        private System.Windows.Forms.ToolStripButton toolBt_JCZ_Conn;
+        private System.Windows.Forms.ToolStripButton toolBt_Len2Ori;
+        private System.Windows.Forms.ToolStripButton toolBt_StopLaser;
     }
 }

@@ -10,6 +10,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Cognex.VisionPro.PMAlign;
 using Cognex.VisionPro.Blob;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace VisionApplication
 {
@@ -91,8 +93,16 @@ namespace VisionApplication
         /// 命令是否执行结束的标志（按板卡）。
         /// true 表示空闲，可接受新命令；false 表示正在等待服务端响应。
         /// </summary>
-        private bool[] bCmdEnds = new bool[MaxLaserCards];
+        //  private bool[] bCmdEnds = new bool[MaxLaserCards];
+        /// <summary>
+        /// 异步命令调度器数组（替换原有的 bCmdEnds 轮询机制）
+        /// </summary>
+        private LaserCommandDispatcher[] laserDispatchers = new LaserCommandDispatcher[MaxLaserCards];
 
+        /// <summary>
+        /// 调度器是否已初始化完成，用于界面使能控制
+        /// </summary>
+        private volatile bool _laserDispatchersReady = false;
         /// <summary>
         /// 激光工作状态标志（按板卡）
         /// 0: 未工作  1：Marking 加工  2：红光预览边界   3：红光轮廓   4：参数设置
@@ -236,7 +246,6 @@ namespace VisionApplication
             }
             return true;
         }
-
         /// <summary>
         /// 将目标窗口嵌入到指定的容器控件中，并去除标题栏和边框。
         /// </summary>
@@ -264,7 +273,6 @@ namespace VisionApplication
                 true                          // 立即重绘
             );
         }
-
         #endregion
 
         // ============================================================
@@ -284,7 +292,6 @@ namespace VisionApplication
             for (int i = 0; i < MaxLaserCards; i++)
             {
                 lczParams[i] = new LCZControlParam();
-                bCmdEnds[i] = true;
                 iLaserWorkingTypes[i] = 0;
                 iEntIndices[i] = -1;
                 nEntNums[i] = 0;
@@ -300,6 +307,7 @@ namespace VisionApplication
                 for (int i = 0; i < MaxLaserCards; i++)
                     bInitJCZ[i] = -3;
                 operLog.iEventStatus = -4;
+                operLog.strOperEvent="连接激光器板卡"
                 operLog.strFailReason = "启动板卡服务端失败";
                 AddLog();
                 return;
@@ -307,23 +315,18 @@ namespace VisionApplication
 
             try
             {
-                // 第二步：为每个板卡创建独立的管道客户端
-                // 管道名称需与 JCZServer 中定义的保持一致：
-                //   服务端 pipeServer0 使用 "PipeServer0" 侦听，客户端应指定本地名 "PipeClient0"，远程名 "PipeServer0"
-                //   服务端 pipeServer1 同理
+                // 第二步：为每个板卡创建独立的管道客户端及异步调度器
                 for (int card = 0; card < MaxLaserCards; card++)
                 {
-                    if (pipeClients[card] == null)
-                    {
-                        string localName = (card == 0) ? "PipeClient0" : "PipeClient1";
-                        string remoteName = (card == 0) ? "PipeServer0" : "PipeServer1";
-                        pipeClients[card] = new Pipechanel(1, localName, remoteName);
-                    }
+                    string localName = (card == 0) ? "PipeClient0" : "PipeClient1";
+                    string remoteName = (card == 0) ? "PipeServer0" : "PipeServer1";
+                    pipeClients[card] = new Pipechanel(1, localName, remoteName);
+                    laserDispatchers[card] = new LaserCommandDispatcher(card, pipeClients[card]);
+                    laserDispatchers[card].DefaultTimeoutMs = 6000; // 默认超时6秒
                 }
 
-                // 注册静态消息接收事件（所有管道实例共享此回调，通过 sender 区分）
-                // 注意：静态事件只应注册一次，否则会重复触发
-                Pipechanel.msgParamReceived += new PipeMsg.PipeMsgParamEventHandler(Pipechanel_msgReceived);
+                // 订阅静态消息事件（所有管道共享，通过 sender 区分）
+                Pipechanel.msgParamReceived += OnPipeMessageReceived;
             }
             catch (Exception ex)
             {
@@ -332,48 +335,62 @@ namespace VisionApplication
                 operLog.strFailReason = ex.ToString();
             }
 
-            // 服务启动成功，管道已连接，等待后续具体板卡初始化命令
+            // 设置调度器就绪标志
+            _laserDispatchersReady = true;
+
+            // 服务启动成功，管道已连接，启用相应激光按钮（通过Invoke确保线程安全）
+            this.BeginInvoke(new Action(() => EnableLaserButtons(true)));
+
             operLog.iEventStatus = 0;
             operLog.strOperEvent = "服务端与双管道初始化完成";
             AddLog();
         }
 
         /// <summary>
-        /// 管道消息接收事件处理（将接收到的消息封送到 UI 线程）
-        /// 静态事件由多个管道实例触发，通过 sender 确定板卡号。
+        /// 启用/禁用激光操作相关按钮。
         /// </summary>
-        private void Pipechanel_msgReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
+        private void EnableLaserButtons(bool enable)
+        {
+            btFunMark.Enabled = enable;
+            btRedLight_Preview.Enabled = enable;
+        //    btFunParam.Enabled = enable;
+            // 其他按钮可根据需要添加
+        }
+
+        /// <summary>
+        /// 静态管道消息事件处理：将接收到的消息分发给对应板卡的调度器，并继续执行原有 UI 更新逻辑。
+        /// </summary>
+        private void OnPipeMessageReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
         {
             try
             {
-                this.Invoke(new MethodInvoker(delegate
+                // 根据 sender 确定板卡号
+                int card = -1;
+                for (int i = 0; i < MaxLaserCards; i++)
                 {
-                    LCZControlParam received = e.receivedMsg;
-                    // 根据 sender 确定板卡号（管道客户端实例）
-                    int card = -1;
-                    if (sender == pipeClients[0])
-                        card = 0;
-                    else if (sender == pipeClients[1])
-                        card = 1;
-                    else
+                    if (ReferenceEquals(sender, pipeClients[i]))
                     {
-                        // 如果无法从 sender 判断，则使用消息中携带的 cardSN（0 或 1）
-                        card = Math.Max(0, Math.Min(received.cardSN, MaxLaserCards - 1));
+                        card = i;
+                        break;
                     }
+                }
+                if (card < 0) return;
 
-                    // 将接收到的参数保存到对应板卡的实例中
-                    lczParams[card] = received;
-                    CMDAna(received);
+                LCZControlParam param = e.receivedMsg;
+                // 将消息传递给调度器，内部会根据 ind3 完成 Task
+                laserDispatchers[card].HandleResponse(param);
+
+                // 继续执行原有的 CMDAna 更新UI、日志等（需在UI线程）
+                this.BeginInvoke(new Action(() =>
+                {
+                    CMDAna(param);
                 }));
             }
-            catch
+            catch (Exception ex)
             {
-                // 如果出错，至少结束当前板卡的命令等待
-                for (int i = 0; i < MaxLaserCards; i++)
-                    bCmdEnds[i] = true;
+                System.Diagnostics.Debug.WriteLine($"OnPipeMessageReceived 异常: {ex.Message}");
             }
-        }
-
+        } 
         #endregion
 
         // ============================================================
@@ -607,9 +624,7 @@ namespace VisionApplication
                 if (nErr != 0)
                     AddLog();
             }
-            bCmdEnds[card] = true;  // 管道通信结束，允许发送下一条命令
         }
-
         /// <summary>
         /// 根据错误码返回中文错误描述文本。
         /// </summary>
@@ -652,6 +667,7 @@ namespace VisionApplication
 
         #region // 激光控制方法
 
+
         /// <summary>
         /// 获取指定板卡对应的管道客户端实例。
         /// </summary>
@@ -680,16 +696,17 @@ namespace VisionApplication
 
         /// <summary>
         /// 查询当前选中板卡的初始化状态（命令码 100）。
-        /// 服务端会返回板卡初始化状态并将对象信息下发。
+        /// 异步版本，替换原有的轮询等待。
         /// </summary>
-        public void QueryCardStatus()
+        public async Task QueryCardStatusAsync()
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
+            var param = lczParams[card];
             param.cmdType = 100;
-            param.cardSN = currentCardSN;           // 指定板卡号
+            param.cardSN = card;
             param.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");
             param.ind1 = alImParam.width;
             param.ind2 = alImParam.height;
@@ -697,124 +714,158 @@ namespace VisionApplication
             param.dParam2 = alImParam.dCenY;
             param.dParam3 = alImParam.dWidth;
             param.dParam4 = alImParam.dHeight;
-            param.ind3 = 0;
+            param.ind3 = 0; // 序列号由调度器填充，此处可忽略
 
-            bCmdEnds[currentCardSN] = false;
-            client.SendParam(param);
-            int iCount = 0;
-            while (!bCmdEnds[currentCardSN] && iCount < 20)
+            try
             {
-                Thread.Sleep(5);
-                iCount++;
+                var result = await dispatcher.SendCommandAsync(param);
+                // 结果已在CMDAna中处理，此处无需额外操作
+            }
+            catch (TimeoutException)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "查询板卡状态";
+                operLog.strFailReason = "命令超时";
+                AddLog();
             }
         }
 
         /// <summary>
         /// 查询所有对象信息，每次发送前设置当前板卡号。
-        /// 通过循环发送 cmdType=7 命令，服务端逐个返回对象信息。
+        /// 异步版本，通过循环发送 cmdType=7 命令，服务端逐个返回对象信息。
         /// </summary>
-        private void QueryEntInfo()
+        private async Task QueryEntInfoAsync()
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-            if (strEntNames[currentCardSN] == null || strEntNames[currentCardSN].Length <= 0) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+            if (strEntNames[card] == null || strEntNames[card].Length <= 0) return;
 
-            for (int i = 0; i < strEntNames[currentCardSN].Length; i++)
+            for (int i = 0; i < strEntNames[card].Length; i++)
             {
-                var param = lczParams[currentCardSN];
-                param.cmdType = 7;
-                param.cardSN = currentCardSN;
-                param.ind2 = i;
-                bCmdEnds[currentCardSN] = false;
-                client.SendParam(param);
-                int count = 0;
-                while (!bCmdEnds[currentCardSN] && count < 40) { Thread.Sleep(5); count++; }
-                Thread.Sleep(30);
+                var param = new LCZControlParam
+                {
+                    cmdType = 7,
+                    cardSN = card,
+                    ind2 = i
+                };
+                try
+                {
+                    await dispatcher.SendCommandAsync(param);
+                }
+                catch (TimeoutException)
+                {
+                    // 单条超时处理，可继续下一对象或终止
+                }
+                Thread.Sleep(30); // 保持原有间隔
             }
         }
 
         /// <summary>
         /// 移动旋转复位：将实体平移和旋转置零。
         /// </summary>
-        private void ResetLaserEnt()
+        private async Task ResetLaserEntAsync()
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
-            bCmdEnds[currentCardSN] = false;
-            param.cmdType = 27;
-            param.cardSN = currentCardSN;
-            param.dParam3 = 0;
-            param.dParam4 = 0;
-            param.dParam1 = 0.003;
-            param.dParam2 = 0.003;
-            param.dParam5 = 0;
-            client.SendParam(param);
+            var param = new LCZControlParam
+            {
+                cmdType = 27,
+                cardSN = card,
+                dParam3 = 0,
+                dParam4 = 0,
+                dParam1 = 0.003,
+                dParam2 = 0.003,
+                dParam5 = 0
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         /// <summary>
         /// 重新加载模板文件（route.ezd）。
         /// </summary>
-        private void ReLoadTemplate()
+        private async Task ReLoadTemplateAsync()
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
-            param.cmdType = 4;
-            param.cardSN = currentCardSN;
-            param.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd");
-            param.ind3 = 0;
-            bCmdEnds[currentCardSN] = false;
-            client.SendParam(param);
-            int count = 0;
-            while (!bCmdEnds[currentCardSN] && count < 10) { Thread.Sleep(10); count++; }
+            var param = new LCZControlParam
+            {
+                cmdType = 4,
+                cardSN = card,
+                strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd"),
+                ind3 = 0
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         // 2025年6月12日，在执行完视觉检测后启动激光加工
         /// <summary>
         /// 视觉检测后执行激光加工。
         /// 根据模板匹配结果设置旋转平移量，然后执行标刻。
-        /// 注意：此方法操作当前选中的板卡（currentCardSN）。
+        /// 异步版本，不再使用轮询。
         /// </summary>
-        private void LaserMarkAfterVisionDet()
+        private async Task LaserMarkAfterVisionDetAsync()
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
-            bCmdEnds[currentCardSN] = false;
-            param.cmdType = 27; // 设置旋转平移
-            param.cardSN = currentCardSN;
-            param.ind3 = 0;
-            param.dParam3 = 0;
-            param.dParam4 = 0;
-            if (pmaRes[currentCardSN].bLocated)
+            // 设置旋转平移量
+            var paramShift = new LCZControlParam
             {
-                param.dParam1 = pmaRes[currentCardSN].dTX;
-                param.dParam2 = pmaRes[currentCardSN].dTY;
-                param.dParam5 = pmaRes[currentCardSN].dTR;
+                cmdType = 27,
+                cardSN = card,
+                ind3 = 0,
+                dParam3 = 0,
+                dParam4 = 0
+            };
+            if (pmaRes[card].bLocated)
+            {
+                paramShift.dParam1 = pmaRes[card].dTX;
+                paramShift.dParam2 = pmaRes[card].dTY;
+                paramShift.dParam5 = pmaRes[card].dTR;
             }
             else
             {
-                param.dParam1 = 0;
-                param.dParam2 = 0;
-                param.dParam5 = 0;
+                paramShift.dParam1 = 0;
+                paramShift.dParam2 = 0;
+                paramShift.dParam5 = 0;
             }
-            client.SendParam(param);
-            while (!bCmdEnds[currentCardSN]) { Thread.Sleep(5); }
+
+            try
+            {
+                await dispatcher.SendCommandAsync(paramShift);
+            }
+            catch (TimeoutException) { return; }
 
             // 如果当前文件不是 route.ezd，则重新加载模板
-            if (param.strFileName.IndexOf("route.ezd") < 0)
-                ReLoadTemplate();
+            if (paramShift.strFileName?.IndexOf("route.ezd") < 0)
+                await ReLoadTemplateAsync();
 
-            bCmdEnds[currentCardSN] = false;
-            param.cmdType = 10; // 开始标刻
-            param.cardSN = currentCardSN;
-            param.ind3 = 0;
-            client.SendParam(param);
-            while (!bCmdEnds[currentCardSN]) { Thread.Sleep(5); }
+            // 开始标刻
+            var paramMark = new LCZControlParam
+            {
+                cmdType = 10,
+                cardSN = card,
+                ind3 = 0
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(paramMark, timeoutMs: 30000); // 标刻可设置较长超时
+            }
+            catch (TimeoutException) { }
 
             // 发送结果到串口（OK信号）
             csd.SendResult(sPortCy, true, 0);
@@ -890,27 +941,28 @@ namespace VisionApplication
 
             return true;
         }
-
         /// <summary>
         /// 设置 JCZServer 界面布局（通过管道发送 cmdType=90）。
         /// 现在支持指定板卡号，布局切换会影响该板卡的服务端窗口显示。
         /// </summary>
-        private void JCZServerLayout()
+        private async Task JCZServerLayoutAsync()
         {
             try
             {
-                Pipechanel client = GetPipeClient(currentCardSN);
-                if (client == null) return;
+                int card = currentCardSN;
+                var dispatcher = laserDispatchers[card];
+                if (dispatcher == null) return;
 
-                var param = lczParams[currentCardSN];
-                param.dParam1 = menuEnt_ShowEntList.Checked ? 1 : 0;
-                param.dParam2 = menuEnt_ShowMarkImage.Checked ? 1 : 0;
-                param.dParam3 = menuEnt_EditEnt.Checked ? 1 : 0;
-                param.dParam4 = menuEnt_ShowMsgList.Checked ? 1 : 0;
-
-                param.cmdType = 90;
-                param.cardSN = currentCardSN;
-                client.SendParam(param);
+                var param = new LCZControlParam
+                {
+                    cmdType = 90,
+                    cardSN = card,
+                    dParam1 = menuEnt_ShowEntList.Checked ? 1 : 0,
+                    dParam2 = menuEnt_ShowMarkImage.Checked ? 1 : 0,
+                    dParam3 = menuEnt_EditEnt.Checked ? 1 : 0,
+                    dParam4 = menuEnt_ShowMsgList.Checked ? 1 : 0
+                };
+                await dispatcher.SendCommandAsync(param);
             }
             catch (Exception ex)
             {
@@ -936,90 +988,138 @@ namespace VisionApplication
         /// <summary>
         /// 连接JCZ服务端（初始化管道和板卡）
         /// </summary>
-        private void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
+        private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
         {
-            jczPipThread = new Thread(InitJCZ);
-            jczPipThread.Start();
+            // 在线程中执行初始化，但可等待调度器就绪后再启用按钮
+            await Task.Run(() => InitJCZ());
         }
 
         /// <summary>
         /// 红光预览（切换开关）
         /// </summary>
-        private void btRedLight_Preview_Click(object sender, EventArgs e)
+        private async void btRedLight_Preview_Click(object sender, EventArgs e)
         {
             if (!LaserCondiction(2)) return;
 
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
-            if (btRedLight_Preview.FlatStyle == FlatStyle.Popup)
+            bool willOpen = btRedLight_Preview.FlatStyle == FlatStyle.Popup;
+            var param = new LCZControlParam
             {
-                iLaserWorkingTypes[currentCardSN] = 2;
-                param.cmdType = 12; // 红光预览边界
-                param.bOpen = true;
-                param.cardSN = currentCardSN;
-                client.SendParam(param);
-                btRedLight_Preview.FlatStyle = FlatStyle.Flat;
+                cmdType = 12,
+                bOpen = willOpen,
+                cardSN = card
+            };
+
+            try
+            {
+                var result = await dispatcher.SendCommandAsync(param);
+                if (result.nErr == 0)
+                {
+                    iLaserWorkingTypes[card] = willOpen ? 2 : 0;
+                    btRedLight_Preview.FlatStyle = willOpen ? FlatStyle.Flat : FlatStyle.Popup;
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "红光预览";
+                    operLog.strFailReason = GetErrorText(result.nErr);
+                    AddLog();
+                }
             }
-            else
+            catch (TimeoutException)
             {
-                iLaserWorkingTypes[currentCardSN] = 0;
-                param.cmdType = 12;
-                param.bOpen = false;
-                param.cardSN = currentCardSN;
-                client.SendParam(param);
-                btRedLight_Preview.FlatStyle = FlatStyle.Popup;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "红光预览";
+                operLog.strFailReason = "命令超时";
+                AddLog();
             }
         }
 
         /// <summary>
         /// 激光标刻按钮（开始/停止）
         /// </summary>
-        private void btFunMark_Click(object sender, EventArgs e)
+        private async void btFunMark_Click(object sender, EventArgs e)
         {
             if (!LaserCondiction(1)) return;
 
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
             if (btFunMark.FlatStyle == FlatStyle.Popup)
             {
-                iLaserWorkingTypes[currentCardSN] = 1;
-                param.cmdType = 110; // 标刻（先清除平移旋转）
-                param.ind1 = 0;
-                param.cardSN = currentCardSN;
-                client.SendParam(param);
+                iLaserWorkingTypes[card] = 1;
                 btFunMark.FlatStyle = FlatStyle.Flat;
+
+                var param = new LCZControlParam
+                {
+                    cmdType = 110,
+                    cardSN = card,
+                    ind1 = 0
+                };
+
+                try
+                {
+                    // 标刻可能耗时较长，设置30秒超时
+                    var result = await dispatcher.SendCommandAsync(param, 30000);
+                    if (result.nErr != 0)
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "激光加工";
+                        operLog.strFailReason = GetErrorText(result.nErr);
+                        AddLog();
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "激光加工";
+                    operLog.strFailReason = "标刻超时";
+                    AddLog();
+                }
+                finally
+                {
+                    iLaserWorkingTypes[card] = 0;
+                    btFunMark.FlatStyle = FlatStyle.Popup;
+                }
             }
         }
 
         /// <summary>
         /// 参数设置按钮（打开设备配置对话框）
         /// </summary>
-        private void btFunParam_Click(object sender, EventArgs e)
+        private async void btFunParam_Click(object sender, EventArgs e)
         {
             if (!LaserCondiction(4)) return;
 
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            iLaserWorkingTypes[currentCardSN] = 4;
-            var param = lczParams[currentCardSN];
-            param.cmdType = 40;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            iLaserWorkingTypes[card] = 4;
+            var param = new LCZControlParam { cmdType = 40, cardSN = card };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+                // 该操作可能打开配置窗口，服务端会异步处理
+            }
+            catch (TimeoutException)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "参数设置";
+                operLog.strFailReason = "命令超时";
+                AddLog();
+            }
         }
 
         /// <summary>
         /// 加载文件菜单项
         /// </summary>
-        private void menuLaser_LoadFile_Click(object sender, EventArgs e)
+        private async void menuLaser_LoadFile_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-
             if (!LaserCondiction(5)) return;
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
             openFileDialog1.Filter = "(*.ezd)|*.*";
@@ -1027,115 +1127,172 @@ namespace VisionApplication
             string filename = openFileDialog1.FileName;
             if (load == DialogResult.OK && !string.IsNullOrEmpty(filename))
             {
-                var param = lczParams[currentCardSN];
-                param.strFileName = filename;
-                param.cmdType = 4;
-                param.ind3 = 0;
-                param.cardSN = currentCardSN;
-                client.SendParam(param);
+                int card = currentCardSN;
+                var dispatcher = laserDispatchers[card];
+                if (dispatcher == null) return;
+
+                var param = new LCZControlParam
+                {
+                    strFileName = filename,
+                    cmdType = 4,
+                    ind3 = 0,
+                    cardSN = card
+                };
+                try
+                {
+                    await dispatcher.SendCommandAsync(param);
+                }
+                catch (TimeoutException)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "加载文件";
+                    operLog.strFailReason = "命令超时";
+                    AddLog();
+                }
             }
         }
 
         /// <summary>
         /// 保存文件菜单项
         /// </summary>
-        private void menuLaser_SaveFile_Click(object sender, EventArgs e)
+        private async void menuLaser_SaveFile_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-
             if (!LaserCondiction(5)) return;
-            var param = lczParams[currentCardSN];
-            param.cmdType = 5;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            var param = new LCZControlParam { cmdType = 5, cardSN = card };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "保存文件";
+                operLog.strFailReason = "命令超时";
+                AddLog();
+            }
         }
 
         /// <summary>
         /// 红光预览边界菜单项（与循环预览关联）
         /// </summary>
-        private void menuLaser_RedBoundary_Click(object sender, EventArgs e)
+        private async void menuLaser_RedBoundary_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-
             if (!LaserCondiction(2)) return;
-            var param = lczParams[currentCardSN];
-            param.cmdType = 12;
-            param.bOpen = menuLaser_Loop.Checked;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            var param = new LCZControlParam
+            {
+                cmdType = 12,
+                bOpen = menuLaser_Loop.Checked,
+                cardSN = card
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         /// <summary>
         /// 红光预览轮廓菜单项
         /// </summary>
-        private void menuLaser_RedCountour_Click(object sender, EventArgs e)
+        private async void menuLaser_RedCountour_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-
             if (!LaserCondiction(3)) return;
-            var param = lczParams[currentCardSN];
-            param.cmdType = 13;
-            param.bOpen = menuLaser_Loop.Checked;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            var param = new LCZControlParam
+            {
+                cmdType = 13,
+                bOpen = menuLaser_Loop.Checked,
+                cardSN = card
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         /// <summary>
         /// 红光预览指定实体菜单项
         /// </summary>
-        private void menuLaser_RedEnt_Click(object sender, EventArgs e)
+        private async void menuLaser_RedEnt_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-
             if (!LaserCondiction(3)) return;
-            int iEnt = iEntIndices[currentCardSN];
-            if (strEntNames[currentCardSN] == null || iEnt < 0 || iEnt >= strEntNames[currentCardSN].Length) return;
-            var param = lczParams[currentCardSN];
-            param.strEntyName = strEntNames[currentCardSN][iEnt];
-            param.bOpen = menuLaser_Loop.Checked;
-            param.cmdType = 22;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            int iEnt = iEntIndices[card];
+            if (strEntNames[card] == null || iEnt < 0 || iEnt >= strEntNames[card].Length) return;
+
+            var param = new LCZControlParam
+            {
+                strEntyName = strEntNames[card][iEnt],
+                bOpen = menuLaser_Loop.Checked,
+                cmdType = 22,
+                cardSN = card
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         /// <summary>
         /// 标刻指定实体菜单项
         /// </summary>
-        private void menuLaser_MarkEnt_Click(object sender, EventArgs e)
+        private async void menuLaser_MarkEnt_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
-
             if (!LaserCondiction(1)) return;
-            int iEnt = iEntIndices[currentCardSN];
-            if (strEntNames[currentCardSN] == null || iEnt < 0 || iEnt >= strEntNames[currentCardSN].Length) return;
-            var param = lczParams[currentCardSN];
-            param.strEntyName = strEntNames[currentCardSN][iEnt];
-            param.cmdType = 21;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            int iEnt = iEntIndices[card];
+            if (strEntNames[card] == null || iEnt < 0 || iEnt >= strEntNames[card].Length) return;
+
+            var param = new LCZControlParam
+            {
+                strEntyName = strEntNames[card][iEnt],
+                cmdType = 21,
+                cardSN = card
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         /// <summary>
         /// 循环预览开关菜单项
         /// </summary>
-        private void menuLaser_Loop_Click(object sender, EventArgs e)
+        private async void menuLaser_Loop_Click(object sender, EventArgs e)
         {
             menuLaser_Loop.Checked = !menuLaser_Loop.Checked;
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
             if (!menuLaser_Loop.Checked)
             {
-                param.cmdType = 12;
-                param.bOpen = false;
-                param.cardSN = currentCardSN;
-                client.SendParam(param);
+                var param = new LCZControlParam { cmdType = 12, bOpen = false, cardSN = card };
+                try
+                {
+                    await dispatcher.SendCommandAsync(param);
+                }
+                catch (TimeoutException) { }
             }
         }
 
@@ -1169,21 +1326,21 @@ namespace VisionApplication
         }
 
         // ---------- 界面布局相关菜单 ----------
-        private void menuEnt_ShowEntList_Click(object sender, EventArgs e)
+        private async void menuEnt_ShowEntList_Click(object sender, EventArgs e)
         {
             menuEnt_ShowEntList.Checked = !menuEnt_ShowEntList.Checked;
             if (!menuEnt_ShowEntList.Checked) menuEnt_EditEnt.Checked = false;
-            JCZServerLayout();
+            await JCZServerLayoutAsync();
         }
 
-        private void menuEnt_ShowMarkImage_Click(object sender, EventArgs e)
+        private async void menuEnt_ShowMarkImage_Click(object sender, EventArgs e)
         {
             menuEnt_ShowMarkImage.Checked = !menuEnt_ShowMarkImage.Checked;
             if (!menuEnt_ShowMarkImage.Checked) menuEnt_EditEnt.Checked = false;
-            JCZServerLayout();
+            await JCZServerLayoutAsync();
         }
 
-        private void menuEnt_EditEnt_Click(object sender, EventArgs e)
+        private async void menuEnt_EditEnt_Click(object sender, EventArgs e)
         {
             menuEnt_EditEnt.Checked = !menuEnt_EditEnt.Checked;
             if (menuEnt_EditEnt.Checked)
@@ -1191,39 +1348,49 @@ namespace VisionApplication
                 menuEnt_ShowEntList.Checked = true;
                 menuEnt_ShowMarkImage.Checked = true;
             }
-            JCZServerLayout();
+            await JCZServerLayoutAsync();
         }
 
-        private void menuEnt_ShowMsgList_Click(object sender, EventArgs e)
+        private async void menuEnt_ShowMsgList_Click(object sender, EventArgs e)
         {
             menuEnt_ShowMsgList.Checked = !menuEnt_ShowMsgList.Checked;
-            JCZServerLayout();
+            await JCZServerLayoutAsync();
         }
 
         // ---------- 复位到原点 ----------
-        private void toolBt_Len2Ori_Click(object sender, EventArgs e)
+        private async void toolBt_Len2Ori_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
-            param.cmdType = 15;
-            param.dParam1 = 0;
-            param.dParam2 = 0;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            var param = new LCZControlParam
+            {
+                cmdType = 15,
+                dParam1 = 0,
+                dParam2 = 0,
+                cardSN = card
+            };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         // ---------- 停止激光和红光 ----------
-        private void toolBt_StopLaser_Click(object sender, EventArgs e)
+        private async void toolBt_StopLaser_Click(object sender, EventArgs e)
         {
-            Pipechanel client = GetPipeClient(currentCardSN);
-            if (client == null) return;
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
 
-            var param = lczParams[currentCardSN];
-            param.cmdType = 11;
-            param.cardSN = currentCardSN;
-            client.SendParam(param);
+            var param = new LCZControlParam { cmdType = 11, cardSN = card };
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+            }
+            catch (TimeoutException) { }
         }
 
         #endregion
@@ -1870,5 +2037,95 @@ namespace VisionApplication
         }
 
         #endregion
+    }
+
+    public class LaserCommandDispatcher : IDisposable
+    {
+        private readonly int _cardSN;
+        private readonly Pipechanel _pipeClient;
+        private readonly ConcurrentDictionary<int, TaskCompletionSource<LCZControlParam>> _pendingCommands
+            = new ConcurrentDictionary<int, TaskCompletionSource<LCZControlParam>>();
+        private int _cmdSeq;
+        private bool _disposed;
+
+        /// <summary>默认超时时间（毫秒）</summary>
+        public int DefaultTimeoutMs { get; set; } = 5000;
+
+        /// <summary>当接收到响应时触发（用于日志或额外处理）</summary>
+        public event Action<LCZControlParam> ResponseReceived;
+
+        public LaserCommandDispatcher(int cardSN, Pipechanel pipeClient)
+        {
+            _cardSN = cardSN;
+            _pipeClient = pipeClient;
+        }
+
+        /// <summary>
+        /// 发送命令并异步等待响应。
+        /// 使用 ind3 字段传递序列号，服务器必须原样返回。
+        /// </summary>
+        public async Task<LCZControlParam> SendCommandAsync(LCZControlParam param, int? timeoutMs = null)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(LaserCommandDispatcher));
+
+            int timeout = timeoutMs ?? DefaultTimeoutMs;
+            int seq = Interlocked.Increment(ref _cmdSeq);
+            param.cardSN = _cardSN;
+            param.ind3 = seq;               // 将序列号存入 ind3 字段，与服务器约定
+
+            var tcs = new TaskCompletionSource<LCZControlParam>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!_pendingCommands.TryAdd(seq, tcs))
+                throw new InvalidOperationException("Duplicate sequence number.");
+
+            // 发送命令（SendParam 需线程安全）
+            _pipeClient.SendParam(param);
+
+            // 超时处理
+            using (var cts = new CancellationTokenSource(timeout))
+            {
+                cts.Token.Register(() =>
+                {
+                    if (_pendingCommands.TryRemove(seq, out var oldTcs))
+                        oldTcs.TrySetException(new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）"));
+                }, useSynchronizationContext: false);
+
+                try
+                {
+                    return await tcs.Task.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理收到的响应（由管道消息回调调用）。
+        /// </summary>
+        public void HandleResponse(LCZControlParam response)
+        {
+            int seq = response.ind3;         // 服务器原样返回的序列号
+            if (_pendingCommands.TryRemove(seq, out var tcs))
+            {
+                tcs.TrySetResult(response);
+                ResponseReceived?.Invoke(response);
+            }
+            else
+            {
+                // 未匹配的响应（可能已超时或重复）
+                System.Diagnostics.Debug.WriteLine($"卡{_cardSN} 收到未匹配的响应 seq={seq}, cmdType={response.cmdType}");
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            foreach (var kvp in _pendingCommands)
+                kvp.Value.TrySetCanceled();
+            _pendingCommands.Clear();
+        }
     }
 }

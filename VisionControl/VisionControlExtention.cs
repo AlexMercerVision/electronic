@@ -101,7 +101,7 @@ namespace VisionControl
             set { pmaRes = value; }
         }
         //DLResult[] DL_result=new DLResult[maxCameraNum];
-        public int _iTaskTypeg
+        public int _iTaskType
         {
             get { return iTaskType; }
             set { iTaskType = value; }

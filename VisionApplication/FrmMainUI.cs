@@ -2361,7 +2361,11 @@ namespace VisionApplication
             string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
             fo.SaveRunTimeStatus(strPath, rts);
 
-      //      CloseLaser();
+            //      CloseLaser();
+            for (int i = 0; i < MaxLaserCards; i++)
+            {
+                laserDispatchers[i]?.Dispose();
+            }
 
             if (vpWin != null && vpWin._iTaskType == 1)  //如果在实时预览视频，则先停止
             {
@@ -6018,7 +6022,7 @@ namespace VisionApplication
             StartService("Cognex Security Service");
         }
 
-         
+       
 
         private void timerIOOut_Tick(object sender, EventArgs e)
         {
