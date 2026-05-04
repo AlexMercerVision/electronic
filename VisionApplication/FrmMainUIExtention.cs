@@ -351,12 +351,11 @@ namespace VisionApplication
                     }
                     if (m_BufForDriverS[icamSelectInd] != IntPtr.Zero)
                     {
-                        Marshal.Release(m_BufForDriverS[icamSelectInd]);
+                        Marshal.FreeHGlobal(m_BufForDriverS[icamSelectInd]);   // 关键修改：FreeHGlobal 而不是 Release
                     }
                     m_nBufSizeForDriver[icamSelectInd] = nPayloadSizeS[icamSelectInd];
                     m_BufForDriverS[icamSelectInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[icamSelectInd]);
                     acqFIFO.SetBuff(m_BufForDriverS[icamSelectInd], nPayloadSizeS[icamSelectInd], icamSelectInd);
-                    
                 }
                 else
                 {
@@ -396,7 +395,8 @@ namespace VisionApplication
                     }
                     if (m_BufForDriverS[icamSelectInd] != IntPtr.Zero)
                     {
-                        Marshal.Release(m_BufForDriverS[icamSelectInd]);
+                        Marshal.FreeHGlobal(m_BufForDriverS[icamSelectInd]);
+                    //    Marshal.Release(m_BufForDriverS[icamSelectInd]);
                     }
                     m_nBufSizeForDriver[icamSelectInd] = nPayloadSizeS[icamSelectInd];
                     m_BufForDriverS[icamSelectInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[icamSelectInd]);

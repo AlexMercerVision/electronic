@@ -101,7 +101,7 @@ namespace VisionControl
             set { pmaRes = value; }
         }
         //DLResult[] DL_result=new DLResult[maxCameraNum];
-        public int _iTaskType
+        public int _iTaskTypeg
         {
             get { return iTaskType; }
             set { iTaskType = value; }
@@ -2199,7 +2199,7 @@ namespace VisionControl
             {
 
                 //  HObject hIm = new HObject();
-                int wsInd = cup.p_VPPRTP.iXBType;
+                int wsInd = iJobIndex;
              //   cogRDMain.Display.cogRecordDisplay.Record = null;
                
                 while (hikCanGrab)
@@ -2217,13 +2217,22 @@ namespace VisionControl
                                 Thread.Sleep(2);
                                 if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[wsInd] != null)  //启用的检测面 
                                 {
-                                    if (iModelRole == 10)
+                                    /*  if (iModelRole == 10)
+                                      {
+                                          cogRDMain.Display.Image = acqFIFO.ci8gAcq[wsInd];
+                                      }
+                                      else
+                                      {
+                                          cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                                      }*/
+                                    switch (wsInd)
                                     {
-                                        cogRDMain.Display.Image = acqFIFO.ci8gAcq[wsInd];
-                                    }
-                                    else
-                                    {
-                                        cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                                        case 0:
+                                            cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                                            break;
+                                        case 1:
+                                            cogRDSub1.Image = acqFIFO.ci8gAcq[wsInd];
+                                            break;
                                     }
                                 }
                             }
@@ -2233,13 +2242,22 @@ namespace VisionControl
                                 Thread.Sleep(2);
                                 if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[wsInd] != null)  //启用的检测面 
                                 {
-                                    if (iModelRole == 10)
+                                  /*  if (iModelRole == 10)
                                     {
                                         cogRDMain.Display.Image = acqFIFO.ci24ColorAcq[wsInd];
                                     }
                                     else
                                     {
                                         cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                    }*/
+                                    switch (wsInd)
+                                    {
+                                        case 0:
+                                            cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                            break;
+                                        case 1:
+                                            cogRDSub1.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                            break;
                                     }
                                 }
                             }
@@ -2387,8 +2405,8 @@ namespace VisionControl
             {
                 cogRDSub1.InteractiveGraphics.Clear();
             }
-            if (cup.p_CD.bListProcess[2])
-            { cogRDSub2.InteractiveGraphics.Clear(); }
+        /*    if (cup.p_CD.bListProcess[2])
+            { cogRDSub2.InteractiveGraphics.Clear(); }*/
             return true;
         }
 
@@ -2412,13 +2430,22 @@ namespace VisionControl
                         Thread.Sleep(2);
                         if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[wsInd] != null)  //启用的检测面 
                         {
-                            if (iModelRole == 10)
+                            /*if (iModelRole == 10)
                             {
                                 cogRDMain.Display.Image = acqFIFO.ci8gAcq[wsInd];
                             }
                             else
                             {
                                 cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                            }*/
+                            switch(wsInd)
+                            {
+                                case 0:
+                                    cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                                    break;
+                                case 1:
+                                    cogRDSub1.Image= acqFIFO.ci8gAcq[wsInd];
+                                    break;
                             }
                         }
                     }
@@ -2428,13 +2455,22 @@ namespace VisionControl
                         Thread.Sleep(2);
                         if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[wsInd] != null)  //启用的检测面 
                         {
-                            if (iModelRole == 10)
+                            /*if (iModelRole == 10)
                             {
                                 cogRDMain.Display.Image = acqFIFO.ci24ColorAcq[wsInd];
                             }
                             else
                             {
                                 cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
+                            }*/
+                            switch (wsInd)
+                            {
+                                case 0:
+                                    cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                    break;
+                                case 1:
+                                    cogRDSub1.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                    break;
                             }
                         }
                     }
@@ -2880,12 +2916,12 @@ namespace VisionControl
             cogRDMainUser.Width = cogRDMain.Width;
             cogRDMainUser.Height = cogRDMain.Height;
 
-            if (iModelRole == 10)
+           /* if (iModelRole == 10)
             {
                 cogRDMainUser.Visible = false;
                 cogRDMain.Visible = true;
             }
-            else
+            else*/
             {
                 cogRDMainUser.Visible = true;
                 cogRDMain.Visible = false;
@@ -3296,13 +3332,13 @@ namespace VisionControl
         }
         public void SiftRDMain()
         {
-            if (iModelRole == 10)
+            /*if (iModelRole == 10)
             {
                 cogRDMain.Visible = true;
                 cogRDMainUser.Visible = false;
                 cogRDMain.Display.Image = cogRDMainUser.Image;
             }
-            else
+            else*/
             {
                 cogRDMain.Visible = false;
                 cogRDMainUser.Visible = true;

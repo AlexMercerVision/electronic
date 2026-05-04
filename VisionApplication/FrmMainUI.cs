@@ -189,7 +189,7 @@ namespace VisionApplication
         {
             try
             {
-                bool bStatus = fo.SaveUserParam(cup);
+                bool bStatus = FileOper.SaveUserParam(cup);
                 if (bStatus)
                     operLog.iEventStatus = 0;
                 else
@@ -521,6 +521,7 @@ namespace VisionApplication
         //初始化用户参数
         private void InitUserParam()
         {
+            FileOper.MigrateOldBinaryIfNeeded();
             ReadUserParam();
 
             ReplaceDrive();  //目录不存在时的处理
@@ -1248,7 +1249,7 @@ namespace VisionApplication
             {
                 if (m_BufForDriverS[iCamInd] != IntPtr.Zero)
                 {
-                    Marshal.Release(m_BufForDriverS[iCamInd]);
+                    Marshal.FreeHGlobal(m_BufForDriverS[iCamInd]);
                 }
                 m_nBufSizeForDriver[iCamInd] = nPayloadSizeS[iCamInd];
                 m_BufForDriverS[iCamInd] = Marshal.AllocHGlobal((Int32)m_nBufSizeForDriver[iCamInd]);
@@ -2231,12 +2232,12 @@ namespace VisionApplication
                 {
                     if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")   //调试专用功能
                     {
-                        iModelRole = 10;
+                        iModelRole = 9;
 
                     }
                     else if (DateTime.Now.ToString("yyyyMMdd") == "20240617")  //临时使用
                     {
-                        iModelRole = 10;
+                        iModelRole = 9;
                     }
                     else
                     {
@@ -2279,8 +2280,8 @@ namespace VisionApplication
                 iProcess = 30;
                 fw.SetProgress(30, "正在加载硬件驱动");
 
-               /* jczPipThread = new Thread(InitJCZ);
-                jczPipThread.Start();*/
+                jczPipThread = new Thread(InitJCZ);
+                jczPipThread.Start();
 
 
                 iProcess = 40;
@@ -2314,10 +2315,11 @@ namespace VisionApplication
                 InitRecord();       //初始化路径
                 InitLocalFile();    //加载回放数据                            //  bSucc = vpWin.SetDiagParam(cup);
 
-                iProcess = 80;
-                fw.SetProgress(80, "正在加深度载推理环境");
+                /*  iProcess = 80;
+                 fw.SetProgress(80, "正在加深度载推理环境");
                 if (cup.p_VPPRTP.bDeepInfer)
-                    InitDL();
+                   {  InitDL();
+                cdl.det_infer_img();}*/
 
                 InitCheckStatus(); 
                 iProcess = 90;
@@ -2330,7 +2332,7 @@ namespace VisionApplication
                 InitParamUI();  //必要的参数初始化 
 
                 //  runonetime(); // 启动默认运行一次  2024年7月22日，处理运行初始化界面 
-                 cdl.det_infer_img();
+                 
 
                 this.Visible = true;
                 this.Show();
@@ -2385,7 +2387,7 @@ namespace VisionApplication
             if (vpWin != null)
                 vpWin.Close(bVPPParamChanged);
 
-            cdl.CloseDL();
+           // cdl.CloseDL();
         }
 
         private void splitContainer3_Panel1_SizeChanged(object sender, EventArgs e)
@@ -5050,16 +5052,16 @@ namespace VisionApplication
 
         private void menuManage_SuperOrNormal_Click(object sender, EventArgs e)
         {
-            if (rts.iModelRole == 10)
+            if (rts.iModelRole == 9)
             {
-                rts.iModelRole = 9;
-                vpWin.iModelRole = 9;
+                rts.iModelRole = 8;
+                vpWin.iModelRole = 8;
                 menuManage_SuperOrNormal.Text = "切换至超级用户";
             }
             else
             {
-                rts.iModelRole = 10;
-                vpWin.iModelRole = 10;
+                rts.iModelRole = 9;
+                vpWin.iModelRole = 9;
                 menuManage_SuperOrNormal.Text = "切换至普通用户";
             }
             vpWin.SiftRDMain();
@@ -6016,7 +6018,7 @@ namespace VisionApplication
             StartService("Cognex Security Service");
         }
 
-      
+         
 
         private void timerIOOut_Tick(object sender, EventArgs e)
         {

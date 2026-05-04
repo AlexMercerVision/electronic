@@ -22,6 +22,11 @@ namespace VisionControl
         ///9点标定
         ///
         int iJobIndex = 0;
+        public int _iJobIndex
+        {
+            get { return iJobIndex; }
+            set { iJobIndex = value; }
+        }
         public void _9PointMark()
         {
             iJobIndex = 1;

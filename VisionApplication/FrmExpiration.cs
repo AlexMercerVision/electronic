@@ -59,7 +59,7 @@ namespace VisionApplication
                 DateVerify(iModelRole);
                 if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")   //调试专用功能
                 {
-                    iModelRole = 10;
+                    iModelRole = 9;
 
                 }
                 else if (DateTime.Now.ToString("yyyyMMdd") == "20240617")  //临时使用

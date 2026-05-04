@@ -674,6 +674,7 @@ namespace VisionApplication
             if (cardSN < 0 || cardSN > 1)
                 throw new ArgumentException("板卡号必须为0或1");
             currentCardSN = cardSN;
+            vpWin._iJobIndex = cardSN;
             // 可在此处更新 UI 状态，例如按钮文字或板卡状态指示灯
         }
 

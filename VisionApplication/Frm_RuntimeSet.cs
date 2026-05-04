@@ -215,7 +215,7 @@ namespace VisionApplication
 
             if(iType==1)
             {
-                fo.SaveUserParam(cup);
+                FileOper.SaveUserParam(cup);
                 this.Close();
 
             }
@@ -586,10 +586,10 @@ namespace VisionApplication
                 cup.p_LI.strLineScence = "Scene" + cup.p_LI.LineNum.ToString() + "#.jpg";
                 cup.p_LI.strCamPrefix[0] = txtMainPrefix.Text;
                 cup.p_LI.strCamPrefix[1] = txtSub1Prefix.Text;
-                cup.p_LI.strCamPrefix[2] = txtSub2Prefix.Text;
-                cup.p_LI.strCamPrefix[3] = txtSub3Prefix.Text;
-                cup.p_LI.strCamPrefix[4] = txtSub4Prefix.Text;
-                for (int i = 0; i < 5; i++)
+              //  cup.p_LI.strCamPrefix[2] = txtSub2Prefix.Text;
+             //   cup.p_LI.strCamPrefix[3] = txtSub3Prefix.Text;
+             //   cup.p_LI.strCamPrefix[4] = txtSub4Prefix.Text;
+                for (int i = 0; i < maxCameraNum; i++)
                 {
                     if (cup.p_LI.strLinePrefix != "")
                         cup.p_LI.strPrefix[i] = cup.p_LI.strLinePrefix + "_" + cup.p_LI.strCamPrefix[i] + "_";
@@ -611,9 +611,9 @@ namespace VisionApplication
             {
                 cup.p_CD.camInd[0] = cmbCamInd1.SelectedIndex;
                 cup.p_CD.camInd[1] = cmbCamInd2.SelectedIndex;
-                cup.p_CD.camInd[2] = cmbCamInd3.SelectedIndex;
-                cup.p_CD.camInd[3] = cmbCamInd4.SelectedIndex;
-                cup.p_CD.camInd[4] = cmbCamInd5.SelectedIndex;
+              //  cup.p_CD.camInd[2] = cmbCamInd3.SelectedIndex;
+             //   cup.p_CD.camInd[3] = cmbCamInd4.SelectedIndex;
+             //   cup.p_CD.camInd[4] = cmbCamInd5.SelectedIndex;
 
                 if (rd1.Checked)
                 {
@@ -1179,9 +1179,9 @@ namespace VisionApplication
                 }
                 txtMainPrefix.Text = cup.p_LI.strCamPrefix[0];
                 txtSub1Prefix.Text = cup.p_LI.strCamPrefix[1];
-                txtSub2Prefix.Text = cup.p_LI.strCamPrefix[2];
-                txtSub3Prefix.Text = cup.p_LI.strCamPrefix[3];
-                txtSub4Prefix.Text = cup.p_LI.strCamPrefix[4];
+             //   txtSub2Prefix.Text = cup.p_LI.strCamPrefix[2];
+             //   txtSub3Prefix.Text = cup.p_LI.strCamPrefix[3];
+             //   txtSub4Prefix.Text = cup.p_LI.strCamPrefix[4];
             }
             catch (Exception ex)
             {
@@ -1197,9 +1197,9 @@ namespace VisionApplication
                 //相机分配参数 
                 cmbCamInd1.SelectedIndex = cup.p_CD.camInd[0];
                 cmbCamInd2.SelectedIndex = cup.p_CD.camInd[1];
-                cmbCamInd3.SelectedIndex = cup.p_CD.camInd[2];
-                cmbCamInd4.SelectedIndex = cup.p_CD.camInd[3];
-                cmbCamInd5.SelectedIndex = cup.p_CD.camInd[4];
+              //  cmbCamInd3.SelectedIndex = cup.p_CD.camInd[2];
+             //   cmbCamInd4.SelectedIndex = cup.p_CD.camInd[3];
+             //   cmbCamInd5.SelectedIndex = cup.p_CD.camInd[4];
 
                 switch (cup.p_CD.triggleCam)
                 {

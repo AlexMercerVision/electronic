@@ -137,7 +137,7 @@ namespace VisionApplication
 
                         if (m_BufForDriver != IntPtr.Zero)
                         {
-                            Marshal.Release(m_BufForDriver);
+                            Marshal.FreeHGlobal(m_BufForDriver);
                         }
 
                         m_BufForDriver = Marshal.AllocHGlobal((Int32)nPayloadSizeS);
@@ -250,7 +250,7 @@ namespace VisionApplication
                     }
                     if (m_BufForDriver != IntPtr.Zero)
                     {
-                        Marshal.Release(m_BufForDriver);
+                        Marshal.FreeHGlobal(m_BufForDriver);
                     }
                     // 释放相机
                     hIKVisionCamera.DestroyCamera();
