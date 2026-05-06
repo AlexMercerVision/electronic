@@ -10,10 +10,12 @@ namespace PipeChanel
     /// </summary>
     public class Pipechanel
     {
-        private static int _maxNumberInstance;
-        private static string _sendpipeName;
-        private static string _recvPipeName;
-        private static NamedPipeServerStream pipeStream;
+        // 改为实例字段（移除 static）
+        private int _maxNumberInstance;
+        private string _sendpipeName;
+        private string _recvPipeName;
+        private NamedPipeServerStream pipeStream;  // ← 改为实例字段
+        private string _pipeName;                   // 添加管道名称标识
 
         /// <summary>
         /// 初始化管道并开启异步接收模式
@@ -26,22 +28,33 @@ namespace PipeChanel
             _maxNumberInstance = maxNumberInstance;
             _sendpipeName = sendpipeName;
             _recvPipeName = recvPipeName;
+            _pipeName = recvPipeName;  // 记录管道名称
             pipeStream = new NamedPipeServerStream(_recvPipeName, PipeDirection.InOut, _maxNumberInstance,
                 PipeTransmissionMode.Message, PipeOptions.Asynchronous);
             _isDisposed = false;
             waitforConnectParam();
         }
 
+        /// <summary>
+        /// 管道名称（用于调试和识别）
+        /// </summary>
+        public string PipeName => _pipeName;
+
         private void waitforConnectParam()
         {
             try
             {
+                // 捕获当前实例的引用，避免闭包问题
+                var currentPipeStream = pipeStream;
+                var currentInstance = this;
+
                 pipeStream.BeginWaitForConnection((o) =>
                 {
                     NamedPipeServerStream pServer = (NamedPipeServerStream)o.AsyncState;
                     pServer.EndWaitForConnection(o);
-                    LCZControlParam lczParam = ReadPipeStreamParam(pipeStream);
-                    msgParamReceived(null, new PipeMsg.PipeMsgParamEventArgs(lczParam));
+                    LCZControlParam lczParam = ReadPipeStreamParam(pServer);
+                    // 传递正确的 sender
+                    msgParamReceived?.Invoke(currentInstance, new PipeMsg.PipeMsgParamEventArgs(lczParam));
                     waitforConnectParam();
                 }, pipeStream);
             }
@@ -52,37 +65,16 @@ namespace PipeChanel
         }
 
         /// <summary>
-        /// 发送一条字符串数据
-        /// </summary>
-        public void Send(string info)
-        {
-            using (NamedPipeClientStream pipeStream =
-                    new NamedPipeClientStream(_sendpipeName))
-            {
-                try
-                {
-                    pipeStream.Connect(10);
-                    WritePipeStream(info, pipeStream);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-            }
-        }
-
-        /// <summary>
         /// 发送一条结构体数据
         /// </summary>
         public void SendParam(LCZControlParam lczparam)
         {
-            using (NamedPipeClientStream pipeStream =
-                    new NamedPipeClientStream(_sendpipeName))
+            using (NamedPipeClientStream pipeStreamClient = new NamedPipeClientStream(_sendpipeName))
             {
                 try
                 {
-                    pipeStream.Connect(10);
-                    WritePipeStream(lczparam, pipeStream);
+                    pipeStreamClient.Connect(10);
+                    WritePipeStream(lczparam, pipeStreamClient);
                 }
                 catch (Exception ex)
                 {
@@ -91,29 +83,9 @@ namespace PipeChanel
             }
         }
 
-        public LCZControlParam str2Param(string message)
-        {
-            Byte[] bytes;
-            UTF8Encoding encoding = new UTF8Encoding();
-            bytes = encoding.GetBytes(message);
-            return Deserialize<LCZControlParam>(bytes);
-        }
-
-        private static void WritePipeStream(string message, NamedPipeClientStream pipeStream)
-        {
-            Byte[] bytes;
-            UTF8Encoding encoding = new UTF8Encoding();
-            bytes = encoding.GetBytes(message);
-            pipeStream.Write(bytes, 0, bytes.Length);
-            pipeStream.Flush();
-        }
-
-        /// <summary>
-        /// 从管道读取 LCZControlParam 结构体
-        /// </summary>
+        // 其他辅助方法...
         private static LCZControlParam ReadPipeStreamParam(NamedPipeServerStream pipeStream)
         {
-            // 动态获取结构体大小，适配结构体字段变更
             int structSize = Marshal.SizeOf<LCZControlParam>();
             Byte[] bytes = new Byte[structSize];
 
@@ -125,7 +97,6 @@ namespace PipeChanel
             } while (!pipeStream.IsMessageComplete);
 
             pipeStream.Disconnect();
-
             return Deserialize<LCZControlParam>(bytes);
         }
 
@@ -140,7 +111,6 @@ namespace PipeChanel
             return bytes;
         }
 
-        // 字节数组 -> 结构体
         private static T Deserialize<T>(byte[] buffer) where T : struct
         {
             int size = Marshal.SizeOf<T>();
@@ -151,7 +121,6 @@ namespace PipeChanel
             Marshal.Copy(buffer, 0, ptr, size);
             T data = Marshal.PtrToStructure<T>(ptr);
             Marshal.FreeHGlobal(ptr);
-
             return data;
         }
 
@@ -177,7 +146,7 @@ namespace PipeChanel
                     pipeStream.Dispose();
                 }
             }
-            catch (ObjectDisposedException) { /* 忽略重复释放 */ }
+            catch (ObjectDisposedException) { }
             finally
             {
                 _isDisposed = true;
@@ -185,6 +154,7 @@ namespace PipeChanel
             }
         }
 
-        public static event PipeMsg.PipeMsgParamEventHandler msgParamReceived;
+        // 事件改为实例事件更安全
+        public event PipeMsg.PipeMsgParamEventHandler msgParamReceived;
     }
 }

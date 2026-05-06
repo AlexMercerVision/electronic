@@ -41,6 +41,10 @@ namespace VisionApplication
         // 导入 Windows API 函数，用于窗口查找、父子关系设置、样式修改等
         [DllImport("user32.dll")]
         private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        
+        [DllImport("user32.dll")]
+        private static extern IntPtr FindWindowEx(IntPtr parentHwnd, IntPtr childAfterHwnd, string className, string windowName);
+        
 
         [DllImport("user32.dll")]
         private static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
@@ -56,13 +60,25 @@ namespace VisionApplication
 
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
+        [DllImport("user32.dll")]
+        private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
         // 窗口样式常量
         private const int SW_MINIMIZE = 6;          // 最小化窗口
         private const int GWL_STYLE = -16;          // 获取窗口样式索引
         private const int WS_CAPTION = 0x00C00000;  // 标题栏样式
         private const int WS_THICKFRAME = 0x00040000; // 可调整边框样式
 
+        // 发送自定义消息通知嵌入模式
+        private const int WM_USER = 0x0400;
+        private const int WM_SET_EMBEDDED_MODE = WM_USER + 1001;
+
+        private const int WM_EMBED_TO_PARENT = 0x0400 + 1001;
+        private const int WM_DETACH_FROM_PARENT = 0x0400 + 1002;
+        private const int WM_SET_LAYOUT_MODE = 0x0400 + 1003;
+
+        // 管道命令类型
+        private const int CMD_NOTIFY_EMBED = 200;
+        private const int CMD_NOTIFY_DETACH = 201;
         /// <summary>
         /// 嵌入的 JCZServer 窗口句柄（两个板卡共用同一个进程窗口）
         /// </summary>
@@ -212,18 +228,23 @@ namespace VisionApplication
         /// <returns>是否成功启动或找到进程</returns>
         private bool StartJCZ()
         {
-            // 查找JCZ服务进程（进程名 "BJJCZ_Server"）
             Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
 
             if (processes.Length == 0)
             {
-                // 未找到进程，启动程序
                 try
                 {
-                    embeddedHwnd = StartProcessAndGetHandle(@".\BJJCZ_Server.exe", "JCZServer");
+                    string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                    string exePath = Path.Combine(basePath, "JCZ", "BJJCZ_Server.exe");
+                    embeddedHwnd = StartProcessAndGetHandle(exePath, "JCZServer");
                     if (embeddedHwnd != IntPtr.Zero)
                     {
-                        EmbedWindow(embeddedHwnd, splitContainer6.Panel2);
+                        _jczServerHwnd = embeddedHwnd;
+                        // 直接嵌入到容器
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            PerformEmbedToPanel();
+                        }));
                     }
                     else
                     {
@@ -236,15 +257,127 @@ namespace VisionApplication
                     return false;
                 }
             }
-            else  // 进程已存在，则直接获取窗口句柄并嵌入
+            else
             {
                 embeddedHwnd = FindWindow(null, "JCZServer");
+                if (embeddedHwnd == IntPtr.Zero && processes[0].MainWindowHandle != IntPtr.Zero)
+                {
+                    embeddedHwnd = processes[0].MainWindowHandle;
+                }
+
                 if (embeddedHwnd != IntPtr.Zero)
                 {
-                    EmbedWindow(embeddedHwnd, splitContainer6.Panel2);
+                    _jczServerHwnd = embeddedHwnd;
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        PerformEmbedToPanel();
+                    }));
                 }
             }
             return true;
+        }
+        private const int WS_SYSMENU = 0x00080000;
+        private const int WS_MINIMIZEBOX = 0x00020000;
+        private const int WS_MAXIMIZEBOX = 0x00010000;
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_APPWINDOW = 0x00040000;
+        private const int WS_EX_WINDOWEDGE = 0x00000100;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int CMD_CONTAINER_HANDLE = 201;   // 返回容器句柄
+        /// <summary>
+        /// 执行嵌入操作（直接设置父窗口）
+        /// </summary>
+        private void PerformEmbedToPanel()
+        {
+            if (_jczServerHwnd == IntPtr.Zero) return;
+
+            try
+            {
+                // 设置父窗口
+                SetParent(_jczServerHwnd, splitContainer6.Panel2.Handle);
+
+                // 移除边框和标题栏
+                int style = GetWindowLong(_jczServerHwnd, GWL_STYLE);
+                style &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                SetWindowLong(_jczServerHwnd, GWL_STYLE, style);
+
+                // 设置为工具窗口
+                int exStyle = GetWindowLong(_jczServerHwnd, GWL_EXSTYLE);
+                exStyle &= ~(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE);
+                exStyle |= WS_EX_TOOLWINDOW;
+                SetWindowLong(_jczServerHwnd, GWL_EXSTYLE, exStyle);
+
+                // 禁用窗口
+                EnableWindow(_jczServerHwnd, false);
+
+                // 调整大小
+                MoveWindow(_jczServerHwnd, 0, 0,
+                    splitContainer6.Panel2.ClientSize.Width,
+                    splitContainer6.Panel2.ClientSize.Height, true);
+
+                // 显示窗口
+                ShowWindow(_jczServerHwnd, SW_SHOW);
+
+                // 监听容器大小变化
+                splitContainer6.Panel2.SizeChanged -= OnPanelSizeChanged;
+                splitContainer6.Panel2.SizeChanged += OnPanelSizeChanged;
+
+                _isJCZServerEmbedded = true;
+
+                // 通过管道通知服务端当前容器句柄（用于后续重嵌）
+                SendContainerHandleToServer();
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "JCZServer嵌入成功";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "JCZServer嵌入失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
+        /// <summary>
+        /// 通过管道发送容器句柄给服务端
+        /// </summary>
+        private void SendContainerHandleToServer()
+        {
+            try
+            {
+                for (int card = 0; card < MaxLaserCards; card++)
+                {
+                    if (pipeClients[card] != null)
+                    {
+                        LCZControlParam param = new LCZControlParam
+                        {
+                            cardSN = card,
+                            cmdType = CMD_CONTAINER_HANDLE,
+                            nErr = 0,
+                            dParam1 = (double)splitContainer6.Panel2.Handle.ToInt64()
+                        };
+                        pipeClients[card].SendParam(param);
+                    }
+                }
+                operLog.strOperEvent = "已发送容器句柄到服务端";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.strOperEvent = "发送容器句柄失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+        private void SetEmbeddedMode(IntPtr hWnd)
+        {
+            // 发送消息通知 JCZServer 进入嵌入模式（wParam = 1 表示嵌入）
+            SendMessage(hWnd, WM_SET_EMBEDDED_MODE, (IntPtr)1, IntPtr.Zero);
         }
         /// <summary>
         /// 将目标窗口嵌入到指定的容器控件中，并去除标题栏和边框。
@@ -259,19 +392,29 @@ namespace VisionApplication
             // 设置父窗口为宿主容器
             SetParent(targetHwnd, container.Handle);
 
-            // 移除目标窗口的边框和标题栏
-            int style = GetWindowLong(targetHwnd, GWL_STYLE);
-            style &= ~(WS_CAPTION | WS_THICKFRAME);
-            SetWindowLong(targetHwnd, GWL_STYLE, style);
+            // 发送嵌入消息，传递父窗口和容器句柄
+            SendMessage(targetHwnd, WM_EMBED_TO_PARENT, container.Parent.Handle, container.Handle);
 
-            // 调整窗口位置和大小以适应容器
-            MoveWindow(
-                targetHwnd,
-                0, 0,                         // X, Y
-                container.ClientSize.Width,   // 宽度
-                container.ClientSize.Height,  // 高度
-                true                          // 立即重绘
-            );
+            // 监听容器尺寸变化
+            container.SizeChanged -= (s, e) => ResizeEmbeddedWindow(targetHwnd, container);
+            container.SizeChanged += (s, e) => ResizeEmbeddedWindow(targetHwnd, container);
+        }
+        // 添加分离窗口的方法
+        public void DetachJCZWindow()
+        {
+            if (embeddedHwnd != IntPtr.Zero)
+            {
+                SendMessage(embeddedHwnd, WM_DETACH_FROM_PARENT, IntPtr.Zero, IntPtr.Zero);
+                SendMessage(embeddedHwnd, WM_SET_LAYOUT_MODE, (IntPtr)0, IntPtr.Zero);
+            }
+        }
+        // 调整嵌入窗口尺寸的辅助方法
+        private void ResizeEmbeddedWindow(IntPtr targetHwnd, Control container)
+        {
+            if (targetHwnd != IntPtr.Zero && container != null)
+            {
+                MoveWindow(targetHwnd, 0, 0, container.ClientSize.Width, container.ClientSize.Height, true);
+            }
         }
         #endregion
 
@@ -286,6 +429,9 @@ namespace VisionApplication
         /// 启动服务进程、建立两个独立的命名管道（分别对应板卡0和板卡1），并注册事件回调。
         /// 此方法通常在独立的线程中调用。
         /// </summary>
+        /// <summary>
+        /// 初始化 JCZ 服务与双管道连接（不含板卡初始化）。
+        /// </summary>
         private void InitJCZ()
         {
             // 初始化所有板卡的参数和状态变量
@@ -297,7 +443,7 @@ namespace VisionApplication
                 nEntNums[i] = 0;
                 strEntNames[i] = new string[0];
                 iPenNums[i] = new int[0];
-                bInitJCZ[i] = 0; // 初始化为未知/未初始化
+                bInitJCZ[i] = 0;
             }
 
             // 第一步：启动 X86 服务端进程及嵌入窗口
@@ -307,7 +453,7 @@ namespace VisionApplication
                 for (int i = 0; i < MaxLaserCards; i++)
                     bInitJCZ[i] = -3;
                 operLog.iEventStatus = -4;
-                operLog.strOperEvent="连接激光器板卡"
+                operLog.strOperEvent = "连接激光器板卡";
                 operLog.strFailReason = "启动板卡服务端失败";
                 AddLog();
                 return;
@@ -321,12 +467,16 @@ namespace VisionApplication
                     string localName = (card == 0) ? "PipeClient0" : "PipeClient1";
                     string remoteName = (card == 0) ? "PipeServer0" : "PipeServer1";
                     pipeClients[card] = new Pipechanel(1, localName, remoteName);
+
+                    // 为每个实例单独订阅事件
+                    pipeClients[card].msgParamReceived += OnPipeMessageReceived;
+
                     laserDispatchers[card] = new LaserCommandDispatcher(card, pipeClients[card]);
-                    laserDispatchers[card].DefaultTimeoutMs = 6000; // 默认超时6秒
+                    laserDispatchers[card].DefaultTimeoutMs = 6000;
                 }
 
-                // 订阅静态消息事件（所有管道共享，通过 sender 区分）
-                Pipechanel.msgParamReceived += OnPipeMessageReceived;
+                // 发送容器句柄给服务端
+                SendContainerHandleToServer();
             }
             catch (Exception ex)
             {
@@ -338,12 +488,111 @@ namespace VisionApplication
             // 设置调度器就绪标志
             _laserDispatchersReady = true;
 
-            // 服务启动成功，管道已连接，启用相应激光按钮（通过Invoke确保线程安全）
+            // 服务启动成功，管道已连接，启用相应激光按钮
             this.BeginInvoke(new Action(() => EnableLaserButtons(true)));
 
             operLog.iEventStatus = 0;
             operLog.strOperEvent = "服务端与双管道初始化完成";
             AddLog();
+        }
+
+        /// <summary>
+        /// 将JCZServer嵌入到splitContainer6.Panel2中
+        /// </summary>
+         private const int SW_SHOW = 5;              // 显示窗口
+        private void EmbedJCZServerToPanel()
+        {
+            if (_jczServerHwnd == IntPtr.Zero) return;
+
+            try
+            {
+                // 设置父窗口
+                SetParent(_jczServerHwnd, splitContainer6.Panel2.Handle);
+
+                // 移除边框
+                int style = GetWindowLong(_jczServerHwnd, GWL_STYLE);
+                style &= ~(WS_CAPTION | WS_THICKFRAME);
+                SetWindowLong(_jczServerHwnd, GWL_STYLE, style);
+
+                // 调整大小
+                MoveWindow(_jczServerHwnd, 0, 0,
+                    splitContainer6.Panel2.ClientSize.Width,
+                    splitContainer6.Panel2.ClientSize.Height, true);
+
+                // 显示窗口
+                ShowWindow(_jczServerHwnd, SW_SHOW);
+
+                // 监听容器大小变化
+                splitContainer6.Panel2.SizeChanged -= OnPanelSizeChanged;
+                splitContainer6.Panel2.SizeChanged += OnPanelSizeChanged;
+
+                // 更新状态
+                rts.initStatus.bJCZ = 0;
+                toolBtSta_LockImage.Checked = true;
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "JCZServer嵌入成功";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "JCZServer嵌入失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
+
+        /// <summary>
+        /// 分离JCZServer
+        /// </summary>
+        private void DetachJCZServer()
+        {
+            if (_jczServerHwnd == IntPtr.Zero) return;
+
+            try
+            {
+                SetParent(_jczServerHwnd, IntPtr.Zero);
+
+                int style = GetWindowLong(_jczServerHwnd, GWL_STYLE);
+                style |= (WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                SetWindowLong(_jczServerHwnd, GWL_STYLE, style);
+
+                int exStyle = GetWindowLong(_jczServerHwnd, GWL_EXSTYLE);
+                exStyle &= ~WS_EX_TOOLWINDOW;
+                exStyle |= WS_EX_APPWINDOW;
+                SetWindowLong(_jczServerHwnd, GWL_EXSTYLE, exStyle);
+
+                EnableWindow(_jczServerHwnd, true);
+
+                splitContainer6.Panel2.SizeChanged -= OnPanelSizeChanged;
+
+                _isJCZServerEmbedded = false;
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "JCZServer分离成功";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "JCZServer分离失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
+        /// <summary>
+        /// 容器大小变化时调整嵌入窗口大小
+        /// </summary>
+        private void OnPanelSizeChanged(object sender, EventArgs e)
+        {
+            if (_jczServerHwnd != IntPtr.Zero && splitContainer6.Panel2 != null)
+            {
+                MoveWindow(_jczServerHwnd, 0, 0,
+                    splitContainer6.Panel2.ClientSize.Width,
+                    splitContainer6.Panel2.ClientSize.Height, true);
+            }
         }
 
         /// <summary>
@@ -357,9 +606,12 @@ namespace VisionApplication
             // 其他按钮可根据需要添加
         }
 
+        private IntPtr _jczServerHwnd = IntPtr.Zero;  // 服务端窗口句柄
+        private bool _isJCZServerEmbedded = true;      // 服务端嵌入状态
         /// <summary>
-        /// 静态管道消息事件处理：将接收到的消息分发给对应板卡的调度器，并继续执行原有 UI 更新逻辑。
+        /// 管道消息事件处理：将接收到的消息分发给对应板卡的调度器。
         /// </summary>
+        /// 
         private void OnPipeMessageReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
         {
             try
@@ -374,11 +626,78 @@ namespace VisionApplication
                         break;
                     }
                 }
+
+                // 备用：通过管道名称判断（如果引用比较失败）
+                if (card == -1 && sender is Pipechanel pipe)
+                {
+                    if (pipe.PipeName == "PipeClient0") card = 0;
+                    else if (pipe.PipeName == "PipeClient1") card = 1;
+                }
+
                 if (card < 0) return;
 
                 LCZControlParam param = e.receivedMsg;
-                // 将消息传递给调度器，内部会根据 ind3 完成 Task
-                laserDispatchers[card].HandleResponse(param);
+
+
+                // 处理嵌入请求
+                if (param.cmdType == 200)  // CMD_NOTIFY_EMBED
+                {
+                    // 服务端请求嵌入
+                    _jczServerHwnd = (IntPtr)param.dParam1;
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        EmbedJCZServerToPanel();
+                    }));
+
+                    // 发送响应确认
+                    LCZControlParam response = new LCZControlParam
+                    {
+                        cardSN = card,
+                        cmdType = 200,
+                        nErr = 0,
+                        ind3 = param.ind3,
+                        dParam1 = (double)splitContainer6.Panel2.Handle.ToInt64()  // 返回容器句柄
+                    };
+                    pipeClients[card]?.SendParam(response);
+                    return;
+                }
+
+                // 处理分离请求
+                // 处理嵌入请求 (cmdType = 200)
+                if (param.cmdType == CMD_NOTIFY_EMBED)
+                {
+                    // 服务端请求嵌入
+                    _jczServerHwnd = (IntPtr)param.dParam1;
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        EmbedJCZServerToPanel();
+                    }));
+
+                    // 发送响应确认，返回容器句柄
+                    LCZControlParam response = new LCZControlParam
+                    {
+                        cardSN = card,
+                        cmdType = CMD_NOTIFY_EMBED,
+                        nErr = 0,
+                        ind3 = param.ind3,
+                        dParam1 = (double)splitContainer6.Panel2.Handle.ToInt64()
+                    };
+                    pipeClients[card]?.SendParam(response);
+                    return;
+                }
+
+                // 处理分离请求 (cmdType = 201)
+                if (param.cmdType == CMD_NOTIFY_DETACH)
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        DetachJCZServer();
+                    }));
+                    return;
+                }
+
+                // 将消息传递给调度器
+                laserDispatchers[card]?.HandleResponse(param);
 
                 // 继续执行原有的 CMDAna 更新UI、日志等（需在UI线程）
                 this.BeginInvoke(new Action(() =>
@@ -390,7 +709,8 @@ namespace VisionApplication
             {
                 System.Diagnostics.Debug.WriteLine($"OnPipeMessageReceived 异常: {ex.Message}");
             }
-        } 
+        }
+
         #endregion
 
         // ============================================================
@@ -990,10 +1310,89 @@ namespace VisionApplication
         /// </summary>
         private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
         {
-            // 在线程中执行初始化，但可等待调度器就绪后再启用按钮
-            await Task.Run(() => InitJCZ());
+            // 先检查服务端进程是否存在
+            if (IsJCZServerRunning())
+            {
+                // 服务端已存在，直接尝试嵌入
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "JCZ服务端已运行，尝试嵌入";
+                AddLog();
+
+                // 获取现有服务端窗口句柄并嵌入
+                await Task.Run(() => ConnectToExistingJCZServer());
+            }
+            else
+            {
+                // 服务端不存在，启动新进程并初始化
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "启动JCZ服务端并初始化";
+                AddLog();
+
+                await Task.Run(() => InitJCZ());
+            }
         }
 
+        /// <summary>
+        /// 检查JCZ服务端进程是否正在运行
+        /// </summary>
+        private bool IsJCZServerRunning()
+        {
+            Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
+            return processes.Length > 0;
+        }
+        /// <summary>
+        /// 连接到已存在的JCZ服务端并嵌入
+        /// </summary>
+        private void ConnectToExistingJCZServer()
+        {
+            try
+            {
+                // 查找现有窗口
+                IntPtr existingHwnd = FindWindow(null, "JCZServer");
+                if (existingHwnd == IntPtr.Zero)
+                {
+                    // 如果找不到窗口，尝试通过进程获取主窗口
+                    Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
+                    if (processes.Length > 0 && processes[0].MainWindowHandle != IntPtr.Zero)
+                    {
+                        existingHwnd = processes[0].MainWindowHandle;
+                    }
+                }
+
+                if (existingHwnd != IntPtr.Zero)
+                {
+                    embeddedHwnd = existingHwnd;
+                    _jczServerHwnd = existingHwnd;
+
+                    // 直接执行嵌入
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        PerformEmbedToPanel();
+                    }));
+
+                    // 通过管道发送容器句柄给服务端
+                    SendContainerHandleToServer();
+
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "JCZ服务端嵌入成功";
+                    AddLog();
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "连接JCZ服务端";
+                    operLog.strFailReason = "未找到服务端窗口";
+                    AddLog();
+                }
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "连接JCZ服务端";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
         /// <summary>
         /// 红光预览（切换开关）
         /// </summary>

@@ -1,3 +1,4 @@
+﻿ 
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,9 +10,11 @@ using System.Windows.Forms;
 using System.IO.Pipes;
 using System.IO;
 using System.Threading;
-using PipeChanel;                     // 管道通信库
+using PipeChanel;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace BJJCZ_BaseDevelop
 {
@@ -27,52 +30,102 @@ namespace BJJCZ_BaseDevelop
         public double dWidth;       // 激光坐标系图像宽度
         public double dHeight;      // 激光坐标系图像高度
     }
-
-    /// <summary>
-    /// JCZServer 主窗体。作为双板卡激光标刻的服务端，监听两条独立的命名管道，
-    /// 分别处理板卡 0 和板卡 1 的命令，并维护各自的状态。
-    /// 当板卡连接失败时，自动进入模拟模式，正常响应客户端请求。
-    /// </summary>
     public partial class JCZServer : Form
     {
         // =============== 双管道服务端 ===============
-        private Pipechanel pipeServer0;      // 对应板卡 0 的服务端
-        private Pipechanel pipeServer1;      // 对应板卡 1 的服务端
+        private Pipechanel pipeServer0;
+        private Pipechanel pipeServer1;
 
-        // =============== 按板卡拆分状态（索引0为板卡0, 1为板卡1） ===============
-        private int[] JczInitErrs = new int[2] { -1, -1 };     // 初始化错误码，-1为从未初始化
-        private int[] nEntNums = new int[2];                   // 对象数量
-        private string[][] strEntNames = new string[2][];      // 对象名称列表
-        private int[][] iPenNos = new int[2][];                // 笔号列表
-        private int[] iEntIndices = new int[2] { -1, -1 };     // 当前选中的实体索引
-        private bool[] bInMark = new bool[2];                  // 是否正在标刻
-        private bool[] bInRed = new bool[2];                   // 是否正在红光预览
-        private Bitmap[] imLaserRoute = new Bitmap[2];         // 激光路线预览图（透明背景）
-        private Bitmap[] originalImage = new Bitmap[2];        // 原始背景图
-
-        // =============== 新增模拟模式支持 ===============
-        // 当板卡连接失败时，设为 true，此后所有命令均返回模拟成功结果
+        // =============== 板卡状态 ===============
+        private int[] JczInitErrs = new int[2] { -1, -1 };
+        private int[] nEntNums = new int[2];
+        private string[][] strEntNames = new string[2][];
+        private int[][] iPenNos = new int[2][];
+        private int[] iEntIndices = new int[2] { -1, -1 };
+        private bool[] bInMark = new bool[2];
+        private bool[] bInRed = new bool[2];
+        private Bitmap[] imLaserRoute = new Bitmap[2];
+        private Bitmap[] originalImage = new Bitmap[2];
         private bool[] bSimulateMode = new bool[2] { false, false };
 
-        // =============== 共享参数（非实时，单线程访问）===============
-        private AlignImParam alImParam = new AlignImParam();   // 预览对齐参数
-        private HatchParam hp = new HatchParam(1);             // 填充参数临时对象
-        private LaserpenParam pP = new LaserpenParam(1);      // 激光笔参数临时对象
+        // =============== 共享参数 ================
+        private AlignImParam alImParam = new AlignImParam();
+        private int currentCard = 0;
+        private int lastCmdCard = 0;
 
-        private int currentCard = 0;    // 当前正在处理的板卡号（用于 UI 更新）
-        private int lastCmdCard = 0;    // 最后一个命令对应的板卡号
+        // =============== 嵌入模式相关 ===============
+        private bool _isEmbedded = true;           // 默认嵌入模式
+        private IntPtr _containerHwnd = IntPtr.Zero;
+        private System.Windows.Forms.Timer _parentCheckTimer;
+
+        // =============== Windows API 声明 ===============
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetParent(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
+
+        [DllImport("user32.dll")]
+        private static extern int GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+        // 窗口样式常量
+        private const int SW_HIDE = 0;
+        private const int SW_SHOW = 5;
+        private const int SW_MINIMIZE = 6;
+        private const int GWL_STYLE = -16;
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_CAPTION = 0x00C00000;
+        private const int WS_THICKFRAME = 0x00040000;
+        private const int WS_SYSMENU = 0x00080000;
+        private const int WS_MINIMIZEBOX = 0x00020000;
+        private const int WS_MAXIMIZEBOX = 0x00010000;
+        private const int WS_EX_APPWINDOW = 0x00040000;
+        private const int WS_EX_WINDOWEDGE = 0x00000100;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+
+        // 管道命令类型
+        private const int CMD_REQUEST_EMBED = 200;      // 请求嵌入
+        private const int CMD_CONTAINER_HANDLE = 201;   // 返回容器句柄
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
 
         // =============== 构造函数 ===============
         public JCZServer()
         {
             InitializeComponent();
 
-            // 创建两个管道服务端实例，分别对应板卡0和板卡1
             pipeServer0 = new Pipechanel(1, "PipeServer0", "PipeClient0");
             pipeServer1 = new Pipechanel(1, "PipeServer1", "PipeClient1");
 
-            // 静态事件只能订阅一次，我们通过 sender 区分来源
-            Pipechanel.msgParamReceived += Pipechanel_msgReceived;
+            pipeServer0.msgParamReceived += Pipechanel_msgReceived;
+            pipeServer1.msgParamReceived += Pipechanel_msgReceived;
+
+            InitParentCheckTimer();
         }
 
         // =============== 窗体加载 ===============
@@ -80,19 +133,200 @@ namespace BJJCZ_BaseDevelop
         {
             JCZServerIcon.Visible = true;
             AddMsg("双管道服务端启动完成，等待板卡0/1连接");
-
-            // 启动时尝试初始化板卡，若失败则分别进入模拟模式
             TryInitializeCards();
+
+            // 默认进入嵌入模式布局
+            ApplyEmbeddedLayout();
         }
 
         /// <summary>
-        /// 尝试初始化两个板卡，失败时自动开启模拟模式。
+        /// 设置容器窗口句柄并执行嵌入
+        /// </summary>
+        public void SetContainerAndEmbed(IntPtr containerHwnd)
+        {
+            if (containerHwnd == IntPtr.Zero) return;
+            _containerHwnd = containerHwnd;
+            _isEmbedded = true;
+            PerformEmbed();
+        }
+
+        /// <summary>
+        /// 执行嵌入操作
+        /// </summary>
+        private void PerformEmbed()
+        {
+            if (_containerHwnd == IntPtr.Zero) return;
+
+            try
+            {
+                // 设置父窗口
+                SetParent(this.Handle, _containerHwnd);
+
+                // 移除边框、标题栏、系统菜单等
+                int style = GetWindowLong(this.Handle, GWL_STYLE);
+                style &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                SetWindowLong(this.Handle, GWL_STYLE, style);
+
+                // 设置为工具窗口（不在任务栏显示）
+                int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                exStyle &= ~(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE);
+                exStyle |= WS_EX_TOOLWINDOW;
+                SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
+
+                // 禁用窗口（不可活动）
+                EnableWindow(this.Handle, false);
+
+                // 获取容器大小并调整
+                RECT containerRect;
+                GetClientRect(_containerHwnd, out containerRect);
+                int width = containerRect.Right - containerRect.Left;
+                int height = containerRect.Bottom - containerRect.Top;
+                MoveWindow(this.Handle, 0, 0, width, height, true);
+
+                this.Show();
+                this.WindowState = FormWindowState.Normal;
+                ShowWindow(this.Handle, SW_SHOW);
+
+                // 应用嵌入布局
+                ApplyEmbeddedLayout();
+
+                AddMsg("已嵌入到容器窗口中");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"嵌入失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 分离嵌入，显示完整窗口
+        /// </summary>
+        public void DetachAndShowFull()
+        {
+            try
+            {
+                // 恢复父窗口为桌面
+                SetParent(this.Handle, IntPtr.Zero);
+
+                // 恢复窗口样式
+                int style = GetWindowLong(this.Handle, GWL_STYLE);
+                style |= (WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                SetWindowLong(this.Handle, GWL_STYLE, style);
+
+                // 恢复扩展样式
+                int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                exStyle &= ~WS_EX_TOOLWINDOW;
+                exStyle |= WS_EX_APPWINDOW;
+                SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
+
+                // 启用窗口
+                EnableWindow(this.Handle, true);
+
+                // 设置窗口大小并居中
+                this.Size = new Size(1200, 600);
+                this.CenterToScreen();
+
+                _isEmbedded = false;
+
+                // 应用完整布局
+                ApplyEmbeddedLayout();
+
+                // 显示窗口
+                this.Show();
+                this.WindowState = FormWindowState.Normal;
+                ShowWindow(this.Handle, SW_SHOW);
+
+             //   AddMsg("已分离，显示完整窗口");
+            }
+            catch (Exception ex)
+            {
+              //  AddMsg($"分离失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 根据嵌入模式调整界面布局
+        /// </summary>
+        private void ApplyEmbeddedLayout()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(ApplyEmbeddedLayout));
+                return;
+            }
+
+            if (_isEmbedded)
+            {
+                // 嵌入模式：折叠 splitContainer1.Panel1（对象列表和日志区域）
+                // 注意：根据您的 Designer，splitContainer1 是水平分割（上下）
+                // Panel1 是上半部分（包含 dgvEnt 和 mainMsgBox）
+                // Panel2 是下半部分（包含 pictureBox1 和 panel1）
+                splitContainer1.Panel1Collapsed = false;
+              //  splitContainer1.SplitterDistance = 0;
+                splitContainer1.Panel2Collapsed = true;
+
+                // 隐藏菜单栏
+                if (menuStrip1 != null)
+                {
+                    menuStrip1.Visible = false;
+                }
+
+                this.FormBorderStyle = FormBorderStyle.None;
+            }
+            else
+            {
+                // 完整模式：显示所有面板
+                splitContainer1.Panel1Collapsed = false;
+                splitContainer1.Panel2Collapsed = false;
+            //    splitContainer1.SplitterDistance = 300;
+
+                // 显示菜单栏
+                if (menuStrip1 != null)
+                {
+                    menuStrip1.Visible = true;
+                }
+
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+            }
+        }
+
+        /// <summary>
+        /// 初始化父窗口检测定时器
+        /// </summary>
+        private void InitParentCheckTimer()
+        {
+            _parentCheckTimer = new System.Windows.Forms.Timer();
+            _parentCheckTimer.Interval = 1000;
+            _parentCheckTimer.Tick += ParentCheckTimer_Tick;
+            _parentCheckTimer.Start();
+        }
+
+        /// <summary>
+        /// 定时检测父窗口状态
+        /// </summary>
+        private void ParentCheckTimer_Tick(object sender, EventArgs e)
+        {
+            if (_isEmbedded && _containerHwnd != IntPtr.Zero)
+            {
+                if (!IsWindowVisible(_containerHwnd))
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
+                     //   AddMsg("父窗口已关闭，最小化到托盘");
+                        this.WindowState = FormWindowState.Minimized;
+                        this.ShowInTaskbar = false;
+                        JCZServerIcon.Visible = true;
+                    }));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 尝试初始化两个板卡
         /// </summary>
         private void TryInitializeCards()
         {
-            // 因为 JczLmc.InitializeCard 实际执行全局初始化（忽略 cardSN），
-            // 所以只需调用一次。成功则两个板卡均视为可用；失败则两个板卡均进入模拟。
-            int initResult = JczLmc.InitializeCard(0, Application.StartupPath, false, this.Handle);
+            int initResult = JczLmc.InitializeCard(0, Application.StartupPath + "\\", false, this.Handle);
             if (initResult == 0)
             {
                 JczInitErrs[0] = 0;
@@ -101,7 +335,6 @@ namespace BJJCZ_BaseDevelop
             }
             else
             {
-                // 初始化失败，两个板卡均进入模拟模式
                 bSimulateMode[0] = true;
                 bSimulateMode[1] = true;
                 AddMsg($"板卡初始化失败({JczLmc.GetErrorText(initResult)})，已切换至模拟模式");
@@ -109,26 +342,34 @@ namespace BJJCZ_BaseDevelop
         }
 
         // =============== 管道消息接收 ===============
-        /// <summary>
-        /// 管道消息回调（由于Pipechanel为静态事件，所有管道实例共享此回调）
-        /// 通过 sender 参数确定触发消息的管道实例，进而得到板卡号
-        /// </summary>
         private void Pipechanel_msgReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
         {
-            // 此方法已保证在 UI 线程执行（Pipechanel 内部 Invoke）
             Pipechanel pipe = sender as Pipechanel;
-            int card = 0;
+            int card = -1;
+
             if (pipe == pipeServer0) card = 0;
             else if (pipe == pipeServer1) card = 1;
-            else return;
+
+            if (card == -1 && pipe != null)
+            {
+                if (pipe.PipeName == "PipeClient0") card = 0;
+                else if (pipe.PipeName == "PipeClient1") card = 1;
+            }
+
+            if (card == -1) return;
 
             LCZControlParam param = e.receivedMsg;
-            // 强制修正卡号，防止客户端传入不规范的值
             param.cardSN = card;
             currentCard = card;
             lastCmdCard = card;
 
-            // 执行命令（如果处于模拟模式，则走模拟分支）
+            // 处理客户端返回的容器句柄
+            if (param.cmdType == CMD_CONTAINER_HANDLE && param.nErr == 0)
+            {
+                SetContainerAndEmbed((IntPtr)param.dParam1);
+                return;
+            }
+
             CMDAna(param);
         }
 
@@ -144,35 +385,105 @@ namespace BJJCZ_BaseDevelop
             });
         }
 
-        // =============== 核心命令解析 ===============
         /// <summary>
-        /// 解析并执行客户端发来的命令。
-        /// 如果对应板卡处于模拟模式，则直接返回模拟成功数据；
-        /// 否则调用 JczLmc 执行实际操作。
+        /// 根据命令类型返回中文描述
         /// </summary>
+        private string GetCmdDescription(int cmdType)
+        {
+            switch (cmdType)
+            {
+                case 0: return "查询状态";
+                case 1: return "初始化板卡";
+                case 2: return "关闭板卡";
+                case 3: return "开关激光器";
+                case 4: return "加载文件";
+                case 5: return "保存文件";
+                case 6: return "加载文件并获取对象";
+                case 7: return "查询对象信息";
+                case 10: return "激光加工";
+                case 11: return "停止加工";
+                case 12: return "红光预览边界";
+                case 13: return "红光预览轮廓";
+                case 15: return "振镜移动";
+                case 21: return "加工指定对象";
+                case 22: return "红光预览对象";
+                case 23: return "旋转对象";
+                case 24: return "移动对象";
+                case 25: return "缩放对象";
+                case 27: return "设置旋转平移";
+                case 28: return "群组/解组";
+                case 31: return "重命名对象";
+                case 40: return "设备配置";
+                case 42: return "更新对齐参数";
+                case 90: return "界面布局";
+                case 100: return "查询状态并加载";
+                case 110: return "激光加工(清除偏移)";
+                case 200: return "请求嵌入";
+                case 201: return "容器句柄";
+                default: return $"未知命令({cmdType})";
+            }
+        }
+
+        /// <summary>
+        /// 根据命令类型返回操作对象描述
+        /// </summary>
+        private string GetCmdTarget(LCZControlParam param)
+        {
+            switch (param.cmdType)
+            {
+                case 3: return param.bOpen ? "开" : "关";
+                case 4:
+                case 6:
+                case 100:
+                    return !string.IsNullOrEmpty(param.strFileName) ? Path.GetFileName(param.strFileName) : "";
+                case 7:
+                case 21:
+                case 22:
+                case 23:
+                case 24:
+                case 25:
+                case 31:
+                    return !string.IsNullOrEmpty(param.strEntyName) ? param.strEntyName : "";
+                case 12:
+                case 13:
+                    return param.bOpen ? "开始" : "停止";
+                case 15:
+                    return $"({param.dParam1:F2},{param.dParam2:F2})";
+                default:
+                    return "";
+            }
+        }
+
+        // =============== 核心命令解析（简化版，保留原有逻辑）===============
         private void CMDAna(LCZControlParam param)
         {
-            int clientSeq = param.ind3;   // 保存客户端传来的序列号
-
+            int clientSeq = param.ind3;
             int card = param.cardSN;
 
-            // 如果该板卡处于模拟模式，则所有命令均返回模拟结果
+            string cmdDesc = GetCmdDescription(param.cmdType);
+            string cmdTarget = GetCmdTarget(param);
+            string logMsg = $"收到命令 [卡{card}] {cmdDesc}";
+            if (!string.IsNullOrEmpty(cmdTarget))
+            {
+                logMsg += $" - {cmdTarget}";
+            }
+            AddMsg(logMsg);
+
             if (bSimulateMode[card])
             {
                 SimulateCommand(param);
                 return;
             }
 
-            // 未初始化的板卡只允许执行少数命令（模拟模式已提前拦截）
             if (JczInitErrs[card] != 0 &&
                 param.cmdType != 0 && param.cmdType != 1 &&
                 param.cmdType != 2 && param.cmdType != 37 &&
                 param.cmdType != 90 && param.cmdType != 42 &&
-                param.cmdType != 100)
+                param.cmdType != 100 && param.cmdType != 200 && param.cmdType != 201)
             {
-                param.nErr = 11;    // 未初始化错误码
+                param.nErr = 11;
                 SendResponse(param);
-                AddMsg($"卡{card} 未初始化，拒绝执行命令 {param.cmdType}");
+                AddMsg($"卡{card} 未初始化，拒绝执行命令");
                 return;
             }
 
@@ -181,22 +492,21 @@ namespace BJJCZ_BaseDevelop
 
             switch (param.cmdType)
             {
-                case 0:     // 查询板卡初始化状态
-                case 100:   // 同 0，并尝试加载指定文件
+                case 0:
+                case 100:
                     nErr = JczInitErrs[card];
                     if (nErr == 0)
                     {
-                        nErr = JczLmc.Imc1_LoadEzdFile(card, param.strFileName);
+                        nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
                         if (nErr == 0)
                         {
-                            // 重新读取对象列表
-                            nEntNums[card] = JczLmc.Imc1_GetEntityCount(card);
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
                             for (int i = 0; i < nEntNums[card]; i++)
                             {
-                                strEntNames[card][i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                                iPenNos[card][i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
                             }
                             UpdateEntTable(card);
                             RefreshPreview(card);
@@ -208,40 +518,39 @@ namespace BJJCZ_BaseDevelop
                     }
                     break;
 
-                case 1:     // 初始化板卡（一般由启动时自动完成，这里作为手动初始化入口）
+                case 1:
                     nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
                     JczInitErrs[card] = nErr;
                     AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
                     if (nErr != 0)
                     {
-                        // 初始化失败则进入模拟模式
                         bSimulateMode[card] = true;
                         AddMsg($"卡{card} 已切换至模拟模式");
                     }
                     break;
 
-                case 2:     // 关闭板卡
-                    nErr = JczLmc.Imc1_Close();
+                case 2:
+                    nErr = JczLmc.lmc1_Close();
                     JczInitErrs[card] = nErr;
                     AddMsg($"卡{card} 关闭 -> {JczLmc.GetErrorText(nErr)}");
                     break;
 
-                case 3:     // 开关激光器
-                    nErr = JczLmc.Imc1_LaserOn(card, param.bOpen);
+                case 3:
+                    nErr = JczLmc.lmc1_LaserOn(card, param.bOpen);
                     AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
                     break;
 
-                case 4:     // 加载 EZD 文件
-                    nErr = JczLmc.Imc1_LoadEzdFile(card, param.strFileName);
+                case 4:
+                    nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
                     if (nErr == 0)
                     {
-                        nEntNums[card] = JczLmc.Imc1_GetEntityCount(card);
+                        nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
                         strEntNames[card] = new string[nEntNums[card]];
                         iPenNos[card] = new int[nEntNums[card]];
                         for (int i = 0; i < nEntNums[card]; i++)
                         {
-                            strEntNames[card][i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                            iPenNos[card][i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                            strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
+                            iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
                         }
                         UpdateEntTable(card);
                         RefreshPreview(card);
@@ -249,56 +558,22 @@ namespace BJJCZ_BaseDevelop
                     AddMsg($"卡{card} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
                     break;
 
-                case 5:     // 保存文件
-                    nErr = JczLmc.Imc1_SaveEntLibToFile(card, param.strFileName);
+                case 5:
+                    nErr = JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
                     AddMsg($"卡{card} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
                     break;
 
-                case 6:     // 加载文件并逐个返回对象信息
-                    nErr = JczLmc.Imc1_LoadEzdFile(card, param.strFileName);
-                    nEntNums[card] = JczLmc.Imc1_GetEntityCount(card);
-                    strEntNames[card] = new string[nEntNums[card]];
-                    iPenNos[card] = new int[nEntNums[card]];
-                    param.nErr = nErr;
-                    param.ind1 = nEntNums[card];
-                    SendResponse(param);
-                    for (int i = 0; i < nEntNums[card]; i++)
-                    {
-                        strEntNames[card][i] = JczLmc.Imc1_GetEntityNameByIndex(card, i);
-                        iPenNos[card][i] = JczLmc.Imc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
-                        param.strEntyName = strEntNames[card][i];
-                        param.ind2 = i;
-                        param.dParam1 = iPenNos[card][i];
-                        SendResponse(param);
-                        Thread.Sleep(5);
-                    }
-                    RefreshPreview(card);
-                    needResponse = false;
-                    break;
-
-                case 7:     // 查询单个对象信息
-                    if (param.ind2 >= 0 && param.ind2 < nEntNums[card])
-                    {
-                        param.strEntyName = strEntNames[card][param.ind2];
-                        param.dParam1 = iPenNos[card][param.ind2];
-                        param.nErr = 0;
-                        SendResponse(param);
-                        needResponse = false;
-                    }
-                    else param.nErr = 18;
-                    break;
-
-                case 10:    // 开始标刻（全部对象）
-                case 110:   // 同 10，但先清除旋转平移量
+                case 10:
+                case 110:
                     if (!bInMark[card])
                     {
-                        if (param.cmdType == 110) JczLmc.Imc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
-                        int markSeq = param.ind3;   // 保存序列号
+                        if (param.cmdType == 110) JczLmc.lmc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
+                        int markSeq = param.ind3;
                         var worker = new BackgroundWorker();
                         worker.DoWork += (s, ev) =>
                         {
                             bInMark[card] = true;
-                            nErr = JczLmc.Imc1_Mark(card, false);
+                            nErr = JczLmc.lmc1_Mark(card, false);
                             bInMark[card] = false;
                             AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
                             var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
@@ -310,16 +585,16 @@ namespace BJJCZ_BaseDevelop
                     else param.nErr = 19;
                     break;
 
-                case 11:    // 停止加工/红光
-                    nErr = JczLmc.Imc1_StopMark(card);
+                case 11:
+                    nErr = JczLmc.lmc1_StopMark(card);
                     bInRed[card] = false;
                     break;
 
-                case 12:    // 红光预览边界（连续）
-                case 13:    // 红光预览轮廓（连续）
+                case 12:
+                case 13:
                     if (!bInMark[card])
                     {
-                        if (bInRed[card]) { JczLmc.Imc1_StopMark(card); bInRed[card] = false; Thread.Sleep(50); }
+                        if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; Thread.Sleep(50); }
                         if (param.bOpen)
                         {
                             bInRed[card] = true;
@@ -328,8 +603,8 @@ namespace BJJCZ_BaseDevelop
                             {
                                 while (param.bOpen && bInRed[card])
                                 {
-                                    if (param.cmdType == 12) JczLmc.Imc1_RedLightMark(card);
-                                    else JczLmc.Imc1_RedLightMarkContourByEnt(card, null);
+                                    if (param.cmdType == 12) JczLmc.lmc1_RedLightMark(card);
+                                    else JczLmc.lmc1_RedLightMarkContourByEnt(card, null);
                                     Thread.Sleep(10);
                                 }
                                 bInRed[card] = false;
@@ -339,22 +614,22 @@ namespace BJJCZ_BaseDevelop
                     }
                     break;
 
-                case 15:    // 移动振镜到指定位置
-                    nErr = JczLmc.Imc1_GotoPos(card, param.dParam1, param.dParam2);
+                case 15:
+                    nErr = JczLmc.lmc1_GotoPos(card, param.dParam1, param.dParam2);
                     break;
 
-                case 21:    // 标刻指定实体
+                case 21:
                     if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
-                        nErr = JczLmc.Imc1_MarkEntity(card, strEntNames[card][iEntIndices[card]]);
+                        nErr = JczLmc.lmc1_MarkEntity(card, strEntNames[card][iEntIndices[card]]);
                     else nErr = 18;
                     break;
 
-                case 22:    // 红光预览指定实体（连续）
+                case 22:
                     if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
                     {
                         if (!bInMark[card])
                         {
-                            if (bInRed[card]) { JczLmc.Imc1_StopMark(card); bInRed[card] = false; }
+                            if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; }
                             if (param.bOpen)
                             {
                                 bInRed[card] = true;
@@ -364,7 +639,7 @@ namespace BJJCZ_BaseDevelop
                                 {
                                     while (param.bOpen && bInRed[card])
                                     {
-                                        JczLmc.Imc1_RedLightMarkContourByEnt(card, entName);
+                                        JczLmc.lmc1_RedLightMarkContourByEnt(card, entName);
                                         Thread.Sleep(10);
                                     }
                                     bInRed[card] = false;
@@ -375,46 +650,46 @@ namespace BJJCZ_BaseDevelop
                     }
                     break;
 
-                case 23:    // 旋转实体
+                case 23:
                     if (param.ind1 < strEntNames[card]?.Length)
-                        nErr = JczLmc.Imc1_RotateEnt(card, strEntNames[card][param.ind1],
+                        nErr = JczLmc.lmc1_RotateEnt(card, strEntNames[card][param.ind1],
                                                      param.dParam3, param.dParam4, param.dParam5);
                     RefreshPreview(card);
                     break;
 
-                case 24:    // 移动实体
+                case 24:
                     if (param.ind1 < strEntNames[card]?.Length)
-                        nErr = JczLmc.Imc1_MoveEnt(card, strEntNames[card][param.ind1],
+                        nErr = JczLmc.lmc1_MoveEnt(card, strEntNames[card][param.ind1],
                                                    param.dParam1, param.dParam2);
                     RefreshPreview(card);
                     break;
 
-                case 25:    // 缩放实体
+                case 25:
                     if (param.ind1 < strEntNames[card]?.Length)
-                        nErr = JczLmc.Imc1_ScaleEnt(card, strEntNames[card][param.ind1],
+                        nErr = JczLmc.lmc1_ScaleEnt(card, strEntNames[card][param.ind1],
                                                     param.dParam1, param.dParam2,
                                                     param.dParam3, param.dParam4);
                     RefreshPreview(card);
                     break;
 
-                case 27:    // 设置全局旋转平移量（标刻时生效）
-                    nErr = JczLmc.Imc1_SetRotateMoveParam(card, param.dParam1, param.dParam2,
+                case 27:
+                    nErr = JczLmc.lmc1_SetRotateMoveParam(card, param.dParam1, param.dParam2,
                                                           param.dParam3, param.dParam4, param.dParam5);
                     break;
 
-                case 28:    // 群组/解组
+                case 28:
                     if (param.bOpen)
-                        nErr = JczLmc.Imc1_GroupEnt2(card, strEntNames[card],
+                        nErr = JczLmc.lmc1_GroupEnt2(card, strEntNames[card],
                                                      strEntNames[card].Length, "grpEnt", 2);
                     else
-                        nErr = JczLmc.Imc1_UnGroupEnt(card, "grpEnt");
+                        nErr = JczLmc.lmc1_UnGroupEnt(card, "grpEnt");
                     break;
 
-                case 40:    // 打开设备配置对话框
-                    nErr = JczLmc.Imc1_SetDevCfg(card);
+                case 40:
+                    nErr = JczLmc.lmc1_SetDevCfg(card);
                     break;
 
-                case 42:    // 更新对齐参数
+                case 42:
                     alImParam.width = param.ind1;
                     alImParam.height = param.ind2;
                     alImParam.dCenX = param.dParam1;
@@ -423,7 +698,7 @@ namespace BJJCZ_BaseDevelop
                     alImParam.dHeight = param.dParam4;
                     break;
 
-                case 90:    // 界面布局控制
+                case 90:
                     splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
                     splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
                     splitContainer1.Panel1Collapsed = (param.dParam1 == 0 && param.dParam2 == 0);
@@ -433,114 +708,89 @@ namespace BJJCZ_BaseDevelop
                     break;
 
                 default:
-                    nErr = 20;  // 未知命令
+                    nErr = 20;
                     break;
             }
 
             if (needResponse)
             {
                 param.nErr = nErr;
-                param.ind3 = clientSeq;   // 强制恢复，防止被修改
+                param.ind3 = clientSeq;
                 SendResponse(param);
             }
         }
 
-        /// <summary>
-        /// 模拟模式下的命令处理：直接返回成功结果，不进行任何硬件操作。
-        /// </summary>
         private void SimulateCommand(LCZControlParam param)
         {
-            int clientSeq = param.ind3;   // 在方法开始保存
+            int clientSeq = param.ind3;
             int card = param.cardSN;
             bool needResponse = true;
+
+            string cmdDesc = GetCmdDescription(param.cmdType);
+            AddMsg($"卡{card} [模拟] {cmdDesc}");
 
             switch (param.cmdType)
             {
                 case 0:
-                case 100:   // 查询初始化状态，模拟返回成功、0个对象
-                    param.nErr = 0;
-                    param.ind1 = 0;          // nEntNums
-                    param.strFileName = "";  // 无文件路径
-                    AddMsg($"卡{card} [模拟] 查询状态 -> 成功(0个对象)");
-                    break;
-
-                case 6:     // 加载文件并返回对象（模拟返回0个对象）
+                case 100:
                     param.nErr = 0;
                     param.ind1 = 0;
-                    SendResponse(param);
-                    // 无需后续对象信息响应
-                    AddMsg($"卡{card} [模拟] 加载文件 -> 成功(0个对象)");
-                    needResponse = false;
                     break;
-
                 case 10:
-                case 110:   // 标刻完成，模拟返回完成标志
+                case 110:
                     param.nErr = 0;
-                    param.bOpen = true;      // 正常完成标志
-                    AddMsg($"卡{card} [模拟] 标刻完成");
+                    param.bOpen = true;
                     break;
-
-                case 11:    // 停止加工
-                case 12:    // 红光预览边界
-                case 13:    // 红光轮廓
-                case 21:    // 标刻指定实体
-                case 22:    // 红光预览指定实体
-                case 15:    // 移动振镜
-                case 23:    // 旋转实体
-                case 24:    // 移动实体
-                case 25:    // 缩放实体
-                case 27:    // 设置全局旋转平移
-                case 28:    // 群组/解组
-                case 40:    // 参数设置（不实际操作）
-                case 42:    // 对齐参数（可接受）
-                case 90:    // 界面布局（可接受）
+                default:
                     param.nErr = 0;
-                    AddMsg($"卡{card} [模拟] 执行命令 {param.cmdType} -> 成功");
-                    break;
-
-                default:    // 未知命令，也返回成功
-                    param.nErr = 0;
-                    AddMsg($"卡{card} [模拟] 未知命令 {param.cmdType} -> 成功");
                     break;
             }
 
             if (needResponse)
             {
-                param.ind3 = clientSeq;   // 恢复
+                param.ind3 = clientSeq;
                 SendResponse(param);
             }
-                 
         }
 
-        // =============== 发送响应 ===============
-        /// <summary>
-        /// 根据板卡号选择对应的管道服务端，将结果参数发送回客户端。
-        /// </summary>
         private void SendResponse(LCZControlParam param)
         {
+            string cmdDesc = GetCmdDescription(param.cmdType);
+            string result = param.nErr == 0 ? "成功" : $"失败({JczLmc.GetErrorText(param.nErr)})";
+            AddMsg($"发送响应 [卡{param.cardSN}] {cmdDesc} - {result}");
+
             Pipechanel server = (param.cardSN == 0) ? pipeServer0 : pipeServer1;
             server.SendParam(param);
         }
 
         // =============== 预览图刷新 ===============
+        [DllImport("gdi32.dll")]
+        private static extern int GetBitmapBits(IntPtr hbitmap, int cbBuffer, byte[] lpvBits);
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr CreateBitmap(int nWidth, int nHeight, uint cPlanes, uint cBitsPerPel, byte[] lpvBits);
         private void RefreshPreview(int card)
         {
-            // 模拟模式下不刷新预览图
-            if (bSimulateMode[card])
-                return;
-
-            imLaserRoute[card] = MakeWhiteTransparent(
-                (Bitmap)JczLmc.Imc1_GetCurPreviewImage3(card, alImParam.width, alImParam.height,
-                    alImParam.dCenX, alImParam.dCenY, alImParam.dWidth / alImParam.width));
-            if (imLaserRoute[card] == null)
+            try
+            {
+                if (bSimulateMode[card]) return;
+                alImParam.width = 1000;
+                alImParam.height = 1000;
+                alImParam.dWidth = 100;
+                alImParam.width = 100;
                 imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)Image.FromFile(@".\data\route.png"), 50);
-            mergeImg(card);
+                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, alImParam.width, alImParam.height));
+                if (imLaserRoute[card] == null)
+                    imLaserRoute[card] = MakeWhiteTransparent(
+                        (Bitmap)Image.FromFile(@".\data\route.png"), 50);
+                mergeImg(card);
+            }
+            catch(Exception ex)
+            {
+
+            }
         }
 
-        /// <summary>
-        /// 将图片中的白色（接近白色）部分变为透明，保留标刻线条。
-        /// </summary>
         private Bitmap MakeWhiteTransparent(Bitmap original, float tolerance = 10f)
         {
             if (original == null) return null;
@@ -560,14 +810,7 @@ namespace BJJCZ_BaseDevelop
                         int index = y * data.Stride + x * 4;
                         Color pixel = original.GetPixel(x, y);
                         float diff = Math.Abs(pixel.R - 255) + Math.Abs(pixel.G - 255) + Math.Abs(pixel.B - 255);
-                        if (diff <= tolerance)
-                        {
-                            ptr[index + 3] = 0; // 完全透明
-                        }
-                        else
-                        {
-                            ptr[index + 3] = 255; // 不透明
-                        }
+                        ptr[index + 3] = (byte)(diff <= tolerance ? 0 : 255);
                     }
                 }
             }
@@ -575,23 +818,17 @@ namespace BJJCZ_BaseDevelop
             return transparentImage;
         }
 
-        /// <summary>
-        /// 将原始背景图与透明化的激光路线图叠加，并旋转 90° 后显示在 pictureBox1 中。
-        /// </summary>
         private void mergeImg(int card)
         {
-            // 模拟模式下不合并图像
-            if (bSimulateMode[card])
-                return;
+            if (bSimulateMode[card]) return;
 
-            // 如果尚未加载背景图，则加载（不同板卡可能使用不同背景）
             if (originalImage[card] == null)
             {
                 string bgFile = (card == 0) ? @".\data\sourceBGImgA.bmp" : @".\data\sourceBGImgB.bmp";
                 if (File.Exists(bgFile))
                     originalImage[card] = new Bitmap(bgFile);
                 else
-                    originalImage[card] = new Bitmap(alImParam.width, alImParam.height); // 黑色备用
+                    originalImage[card] = new Bitmap(alImParam.width, alImParam.height);
             }
 
             if (originalImage[card] == null || imLaserRoute[card] == null) return;
@@ -613,9 +850,14 @@ namespace BJJCZ_BaseDevelop
         // =============== 实体表格更新 ===============
         private void UpdateEntTable(int card)
         {
-            // 模拟模式下不更新表格
-            if (bSimulateMode[card])
+            if (bSimulateMode[card]) return;
+
+            // 检查是否需要跨线程调用
+            if (dgvEnt.InvokeRequired)
+            {
+                dgvEnt.Invoke(new Action<int>(UpdateEntTable), card);
                 return;
+            }
 
             dgvEnt.Rows.Clear();
             for (int i = 0; i < nEntNums[card]; i++)
@@ -648,18 +890,15 @@ namespace BJJCZ_BaseDevelop
             }
         }
 
-        private void menuControl_Click(object sender, EventArgs e)
-        {
-            // 预留
-        }
+        private void menuControl_Click(object sender, EventArgs e) { }
 
         private void menuExitApp_Click(object sender, EventArgs e)
         {
             try
             {
                 if (!bSimulateMode[0] && !bSimulateMode[1])
-                    JczLmc.Imc1_Close();
-                AddMsg("关闭所有板卡（模拟模式不执行硬件关闭）");
+                    JczLmc.lmc1_Close();
+                AddMsg("关闭所有板卡");
             }
             catch { }
             Application.Exit();
@@ -670,9 +909,53 @@ namespace BJJCZ_BaseDevelop
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 e.Cancel = true;
+
+                // 如果当前是分离状态，先分离再最小化
+                if (!_isEmbedded)
+                {
+                    DetachAndShowFull();
+                }
+
+                // 折叠并最小化到托盘
+                splitContainer1.Panel1Collapsed = true;
+                splitContainer1.SplitterDistance = 0;
                 this.WindowState = FormWindowState.Minimized;
                 this.ShowInTaskbar = false;
                 JCZServerIcon.Visible = true;
+
+                // 向客户端发送请求嵌入的消息
+            //    RequestClientToEmbed();
+
+                AddMsg("已最小化到系统托盘，已请求客户端重新嵌入");
+            }
+        }
+
+        /// <summary>
+        /// 向客户端发送请求嵌入的消息
+        /// </summary>
+        private void RequestClientToEmbed()
+        {
+            try
+            {
+                for (int card = 0; card < 2; card++)
+                {
+                    LCZControlParam requestParam = new LCZControlParam
+                    {
+                        cardSN = card,
+                        cmdType = CMD_REQUEST_EMBED,
+                        nErr = 0,
+                        ind3 = 0,
+                        dParam1 = (double)this.Handle.ToInt64()
+                    };
+
+                    Pipechanel server = (card == 0) ? pipeServer0 : pipeServer1;
+                    server.SendParam(requestParam);
+                }
+              //  AddMsg("已发送嵌入请求到客户端");
+            }
+            catch (Exception ex)
+            {
+               // AddMsg($"发送嵌入请求失败: {ex.Message}");
             }
         }
 
@@ -687,9 +970,20 @@ namespace BJJCZ_BaseDevelop
 
         private void notifyIcon1_DoubleClick(object sender, EventArgs e)
         {
-            this.Show();
-            this.WindowState = FormWindowState.Normal;
-            this.ShowInTaskbar = true;
+            if (_isEmbedded)
+            {
+                // 嵌入模式：双击分离并显示完整窗口
+                DetachAndShowFull();
+             //   AddMsg("双击托盘图标，已分离并显示完整窗口");
+            }
+            else
+            {
+                // 完整模式：双击显示窗口
+                this.Show();
+                this.WindowState = FormWindowState.Normal;
+                this.ShowInTaskbar = true;
+             //   AddMsg("显示完整窗口");
+            }
         }
 
         private void dgvEnt_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -712,13 +1006,11 @@ namespace BJJCZ_BaseDevelop
             string newName = txtEntName.Text.Trim();
             if (string.IsNullOrEmpty(newName)) return;
 
-            // 通过内部命令重命名（不经过管道，直接操作 DLL）
             LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 31, ind1 = iEntIndices[card], strEntyName = newName };
             CMDAna(cmd);
             strEntNames[card][iEntIndices[card]] = newName;
             dgvEnt.Rows[iEntIndices[card]].Cells[1].Value = newName;
 
-            // 保存文件
             cmd = new LCZControlParam { cardSN = card, cmdType = 5, strFileName = Path.Combine(Application.StartupPath, "route.ezd") };
             CMDAna(cmd);
         }
@@ -760,16 +1052,191 @@ namespace BJJCZ_BaseDevelop
                 case "picScaleY": cmd.cmdType = 25; cmd.dParam1 = cenX; cmd.dParam2 = cenY; cmd.dParam3 = 1; cmd.dParam4 = scaleVal; break;
             }
             CMDAna(cmd);
-            // 自动保存
             cmd = new LCZControlParam { cardSN = card, cmdType = 5 };
             CMDAna(cmd);
         }
 
-        #region 后台工作线程（保留占位，不再使用）
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            // 此部分已由其他方式实现，保留以兼容设计器
-        }
+        #region 后台工作线程
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e) { }
         #endregion
+
+        // =============== 菜单事件实现 ===============
+
+        private void File_LoadEZD_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Filter = "EZD Files|*.ezd|All Files|*.*";
+                ofd.Title = "选择EZD文件";
+
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    LCZControlParam param = new LCZControlParam
+                    {
+                        cardSN = currentCard,
+                        cmdType = 4,  // 加载文件
+                        strFileName = ofd.FileName,
+                        ind3 = 0
+                    };
+                    CMDAna(param);
+                }
+            }
+        }
+
+        private void File_SaveEZD_Click(object sender, EventArgs e)
+        {
+            using (SaveFileDialog sfd = new SaveFileDialog())
+            {
+                sfd.Filter = "EZD Files|*.ezd|All Files|*.*";
+                sfd.Title = "保存EZD文件";
+                sfd.FileName = "route.ezd";
+
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    LCZControlParam param = new LCZControlParam
+                    {
+                        cardSN = currentCard,
+                        cmdType = 5,  // 保存文件
+                        strFileName = sfd.FileName,
+                        ind3 = 0
+                    };
+                    CMDAna(param);
+                }
+            }
+        }
+
+        private void File_ExportFigure_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (pictureBox1.Image != null)
+            {
+                using (SaveFileDialog sfd = new SaveFileDialog())
+                {
+                    sfd.Filter = "PNG Image|*.png|JPEG Image|*.jpg|BMP Image|*.bmp";
+                    sfd.Title = "导出预览图像";
+                    sfd.FileName = $"routeExport_{card}_{DateTime.Now:yyyyMMddHHmmss}.png";
+
+                    if (sfd.ShowDialog() == DialogResult.OK)
+                    {
+                        try
+                        {
+                            string ext = System.IO.Path.GetExtension(sfd.FileName).ToLower();
+                            ImageFormat format = ImageFormat.Png;
+
+                            switch (ext)
+                            {
+                                case ".jpg":
+                                case ".jpeg":
+                                    format = ImageFormat.Jpeg;
+                                    break;
+                                case ".bmp":
+                                    format = ImageFormat.Bmp;
+                                    break;
+                                default:
+                                    format = ImageFormat.Png;
+                                    break;
+                            }
+
+                            pictureBox1.Image.Save(sfd.FileName, format);
+                            AddMsg($"导出图像成功 -> {sfd.FileName}");
+                        }
+                        catch (Exception ex)
+                        {
+                            AddMsg($"导出图像失败: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                AddMsg("没有可导出的图像");
+            }
+        }
+
+        private void Card_NO1_Click(object sender, EventArgs e)
+        {
+            currentCard = 0;
+            AddMsg($"切换到卡1 (当前当前卡: {currentCard + 1})");
+
+            // 更新界面显示
+            UpdateEntTable(currentCard);
+
+            // 高亮显示当前卡（可选：修改菜单项样式）
+            Card_NO1.Checked = true;
+            Card_NO2.Checked = false;
+        }
+
+        private void Card_NO2_Click(object sender, EventArgs e)
+        {
+            currentCard = 1;
+            AddMsg($"切换到卡2 (当前当前卡: {currentCard + 1})");
+
+            // 更新界面显示
+            UpdateEntTable(currentCard);
+
+            // 高亮显示当前卡
+            Card_NO1.Checked = false;
+            Card_NO2.Checked = true;
+        }
+
+        private void Win_Log_Click(object sender, EventArgs e)
+        {
+            // 切换日志窗口显示/隐藏
+            ToolStripMenuItem item = sender as ToolStripMenuItem;
+            item.Checked = !item.Checked; 
+            splitContainer2.Panel1Collapsed = !item.Checked; 
+            splitContainer1.Panel1Collapsed = !Win_Log.Checked & !Win_Entity.Checked;
+        }
+
+        private void Win_Entity_Click(object sender, EventArgs e)
+        {
+            ToolStripMenuItem item = sender as ToolStripMenuItem;
+            item.Checked = !item.Checked;
+            splitContainer2.Panel2Collapsed = !item.Checked;
+            splitContainer1.Panel1Collapsed = !Win_Log.Checked & !Win_Entity.Checked;
+        }
+
+        private void Win_Route_Click(object sender, EventArgs e)
+        {
+            ToolStripMenuItem item = sender as ToolStripMenuItem;
+            item.Checked = !item.Checked;
+            splitContainer3.Panel1Collapsed = !item.Checked;
+            splitContainer1.Panel2Collapsed = !Win_Route.Checked & !Win_Oper.Checked;
+
+             
+        }
+
+        private void Win_Oper_Click(object sender, EventArgs e)
+        {
+            ToolStripMenuItem item = sender as ToolStripMenuItem;
+            item.Checked = !item.Checked;
+            splitContainer3.Panel2Collapsed = !item.Checked;
+            splitContainer1.Panel2Collapsed = !Win_Route.Checked & !Win_Oper.Checked;
+
+        }
+
+        // 可选：添加一个窗口布局重置菜单项
+        private void Win_Reset_Click(object sender, EventArgs e)
+        {
+            // 重置所有窗口布局
+            /* splitContainer1.SplitterDistance = 287;
+             splitContainer2.SplitterDistance = 610;
+             splitContainer3.SplitterDistance = 610;*/
+
+            splitContainer1.Panel1Collapsed = false;
+            splitContainer1.Panel2Collapsed = false;
+            splitContainer2.Panel1Collapsed = false;
+            splitContainer2.Panel2Collapsed = false;
+            splitContainer3.Panel1Collapsed = false;
+            splitContainer3.Panel2Collapsed = false;
+
+            // 更新菜单项选中状态
+            Win_Log.Checked = true;
+            Win_Entity.Checked = true;
+            Win_Route.Checked = true;
+            Win_Oper.Checked = true;
+
+        //    AddMsg("窗口布局已重置");
+        }
     }
 }

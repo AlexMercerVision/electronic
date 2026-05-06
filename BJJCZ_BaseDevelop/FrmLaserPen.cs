@@ -179,7 +179,7 @@ namespace BJJCZ_BaseDevelop
         {
             GetParam(ref pP);
             // 将参数写回板卡（使用当前卡号）
-            int ret = JczLmc.Imc1_SetPenParam4(CardNumber, pP.nPenNo, pP.pStrName, pP.clr,
+            int ret = JczLmc.lmc1_SetPenParam4(CardNumber, pP.nPenNo, pP.pStrName, pP.clr,
                 pP.bDisableMark, pP.bUseDefParam, pP.nMarkLoop, pP.dMarkSpeed, pP.dPowerRatio,
                 pP.dCurrent, pP.nFreq, pP.dQPulseWidth, pP.nStartTC, pP.nLaserOffTC,
                 pP.nEndTC, pP.nPolyTC, pP.dJumpSpeed, pP.nMinJumpDelayTCUs, pP.nMaxJumpDelayTCUs,

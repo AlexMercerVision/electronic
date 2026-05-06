@@ -40,6 +40,13 @@ namespace VisionApplication
             this.menuLaserFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuLaser_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuLaser_SaveFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFile_SaveDirectory = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFile_PlaybackDirectory = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFile_ResultDirectory = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuFile_LogDirectory = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuFile_UpdatePlaybackDirectory = new System.Windows.Forms.ToolStripMenuItem();
             this.menuXBType = new System.Windows.Forms.ToolStripMenuItem();
             this.menuWS_Job1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuWS_Job2 = new System.Windows.Forms.ToolStripMenuItem();
@@ -62,18 +69,11 @@ namespace VisionApplication
             this.menuManage_User = new System.Windows.Forms.ToolStripMenuItem();
             this.menuManage_authorize = new System.Windows.Forms.ToolStripMenuItem();
             this.menuManage_SuperOrNormal = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuFile_SaveDirectory = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuFile_PlaybackDirectory = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuFile_ResultDirectory = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuFile_LogDirectory = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuFile_UpdatePlaybackDirectory = new System.Windows.Forms.ToolStripMenuItem();
             this.menuWin = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_EventStatus = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_SystemLog = new System.Windows.Forms.ToolStripMenuItem();
-            this.menu_View_ResultStatics = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_LaserWin = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_View_ResultStatics = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_Layout = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_Layout1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_Layout2 = new System.Windows.Forms.ToolStripMenuItem();
@@ -153,12 +153,15 @@ namespace VisionApplication
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBt_Record = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolBt_JCZ_Conn = new System.Windows.Forms.ToolStripButton();
+            this.toolBt_Len2Ori = new System.Windows.Forms.ToolStripButton();
+            this.toolBt_StopLaser = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBt_ConnSer = new System.Windows.Forms.ToolStripButton();
             this.toolBtSta_Triggle = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBt_LS = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.toolBt_RuntimeSet = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator17 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripSeparator16 = new System.Windows.Forms.ToolStripSeparator();
@@ -199,35 +202,8 @@ namespace VisionApplication
             this.btFunAcqOneImage = new System.Windows.Forms.Button();
             this.btFunRunCont = new System.Windows.Forms.Button();
             this.btFunRunOneTime = new System.Windows.Forms.Button();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
-            this.lblOut2 = new System.Windows.Forms.Label();
-            this.lblIn2 = new System.Windows.Forms.Label();
-            this.lblOut1 = new System.Windows.Forms.Label();
-            this.lblIn1 = new System.Windows.Forms.Label();
-            this.btCam = new System.Windows.Forms.Button();
-            this.label8 = new System.Windows.Forms.Label();
-            this.btSpace = new System.Windows.Forms.Button();
-            this.btSer = new System.Windows.Forms.Button();
-            this.btID = new System.Windows.Forms.Button();
-            this.label10 = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label15 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.label12 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.btMachine = new System.Windows.Forms.Button();
-            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
-            this.dgvLog = new System.Windows.Forms.DataGridView();
-            this.ClmnTime = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ClmnOper = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ClmnStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ClmnReason = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ClmnUser = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.splitContainer5 = new System.Windows.Forms.SplitContainer();
+            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPageCam = new System.Windows.Forms.TabPage();
             this.label63 = new System.Windows.Forms.Label();
@@ -375,6 +351,32 @@ namespace VisionApplication
             this.btCalib = new System.Windows.Forms.Button();
             this.btUpdateCalibDate = new System.Windows.Forms.Button();
             this.btMarkTemplate = new System.Windows.Forms.Button();
+            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.lblOut2 = new System.Windows.Forms.Label();
+            this.lblIn2 = new System.Windows.Forms.Label();
+            this.lblOut1 = new System.Windows.Forms.Label();
+            this.lblIn1 = new System.Windows.Forms.Label();
+            this.btCam = new System.Windows.Forms.Button();
+            this.label8 = new System.Windows.Forms.Label();
+            this.btSpace = new System.Windows.Forms.Button();
+            this.btSer = new System.Windows.Forms.Button();
+            this.btID = new System.Windows.Forms.Button();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label9 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
+            this.label12 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
+            this.btMachine = new System.Windows.Forms.Button();
+            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
+            this.dgvLog = new System.Windows.Forms.DataGridView();
+            this.ClmnTime = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ClmnOper = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ClmnStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ClmnReason = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ClmnUser = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.label_JobResults_Percent = new System.Windows.Forms.Label();
             this.textBox_JobN_TotalAccept_Percent = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -397,9 +399,6 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
-            this.toolBt_Len2Ori = new System.Windows.Forms.ToolStripButton();
-            this.toolBt_JCZ_Conn = new System.Windows.Forms.ToolStripButton();
-            this.toolBt_StopLaser = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -408,24 +407,13 @@ namespace VisionApplication
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picLogo)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
-            this.splitContainer2.Panel1.SuspendLayout();
-            this.splitContainer2.Panel2.SuspendLayout();
-            this.splitContainer2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
+            this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
-            this.splitContainer4.Panel1.SuspendLayout();
-            this.splitContainer4.Panel2.SuspendLayout();
-            this.splitContainer4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
-            this.splitContainer6.Panel1.SuspendLayout();
-            this.splitContainer6.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).BeginInit();
-            this.splitContainer5.Panel1.SuspendLayout();
-            this.splitContainer5.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+            this.splitContainer2.Panel2.SuspendLayout();
+            this.splitContainer2.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPageCam.SuspendLayout();
             this.groupBox4.SuspendLayout();
@@ -475,6 +463,14 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.numUDCenY)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numUDRad)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvMarkCood)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
+            this.splitContainer4.Panel1.SuspendLayout();
+            this.splitContainer4.Panel2.SuspendLayout();
+            this.splitContainer4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
+            this.splitContainer6.Panel1.SuspendLayout();
+            this.splitContainer6.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -485,11 +481,11 @@ namespace VisionApplication
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuCam,
             this.menuLaserFile,
+            this.menuFile,
             this.menuXBType,
             this.menuLaser,
             this.menuParam,
             this.menuManage,
-            this.menuFile,
             this.menuWin,
             this.menuUnion,
             this.menuDisp,
@@ -565,6 +561,61 @@ namespace VisionApplication
             this.menuLaser_SaveFile.Size = new System.Drawing.Size(148, 22);
             this.menuLaser_SaveFile.Text = "保存激光文件";
             this.menuLaser_SaveFile.Click += new System.EventHandler(this.menuLaser_SaveFile_Click);
+            // 
+            // menuFile
+            // 
+            this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuFile_SaveDirectory,
+            this.menuFile_PlaybackDirectory,
+            this.menuFile_ResultDirectory,
+            this.toolStripSeparator4,
+            this.menuFile_LogDirectory,
+            this.menuFile_UpdatePlaybackDirectory});
+            this.menuFile.Name = "menuFile";
+            this.menuFile.Size = new System.Drawing.Size(44, 22);
+            this.menuFile.Text = "目录";
+            // 
+            // menuFile_SaveDirectory
+            // 
+            this.menuFile_SaveDirectory.Name = "menuFile_SaveDirectory";
+            this.menuFile_SaveDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_SaveDirectory.Text = "打开存储文件夹";
+            this.menuFile_SaveDirectory.Click += new System.EventHandler(this.menuFile_SaveDirectory_Click);
+            // 
+            // menuFile_PlaybackDirectory
+            // 
+            this.menuFile_PlaybackDirectory.Name = "menuFile_PlaybackDirectory";
+            this.menuFile_PlaybackDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_PlaybackDirectory.Text = "打开回放文件夹";
+            this.menuFile_PlaybackDirectory.Click += new System.EventHandler(this.menuFile_PlaybackDirectory_Click);
+            // 
+            // menuFile_ResultDirectory
+            // 
+            this.menuFile_ResultDirectory.Name = "menuFile_ResultDirectory";
+            this.menuFile_ResultDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_ResultDirectory.Text = "打开模型文件夹";
+            this.menuFile_ResultDirectory.Click += new System.EventHandler(this.menuFile_ResultDirectory_Click);
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(157, 6);
+            // 
+            // menuFile_LogDirectory
+            // 
+            this.menuFile_LogDirectory.Name = "menuFile_LogDirectory";
+            this.menuFile_LogDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_LogDirectory.Text = "打开标刻文件夹";
+            this.menuFile_LogDirectory.Visible = false;
+            this.menuFile_LogDirectory.Click += new System.EventHandler(this.menuFile_LogDirectory_Click);
+            // 
+            // menuFile_UpdatePlaybackDirectory
+            // 
+            this.menuFile_UpdatePlaybackDirectory.Name = "menuFile_UpdatePlaybackDirectory";
+            this.menuFile_UpdatePlaybackDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_UpdatePlaybackDirectory.Text = "更新回放数据";
+            this.menuFile_UpdatePlaybackDirectory.Visible = false;
+            this.menuFile_UpdatePlaybackDirectory.Click += new System.EventHandler(this.menuFile_UpdatePlaybackDirectory_Click);
             // 
             // menuXBType
             // 
@@ -743,68 +794,13 @@ namespace VisionApplication
             this.menuManage_SuperOrNormal.Visible = false;
             this.menuManage_SuperOrNormal.Click += new System.EventHandler(this.menuManage_SuperOrNormal_Click);
             // 
-            // menuFile
-            // 
-            this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuFile_SaveDirectory,
-            this.menuFile_PlaybackDirectory,
-            this.menuFile_ResultDirectory,
-            this.toolStripSeparator4,
-            this.menuFile_LogDirectory,
-            this.menuFile_UpdatePlaybackDirectory});
-            this.menuFile.Name = "menuFile";
-            this.menuFile.Size = new System.Drawing.Size(44, 22);
-            this.menuFile.Text = "目录";
-            // 
-            // menuFile_SaveDirectory
-            // 
-            this.menuFile_SaveDirectory.Name = "menuFile_SaveDirectory";
-            this.menuFile_SaveDirectory.Size = new System.Drawing.Size(160, 22);
-            this.menuFile_SaveDirectory.Text = "打开存储文件夹";
-            this.menuFile_SaveDirectory.Click += new System.EventHandler(this.menuFile_SaveDirectory_Click);
-            // 
-            // menuFile_PlaybackDirectory
-            // 
-            this.menuFile_PlaybackDirectory.Name = "menuFile_PlaybackDirectory";
-            this.menuFile_PlaybackDirectory.Size = new System.Drawing.Size(160, 22);
-            this.menuFile_PlaybackDirectory.Text = "打开回放文件夹";
-            this.menuFile_PlaybackDirectory.Click += new System.EventHandler(this.menuFile_PlaybackDirectory_Click);
-            // 
-            // menuFile_ResultDirectory
-            // 
-            this.menuFile_ResultDirectory.Name = "menuFile_ResultDirectory";
-            this.menuFile_ResultDirectory.Size = new System.Drawing.Size(160, 22);
-            this.menuFile_ResultDirectory.Text = "打开模型文件夹";
-            this.menuFile_ResultDirectory.Click += new System.EventHandler(this.menuFile_ResultDirectory_Click);
-            // 
-            // toolStripSeparator4
-            // 
-            this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(157, 6);
-            // 
-            // menuFile_LogDirectory
-            // 
-            this.menuFile_LogDirectory.Name = "menuFile_LogDirectory";
-            this.menuFile_LogDirectory.Size = new System.Drawing.Size(160, 22);
-            this.menuFile_LogDirectory.Text = "打开标刻文件夹";
-            this.menuFile_LogDirectory.Visible = false;
-            this.menuFile_LogDirectory.Click += new System.EventHandler(this.menuFile_LogDirectory_Click);
-            // 
-            // menuFile_UpdatePlaybackDirectory
-            // 
-            this.menuFile_UpdatePlaybackDirectory.Name = "menuFile_UpdatePlaybackDirectory";
-            this.menuFile_UpdatePlaybackDirectory.Size = new System.Drawing.Size(160, 22);
-            this.menuFile_UpdatePlaybackDirectory.Text = "更新回放数据";
-            this.menuFile_UpdatePlaybackDirectory.Visible = false;
-            this.menuFile_UpdatePlaybackDirectory.Click += new System.EventHandler(this.menuFile_UpdatePlaybackDirectory_Click);
-            // 
             // menuWin
             // 
             this.menuWin.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menu_View_EventStatus,
             this.menu_View_SystemLog,
-            this.menu_View_ResultStatics,
             this.menu_View_LaserWin,
+            this.menu_View_ResultStatics,
             this.menu_View_Layout,
             this.menu_View_Fit});
             this.menuWin.Name = "menuWin";
@@ -816,7 +812,7 @@ namespace VisionApplication
             this.menu_View_EventStatus.Checked = true;
             this.menu_View_EventStatus.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_EventStatus.Name = "menu_View_EventStatus";
-            this.menu_View_EventStatus.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_EventStatus.Size = new System.Drawing.Size(180, 22);
             this.menu_View_EventStatus.Text = "状态标志";
             this.menu_View_EventStatus.Click += new System.EventHandler(this.menu_View_EventStatus_Click);
             // 
@@ -825,27 +821,27 @@ namespace VisionApplication
             this.menu_View_SystemLog.Checked = true;
             this.menu_View_SystemLog.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_SystemLog.Name = "menu_View_SystemLog";
-            this.menu_View_SystemLog.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_SystemLog.Size = new System.Drawing.Size(180, 22);
             this.menu_View_SystemLog.Text = "操作日志";
             this.menu_View_SystemLog.Click += new System.EventHandler(this.menu_View_SystemLog_Click);
-            // 
-            // menu_View_ResultStatics
-            // 
-            this.menu_View_ResultStatics.Checked = true;
-            this.menu_View_ResultStatics.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.menu_View_ResultStatics.Name = "menu_View_ResultStatics";
-            this.menu_View_ResultStatics.Size = new System.Drawing.Size(160, 22);
-            this.menu_View_ResultStatics.Text = "参数设置";
-            this.menu_View_ResultStatics.Click += new System.EventHandler(this.menu_View_ResultStatics_Click);
             // 
             // menu_View_LaserWin
             // 
             this.menu_View_LaserWin.Checked = true;
             this.menu_View_LaserWin.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_LaserWin.Name = "menu_View_LaserWin";
-            this.menu_View_LaserWin.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_LaserWin.Size = new System.Drawing.Size(180, 22);
             this.menu_View_LaserWin.Text = "激光标刻服务端";
-            this.menu_View_LaserWin.Visible = false;
+            this.menu_View_LaserWin.Click += new System.EventHandler(this.menu_View_LaserWin_Click);
+            // 
+            // menu_View_ResultStatics
+            // 
+            this.menu_View_ResultStatics.Checked = true;
+            this.menu_View_ResultStatics.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.menu_View_ResultStatics.Name = "menu_View_ResultStatics";
+            this.menu_View_ResultStatics.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_ResultStatics.Text = "参数设置";
+            this.menu_View_ResultStatics.Click += new System.EventHandler(this.menu_View_ResultStatics_Click);
             // 
             // menu_View_Layout
             // 
@@ -857,7 +853,7 @@ namespace VisionApplication
             this.menu_View_Layout5,
             this.menu_View_LayoutEq});
             this.menu_View_Layout.Name = "menu_View_Layout";
-            this.menu_View_Layout.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_Layout.Size = new System.Drawing.Size(180, 22);
             this.menu_View_Layout.Text = "窗口布局";
             // 
             // menu_View_Layout1
@@ -905,7 +901,7 @@ namespace VisionApplication
             // menu_View_Fit
             // 
             this.menu_View_Fit.Name = "menu_View_Fit";
-            this.menu_View_Fit.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_Fit.Size = new System.Drawing.Size(180, 22);
             this.menu_View_Fit.Text = "图像适应窗口";
             this.menu_View_Fit.Click += new System.EventHandler(this.menu_View_Fit_Click);
             // 
@@ -1159,6 +1155,7 @@ namespace VisionApplication
             this.menuTask.Name = "menuTask";
             this.menuTask.Size = new System.Drawing.Size(68, 22);
             this.menuTask.Text = "推理模式";
+            this.menuTask.Visible = false;
             this.menuTask.Click += new System.EventHandler(this.menuTask_Click);
             // 
             // menuTask_AcqOneImage
@@ -1520,6 +1517,37 @@ namespace VisionApplication
             this.toolStripSeparator9.Name = "toolStripSeparator9";
             this.toolStripSeparator9.Size = new System.Drawing.Size(6, 45);
             // 
+            // toolBt_JCZ_Conn
+            // 
+            this.toolBt_JCZ_Conn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBt_JCZ_Conn.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_JCZ_Conn.Image")));
+            this.toolBt_JCZ_Conn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBt_JCZ_Conn.Name = "toolBt_JCZ_Conn";
+            this.toolBt_JCZ_Conn.Size = new System.Drawing.Size(36, 42);
+            this.toolBt_JCZ_Conn.Text = "暂停";
+            this.toolBt_JCZ_Conn.ToolTipText = "连接板卡";
+            this.toolBt_JCZ_Conn.Click += new System.EventHandler(this.toolBt_JCZ_Conn_Click);
+            // 
+            // toolBt_Len2Ori
+            // 
+            this.toolBt_Len2Ori.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBt_Len2Ori.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_Len2Ori.Image")));
+            this.toolBt_Len2Ori.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBt_Len2Ori.Name = "toolBt_Len2Ori";
+            this.toolBt_Len2Ori.Size = new System.Drawing.Size(36, 42);
+            this.toolBt_Len2Ori.ToolTipText = "振镜复位";
+            this.toolBt_Len2Ori.Click += new System.EventHandler(this.toolBt_Len2Ori_Click);
+            // 
+            // toolBt_StopLaser
+            // 
+            this.toolBt_StopLaser.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBt_StopLaser.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_StopLaser.Image")));
+            this.toolBt_StopLaser.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBt_StopLaser.Name = "toolBt_StopLaser";
+            this.toolBt_StopLaser.Size = new System.Drawing.Size(36, 42);
+            this.toolBt_StopLaser.ToolTipText = "停止标刻";
+            this.toolBt_StopLaser.Click += new System.EventHandler(this.toolBt_StopLaser_Click);
+            // 
             // toolStripSeparator10
             // 
             this.toolStripSeparator10.Name = "toolStripSeparator10";
@@ -1547,6 +1575,11 @@ namespace VisionApplication
             this.toolBtSta_Triggle.ToolTipText = "光源打开";
             this.toolBtSta_Triggle.Click += new System.EventHandler(this.toolBtSta_Triggle_Click);
             // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 45);
+            // 
             // toolBt_LS
             // 
             this.toolBt_LS.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -1563,11 +1596,6 @@ namespace VisionApplication
             // 
             this.toolStripSeparator11.Name = "toolStripSeparator11";
             this.toolStripSeparator11.Size = new System.Drawing.Size(6, 45);
-            // 
-            // toolStripSeparator3
-            // 
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 45);
             // 
             // toolBt_RuntimeSet
             // 
@@ -1898,7 +1926,7 @@ namespace VisionApplication
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
+            this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(986, 777);
             this.splitContainer1.SplitterDistance = 108;
             this.splitContainer1.TabIndex = 8;
@@ -2046,25 +2074,6 @@ namespace VisionApplication
             this.btFunRunOneTime.UseVisualStyleBackColor = false;
             this.btFunRunOneTime.Click += new System.EventHandler(this.btFun_Click);
             // 
-            // splitContainer2
-            // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Name = "splitContainer2";
-            // 
-            // splitContainer2.Panel1
-            // 
-            this.splitContainer2.Panel1.Controls.Add(this.splitContainer3);
-            // 
-            // splitContainer2.Panel2
-            // 
-            this.splitContainer2.Panel2.BackColor = System.Drawing.SystemColors.Control;
-            this.splitContainer2.Panel2.Controls.Add(this.splitContainer5);
-            this.splitContainer2.Size = new System.Drawing.Size(874, 777);
-            this.splitContainer2.SplitterDistance = 511;
-            this.splitContainer2.TabIndex = 0;
-            // 
             // splitContainer3
             // 
             this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -2075,323 +2084,35 @@ namespace VisionApplication
             // 
             // splitContainer3.Panel1
             // 
-            this.splitContainer3.Panel1.SizeChanged += new System.EventHandler(this.splitContainer3_Panel1_SizeChanged);
+            this.splitContainer3.Panel1.Controls.Add(this.splitContainer2);
+          //  this.splitContainer3.Panel1.SizeChanged += new System.EventHandler(this.splitContainer3_Panel1_SizeChanged);
             // 
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer3.Panel2.Controls.Add(this.splitContainer4);
-            this.splitContainer3.Size = new System.Drawing.Size(511, 777);
+            this.splitContainer3.Size = new System.Drawing.Size(874, 777);
             this.splitContainer3.SplitterDistance = 590;
             this.splitContainer3.TabIndex = 0;
             // 
-            // splitContainer4
+            // splitContainer2
             // 
-            this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer4.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer4.Name = "splitContainer4";
+            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
+            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer2.Name = "splitContainer2";
             // 
-            // splitContainer4.Panel1
+            // splitContainer2.Panel1
             // 
-            this.splitContainer4.Panel1.BackColor = System.Drawing.Color.White;
-            this.splitContainer4.Panel1.Controls.Add(this.lblOut2);
-            this.splitContainer4.Panel1.Controls.Add(this.lblIn2);
-            this.splitContainer4.Panel1.Controls.Add(this.lblOut1);
-            this.splitContainer4.Panel1.Controls.Add(this.lblIn1);
-            this.splitContainer4.Panel1.Controls.Add(this.btCam);
-            this.splitContainer4.Panel1.Controls.Add(this.label8);
-            this.splitContainer4.Panel1.Controls.Add(this.btSpace);
-            this.splitContainer4.Panel1.Controls.Add(this.btSer);
-            this.splitContainer4.Panel1.Controls.Add(this.btID);
-            this.splitContainer4.Panel1.Controls.Add(this.label10);
-            this.splitContainer4.Panel1.Controls.Add(this.label9);
-            this.splitContainer4.Panel1.Controls.Add(this.label6);
-            this.splitContainer4.Panel1.Controls.Add(this.label15);
-            this.splitContainer4.Panel1.Controls.Add(this.label11);
-            this.splitContainer4.Panel1.Controls.Add(this.label12);
-            this.splitContainer4.Panel1.Controls.Add(this.label5);
-            this.splitContainer4.Panel1.Controls.Add(this.label7);
-            this.splitContainer4.Panel1.Controls.Add(this.btMachine);
+            this.splitContainer2.Panel1.SizeChanged += new System.EventHandler(this.splitContainer2_Panel1_SizeChanged);
             // 
-            // splitContainer4.Panel2
+            // splitContainer2.Panel2
             // 
-            this.splitContainer4.Panel2.Controls.Add(this.splitContainer6);
-            this.splitContainer4.Size = new System.Drawing.Size(511, 183);
-            this.splitContainer4.SplitterDistance = 200;
-            this.splitContainer4.TabIndex = 0;
-            // 
-            // lblOut2
-            // 
-            this.lblOut2.AutoSize = true;
-            this.lblOut2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblOut2.Location = new System.Drawing.Point(156, 96);
-            this.lblOut2.Name = "lblOut2";
-            this.lblOut2.Size = new System.Drawing.Size(21, 19);
-            this.lblOut2.TabIndex = 46;
-            this.lblOut2.Text = "⭕️";
-            // 
-            // lblIn2
-            // 
-            this.lblIn2.AutoSize = true;
-            this.lblIn2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblIn2.Location = new System.Drawing.Point(156, 37);
-            this.lblIn2.Name = "lblIn2";
-            this.lblIn2.Size = new System.Drawing.Size(21, 19);
-            this.lblIn2.TabIndex = 46;
-            this.lblIn2.Text = "⭕️";
-            // 
-            // lblOut1
-            // 
-            this.lblOut1.AutoSize = true;
-            this.lblOut1.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblOut1.ForeColor = System.Drawing.Color.Black;
-            this.lblOut1.Location = new System.Drawing.Point(126, 96);
-            this.lblOut1.Name = "lblOut1";
-            this.lblOut1.Size = new System.Drawing.Size(21, 19);
-            this.lblOut1.TabIndex = 46;
-            this.lblOut1.Text = "⭕️";
-            // 
-            // lblIn1
-            // 
-            this.lblIn1.AutoSize = true;
-            this.lblIn1.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblIn1.Location = new System.Drawing.Point(123, 37);
-            this.lblIn1.Name = "lblIn1";
-            this.lblIn1.Size = new System.Drawing.Size(21, 19);
-            this.lblIn1.TabIndex = 46;
-            this.lblIn1.Text = "⭕️";
-            // 
-            // btCam
-            // 
-            this.btCam.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btCam.BackgroundImage = global::VisionApplication.Properties.Resources.RedLight;
-            this.btCam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btCam.FlatAppearance.BorderSize = 0;
-            this.btCam.Location = new System.Drawing.Point(48, 5);
-            this.btCam.Name = "btCam";
-            this.btCam.Size = new System.Drawing.Size(36, 34);
-            this.btCam.TabIndex = 0;
-            this.btCam.UseVisualStyleBackColor = false;
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(6, 87);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(41, 12);
-            this.label8.TabIndex = 45;
-            this.label8.Text = "IO模块";
-            // 
-            // btSpace
-            // 
-            this.btSpace.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btSpace.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btSpace.BackgroundImage")));
-            this.btSpace.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btSpace.FlatAppearance.BorderSize = 0;
-            this.btSpace.Location = new System.Drawing.Point(48, 108);
-            this.btSpace.Name = "btSpace";
-            this.btSpace.Size = new System.Drawing.Size(36, 34);
-            this.btSpace.TabIndex = 0;
-            this.toolTip1.SetToolTip(this.btSpace, "剩余磁盘空间");
-            this.btSpace.UseVisualStyleBackColor = false;
-            // 
-            // btSer
-            // 
-            this.btSer.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btSer.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btSer.BackgroundImage")));
-            this.btSer.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btSer.FlatAppearance.BorderSize = 0;
-            this.btSer.Location = new System.Drawing.Point(48, 42);
-            this.btSer.Name = "btSer";
-            this.btSer.Size = new System.Drawing.Size(36, 34);
-            this.btSer.TabIndex = 0;
-            this.btSer.UseVisualStyleBackColor = false;
-            // 
-            // btID
-            // 
-            this.btID.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btID.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btID.BackgroundImage")));
-            this.btID.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btID.FlatAppearance.BorderSize = 0;
-            this.btID.Location = new System.Drawing.Point(48, 140);
-            this.btID.Name = "btID";
-            this.btID.Size = new System.Drawing.Size(36, 34);
-            this.btID.TabIndex = 0;
-            this.btID.UseVisualStyleBackColor = false;
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(12, 151);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(29, 12);
-            this.label10.TabIndex = 45;
-            this.label10.Text = "权限";
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(13, 119);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(29, 12);
-            this.label9.TabIndex = 45;
-            this.label9.Text = "板卡";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(13, 16);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(29, 12);
-            this.label6.TabIndex = 45;
-            this.label6.Text = "相机";
-            // 
-            // label15
-            // 
-            this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(160, 75);
-            this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(17, 12);
-            this.label15.TabIndex = 45;
-            this.label15.Text = "Y2";
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(158, 16);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(17, 12);
-            this.label11.TabIndex = 45;
-            this.label11.Text = "X2";
-            // 
-            // label12
-            // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(124, 75);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(17, 12);
-            this.label12.TabIndex = 45;
-            this.label12.Text = "Y1";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(121, 16);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(17, 12);
-            this.label5.TabIndex = 45;
-            this.label5.Text = "X1";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(13, 53);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(29, 12);
-            this.label7.TabIndex = 45;
-            this.label7.Text = "光源";
-            // 
-            // btMachine
-            // 
-            this.btMachine.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.btMachine.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMachine.BackgroundImage")));
-            this.btMachine.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMachine.FlatAppearance.BorderSize = 0;
-            this.btMachine.Location = new System.Drawing.Point(48, 75);
-            this.btMachine.Name = "btMachine";
-            this.btMachine.Size = new System.Drawing.Size(36, 34);
-            this.btMachine.TabIndex = 0;
-            this.btMachine.UseVisualStyleBackColor = false;
-            // 
-            // splitContainer6
-            // 
-            this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer6.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer6.Name = "splitContainer6";
-            // 
-            // splitContainer6.Panel1
-            // 
-            this.splitContainer6.Panel1.Controls.Add(this.dgvLog);
-            // 
-            // splitContainer6.Panel2
-            // 
-            this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
-            this.splitContainer6.Size = new System.Drawing.Size(307, 183);
-            this.splitContainer6.SplitterDistance = 277;
-            this.splitContainer6.TabIndex = 0;
-            // 
-            // dgvLog
-            // 
-            this.dgvLog.BackgroundColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.dgvLog.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvLog.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.ClmnTime,
-            this.ClmnOper,
-            this.ClmnStatus,
-            this.ClmnReason,
-            this.ClmnUser});
-            this.dgvLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dgvLog.Location = new System.Drawing.Point(0, 0);
-            this.dgvLog.Name = "dgvLog";
-            this.dgvLog.RowHeadersVisible = false;
-            this.dgvLog.RowHeadersWidth = 62;
-            this.dgvLog.RowTemplate.Height = 23;
-            this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dgvLog.Size = new System.Drawing.Size(277, 183);
-            this.dgvLog.TabIndex = 0;
-            // 
-            // ClmnTime
-            // 
-            this.ClmnTime.HeaderText = "时间";
-            this.ClmnTime.MinimumWidth = 8;
-            this.ClmnTime.Name = "ClmnTime";
-            this.ClmnTime.Width = 130;
-            // 
-            // ClmnOper
-            // 
-            this.ClmnOper.HeaderText = "操作类型";
-            this.ClmnOper.MinimumWidth = 8;
-            this.ClmnOper.Name = "ClmnOper";
-            this.ClmnOper.Width = 140;
-            // 
-            // ClmnStatus
-            // 
-            this.ClmnStatus.HeaderText = "状态";
-            this.ClmnStatus.MinimumWidth = 8;
-            this.ClmnStatus.Name = "ClmnStatus";
-            this.ClmnStatus.Width = 80;
-            // 
-            // ClmnReason
-            // 
-            this.ClmnReason.HeaderText = "备注";
-            this.ClmnReason.MinimumWidth = 8;
-            this.ClmnReason.Name = "ClmnReason";
-            this.ClmnReason.Width = 180;
-            // 
-            // ClmnUser
-            // 
-            this.ClmnUser.HeaderText = "用户";
-            this.ClmnUser.MinimumWidth = 8;
-            this.ClmnUser.Name = "ClmnUser";
-            this.ClmnUser.Width = 60;
-            // 
-            // splitContainer5
-            // 
-            this.splitContainer5.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer5.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer5.Name = "splitContainer5";
-            this.splitContainer5.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer5.Panel1
-            // 
-            this.splitContainer5.Panel1.Controls.Add(this.tabControl1);
-            // 
-            // splitContainer5.Panel2
-            // 
-            this.splitContainer5.Panel2.BackColor = System.Drawing.Color.White;
-            this.splitContainer5.Size = new System.Drawing.Size(359, 777);
-            this.splitContainer5.SplitterDistance = 660;
-            this.splitContainer5.TabIndex = 0;
+            this.splitContainer2.Panel2.BackColor = System.Drawing.SystemColors.Control;
+            this.splitContainer2.Panel2.Controls.Add(this.tabControl1);
+            this.splitContainer2.Size = new System.Drawing.Size(874, 590);
+            this.splitContainer2.SplitterDistance = 514;
+            this.splitContainer2.TabIndex = 0;
             // 
             // tabControl1
             // 
@@ -2403,7 +2124,7 @@ namespace VisionApplication
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(359, 660);
+            this.tabControl1.Size = new System.Drawing.Size(356, 590);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPageCam
@@ -2419,7 +2140,7 @@ namespace VisionApplication
             this.tabPageCam.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCam.Location = new System.Drawing.Point(4, 24);
             this.tabPageCam.Name = "tabPageCam";
-            this.tabPageCam.Size = new System.Drawing.Size(351, 632);
+            this.tabPageCam.Size = new System.Drawing.Size(348, 562);
             this.tabPageCam.TabIndex = 3;
             this.tabPageCam.Text = "相机设置";
             // 
@@ -3109,7 +2830,7 @@ namespace VisionApplication
             this.tabPageBase.Location = new System.Drawing.Point(4, 24);
             this.tabPageBase.Name = "tabPageBase";
             this.tabPageBase.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBase.Size = new System.Drawing.Size(351, 632);
+            this.tabPageBase.Size = new System.Drawing.Size(347, 562);
             this.tabPageBase.TabIndex = 0;
             this.tabPageBase.Text = "模板匹配";
             // 
@@ -3659,7 +3380,7 @@ namespace VisionApplication
             this.tabPageCalib.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCalib.Location = new System.Drawing.Point(4, 24);
             this.tabPageCalib.Name = "tabPageCalib";
-            this.tabPageCalib.Size = new System.Drawing.Size(351, 632);
+            this.tabPageCalib.Size = new System.Drawing.Size(347, 562);
             this.tabPageCalib.TabIndex = 4;
             this.tabPageCalib.Text = "激光视觉标定";
             // 
@@ -4345,7 +4066,7 @@ namespace VisionApplication
             this.dgvMarkCood.Name = "dgvMarkCood";
             this.dgvMarkCood.RowHeadersWidth = 62;
             this.dgvMarkCood.RowTemplate.Height = 23;
-            this.dgvMarkCood.Size = new System.Drawing.Size(343, 132);
+            this.dgvMarkCood.Size = new System.Drawing.Size(577, 132);
             this.dgvMarkCood.TabIndex = 89;
             // 
             // colImgX
@@ -4420,6 +4141,296 @@ namespace VisionApplication
             this.btMarkTemplate.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btMarkTemplate.UseVisualStyleBackColor = true;
             this.btMarkTemplate.Click += new System.EventHandler(this.btMarkCalib_Click);
+            // 
+            // splitContainer4
+            // 
+            this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer4.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer4.Name = "splitContainer4";
+            // 
+            // splitContainer4.Panel1
+            // 
+            this.splitContainer4.Panel1.BackColor = System.Drawing.Color.White;
+            this.splitContainer4.Panel1.Controls.Add(this.lblOut2);
+            this.splitContainer4.Panel1.Controls.Add(this.lblIn2);
+            this.splitContainer4.Panel1.Controls.Add(this.lblOut1);
+            this.splitContainer4.Panel1.Controls.Add(this.lblIn1);
+            this.splitContainer4.Panel1.Controls.Add(this.btCam);
+            this.splitContainer4.Panel1.Controls.Add(this.label8);
+            this.splitContainer4.Panel1.Controls.Add(this.btSpace);
+            this.splitContainer4.Panel1.Controls.Add(this.btSer);
+            this.splitContainer4.Panel1.Controls.Add(this.btID);
+            this.splitContainer4.Panel1.Controls.Add(this.label10);
+            this.splitContainer4.Panel1.Controls.Add(this.label9);
+            this.splitContainer4.Panel1.Controls.Add(this.label6);
+            this.splitContainer4.Panel1.Controls.Add(this.label15);
+            this.splitContainer4.Panel1.Controls.Add(this.label11);
+            this.splitContainer4.Panel1.Controls.Add(this.label12);
+            this.splitContainer4.Panel1.Controls.Add(this.label5);
+            this.splitContainer4.Panel1.Controls.Add(this.label7);
+            this.splitContainer4.Panel1.Controls.Add(this.btMachine);
+            // 
+            // splitContainer4.Panel2
+            // 
+            this.splitContainer4.Panel2.Controls.Add(this.splitContainer6);
+            this.splitContainer4.Size = new System.Drawing.Size(874, 183);
+            this.splitContainer4.SplitterDistance = 114;
+            this.splitContainer4.TabIndex = 0;
+            // 
+            // lblOut2
+            // 
+            this.lblOut2.AutoSize = true;
+            this.lblOut2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOut2.Location = new System.Drawing.Point(84, 149);
+            this.lblOut2.Name = "lblOut2";
+            this.lblOut2.Size = new System.Drawing.Size(21, 19);
+            this.lblOut2.TabIndex = 46;
+            this.lblOut2.Text = "⭕️";
+            // 
+            // lblIn2
+            // 
+            this.lblIn2.AutoSize = true;
+            this.lblIn2.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblIn2.Location = new System.Drawing.Point(85, 68);
+            this.lblIn2.Name = "lblIn2";
+            this.lblIn2.Size = new System.Drawing.Size(21, 19);
+            this.lblIn2.TabIndex = 46;
+            this.lblIn2.Text = "⭕️";
+            // 
+            // lblOut1
+            // 
+            this.lblOut1.AutoSize = true;
+            this.lblOut1.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOut1.ForeColor = System.Drawing.Color.Black;
+            this.lblOut1.Location = new System.Drawing.Point(85, 107);
+            this.lblOut1.Name = "lblOut1";
+            this.lblOut1.Size = new System.Drawing.Size(21, 19);
+            this.lblOut1.TabIndex = 46;
+            this.lblOut1.Text = "⭕️";
+            // 
+            // lblIn1
+            // 
+            this.lblIn1.AutoSize = true;
+            this.lblIn1.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblIn1.Location = new System.Drawing.Point(86, 26);
+            this.lblIn1.Name = "lblIn1";
+            this.lblIn1.Size = new System.Drawing.Size(21, 19);
+            this.lblIn1.TabIndex = 46;
+            this.lblIn1.Text = "⭕️";
+            // 
+            // btCam
+            // 
+            this.btCam.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.btCam.BackgroundImage = global::VisionApplication.Properties.Resources.RedLight;
+            this.btCam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btCam.FlatAppearance.BorderSize = 0;
+            this.btCam.Location = new System.Drawing.Point(48, 5);
+            this.btCam.Name = "btCam";
+            this.btCam.Size = new System.Drawing.Size(36, 34);
+            this.btCam.TabIndex = 0;
+            this.btCam.UseVisualStyleBackColor = false;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(6, 87);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(41, 12);
+            this.label8.TabIndex = 45;
+            this.label8.Text = "IO模块";
+            // 
+            // btSpace
+            // 
+            this.btSpace.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.btSpace.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btSpace.BackgroundImage")));
+            this.btSpace.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btSpace.FlatAppearance.BorderSize = 0;
+            this.btSpace.Location = new System.Drawing.Point(48, 108);
+            this.btSpace.Name = "btSpace";
+            this.btSpace.Size = new System.Drawing.Size(36, 34);
+            this.btSpace.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.btSpace, "剩余磁盘空间");
+            this.btSpace.UseVisualStyleBackColor = false;
+            // 
+            // btSer
+            // 
+            this.btSer.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.btSer.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btSer.BackgroundImage")));
+            this.btSer.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btSer.FlatAppearance.BorderSize = 0;
+            this.btSer.Location = new System.Drawing.Point(48, 42);
+            this.btSer.Name = "btSer";
+            this.btSer.Size = new System.Drawing.Size(36, 34);
+            this.btSer.TabIndex = 0;
+            this.btSer.UseVisualStyleBackColor = false;
+            // 
+            // btID
+            // 
+            this.btID.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.btID.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btID.BackgroundImage")));
+            this.btID.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btID.FlatAppearance.BorderSize = 0;
+            this.btID.Location = new System.Drawing.Point(48, 140);
+            this.btID.Name = "btID";
+            this.btID.Size = new System.Drawing.Size(36, 34);
+            this.btID.TabIndex = 0;
+            this.btID.UseVisualStyleBackColor = false;
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(12, 151);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(29, 12);
+            this.label10.TabIndex = 45;
+            this.label10.Text = "权限";
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(13, 119);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(29, 12);
+            this.label9.TabIndex = 45;
+            this.label9.Text = "板卡";
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(13, 16);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(29, 12);
+            this.label6.TabIndex = 45;
+            this.label6.Text = "相机";
+            // 
+            // label15
+            // 
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(88, 133);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(17, 12);
+            this.label15.TabIndex = 45;
+            this.label15.Text = "Y2";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(90, 54);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(17, 12);
+            this.label11.TabIndex = 45;
+            this.label11.Text = "X2";
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Location = new System.Drawing.Point(89, 92);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(17, 12);
+            this.label12.TabIndex = 45;
+            this.label12.Text = "Y1";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(90, 16);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(17, 12);
+            this.label5.TabIndex = 45;
+            this.label5.Text = "X1";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(13, 53);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(29, 12);
+            this.label7.TabIndex = 45;
+            this.label7.Text = "光源";
+            // 
+            // btMachine
+            // 
+            this.btMachine.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.btMachine.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMachine.BackgroundImage")));
+            this.btMachine.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMachine.FlatAppearance.BorderSize = 0;
+            this.btMachine.Location = new System.Drawing.Point(48, 75);
+            this.btMachine.Name = "btMachine";
+            this.btMachine.Size = new System.Drawing.Size(36, 34);
+            this.btMachine.TabIndex = 0;
+            this.btMachine.UseVisualStyleBackColor = false;
+            // 
+            // splitContainer6
+            // 
+            this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer6.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer6.Name = "splitContainer6";
+            // 
+            // splitContainer6.Panel1
+            // 
+            this.splitContainer6.Panel1.Controls.Add(this.dgvLog);
+            // 
+            // splitContainer6.Panel2
+            // 
+            this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
+            this.splitContainer6.Size = new System.Drawing.Size(756, 183);
+            this.splitContainer6.SplitterDistance = 413;
+            this.splitContainer6.TabIndex = 0;
+            // 
+            // dgvLog
+            // 
+            this.dgvLog.BackgroundColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.dgvLog.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvLog.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.ClmnTime,
+            this.ClmnOper,
+            this.ClmnStatus,
+            this.ClmnReason,
+            this.ClmnUser});
+            this.dgvLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dgvLog.Location = new System.Drawing.Point(0, 0);
+            this.dgvLog.Name = "dgvLog";
+            this.dgvLog.RowHeadersVisible = false;
+            this.dgvLog.RowHeadersWidth = 62;
+            this.dgvLog.RowTemplate.Height = 23;
+            this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.dgvLog.Size = new System.Drawing.Size(413, 183);
+            this.dgvLog.TabIndex = 0;
+            // 
+            // ClmnTime
+            // 
+            this.ClmnTime.HeaderText = "时间";
+            this.ClmnTime.MinimumWidth = 8;
+            this.ClmnTime.Name = "ClmnTime";
+            this.ClmnTime.Width = 130;
+            // 
+            // ClmnOper
+            // 
+            this.ClmnOper.HeaderText = "操作类型";
+            this.ClmnOper.MinimumWidth = 8;
+            this.ClmnOper.Name = "ClmnOper";
+            this.ClmnOper.Width = 140;
+            // 
+            // ClmnStatus
+            // 
+            this.ClmnStatus.HeaderText = "状态";
+            this.ClmnStatus.MinimumWidth = 8;
+            this.ClmnStatus.Name = "ClmnStatus";
+            this.ClmnStatus.Width = 80;
+            // 
+            // ClmnReason
+            // 
+            this.ClmnReason.HeaderText = "备注";
+            this.ClmnReason.MinimumWidth = 8;
+            this.ClmnReason.Name = "ClmnReason";
+            this.ClmnReason.Width = 180;
+            // 
+            // ClmnUser
+            // 
+            this.ClmnUser.HeaderText = "用户";
+            this.ClmnUser.MinimumWidth = 8;
+            this.ClmnUser.Name = "ClmnUser";
+            this.ClmnUser.Width = 60;
             // 
             // label_JobResults_Percent
             // 
@@ -4636,37 +4647,6 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
-            // toolBt_Len2Ori
-            // 
-            this.toolBt_Len2Ori.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolBt_Len2Ori.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_Len2Ori.Image")));
-            this.toolBt_Len2Ori.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolBt_Len2Ori.Name = "toolBt_Len2Ori";
-            this.toolBt_Len2Ori.Size = new System.Drawing.Size(36, 42);
-            this.toolBt_Len2Ori.ToolTipText = "振镜复位";
-            this.toolBt_Len2Ori.Click += new System.EventHandler(this.toolBt_Len2Ori_Click);
-            // 
-            // toolBt_JCZ_Conn
-            // 
-            this.toolBt_JCZ_Conn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolBt_JCZ_Conn.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_JCZ_Conn.Image")));
-            this.toolBt_JCZ_Conn.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolBt_JCZ_Conn.Name = "toolBt_JCZ_Conn";
-            this.toolBt_JCZ_Conn.Size = new System.Drawing.Size(36, 42);
-            this.toolBt_JCZ_Conn.Text = "暂停";
-            this.toolBt_JCZ_Conn.ToolTipText = "连接板卡";
-            this.toolBt_JCZ_Conn.Click += new System.EventHandler(this.toolBt_JCZ_Conn_Click);
-            // 
-            // toolBt_StopLaser
-            // 
-            this.toolBt_StopLaser.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolBt_StopLaser.Image = ((System.Drawing.Image)(resources.GetObject("toolBt_StopLaser.Image")));
-            this.toolBt_StopLaser.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolBt_StopLaser.Name = "toolBt_StopLaser";
-            this.toolBt_StopLaser.Size = new System.Drawing.Size(36, 42);
-            this.toolBt_StopLaser.ToolTipText = "停止标刻";
-            this.toolBt_StopLaser.Click += new System.EventHandler(this.toolBt_StopLaser_Click);
-            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -4695,25 +4675,13 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.picLogo)).EndInit();
-            this.splitContainer2.Panel1.ResumeLayout(false);
-            this.splitContainer2.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
-            this.splitContainer2.ResumeLayout(false);
+            this.splitContainer3.Panel1.ResumeLayout(false);
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
-            this.splitContainer4.Panel1.ResumeLayout(false);
-            this.splitContainer4.Panel1.PerformLayout();
-            this.splitContainer4.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
-            this.splitContainer4.ResumeLayout(false);
-            this.splitContainer6.Panel1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
-            this.splitContainer6.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).EndInit();
-            this.splitContainer5.Panel1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).EndInit();
-            this.splitContainer5.ResumeLayout(false);
+            this.splitContainer2.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+            this.splitContainer2.ResumeLayout(false);
             this.tabControl1.ResumeLayout(false);
             this.tabPageCam.ResumeLayout(false);
             this.tabPageCam.PerformLayout();
@@ -4775,6 +4743,15 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.numUDCenY)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numUDRad)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvMarkCood)).EndInit();
+            this.splitContainer4.Panel1.ResumeLayout(false);
+            this.splitContainer4.Panel1.PerformLayout();
+            this.splitContainer4.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
+            this.splitContainer4.ResumeLayout(false);
+            this.splitContainer6.Panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
+            this.splitContainer6.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
@@ -4941,7 +4918,6 @@ namespace VisionApplication
         private System.Windows.Forms.Button btFun_Preview;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator13;
         private System.Windows.Forms.ToolStripMenuItem menuTool_LightDebug;
-        private System.Windows.Forms.SplitContainer splitContainer5;
         private System.Windows.Forms.PictureBox picLogo;
         private System.Windows.Forms.ToolStripMenuItem menuManage_SuperOrNormal;
         private System.Windows.Forms.DataGridViewImageColumn dataGridViewImageColumn2;

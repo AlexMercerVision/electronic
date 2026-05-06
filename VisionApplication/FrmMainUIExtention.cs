@@ -337,8 +337,16 @@ namespace VisionApplication
                     operLog.strFailReason = "";
                     string strRes = cmbResulation.Text;
                     int ind = strRes.IndexOf('*');
-                    cup.p_Cam[icamSelectInd].iWidth = uint.Parse(strRes.Substring(0, ind));
-                    cup.p_Cam[icamSelectInd].iHeight = uint.Parse(strRes.Substring(ind + 1, strRes.Length - ind - 1));
+                    if(ind>0)
+                    {
+                        cup.p_Cam[icamSelectInd].iWidth = uint.Parse(strRes.Substring(0, ind));
+                        cup.p_Cam[icamSelectInd].iHeight = uint.Parse(strRes.Substring(ind + 1, strRes.Length - ind - 1));
+                    }
+                    else
+                    {
+
+                    }
+                    
 
 
                     if (cmbPixelFormat.SelectedIndex == 0 )

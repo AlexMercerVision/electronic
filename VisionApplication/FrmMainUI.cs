@@ -205,10 +205,10 @@ namespace VisionApplication
         //窗口布局初始化  主窗体加载以及窗体大小调整时调用
         private void ViewLayout()
         {
-            mainWindWidth = splitContainer3.Panel1.Width;
-            mainWindHeight = splitContainer3.Panel1.Height;
-            splitContainer4.SplitterDistance = 150;
-            splitContainer5.Panel1Collapsed = false;
+            mainWindWidth = splitContainer2.Panel1.Width;
+            mainWindHeight = splitContainer2.Panel1.Height;
+            splitContainer4.SplitterDistance = 100;
+         //   splitContainer5.Panel1Collapsed = false;
             //**20220409  主窗口大小调整
             if (vpWin != null)
             {
@@ -307,7 +307,9 @@ namespace VisionApplication
                         if (!bVPWinAttached)
                         {
                             bVPWinAttached = true;
-                            this.splitContainer3.Panel1.Controls.Add(this.vpWin);
+                            this.splitContainer2.Panel1.Controls.Add(this.vpWin);
+                           /* this.vpWin.Dock = DockStyle.Fill;
+                            this.vpWin.BringToFront();*/
                         }
                         vpWin.cdl = cdl;
                         this.vpWin.Location = new System.Drawing.Point(-2, 6);
@@ -362,8 +364,10 @@ namespace VisionApplication
                 else if(cup.p_VPPRTP.bDeepInfer)
                 {
                     
-                    this.splitContainer3.Panel1.Controls.Add(this.vpWin);
-                     
+                    this.splitContainer2.Panel1.Controls.Add(this.vpWin);
+                    /*this.vpWin.Dock = DockStyle.Fill;
+                    this.vpWin.BringToFront();*/
+
                     vpWin.cdl = cdl;
                     this.vpWin.Location = new System.Drawing.Point(-2, 6);
                     this.vpWin.Name = "XB视图";
@@ -978,7 +982,8 @@ namespace VisionApplication
                 chooseHIK = false;
             }
             rts.cs.camNum = (int)cameraNum;
-            vpWin._cameraNum = cameraNum;
+            if(vpWin!=null)
+                vpWin._cameraNum = cameraNum;
         }
 
         private void InitCamLog()
@@ -2223,7 +2228,7 @@ namespace VisionApplication
             string strEnableMAC = mPasswordFile.GetCID();
 
             int iModelRole = -1;
-            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
+            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "00E269A99B04")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
             {
                 rts.initStatus.bModelRoleCert = true;
 
@@ -2235,7 +2240,7 @@ namespace VisionApplication
                         iModelRole = 9;
 
                     }
-                    else if (DateTime.Now.ToString("yyyyMMdd") == "20240617")  //临时使用
+                    else if (DateTime.Now.ToString("yyyyMMdd") == "20260505")  //临时使用
                     {
                         iModelRole = 9;
                     }
@@ -2394,11 +2399,11 @@ namespace VisionApplication
            // cdl.CloseDL();
         }
 
-        private void splitContainer3_Panel1_SizeChanged(object sender, EventArgs e)
+        
+        private void splitContainer2_Panel1_SizeChanged(object sender, EventArgs e)
         {
             ViewLayout();
         }
-
         #endregion 
 
         #region   交互操作事件区
@@ -3014,7 +3019,7 @@ namespace VisionApplication
             RunCont();*/
             //  vpWin.RunCont();
         }
-
+      
         private void menu_View_EventStatus_Click(object sender, EventArgs e)
         {
             menu_View_EventStatus.Checked = !menu_View_EventStatus.Checked;
@@ -3026,7 +3031,11 @@ namespace VisionApplication
             menu_View_SystemLog.Checked = !menu_View_SystemLog.Checked;
             ViewChange();
         }
-
+        private void menu_View_LaserWin_Click(object sender, EventArgs e)
+        {
+            menu_View_LaserWin.Checked = !menu_View_LaserWin.Checked;
+            ViewChange();
+        }
         private void button_ResetStatistics_Click(object sender, EventArgs e)
         {
             iAcquisitionsTimes = 0;
@@ -5186,34 +5195,16 @@ namespace VisionApplication
         }
         private void ViewChange()
         {
-            if (menu_View_SystemLog.Checked && menu_View_EventStatus.Checked)
-            {
+            // 各子区域根据菜单项 Checked 状态控制折叠/展开
+            splitContainer4.Panel1Collapsed = !menu_View_EventStatus.Checked;
+            splitContainer6.Panel1Collapsed = !menu_View_SystemLog.Checked;
+            splitContainer6.Panel2Collapsed = !menu_View_LaserWin.Checked;
 
-                splitContainer3.Panel2Collapsed = false;
-                splitContainer4.Panel1Collapsed = false;
-                splitContainer4.Panel2Collapsed = false;
-
-
-            }
-            else if (menu_View_SystemLog.Checked)
-            {
-                //  splitContainer4.Visible = true;
-                splitContainer3.Panel2Collapsed = false;
-                splitContainer4.Panel1Collapsed = true;
-                splitContainer4.Panel2Collapsed = false;
-            }
-            else if (menu_View_EventStatus.Checked)
-            {
-                // splitContainer4.Visible = true;
-                splitContainer3.Panel2Collapsed = false;
-                splitContainer4.Panel1Collapsed = false;
-                splitContainer4.Panel2Collapsed = true;
-            }
-            else
-            {
-                splitContainer3.Panel2Collapsed = true;
-
-            }
+            // 如果系统日志和激光窗口都未选中，折叠 splitContainer4.Panel2
+            splitContainer4.Panel2Collapsed = !menu_View_SystemLog.Checked && !menu_View_LaserWin.Checked;
+            // 如果三个菜单项都未选中，折叠整个 splitContainer3.Panel2；否则展开
+            bool anyChecked = menu_View_EventStatus.Checked || menu_View_SystemLog.Checked || menu_View_LaserWin.Checked;
+            splitContainer3.Panel2Collapsed = !anyChecked;
         }
 
         //20220410串口操作
@@ -5319,7 +5310,7 @@ namespace VisionApplication
                         if (bSucc)
                         {
                             // cup.p_SD.
-                            operLog.strOperEvent = "打开串口" + (ind + 1) + "成功";
+                            operLog.strOperEvent = "打开串口" + (i + 1) + "成功";
                             operLog.iEventStatus = 0;
                         }
                         else
@@ -5498,6 +5489,8 @@ namespace VisionApplication
         //st 2022年10月31日
         private bool openSer(SerialPort sPortS, string com)
         {
+            if (sPortS == null)
+                return false;
             sPortS.PortName = com;//串口的portname 
             sPortS.BaudRate = cup.p_SD.BaudRate;// 19200;//串口的波特率 
             sPortS.DataBits = cup.p_SD.DataBits;//数据位 
@@ -6022,7 +6015,7 @@ namespace VisionApplication
             StartService("Cognex Security Service");
         }
 
-       
+      
 
         private void timerIOOut_Tick(object sender, EventArgs e)
         {

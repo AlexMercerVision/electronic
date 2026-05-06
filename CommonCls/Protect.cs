@@ -503,7 +503,7 @@ namespace CommonCls
             DateTime dtNow = DateTime.Now;
             SetDate(DateType.LastLog, dtNow);
             WritePasswordFile();
-            if (iModelRole == 10)
+            if (iModelRole == 9)
                 return 0;
             if (dtNow < dtLast)
                 return 1;  //修改过系统时间

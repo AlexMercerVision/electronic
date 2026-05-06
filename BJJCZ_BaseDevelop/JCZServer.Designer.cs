@@ -1,5 +1,4 @@
-﻿
-namespace BJJCZ_BaseDevelop
+﻿namespace BJJCZ_BaseDevelop
 {
     partial class JCZServer
     {
@@ -35,20 +34,30 @@ namespace BJJCZ_BaseDevelop
             this.menuExit = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.menuExitApp = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.menuExport = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuControl = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuSplit = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.File_LoadEZD = new System.Windows.Forms.ToolStripMenuItem();
+            this.File_SaveEZD = new System.Windows.Forms.ToolStripMenuItem();
+            this.File_ExportFigure = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuCard = new System.Windows.Forms.ToolStripMenuItem();
+            this.Card_NO1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.Card_NO2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.Win = new System.Windows.Forms.ToolStripMenuItem();
+            this.Win_Log = new System.Windows.Forms.ToolStripMenuItem();
+            this.Win_Entity = new System.Windows.Forms.ToolStripMenuItem();
+            this.Win_Route = new System.Windows.Forms.ToolStripMenuItem();
+            this.Win_Oper = new System.Windows.Forms.ToolStripMenuItem();
+            this.win_Reset = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.mainMsgBox = new System.Windows.Forms.RichTextBox();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.mainMsgBox = new System.Windows.Forms.RichTextBox();
             this.dgvEnt = new System.Windows.Forms.DataGridView();
             this.Column1 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.label11 = new System.Windows.Forms.Label();
             this.picRoCrossClock = new System.Windows.Forms.PictureBox();
@@ -71,7 +80,6 @@ namespace BJJCZ_BaseDevelop
             this.txtMv_Value = new System.Windows.Forms.TextBox();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -85,6 +93,7 @@ namespace BJJCZ_BaseDevelop
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picRoCrossClock)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picMvLeft)).BeginInit();
@@ -121,67 +130,134 @@ namespace BJJCZ_BaseDevelop
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuExport,
-            this.menuControl,
-            this.menuSplit});
+            this.MenuFile,
+            this.MenuCard,
+            this.Win});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1220, 25);
-            this.menuStrip1.TabIndex = 1;
+            this.menuStrip1.TabIndex = 2;
             this.menuStrip1.Text = "menuStrip1";
-            this.menuStrip1.Visible = false;
             // 
-            // menuExport
+            // MenuFile
             // 
-            this.menuExport.Name = "menuExport";
-            this.menuExport.Size = new System.Drawing.Size(68, 21);
-            this.menuExport.Text = "导出图像";
-            this.menuExport.Click += new System.EventHandler(this.menuExport_Click);
+            this.MenuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.File_LoadEZD,
+            this.File_SaveEZD,
+            this.File_ExportFigure});
+            this.MenuFile.Name = "MenuFile";
+            this.MenuFile.Size = new System.Drawing.Size(44, 21);
+            this.MenuFile.Text = "文件";
             // 
-            // menuControl
+            // File_LoadEZD
             // 
-            this.menuControl.Name = "menuControl";
-            this.menuControl.Size = new System.Drawing.Size(44, 21);
-            this.menuControl.Text = "控制";
-            this.menuControl.Click += new System.EventHandler(this.menuControl_Click);
+            this.File_LoadEZD.Name = "File_LoadEZD";
+            this.File_LoadEZD.Size = new System.Drawing.Size(147, 22);
+            this.File_LoadEZD.Text = "加载EZD文件";
+            this.File_LoadEZD.Click += new System.EventHandler(this.File_LoadEZD_Click);
             // 
-            // menuSplit
+            // File_SaveEZD
             // 
-            this.menuSplit.Name = "menuSplit";
-            this.menuSplit.Size = new System.Drawing.Size(44, 21);
-            this.menuSplit.Text = "分离";
-            this.menuSplit.Click += new System.EventHandler(this.menuSplit_Click);
+            this.File_SaveEZD.Name = "File_SaveEZD";
+            this.File_SaveEZD.Size = new System.Drawing.Size(147, 22);
+            this.File_SaveEZD.Text = "保存EZD文件";
+            this.File_SaveEZD.Click += new System.EventHandler(this.File_SaveEZD_Click);
+            // 
+            // File_ExportFigure
+            // 
+            this.File_ExportFigure.Name = "File_ExportFigure";
+            this.File_ExportFigure.Size = new System.Drawing.Size(147, 22);
+            this.File_ExportFigure.Text = "导出图像";
+            this.File_ExportFigure.Click += new System.EventHandler(this.File_ExportFigure_Click);
+            // 
+            // MenuCard
+            // 
+            this.MenuCard.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.Card_NO1,
+            this.Card_NO2});
+            this.MenuCard.Name = "MenuCard";
+            this.MenuCard.Size = new System.Drawing.Size(44, 21);
+            this.MenuCard.Text = "板卡";
+            // 
+            // Card_NO1
+            // 
+            this.Card_NO1.Name = "Card_NO1";
+            this.Card_NO1.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO1.Text = "卡1";
+            this.Card_NO1.Click += new System.EventHandler(this.Card_NO1_Click);
+            // 
+            // Card_NO2
+            // 
+            this.Card_NO2.Name = "Card_NO2";
+            this.Card_NO2.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO2.Text = "卡2";
+            this.Card_NO2.Click += new System.EventHandler(this.Card_NO2_Click);
+            // 
+            // Win
+            // 
+            this.Win.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.Win_Log,
+            this.Win_Entity,
+            this.Win_Route,
+            this.Win_Oper,
+            this.win_Reset});
+            this.Win.Name = "Win";
+            this.Win.Size = new System.Drawing.Size(44, 21);
+            this.Win.Text = "窗口";
+            // 
+            // Win_Log
+            // 
+            this.Win_Log.Checked = true;
+            this.Win_Log.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.Win_Log.Name = "Win_Log";
+            this.Win_Log.Size = new System.Drawing.Size(180, 22);
+            this.Win_Log.Text = "日志窗口";
+            this.Win_Log.Click += new System.EventHandler(this.Win_Log_Click);
+            // 
+            // Win_Entity
+            // 
+            this.Win_Entity.Checked = true;
+            this.Win_Entity.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.Win_Entity.Name = "Win_Entity";
+            this.Win_Entity.Size = new System.Drawing.Size(180, 22);
+            this.Win_Entity.Text = "对象清单窗口";
+            this.Win_Entity.Click += new System.EventHandler(this.Win_Entity_Click);
+            // 
+            // Win_Route
+            // 
+            this.Win_Route.Checked = true;
+            this.Win_Route.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.Win_Route.Name = "Win_Route";
+            this.Win_Route.Size = new System.Drawing.Size(180, 22);
+            this.Win_Route.Text = "路径图窗口";
+            this.Win_Route.Click += new System.EventHandler(this.Win_Route_Click);
+            // 
+            // Win_Oper
+            // 
+            this.Win_Oper.Checked = true;
+            this.Win_Oper.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.Win_Oper.Name = "Win_Oper";
+            this.Win_Oper.Size = new System.Drawing.Size(180, 22);
+            this.Win_Oper.Text = "操作窗口";
+            this.Win_Oper.Click += new System.EventHandler(this.Win_Oper_Click);
+            // 
+            // win_Reset
+            // 
+            this.win_Reset.Name = "win_Reset";
+            this.win_Reset.Size = new System.Drawing.Size(180, 22);
+            this.win_Reset.Text = "重置";
+            this.win_Reset.Click += new System.EventHandler(this.Win_Reset_Click);
             // 
             // backgroundWorker1
             // 
             this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             // 
-            // pictureBox1
-            // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(312, 272);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox1.TabIndex = 6;
-            this.pictureBox1.TabStop = false;
-            // 
-            // mainMsgBox
-            // 
-            this.mainMsgBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mainMsgBox.Location = new System.Drawing.Point(0, 0);
-            this.mainMsgBox.Name = "mainMsgBox";
-            this.mainMsgBox.Size = new System.Drawing.Size(264, 272);
-            this.mainMsgBox.TabIndex = 117;
-            this.mainMsgBox.Text = "";
-            // 
             // splitContainer1
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer1.Location = new System.Drawing.Point(0, 25);
             this.splitContainer1.Name = "splitContainer1";
+            this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
             // splitContainer1.Panel1
             // 
@@ -190,9 +266,9 @@ namespace BJJCZ_BaseDevelop
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
-            this.splitContainer1.Size = new System.Drawing.Size(1220, 272);
-            this.splitContainer1.SplitterDistance = 595;
-            this.splitContainer1.TabIndex = 118;
+            this.splitContainer1.Size = new System.Drawing.Size(1220, 575);
+            this.splitContainer1.SplitterDistance = 287;
+            this.splitContainer1.TabIndex = 3;
             // 
             // splitContainer2
             // 
@@ -202,14 +278,23 @@ namespace BJJCZ_BaseDevelop
             // 
             // splitContainer2.Panel1
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.dgvEnt);
+            this.splitContainer2.Panel1.Controls.Add(this.mainMsgBox);
             // 
             // splitContainer2.Panel2
             // 
-            this.splitContainer2.Panel2.Controls.Add(this.pictureBox1);
-            this.splitContainer2.Size = new System.Drawing.Size(595, 272);
-            this.splitContainer2.SplitterDistance = 279;
+            this.splitContainer2.Panel2.Controls.Add(this.dgvEnt);
+            this.splitContainer2.Size = new System.Drawing.Size(1220, 287);
+            this.splitContainer2.SplitterDistance = 610;
             this.splitContainer2.TabIndex = 0;
+            // 
+            // mainMsgBox
+            // 
+            this.mainMsgBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.mainMsgBox.Location = new System.Drawing.Point(0, 0);
+            this.mainMsgBox.Name = "mainMsgBox";
+            this.mainMsgBox.Size = new System.Drawing.Size(610, 287);
+            this.mainMsgBox.TabIndex = 118;
+            this.mainMsgBox.Text = "";
             // 
             // dgvEnt
             // 
@@ -223,8 +308,8 @@ namespace BJJCZ_BaseDevelop
             this.dgvEnt.Location = new System.Drawing.Point(0, 0);
             this.dgvEnt.Name = "dgvEnt";
             this.dgvEnt.RowTemplate.Height = 23;
-            this.dgvEnt.Size = new System.Drawing.Size(279, 272);
-            this.dgvEnt.TabIndex = 91;
+            this.dgvEnt.Size = new System.Drawing.Size(606, 287);
+            this.dgvEnt.TabIndex = 92;
             this.dgvEnt.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvEnt_CellClick);
             this.dgvEnt.RowHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dgvEnt_RowHeaderMouseClick);
             // 
@@ -258,14 +343,26 @@ namespace BJJCZ_BaseDevelop
             // 
             // splitContainer3.Panel1
             // 
-            this.splitContainer3.Panel1.Controls.Add(this.panel1);
+            this.splitContainer3.Panel1.Controls.Add(this.pictureBox1);
             // 
             // splitContainer3.Panel2
             // 
-            this.splitContainer3.Panel2.Controls.Add(this.mainMsgBox);
-            this.splitContainer3.Size = new System.Drawing.Size(621, 272);
-            this.splitContainer3.SplitterDistance = 353;
+            this.splitContainer3.Panel2.Controls.Add(this.panel1);
+            this.splitContainer3.Size = new System.Drawing.Size(1220, 284);
+            this.splitContainer3.SplitterDistance = 610;
             this.splitContainer3.TabIndex = 0;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(610, 284);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox1.TabIndex = 7;
+            this.pictureBox1.TabStop = false;
             // 
             // panel1
             // 
@@ -292,8 +389,8 @@ namespace BJJCZ_BaseDevelop
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(353, 272);
-            this.panel1.TabIndex = 119;
+            this.panel1.Size = new System.Drawing.Size(606, 284);
+            this.panel1.TabIndex = 120;
             // 
             // label11
             // 
@@ -485,7 +582,7 @@ namespace BJJCZ_BaseDevelop
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(1220, 272);
+            this.ClientSize = new System.Drawing.Size(1220, 600);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
@@ -499,7 +596,6 @@ namespace BJJCZ_BaseDevelop
             this.menuExit.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
@@ -513,6 +609,7 @@ namespace BJJCZ_BaseDevelop
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picRoCrossClock)).EndInit();
@@ -533,39 +630,49 @@ namespace BJJCZ_BaseDevelop
         private System.Windows.Forms.ContextMenuStrip menuExit;
         private System.Windows.Forms.ToolStripMenuItem menuExitApp;
         private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem menuExport;
-        private System.Windows.Forms.ToolStripMenuItem menuControl;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private System.Windows.Forms.ToolStripMenuItem menuSplit;
-        private System.Windows.Forms.PictureBox pictureBox1;
-        private System.Windows.Forms.RichTextBox mainMsgBox;
         private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.SplitContainer splitContainer2;
+        private System.Windows.Forms.SplitContainer splitContainer3;
         private System.Windows.Forms.DataGridView dgvEnt;
         private System.Windows.Forms.DataGridViewCheckBoxColumn Column1;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column2;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
-        private System.Windows.Forms.PictureBox picMvRight;
-        private System.Windows.Forms.TextBox txtScale_Value;
-        private System.Windows.Forms.TextBox txtRo_Value;
+        private System.Windows.Forms.RichTextBox mainMsgBox;
+        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.PictureBox picRoCrossClock;
         private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.Button btRenameEnt;
+        private System.Windows.Forms.PictureBox picMvLeft;
+        private System.Windows.Forms.PictureBox picMvRight;
+        private System.Windows.Forms.PictureBox picMvDown;
+        private System.Windows.Forms.TextBox txtRo_cenX;
+        private System.Windows.Forms.PictureBox picMvUp;
+        private System.Windows.Forms.PictureBox picScaleX;
         private System.Windows.Forms.TextBox txtRo_cenY;
         private System.Windows.Forms.Label label15;
-        private System.Windows.Forms.TextBox txtRo_cenX;
-        private System.Windows.Forms.TextBox txtMv_Value;
-        private System.Windows.Forms.PictureBox picMvDown;
-        private System.Windows.Forms.PictureBox picMvUp;
-        private System.Windows.Forms.PictureBox picScaleY;
-        private System.Windows.Forms.PictureBox picRoCrossClock;
-        private System.Windows.Forms.PictureBox picScaleX;
         private System.Windows.Forms.PictureBox picRoClock;
-        private System.Windows.Forms.PictureBox picMvLeft;
+        private System.Windows.Forms.TextBox txtScale_Value;
         private System.Windows.Forms.CheckBox chkEntGroup;
         private System.Windows.Forms.TextBox txtEntName;
-        private System.Windows.Forms.Button btRenameEnt;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.SplitContainer splitContainer2;
-        private System.Windows.Forms.SplitContainer splitContainer3;
-        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.TextBox txtRo_Value;
+        private System.Windows.Forms.PictureBox picScaleY;
+        private System.Windows.Forms.TextBox txtMv_Value;
+        private System.Windows.Forms.ToolStripMenuItem MenuFile;
+        private System.Windows.Forms.ToolStripMenuItem File_LoadEZD;
+        private System.Windows.Forms.ToolStripMenuItem File_SaveEZD;
+        private System.Windows.Forms.ToolStripMenuItem MenuCard;
+        private System.Windows.Forms.ToolStripMenuItem File_ExportFigure;
+        private System.Windows.Forms.ToolStripMenuItem Card_NO1;
+        private System.Windows.Forms.ToolStripMenuItem Card_NO2;
+        private System.Windows.Forms.ToolStripMenuItem Win;
+        private System.Windows.Forms.ToolStripMenuItem Win_Log;
+        private System.Windows.Forms.ToolStripMenuItem Win_Entity;
+        private System.Windows.Forms.ToolStripMenuItem Win_Route;
+        private System.Windows.Forms.ToolStripMenuItem Win_Oper;
+        private System.Windows.Forms.ToolStripMenuItem win_Reset;
     }
 }
