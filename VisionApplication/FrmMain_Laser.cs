@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using PipeChanel;
@@ -1005,14 +1006,211 @@ namespace VisionApplication
         /// 调用后，所有通过UI按钮触发的激光命令将自动使用新板卡号。
         /// </summary>
         /// <param name="cardSN">板卡号，必须为 0 或 1</param>
+        /// <summary>
+        /// 切换当前操作的激光板卡，并更新界面按钮可用性状态。
+        /// 调用后，所有通过UI按钮触发的激光命令将自动使用新板卡号。
+        /// </summary>
+        /// <param name="cardSN">板卡号，必须为 0 或 1</param>
         public void SwitchCard(int cardSN)
         {
             if (cardSN < 0 || cardSN > 1)
                 throw new ArgumentException("板卡号必须为0或1");
+
             currentCardSN = cardSN;
             vpWin._iJobIndex = cardSN;
-            // 可在此处更新 UI 状态，例如按钮文字或板卡状态指示灯
+
+            // 更新界面按钮可用性状态
+            UpdateLaserButtonStates();
         }
+
+        /// <summary>
+        /// 根据当前板卡的状态更新所有激光相关按钮的可用性。
+        /// </summary>
+        private void UpdateLaserButtonStates()
+        {
+            // 更新工位菜单的选中状态
+            UpdateJobMenuSelection(iJobIndex);
+
+            // 更新板卡状态显示（锁图标）
+            UpdateCardStatusIcon(iJobIndex);
+
+            // 更新激光操作按钮的可用性
+            UpdateLaserButtonsState(iJobIndex);             
+
+            // 更新状态栏显示
+            UpdateStatusStripForCard(iJobIndex);
+        }
+
+        /// <summary>
+        /// 更新工位菜单的选中状态
+        /// </summary>
+        private void UpdateJobMenuSelection(int cardSN)
+        {
+            switch (cardSN)
+            {
+                case 0:
+                    menuWS_Job1.Checked = true;
+                    menuWS_Job2.Checked = false;
+                    menuWS_Job3.Checked = false;
+                    menuWS_JobS.Checked = false;
+                    break;
+                case 1:
+                    menuWS_Job1.Checked = false;
+                    menuWS_Job2.Checked = true;
+                    menuWS_Job3.Checked = false;
+                    menuWS_JobS.Checked = false;
+                    break;
+                default:
+                    menuWS_Job1.Checked = false;
+                    menuWS_Job2.Checked = false;
+                    menuWS_Job3.Checked = false;
+                    menuWS_JobS.Checked = true;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 更新板卡状态图标（锁图标表示初始化状态）
+        /// </summary>
+        private void UpdateCardStatusIcon(int cardSN)
+        {
+            if (bInitJCZ[cardSN] == 0)
+            {
+                toolBtSta_LockImage.Checked = true;
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+                toolBtSta_LockImage.ToolTipText = $"板卡{cardSN + 1}已初始化";
+            }
+            else
+            {
+                toolBtSta_LockImage.Checked = false;
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
+                toolBtSta_LockImage.ToolTipText = $"板卡{cardSN + 1}未初始化";
+            }
+        }
+
+        /// <summary>
+        /// 根据板卡状态更新激光操作按钮的可用性
+        /// </summary>
+        private void UpdateLaserButtonsState(int cardSN)
+        {
+            bool isCardReady = (bInitJCZ[cardSN] == 0);
+            bool isLaserIdle = (iLaserWorkingTypes[cardSN] == 0);
+            bool canOperate = isCardReady && isLaserIdle;
+
+            // 标刻按钮
+            btFunMark.Enabled = canOperate && LaserCondiction(1);
+
+            // 红光预览按钮
+            btRedLight_Preview.Enabled = canOperate;
+
+            // 菜单项
+            menuLaser_RedBoundary.Enabled = canOperate;
+            menuLaser_RedCountour.Enabled = canOperate;
+            menuLaser_RedEnt.Enabled = canOperate && (iEntIndices[cardSN] >= 0);
+            menuLaser_MarkEnt.Enabled = canOperate && (iEntIndices[cardSN] >= 0);
+
+            // 工具栏按钮
+            toolBt_Len2Ori.Enabled = isCardReady;
+            toolBt_StopLaser.Enabled = (iLaserWorkingTypes[cardSN] != 0);
+
+            // 根据当前选中对象更新菜单项可用性
+            UpdateEntityMenuState(cardSN);
+        }
+         
+        /// <summary>
+        /// 更新状态栏中的板卡状态显示
+        /// </summary>
+        private void UpdateStatusStripForCard(int cardSN)
+        {
+            // 更新状态栏文本
+            toolStripStatusLabel_CardStatus.Text = $"当前板卡: {cardSN + 1}";
+
+            // 更新板卡状态指示器颜色
+            if (bInitJCZ[cardSN] == 0)
+            {
+                toolStripStatusLabel_CardInitStatus.Text = "● 已初始化";
+                toolStripStatusLabel_CardInitStatus.ForeColor = Color.Green;
+            }
+            else
+            {
+                toolStripStatusLabel_CardInitStatus.Text = "● 未初始化";
+                toolStripStatusLabel_CardInitStatus.ForeColor = Color.Red;
+            }
+
+            // 更新加工状态
+            if (iLaserWorkingTypes[cardSN] == 1)
+                toolStripStatusLabel_LaserStatus.Text = "● 加工中";
+            else if (iLaserWorkingTypes[cardSN] == 2)
+                toolStripStatusLabel_LaserStatus.Text = "● 红光预览";
+            else
+                toolStripStatusLabel_LaserStatus.Text = "● 空闲";
+        }
+
+        /// <summary>
+        /// 更新实体菜单项的可用性
+        /// </summary>
+        private void UpdateEntityMenuState(int cardSN)
+        {
+            bool hasEntities = (strEntNames[cardSN] != null && strEntNames[cardSN].Length > 0);
+            bool hasSelected = (iEntIndices[cardSN] >= 0);
+
+            menuLaser_RedEnt.Enabled = hasEntities && hasSelected;
+            menuLaser_MarkEnt.Enabled = hasEntities && hasSelected;
+        }
+
+        /// <summary>
+        /// 定期刷新激光相关的UI状态
+        /// </summary>
+        private void RefreshLaserUIState()
+        {
+            if (!_laserDispatchersReady) return;
+
+            int card = currentCardSN;
+
+            // 刷新按钮状态
+            bool isCardReady = (bInitJCZ[card] == 0);
+            bool isLaserIdle = (iLaserWorkingTypes[card] == 0);
+
+            // 根据实际加工状态更新按钮样式
+            if (iLaserWorkingTypes[card] == 1)
+            {
+                btFunMark.FlatStyle = FlatStyle.Flat;
+            }
+            else
+            {
+                btFunMark.FlatStyle = FlatStyle.Popup;
+            }
+
+            if (iLaserWorkingTypes[card] == 2)
+            {
+                btRedLight_Preview.FlatStyle = FlatStyle.Flat;
+            }
+            else
+            {
+                btRedLight_Preview.FlatStyle = FlatStyle.Popup;
+            }
+
+            // 更新状态栏
+            UpdateStatusStripForCard(card);
+        }
+
+        /// <summary>
+        /// 获取当前板卡的实体信息描述。
+        /// </summary>
+        /// <param name="card">板卡号</param>
+        /// <returns>实体信息字符串</returns>
+        private string GetEntityInfo(int card)
+        {
+            if (!_laserDispatchersReady || laserDispatchers[card] == null)
+                return "实体：不可用";
+
+            if (strEntNames[card] == null || strEntNames[card].Length == 0)
+                return "实体：无";
+
+            return $"实体数：{nEntNums[card]}";
+        }
+
+
 
         /// <summary>
         /// 查询当前选中板卡的初始化状态（命令码 100）。
@@ -1136,59 +1334,111 @@ namespace VisionApplication
         /// 根据模板匹配结果设置旋转平移量，然后执行标刻。
         /// 异步版本，不再使用轮询。
         /// </summary>
+        /// <summary>
+        /// 视觉检测后执行激光加工。
+        /// 根据模板匹配结果设置旋转平移量，然后执行标刻。
+        /// </summary>
         private async Task LaserMarkAfterVisionDetAsync()
         {
             int card = currentCardSN;
             var dispatcher = laserDispatchers[card];
             if (dispatcher == null) return;
 
-            // 设置旋转平移量
-            var paramShift = new LCZControlParam
-            {
-                cmdType = 27,
-                cardSN = card,
-                ind3 = 0,
-                dParam3 = 0,
-                dParam4 = 0
-            };
-            if (pmaRes[card].bLocated)
-            {
-                paramShift.dParam1 = pmaRes[card].dTX;
-                paramShift.dParam2 = pmaRes[card].dTY;
-                paramShift.dParam5 = pmaRes[card].dTR;
-            }
-            else
-            {
-                paramShift.dParam1 = 0;
-                paramShift.dParam2 = 0;
-                paramShift.dParam5 = 0;
-            }
-
             try
             {
+                // 设置旋转平移量
+                var paramShift = new LCZControlParam
+                {
+                    cmdType = 27,
+                    cardSN = card,
+                    ind3 = 0,
+                    dParam3 = 0,
+                    dParam4 = 0
+                };
+
+                // 根据视觉检测结果设置偏移量
+                if (pmaRes[card].bLocated)
+                {
+                    paramShift.dParam1 = pmaRes[card].dTX;
+                    paramShift.dParam2 = pmaRes[card].dTY;
+                    paramShift.dParam5 = pmaRes[card].dTR;
+                }
+                else
+                {
+                    // 未定位成功，记录日志
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "激光标刻前定位检查";
+                    operLog.strFailReason = "视觉定位失败，使用默认偏移";
+                    AddLog();
+
+                    paramShift.dParam1 = 0;
+                    paramShift.dParam2 = 0;
+                    paramShift.dParam5 = 0;
+                }
+
+                // 发送偏移参数
                 await dispatcher.SendCommandAsync(paramShift);
+
+                // 加载激光打标模板文件
+                string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd");
+                var loadParam = new LCZControlParam
+                {
+                    cmdType = 4,
+                    cardSN = card,
+                    strFileName = templatePath,
+                    ind3 = 0
+                };
+                await dispatcher.SendCommandAsync(loadParam);
+
+                // 执行激光标刻
+                iLaserWorkingTypes[card] = 1;
+
+                var markParam = new LCZControlParam
+                {
+                    cmdType = 110,  // 使用110命令（先清除旋转平移）
+                    cardSN = card,
+                    ind3 = 0
+                };
+
+                // 30秒超时
+                var result = await dispatcher.SendCommandAsync(markParam, 30000);
+
+                iLaserWorkingTypes[card] = 0;
+
+                if (result.nErr == 0)
+                {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "激光标刻完成";
+                    operLog.strFailReason = $"偏移: X={paramShift.dParam1:F3}, Y={paramShift.dParam2:F3}, R={paramShift.dParam5:F3}";
+                    AddLog();
+
+                    // 发送OK信号
+                    csd.SendResult(sPortCy, true, 0);
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "激光标刻";
+                    operLog.strFailReason = GetErrorText(result.nErr);
+                    AddLog();
+                }
             }
-            catch (TimeoutException) { return; }
-
-            // 如果当前文件不是 route.ezd，则重新加载模板
-            if (paramShift.strFileName?.IndexOf("route.ezd") < 0)
-                await ReLoadTemplateAsync();
-
-            // 开始标刻
-            var paramMark = new LCZControlParam
+            catch (TimeoutException)
             {
-                cmdType = 10,
-                cardSN = card,
-                ind3 = 0
-            };
-            try
-            {
-                await dispatcher.SendCommandAsync(paramMark, timeoutMs: 30000); // 标刻可设置较长超时
+                iLaserWorkingTypes[card] = 0;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "激光标刻";
+                operLog.strFailReason = "标刻超时";
+                AddLog();
             }
-            catch (TimeoutException) { }
-
-            // 发送结果到串口（OK信号）
-            csd.SendResult(sPortCy, true, 0);
+            catch (Exception ex)
+            {
+                iLaserWorkingTypes[card] = 0;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "激光标刻";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
         }
 
         /// <summary>
@@ -1490,26 +1740,88 @@ namespace VisionApplication
         /// <summary>
         /// 参数设置按钮（打开设备配置对话框）
         /// </summary>
+        /// <summary>
+        /// 参数设置按钮（打开设备配置对话框）
+        /// 发送命令到服务端打开F3参数设置界面
+        /// </summary>
         private async void btFunParam_Click(object sender, EventArgs e)
         {
-            if (!LaserCondiction(4)) return;
+            // 检查激光操作条件
+            if (!LaserCondiction(4))
+                return;
 
             int card = currentCardSN;
             var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
 
-            iLaserWorkingTypes[card] = 4;
-            var param = new LCZControlParam { cmdType = 40, cardSN = card };
-            try
-            {
-                await dispatcher.SendCommandAsync(param);
-                // 该操作可能打开配置窗口，服务端会异步处理
-            }
-            catch (TimeoutException)
+            // 检查调度器是否可用
+            if (dispatcher == null)
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "参数设置";
+                operLog.strFailReason = "激光调度器未初始化";
+                AddLog();
+                return;
+            }
+
+            // 检查板卡是否已初始化
+            if (bInitJCZ[card] != 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "参数设置";
+                operLog.strFailReason = $"板卡{card + 1}未初始化";
+                AddLog();
+                return;
+            }
+
+            try
+            {
+                // 设置工作状态为参数设置
+                iLaserWorkingTypes[card] = 4;
+
+                // 构建命令参数
+                var param = new LCZControlParam
+                {
+                    cmdType = 40,  // 参数设置命令
+                    cardSN = card,
+                    ind3 = 0       // 序列号由调度器自动填充
+                };
+
+                operLog.strOperEvent = "参数设置";
+                operLog.iEventStatus = 0;
+                AddLog();
+
+                // 异步发送命令（参数设置可能打开配置窗口，设置较长超时）
+                var result = await dispatcher.SendCommandAsync(param, 10000);
+
+                // 恢复工作状态
+                iLaserWorkingTypes[card] = 0;
+
+                // 处理返回结果
+                if (result.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = GetErrorText(result.nErr);
+                    AddLog();
+                }
+            }
+            catch (TimeoutException)
+            {
+                // 超时后恢复状态
+                iLaserWorkingTypes[card] = 0;
+
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "参数设置";
                 operLog.strFailReason = "命令超时";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                // 异常后恢复状态
+                iLaserWorkingTypes[card] = 0;
+
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "参数设置";
+                operLog.strFailReason = ex.Message;
                 AddLog();
             }
         }
@@ -2278,8 +2590,401 @@ namespace VisionApplication
         }
         #endregion
 
+        /// <summary>
+        /// 创建十字线文件（用于标定）
+        /// </summary>
+        private async Task<bool> CreateCrossTemplateAsync()
+        {
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return false;
+
+            string crossPath = Path.Combine(cup.p_Paf.ManuMarkPath, "Cross.ezd");
+
+            try
+            {
+                // 十字线参数（可从UI获取或使用默认值）
+                double crossLength = 10.0;   // 十字线长度
+                double lineWidth = 0.1;      // 线宽（如果服务端支持）
+
+                // 添加水平线
+                var addHLineParam = new LCZControlParam
+                {
+                    cmdType = 35,                            // 添加线段
+                    cardSN = card,
+                    dParam1 = -crossLength / 2,              // 起点X
+                    dParam2 = 0,                             // 起点Y
+                    dParam3 = crossLength / 2,               // 终点X
+                    dParam4 = 0,                             // 终点Y
+                    strEntyName = "水平线",
+                    ind1 = 2                                 // 笔号
+                };
+
+                var hResult = await dispatcher.SendCommandAsync(addHLineParam, 5000);
+                if (hResult.nErr != 0) return false;
+
+                // 添加垂直线
+                var addVLineParam = new LCZControlParam
+                {
+                    cmdType = 35,
+                    cardSN = card,
+                    dParam1 = 0,
+                    dParam2 = -crossLength / 2,
+                    dParam3 = 0,
+                    dParam4 = crossLength / 2,
+                    strEntyName = "垂直线",
+                    ind1 = 2
+                };
+
+                var vResult = await dispatcher.SendCommandAsync(addVLineParam, 5000);
+                if (vResult.nErr != 0) return false;
+
+                // 保存文件
+                var saveParam = new LCZControlParam
+                {
+                    cmdType = 5,
+                    cardSN = card,
+                    strFileName = crossPath
+                };
+
+                var saveResult = await dispatcher.SendCommandAsync(saveParam, 5000);
+                return saveResult.nErr == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 创建方框文件（用于视野标定）
+        /// </summary>
+        private async Task<bool> CreateSquareTemplateAsync()
+        {
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return false;
+
+            string squarePath = Path.Combine(cup.p_Paf.ManuMarkPath, "Square.ezd");
+
+            try
+            {
+                double squareSize = 20.0;  // 方框边长
+
+                // 通过4条线段组成方框
+                double half = squareSize / 2;
+
+                // 上边线
+                var topLine = new LCZControlParam
+                {
+                    cmdType = 35,
+                    cardSN = card,
+                    dParam1 = -half,
+                    dParam2 = -half,
+                    dParam3 = half,
+                    dParam4 = -half,
+                    strEntyName = "上边线",
+                    ind1 = 2
+                };
+                await dispatcher.SendCommandAsync(topLine, 5000);
+
+                // 下边线
+                var bottomLine = new LCZControlParam
+                {
+                    cmdType = 35,
+                    cardSN = card,
+                    dParam1 = -half,
+                    dParam2 = half,
+                    dParam3 = half,
+                    dParam4 = half,
+                    strEntyName = "下边线",
+                    ind1 = 2
+                };
+                await dispatcher.SendCommandAsync(bottomLine, 5000);
+
+                // 左边线
+                var leftLine = new LCZControlParam
+                {
+                    cmdType = 35,
+                    cardSN = card,
+                    dParam1 = -half,
+                    dParam2 = -half,
+                    dParam3 = -half,
+                    dParam4 = half,
+                    strEntyName = "左边线",
+                    ind1 = 2
+                };
+                await dispatcher.SendCommandAsync(leftLine, 5000);
+
+                // 右边线
+                var rightLine = new LCZControlParam
+                {
+                    cmdType = 35,
+                    cardSN = card,
+                    dParam1 = half,
+                    dParam2 = -half,
+                    dParam3 = half,
+                    dParam4 = half,
+                    strEntyName = "右边线",
+                    ind1 = 2
+                };
+                await dispatcher.SendCommandAsync(rightLine, 5000);
+
+                // 保存文件
+                var saveParam = new LCZControlParam
+                {
+                    cmdType = 5,
+                    cardSN = card,
+                    strFileName = squarePath
+                };
+
+                var saveResult = await dispatcher.SendCommandAsync(saveParam, 5000);
+                return saveResult.nErr == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        /// <summary>
+        /// 创建9点标定模板（动态生成方形阵列填充圆）
+        /// </summary>
+        private async Task<bool> CreateCalibTemplateAsync()
+        {
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "创建标定模板";
+                operLog.strFailReason = "激光调度器未初始化";
+                AddLog();
+                return false;
+            }
+
+            string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "calibTemplate.ezd");
+
+            try
+            {
+                operLog.strOperEvent = "创建标定模板";
+
+                // 1. 从UI更新模板参数
+                UpdateCalibTemplate2VarFromUI();
+
+                int featureCount = cup.calTP.iRow * cup.calTP.iCol;
+                featurePointNum = featureCount;
+
+                // 2. 重新计算激光坐标点
+                dCalibPointLaser = new double[featureCount * 2];
+                int ind = 0;
+                for (double i = -(cup.calTP.iRow - 1) / 2; i <= (cup.calTP.iRow - 1) / 2; i++)
+                {
+                    for (double j = -(cup.calTP.iCol - 1) / 2; j <= (cup.calTP.iCol - 1) / 2; j++)
+                    {
+                        dCalibPointLaser[ind * 2] = j * cup.calTP.dDisX;
+                        dCalibPointLaser[ind * 2 + 1] = i * cup.calTP.dDisY;
+
+                        // 根据相机镜像设置调整坐标方向
+                        if (cup.p_Cam[icamSelectInd].iFlipType == 1)
+                            dCalibPointLaser[ind * 2] = -j * cup.calTP.dDisX;
+                        if (cup.p_Cam[icamSelectInd].iFlipType == 2)
+                            dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;
+                        ind++;
+                    }
+                }
+
+                // 3. 依次创建每个填充圆对象
+                // 注意：需要先清除已有对象，服务端在加载新文件时会自动清除，此处无需单独清除
+
+                for (int i = 0; i < featureCount; i++)
+                {
+                    // 添加圆对象
+                    var addCircleParam = new LCZControlParam
+                    {
+                        cmdType = 34,                           // 添加圆对象
+                        cardSN = card,
+                        dParam1 = dCalibPointLaser[i * 2],      // X坐标
+                        dParam2 = dCalibPointLaser[i * 2 + 1],  // Y坐标
+                        dParam3 = cup.calTP.dRadius,            // 半径
+                        strEntyName = "特征圆" + (i + 1).ToString(),
+                        ind1 = 2                                 // 笔号
+                    };
+
+                    var addResult = await dispatcher.SendCommandAsync(addCircleParam, 5000);
+                    if (addResult.nErr != 0)
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "创建标定模板";
+                        operLog.strFailReason = $"添加圆 {i + 1} 失败: {GetErrorText(addResult.nErr)}";
+                        AddLog();
+                        return false;
+                    }
+
+                    // 设置圆填充（命令码38，启用填充）
+                    var fillParam = new LCZControlParam
+                    {
+                        cmdType = 38,                           // 设置填充
+                        cardSN = card,
+                        strEntyName = "特征圆" + (i + 1).ToString(),
+                        ind1 = 1                                 // 1=启用填充, 0=不填充
+                    };
+
+                    try
+                    {
+                        await dispatcher.SendCommandAsync(fillParam, 3000);
+                    }
+                    catch (TimeoutException)
+                    {
+                        // 填充设置失败不影响主要功能，继续执行
+                    }
+                }
+
+                // 4. 保存模板文件
+                var saveParam = new LCZControlParam
+                {
+                    cmdType = 5,                                // 保存文件
+                    cardSN = card,
+                    strFileName = templatePath
+                };
+
+                var saveResult = await dispatcher.SendCommandAsync(saveParam, 5000);
+                if (saveResult.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "创建标定模板";
+                    operLog.strFailReason = $"保存模板文件失败: {GetErrorText(saveResult.nErr)}";
+                    AddLog();
+                    return false;
+                }
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "创建标定模板";
+                operLog.strFailReason = $"成功创建 {featureCount} 个填充圆";
+                AddLog();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "创建标定模板";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+                return false;
+            }
+        }
         private void MarkCalibTemplate() { }
-        private void btMarkCalib_Click(object sender, EventArgs e) { }
+        /// <summary>
+        /// 标刻9点标定模板（方形阵列圆点）
+        /// </summary>
+        /// <summary>
+        /// 标刻9点标定模板
+        /// </summary>
+        private async void btMarkCalib_Click(object sender, EventArgs e)
+        {
+            if (!LaserCondiction(1))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻标定模板";
+                operLog.strFailReason = "激光不满足标刻条件";
+                AddLog();
+                return;
+            }
+
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            iLaserWorkingTypes[card] = 1;
+            btFunMark.FlatStyle = FlatStyle.Flat;
+
+            try
+            {
+                // 1. 动态创建标定模板
+                bool created = await CreateCalibTemplateAsync();
+                if (!created)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻标定模板";
+                    operLog.strFailReason = "创建标定模板失败";
+                    AddLog();
+                    return;
+                }
+
+                // 2. 加载模板文件
+                string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "calibTemplate.ezd");
+
+                var loadParam = new LCZControlParam
+                {
+                    cmdType = 4,
+                    cardSN = card,
+                    strFileName = templatePath,
+                    ind3 = 1
+                };
+
+                var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
+                if (loadResult.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = $"加载模板失败: {GetErrorText(loadResult.nErr)}";
+                    AddLog();
+                    return;
+                }
+
+                await Task.Delay(100);
+
+                // 3. 开始标刻
+                var markParam = new LCZControlParam
+                {
+                    cmdType = 10,
+                    cardSN = card,
+                    ind3 = 1
+                };
+
+                loadingForm = new LoadingForm();
+                _ = Task.Run(() => loadingForm.ShowDialog());
+
+                var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
+
+                loadingForm?.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                loadingForm = null;
+
+                if (markResult.nErr == 0)
+                {
+                    await Task.Delay(200);
+                    CaptureCalibImage();
+
+                    // 更新标定数据表格
+                    vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, card);
+                    UpdateCalibPointTable();
+
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "标刻标定模板";
+                    AddLog();
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻标定模板";
+                    operLog.strFailReason = GetErrorText(markResult.nErr);
+                    AddLog();
+                }
+            }
+            catch (Exception ex)
+            {
+                loadingForm?.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                loadingForm = null;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻标定模板";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                iLaserWorkingTypes[card] = 0;
+                btFunMark.FlatStyle = FlatStyle.Popup;
+            }
+        }
 
         private void btUpdateCalibDate_Click(object sender, EventArgs e)
         {
@@ -2298,9 +3003,329 @@ namespace VisionApplication
             }
         }
 
-        private void btMarkCross_Click(object sender, EventArgs e) { }
-        private void btMarkSquare_Click(object sender, EventArgs e) { }
+        /// <summary>
+        /// 标刻十字并采集图像
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void btMarkCross_Click(object sender, EventArgs e)
+        {
+            // 1. 检查标刻条件
+            if (!LaserCondiction(1))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻十字";
+                operLog.strFailReason = "激光不满足标刻条件";
+                AddLog();
+                return;
+            }
 
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻十字";
+                operLog.strFailReason = "激光调度器未初始化";
+                AddLog();
+                return;
+            }
+
+            // 2. 更新UI状态
+            iLaserWorkingTypes[card] = 1;
+            btFunMark.FlatStyle = FlatStyle.Flat;
+
+            try
+            {
+                // 3. 加载十字线文件
+                string crossPath = Path.Combine(cup.p_Paf.ManuMarkPath, "Cross.ezd");
+
+                if (!File.Exists(crossPath))
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻十字";
+                    operLog.strFailReason = "十字线文件不存在";
+                    AddLog();
+                    return;
+                }
+
+                // 4. 发送加载文件命令
+                var loadParam = new LCZControlParam
+                {
+                    cmdType = 4,
+                    cardSN = card,
+                    strFileName = crossPath,
+                    ind3 = 2  // 标记为十字标刻
+                };
+
+                var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
+                if (loadResult.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻十字";
+                    operLog.strFailReason = $"加载十字线文件失败: {GetErrorText(loadResult.nErr)}";
+                    AddLog();
+                    return;
+                }
+
+                // 5. 等待稳定
+                await Task.Delay(100);
+
+                // 6. 复位旋转平移
+                var resetParam = new LCZControlParam
+                {
+                    cmdType = 27,
+                    cardSN = card,
+                    dParam1 = 0,
+                    dParam2 = 0,
+                    dParam3 = 0,
+                    dParam4 = 0,
+                    dParam5 = 0,
+                    ind3 = 2
+                };
+
+                var resetResult = await dispatcher.SendCommandAsync(resetParam, 3000);
+                if (resetResult.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻十字";
+                    operLog.strFailReason = $"复位失败: {GetErrorText(resetResult.nErr)}";
+                    AddLog();
+                    return;
+                }
+
+                // 7. 开始标刻
+                var markParam = new LCZControlParam
+                {
+                    cmdType = 10,
+                    cardSN = card,
+                    ind3 = 2  // 标记为十字标刻
+                };
+
+                // 显示等待窗体
+                loadingForm = new LoadingForm();
+                var showLoadingTask = Task.Run(() => loadingForm.ShowDialog());
+
+                try
+                {
+                    var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
+
+                    // 关闭等待窗体
+                    if (loadingForm != null)
+                    {
+                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                        loadingForm = null;
+                    }
+
+                    if (markResult.nErr == 0)
+                    {
+                        // 8. 标刻完成后采集十字图像
+                        await Task.Delay(200);
+                        CaptureCrossImage();
+
+                        operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "标刻十字";
+                        AddLog();
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "标刻十字";
+                        operLog.strFailReason = GetErrorText(markResult.nErr);
+                        AddLog();
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    if (loadingForm != null)
+                    {
+                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                        loadingForm = null;
+                    }
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻十字";
+                    operLog.strFailReason = "标刻超时";
+                    AddLog();
+                }
+            }
+            catch (Exception ex)
+            {
+                if (loadingForm != null)
+                {
+                    loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                    loadingForm = null;
+                }
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻十字";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                iLaserWorkingTypes[card] = 0;
+                btFunMark.FlatStyle = FlatStyle.Popup;
+            }
+        }
+      
+        /// <summary>
+        /// 标刻正方形并采集图像（用于9点标定）
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void btMarkSquare_Click(object sender, EventArgs e)
+        {
+            // 1. 检查标刻条件
+            if (!LaserCondiction(1))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻方框";
+                operLog.strFailReason = "激光不满足标刻条件";
+                AddLog();
+                return;
+            }
+
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻方框";
+                operLog.strFailReason = "激光调度器未初始化";
+                AddLog();
+                return;
+            }
+
+            // 2. 更新UI状态
+            iLaserWorkingTypes[card] = 1;
+            btFunMark.FlatStyle = FlatStyle.Flat;
+
+            try
+            {
+                // 3. 加载方框文件
+                string squarePath = Path.Combine(cup.p_Paf.ManuMarkPath, "Square.ezd");
+
+                if (!File.Exists(squarePath))
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻方框";
+                    operLog.strFailReason = "方框文件不存在";
+                    AddLog();
+                    return;
+                }
+
+                // 4. 发送加载文件命令
+                var loadParam = new LCZControlParam
+                {
+                    cmdType = 4,
+                    cardSN = card,
+                    strFileName = squarePath,
+                    ind3 = 3  // 标记为方框标刻
+                };
+
+                var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
+                if (loadResult.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻方框";
+                    operLog.strFailReason = $"加载方框文件失败: {GetErrorText(loadResult.nErr)}";
+                    AddLog();
+                    return;
+                }
+
+                // 5. 等待稳定
+                await Task.Delay(100);
+
+                // 6. 复位旋转平移
+                var resetParam = new LCZControlParam
+                {
+                    cmdType = 27,
+                    cardSN = card,
+                    dParam1 = 0,
+                    dParam2 = 0,
+                    dParam3 = 0,
+                    dParam4 = 0,
+                    dParam5 = 0,
+                    ind3 = 3
+                };
+
+                var resetResult = await dispatcher.SendCommandAsync(resetParam, 3000);
+                if (resetResult.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻方框";
+                    operLog.strFailReason = $"复位失败: {GetErrorText(resetResult.nErr)}";
+                    AddLog();
+                    return;
+                }
+
+                // 7. 开始标刻
+                var markParam = new LCZControlParam
+                {
+                    cmdType = 10,
+                    cardSN = card,
+                    ind3 = 3  // 标记为方框标刻
+                };
+
+                // 显示等待窗体
+                loadingForm = new LoadingForm();
+                var showLoadingTask = Task.Run(() => loadingForm.ShowDialog());
+
+                try
+                {
+                    var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
+
+                    // 关闭等待窗体
+                    if (loadingForm != null)
+                    {
+                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                        loadingForm = null;
+                    }
+
+                    if (markResult.nErr == 0)
+                    {
+                        operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "标刻方框";
+                        AddLog();
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "标刻方框";
+                        operLog.strFailReason = GetErrorText(markResult.nErr);
+                        AddLog();
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    if (loadingForm != null)
+                    {
+                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                        loadingForm = null;
+                    }
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻方框";
+                    operLog.strFailReason = "标刻超时";
+                    AddLog();
+                }
+            }
+            catch (Exception ex)
+            {
+                if (loadingForm != null)
+                {
+                    loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                    loadingForm = null;
+                }
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻方框";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                iLaserWorkingTypes[card] = 0;
+                btFunMark.FlatStyle = FlatStyle.Popup;
+            }
+        }
         /// <summary>
         /// 采集9点标定图像
         /// </summary>
@@ -2436,6 +3461,217 @@ namespace VisionApplication
         }
 
         #endregion
+
+        ///////////////////////////////////
+        ///
+        /// <summary>
+        /// 单个工位的一次运行（视觉检测 + 激光标刻）
+        /// </summary>
+        /// <param name="faceIndex">工位索引：0 = A面，1 = B面</param>
+        private async Task RunOneTimeForFace(int faceIndex)
+        {
+            try
+            {
+                if (!bRunCondiction(10))   // 复用条件判断，10 表示触发运行
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}触发运行";
+                    operLog.strFailReason = "不满足运行条件";
+                    AddLog();
+                    return;
+                }
+
+                // 设置当前工位（用于视觉和激光）
+                vpWin._iJobIndex = faceIndex;
+                currentCardSN = faceIndex;   // 激光板卡也切换到当前工位
+
+                // 执行视觉检测
+                bool visionOk = false;
+                try
+                {
+                    vpWin._iTaskType = 2;
+                    vpWin.bMainTaskFinished = false;
+
+                    // 运行视觉检测（同步等待）
+                    if (vpWin.RunOneTimeSplite(faceIndex))
+                    {
+                        int maxWait = cup.p_RTSP.runTimeOut / 10;
+                        int count = 0;
+                        while (vpWin._bRunOneTimeFinished[faceIndex] != 2 && count < maxWait)
+                        {
+                            await Task.Delay(10);
+                            count++;
+                        }
+                        // 获取检测结果
+                        pmaRes[faceIndex] = vpWin.GetJobResult(faceIndex);
+                        visionOk = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测异常";
+                    operLog.strFailReason = ex.Message;
+                    AddLog();
+                }
+                finally
+                {
+                    vpWin.bMainTaskFinished = true;
+                    vpWin._bRunOneTimeFinished[faceIndex] = 2;
+                }
+
+                // 如果视觉检测需要激光标刻（例如结果 OK 且锁标刻开启）
+                if (visionOk && rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
+                {
+                    await LaserMarkAfterVisionDetAsync(faceIndex);
+                }
+                ExeIOOut(faceIndex);
+
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"工位{faceIndex + 1}一次运行失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                // 恢复指示灯
+                if (faceIndex == 0)
+                    lblIn1.Invoke(new Action(() => lblIn1.ForeColor = Color.Black));
+                else
+                    lblIn2.Invoke(new Action(() => lblIn2.ForeColor = Color.Black));
+            }
+        }
+
+        private async Task LaserMarkAfterVisionDetAsync(int faceIndex)
+        {
+            var dispatcher = laserDispatchers[faceIndex];
+            if (dispatcher == null) return;
+
+            try
+            {
+                // 设置旋转平移偏移量（根据视觉结果）
+                var paramShift = new LCZControlParam
+                {
+                    cmdType = 27,
+                    cardSN = faceIndex,
+                    ind3 = 0,
+                    dParam3 = 0,
+                    dParam4 = 0
+                };
+                if (pmaRes[faceIndex].bLocated)
+                {
+                    paramShift.dParam1 = pmaRes[faceIndex].dTX;
+                    paramShift.dParam2 = pmaRes[faceIndex].dTY;
+                    paramShift.dParam5 = pmaRes[faceIndex].dTR;
+                }
+                else
+                {
+                    paramShift.dParam1 = paramShift.dParam2 = paramShift.dParam5 = 0;
+                }
+                await dispatcher.SendCommandAsync(paramShift);
+
+                // 加载激光模板
+                string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd");
+                var loadParam = new LCZControlParam
+                {
+                    cmdType = 4,
+                    cardSN = faceIndex,
+                    strFileName = templatePath,
+                    ind3 = 0
+                };
+                await dispatcher.SendCommandAsync(loadParam);
+
+                // 开始标刻
+                iLaserWorkingTypes[faceIndex] = 1;
+                var markParam = new LCZControlParam
+                {
+                    cmdType = 110,
+                    cardSN = faceIndex,
+                    ind3 = 0
+                };
+                var result = await dispatcher.SendCommandAsync(markParam, 30000);
+                iLaserWorkingTypes[faceIndex] = 0;
+
+                if (result.nErr != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}激光标刻失败";
+                    operLog.strFailReason = GetErrorText(result.nErr);
+                    AddLog();
+                }
+            }
+            catch (Exception ex)
+            {
+                iLaserWorkingTypes[faceIndex] = 0;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"工位{faceIndex + 1}激光标刻异常";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+           
+        }
+        /// <summary>
+        /// 设置指定输出线圈（Y口）的状态
+        /// </summary>
+        /// <param name="outputIndex">输出端口号（1-based，例如 Y1 = 1）</param>
+        /// <param name="on">true = 闭合（ON），false = 断开（OFF）</param>
+        private async Task SetOutputCoil(int outputIndex, bool on)
+        {
+            if (sPortCy == null || !sPortCy.IsOpen)
+                return;
+
+            // Modbus 地址：假设 Y1 对应地址 0x0001（根据实际PLC映射调整）
+            int address = outputIndex - 1;  // 0-based
+            byte[] command = new byte[8];
+            command[0] = 0x01;              // 从站地址（Modbus 地址1）
+            command[1] = 0x05;              // 写单个线圈功能码
+            command[2] = (byte)(address >> 8);
+            command[3] = (byte)(address & 0xFF);
+            command[4] = on ? (byte)0xFF : (byte)0x00;
+            command[5] = 0x00;
+            // CRC16 计算（低位在前）
+            ushort crc = ModRTU_CRC(command, 6);
+            command[6] = (byte)(crc & 0xFF);
+            command[7] = (byte)(crc >> 8);
+
+            sPortCy.Write(command, 0, 8);
+            await Task.Delay(50);  // 短暂保持输出
+
+            // 可选：延时后自动复位（如需要脉冲输出）
+            // await Task.Delay(cup.p_IOPP.IOTimeDelay);
+            // command[4] = 0x00;
+            // crc = ModRTU_CRC(command, 6);
+            // command[6] = (byte)(crc & 0xFF);
+            // command[7] = (byte)(crc >> 8);
+            // sPortCy.Write(command, 0, 8);
+        }
+
+        /// <summary>
+        /// 计算 Modbus RTU CRC16
+        /// </summary>
+        private ushort ModRTU_CRC(byte[] buf, int len)
+        {
+            ushort crc = 0xFFFF;
+            for (int pos = 0; pos < len; pos++)
+            {
+                crc ^= (ushort)buf[pos];
+                for (int i = 8; i != 0; i--)
+                {
+                    if ((crc & 0x0001) != 0)
+                    {
+                        crc >>= 1;
+                        crc ^= 0xA001;
+                    }
+                    else
+                        crc >>= 1;
+                }
+            }
+            return crc;
+        }
+
     }
 
     public class LaserCommandDispatcher : IDisposable
@@ -2526,5 +3762,9 @@ namespace VisionApplication
                 kvp.Value.TrySetCanceled();
             _pendingCommands.Clear();
         }
+
+        //////////////////////////
+        ///
+
     }
 }

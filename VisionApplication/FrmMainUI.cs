@@ -1951,6 +1951,18 @@ namespace VisionApplication
             } 
         }*/
         //2025年10月7日  执行一次运算输出IO信号
+        private void ExeIOOut(int iJobIndex)
+        {
+            if (csd.SendResultToIO(sPortCy, iJobIndex==0, cup.p_IOPP))
+            {
+                if (pmaRes[currentCardSN].bOk)
+                    lblOut1.ForeColor = Color.Red;
+                else
+                    lblOut2.ForeColor = Color.Red;
+                if (!timerIOOut.Enabled)
+                    timerIOOut.Start();
+            }
+        }
         private void ExeIOOut()
         {
             switch (rts.onLS.iFeedbackType)                  //启用了结果自动反馈
@@ -4364,6 +4376,8 @@ namespace VisionApplication
             }
             catch
             { };
+            // 刷新激光UI状态
+            RefreshLaserUIState();
             timer1.Start();
         }
         public void equidistantBlow()
@@ -5404,27 +5418,27 @@ namespace VisionApplication
                 if (inf[4] == 1)
                 {
                     lblIn1.ForeColor = Color.Red;
-                    OrderType = 2;
+                    OrderType = 1;
                 }
                 if (inf[4] == 2)
                 {
                     lblIn2.ForeColor = Color.Red;
-                    OrderType = 4;
+                    OrderType = 2;
                 }
 
-                /*bOrder = (Byte)(1 << (cup.p_IOPP.AcqTrig - 1));
+                /*bOrder = (Byte)(1 << (cup.p_IOPP.APlane - 1));
                 if ((inf[4] & bOrder) == bOrder)
                     OrderType = 1;
-                bOrder = (Byte)(1 << (cup.p_IOPP.DetTrig - 1));
+                bOrder = (Byte)(1 << (cup.p_IOPP.BPlane - 1));
                 if ((inf[4] & bOrder) == bOrder)
                     OrderType = 2;
-                bOrder = (Byte)(1 << (cup.p_IOPP.EndAcqTrig - 1));
+                bOrder = (Byte)(1 << (cup.p_IOPP.EndAPlane - 1));
                 if ((inf[4] & bOrder) == bOrder)
                     OrderType = 3;
-                bOrder = (Byte)(1 << (cup.p_IOPP.EndDetTrig - 1));
+                bOrder = (Byte)(1 << (cup.p_IOPP.EndBPlane - 1));
                 if ((inf[4] & bOrder) == bOrder)
                     OrderType = 4;*/
-                Thread.Sleep(100);
+                Thread.Sleep(5);
                 ExeIOTrig(OrderType);  //执行触发任务
                 if (!timerIOIn.Enabled)
                     timerIOIn.Start();
@@ -5451,29 +5465,39 @@ namespace VisionApplication
 
             switch (TrigType)
             {
-                case 1:  //启动采集
-                    if (cup.p_IOPP.EndAcqTrig == 0)  //没有采集结束信号，则认为每次触发仅采集一帧图像
-                    {
-                        PeviewOneImage();
-                    }
-                    else  //有采集结束信号，则认为每次触发启用实时预览
-                    {
-                        PreviewImage(1);  //启动实时预览
-                    }
-                    break;
-
-                case 2:  //启动检测
-                    if (cup.p_IOPP.EndDetTrig == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
+                case 1:  //A 面触发
+                   // if (cup.p_IOPP.EndBPlane == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
                     {
                         if (bRunCondiction(1)) //运行条件判断
-                            runonetime();
+                        {
+                            // 避免重复触发，可增加防抖或状态判断
+                            if (lblIn1.ForeColor != Color.Red)
+                            {
+                                lblIn1.Invoke(new Action(() => lblIn1.ForeColor = Color.Red));
+                                // 启动 A 面（工位 0）一次运行
+                                Task.Run(() => RunOneTimeForFace(0));
+                            }
+                        }
+                           
                     }
-                    else  //有检测结束信号，则认为每次触发启用连续检测
-                    {
-                        StartRun();
-                    }
+                    
                     break;
 
+                case 2:  //B面触发
+                    {
+                        if (bRunCondiction(1)) //运行条件判断
+                        {
+                            // 避免重复触发，可增加防抖或状态判断
+                            if (lblIn2.ForeColor != Color.Red)
+                            {
+                                lblIn2.Invoke(new Action(() => lblIn2.ForeColor = Color.Red));
+                                // 启动 A 面（工位 0）一次运行
+                                Task.Run(() => RunOneTimeForFace(1));
+                            }
+                        }
+
+                    }
+                    break;
                 case 3:  //停止采集
                     PreviewImage(2);  //停止实时预览
                     break;
@@ -6015,8 +6039,7 @@ namespace VisionApplication
             StartService("Cognex Security Service");
         }
 
-      
-
+        
         private void timerIOOut_Tick(object sender, EventArgs e)
         {
            
@@ -6074,27 +6097,39 @@ namespace VisionApplication
             try
             {
                 rts.iIsRunning = 1;
-                /*  rts.dtLastDet = DateTime.Now;
-                  operLog.iEventStatus = 0;
-                  operLog.strOperEvent = "启动一次运行";
-                  operLog.strFailReason = "";
-                  AddLog();*/
+
                 if (vpWin.RunOneTimeSplite(iJobIndex))
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 10;
-                    while (vpWin._bRunOneTimeFinished[iJobIndex] != 2 && count< maxTimes)
+
+                    // 等待视觉检测完成
+                    while (vpWin._bRunOneTimeFinished[iJobIndex] != 2 && count < maxTimes)
                     {
                         Thread.Sleep(10);
                         count++;
                     }
-                    vpWin._bRunOneTimeFinished[iJobIndex] = 2;  //强制结束
-                      pmaRes = vpWin._PMARes;
-                  /*  if (rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
-                        LaserMarkAfterVisionDet(); */ //2025年6月12日，检测完毕后启动激光标刻
-                    /* operLog.iEventStatus = 0;
-                     operLog.strOperEvent = "执行一次运行";
-                     operLog.strFailReason = "";*/
+
+                    vpWin._bRunOneTimeFinished[iJobIndex] = 2;  // 强制结束
+                    pmaRes = vpWin._PMARes;
+
+                    // 视觉检测完成后，判断是否需要激光标刻
+                    if (rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
+                    {
+                        // 异步执行激光标刻，不阻塞UI
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await LaserMarkAfterVisionDetAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"激光标刻异常: {ex.Message}");
+                            }
+                        });
+                    }
+
                     vpWin.bMainTaskFinished = true;
                     rts.iIsRunning = 0;
                 }
@@ -6107,7 +6142,6 @@ namespace VisionApplication
                     AddLog();
                     iErrExecuteTimes++;
                 }
-
             }
             catch
             {
@@ -6116,19 +6150,18 @@ namespace VisionApplication
                 operLog.strFailReason = "执行运行失败";
                 iErrExecuteTimes++;
             }
+
             vpWin.bMainTaskFinished = true;
             btFunRunOneTime.FlatStyle = FlatStyle.Popup;
-            //  
-            //st 2024年7月13日
-            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
+
+            // 更新UI
+            updateUItmp = new delegateUIUpdate(UpdateUIExe);
             if (this.InvokeRequired)
             {
-                this.Invoke(updateUItmp, null); 
+                this.Invoke(updateUItmp, null);
             }
-            /*UpdateUIThread = new Thread(UpdateUIExe);
-            UpdateUIThread.Start();*/ 
         }
-        
+
         private void UpdateUIExe()
         {
             UpdateStatisticsForJob(0);  //更新统计数据
