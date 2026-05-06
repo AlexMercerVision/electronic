@@ -328,16 +328,16 @@ namespace VisionApplication
                 // 通过管道通知服务端当前容器句柄（用于后续重嵌）
                 SendContainerHandleToServer();
 
-                operLog.iEventStatus = 0;
-                operLog.strOperEvent = "JCZServer嵌入成功";
-                AddLog();
+             //   operLog.iEventStatus = 0;
+             //   operLog.strOperEvent = "JCZServer嵌入成功";
+              //  AddLog();
             }
             catch (Exception ex)
             {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "JCZServer嵌入失败";
-                operLog.strFailReason = ex.Message;
-                AddLog();
+              //  operLog.iEventStatus = -1;
+             //   operLog.strOperEvent = "JCZServer嵌入失败";
+              //  operLog.strFailReason = ex.Message;
+            //    AddLog();
             }
         }
         /// <summary>
@@ -361,8 +361,8 @@ namespace VisionApplication
                         pipeClients[card].SendParam(param);
                     }
                 }
-                operLog.strOperEvent = "已发送容器句柄到服务端";
-                AddLog();
+               // operLog.strOperEvent = "已发送容器句柄到服务端";
+              //  AddLog();
             }
             catch (Exception ex)
             {
@@ -492,9 +492,9 @@ namespace VisionApplication
             // 服务启动成功，管道已连接，启用相应激光按钮
             this.BeginInvoke(new Action(() => EnableLaserButtons(true)));
 
-            operLog.iEventStatus = 0;
+           /* operLog.iEventStatus = 0;
             operLog.strOperEvent = "服务端与双管道初始化完成";
-            AddLog();
+            AddLog();*/
         }
 
         /// <summary>
@@ -1226,12 +1226,12 @@ namespace VisionApplication
             param.cmdType = 100;
             param.cardSN = card;
             param.strFileName = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd.");
-            param.ind1 = alImParam.width;
-            param.ind2 = alImParam.height;
-            param.dParam1 = alImParam.dCenX;
-            param.dParam2 = alImParam.dCenY;
-            param.dParam3 = alImParam.dWidth;
-            param.dParam4 = alImParam.dHeight;
+            param.ind1 = alImParam[card].width;
+            param.ind2 = alImParam[card].height;
+            param.dParam1 = alImParam[card].dCenX;
+            param.dParam2 = alImParam[card].dCenY;
+            param.dParam3 = alImParam[card].dWidth;
+            param.dParam4 = alImParam[card].dHeight;
             param.ind3 = 0; // 序列号由调度器填充，此处可忽略
 
             try
@@ -2318,7 +2318,7 @@ namespace VisionApplication
                     iTmpType = vpWin._iTaskType;
                     pmaV2 = new CogPMAlignEditV2();
                     pmaV2.Subject = vpWin._pmaMT;
-                    splitContainer3.Panel1.Controls.Add(pmaV2);
+                    splitContainer2.Panel1.Controls.Add(pmaV2);
                     pmaV2.Dock = DockStyle.Fill;
                     vpWin.Visible = false;
                     bVPPParamChanged = true;
@@ -2331,7 +2331,7 @@ namespace VisionApplication
                 else
                 {
                     vpWin.setPMA(pmaV2.Subject);
-                    splitContainer3.Panel1.Controls.Remove(pmaV2);
+                    splitContainer2.Panel1.Controls.Remove(pmaV2);
                     pmaV2.Dispose();
 
                     vpWin._iTaskType = iTmpType;
@@ -2565,7 +2565,7 @@ namespace VisionApplication
                 iTmpType = vpWin._iTaskType;
                 blobV2 = new CogBlobEditV2();
                 blobV2.Subject = vpWin._blobCalib;
-                splitContainer3.Panel1.Controls.Add(blobV2);
+                splitContainer2.Panel1.Controls.Add(blobV2);
                 blobV2.Dock = DockStyle.Fill;
                 vpWin.Visible = false;
                 bVPPParamChanged = true;

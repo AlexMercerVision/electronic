@@ -576,7 +576,7 @@ namespace VisionControl
             if (jobIdx.HasValue)
             {
                 RunOneTimeFinished(jobIdx.Value);
-                
+                DirectShowImage(jobIdx.Value);
                 infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
                 start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
                 cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
@@ -874,20 +874,21 @@ namespace VisionControl
         {
             try
             {
+                
+                pmaRes[iJobIndex].bLocated = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
+                
+                if (!pmaRes[iJobIndex].bLocated)
+                {
+                    iReject++;
+                }
+                else
+                {
+                    pmaRes[iJobIndex].dTX = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TX");
+                    pmaRes[iJobIndex].dTY = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TY");
+                    pmaRes[iJobIndex].dTR = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TR");
+                    pmaRes[iJobIndex].dPMAScore = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("PMAScore");
+                }
                 bRunOneTimeFinished[iJobIndex] = 2;
-                pmaRes[iJobIndex].bOk = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
-                pmaRes[iJobIndex].bLocated = true;
-                /* if (!pmaRes.bLocated)
-                 {
-                     iReject++; 
-                 }
-                 else
-                 {
-                     pmaRes.dTX = (double)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("TX");
-                     pmaRes.dTY = (double)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("TY");
-                     pmaRes.dTR = (double)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("TR");
-                     pmaRes.dPMAScore = (double)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("PMAScore");
-                 }*/
             }
             catch
             { }

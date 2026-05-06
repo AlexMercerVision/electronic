@@ -197,6 +197,7 @@ namespace VisionApplication
             this.toolStripStatus_inferTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_ExcuteTimes = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.btFunParam = new System.Windows.Forms.Button();
             this.btFunMark = new System.Windows.Forms.Button();
             this.btRedLight_Preview = new System.Windows.Forms.Button();
             this.picLogo = new System.Windows.Forms.PictureBox();
@@ -402,7 +403,6 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
-            this.btFunParam = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -1958,6 +1958,23 @@ namespace VisionApplication
             this.splitContainer1.SplitterDistance = 108;
             this.splitContainer1.TabIndex = 8;
             // 
+            // btFunParam
+            // 
+            this.btFunParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btFunParam.FlatAppearance.BorderSize = 4;
+            this.btFunParam.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btFunParam.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btFunParam.ForeColor = System.Drawing.Color.Red;
+            this.btFunParam.Image = ((System.Drawing.Image)(resources.GetObject("btFunParam.Image")));
+            this.btFunParam.Location = new System.Drawing.Point(3, 559);
+            this.btFunParam.Name = "btFunParam";
+            this.btFunParam.Size = new System.Drawing.Size(100, 90);
+            this.btFunParam.TabIndex = 7;
+            this.btFunParam.Text = "参数设置";
+            this.btFunParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btFunParam.UseVisualStyleBackColor = true;
+            this.btFunParam.Click += new System.EventHandler(this.btFunParam_Click);
+            // 
             // btFunMark
             // 
             this.btFunMark.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
@@ -2020,7 +2037,6 @@ namespace VisionApplication
             this.btFunSet.Text = "流程构建";
             this.btFunSet.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btFunSet.UseVisualStyleBackColor = true;
-            this.btFunSet.Visible = false;
             this.btFunSet.Click += new System.EventHandler(this.btFun_Click);
             // 
             // btFun_Preview
@@ -2166,7 +2182,7 @@ namespace VisionApplication
             this.tabPageCam.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCam.Location = new System.Drawing.Point(4, 24);
             this.tabPageCam.Name = "tabPageCam";
-            this.tabPageCam.Size = new System.Drawing.Size(348, 631);
+            this.tabPageCam.Size = new System.Drawing.Size(348, 563);
             this.tabPageCam.TabIndex = 3;
             this.tabPageCam.Text = "相机设置";
             // 
@@ -3406,7 +3422,7 @@ namespace VisionApplication
             this.tabPageCalib.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCalib.Location = new System.Drawing.Point(4, 24);
             this.tabPageCalib.Name = "tabPageCalib";
-            this.tabPageCalib.Size = new System.Drawing.Size(348, 631);
+            this.tabPageCalib.Size = new System.Drawing.Size(348, 563);
             this.tabPageCalib.TabIndex = 4;
             this.tabPageCalib.Text = "激光视觉标定";
             // 
@@ -4672,23 +4688,6 @@ namespace VisionApplication
             this.timerIOOut.Enabled = true;
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
-            // 
-            // btFunParam
-            // 
-            this.btFunParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btFunParam.FlatAppearance.BorderSize = 4;
-            this.btFunParam.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.btFunParam.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btFunParam.ForeColor = System.Drawing.Color.Red;
-            this.btFunParam.Image = ((System.Drawing.Image)(resources.GetObject("btFunParam.Image")));
-            this.btFunParam.Location = new System.Drawing.Point(3, 559);
-            this.btFunParam.Name = "btFunParam";
-            this.btFunParam.Size = new System.Drawing.Size(100, 90);
-            this.btFunParam.TabIndex = 7;
-            this.btFunParam.Text = "参数设置";
-            this.btFunParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btFunParam.UseVisualStyleBackColor = true;
-            this.btFunParam.Click += new System.EventHandler(this.btFunParam_Click);
             // 
             // FrmMainUI
             // 

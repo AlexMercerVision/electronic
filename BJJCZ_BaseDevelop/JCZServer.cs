@@ -190,11 +190,11 @@ namespace BJJCZ_BaseDevelop
                 // 应用嵌入布局
                 ApplyEmbeddedLayout();
 
-                AddMsg("已嵌入到容器窗口中");
+             //   AddMsg("已嵌入到容器窗口中");
             }
             catch (Exception ex)
             {
-                AddMsg($"嵌入失败: {ex.Message}");
+              //  AddMsg($"嵌入失败: {ex.Message}");
             }
         }
 
@@ -306,6 +306,12 @@ namespace BJJCZ_BaseDevelop
         /// </summary>
         private void ParentCheckTimer_Tick(object sender, EventArgs e)
         {
+            // 检查窗口句柄是否已创建
+            if (!this.IsHandleCreated)
+            {
+                return;  // 句柄未创建，跳过本次执行
+            }
+
             if (_isEmbedded && _containerHwnd != IntPtr.Zero)
             {
                 if (!IsWindowVisible(_containerHwnd))
@@ -724,6 +730,61 @@ namespace BJJCZ_BaseDevelop
                         else
                             nErr = JczLmc.lmc1_UnGroupEnt(card, "grpEnt");
                         break;
+                    case 31:
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_ChangeEntName(card, strEntNames[card][param.ind1], param.strEntyName);
+                        RefreshPreview(card);
+                        break;
+                    case 34:  // 添加圆
+                              // 参数映射：
+                              // dParam1 = ptCenX (圆心X坐标)
+                              // dParam2 = ptCenY (圆心Y坐标)
+                              // dParam3 = dRadius (圆半径)
+                              // strEntyName = 对象名称
+                              // ind1 = 笔号
+                              // bOpen = 是否填充 (可选，如果服务端支持)
+                              // bFirst = 是否启用填充 (扩展参数)
+
+                        double centerX = param.dParam1;
+                        double centerY = param.dParam2;
+                        double radius = param.dParam3;
+                        string entNameCir = string.IsNullOrEmpty(param.strEntyName) ? "Circle" : param.strEntyName;
+                        int penNo = param.ind1 > 0 ? param.ind1 : 1;  // 默认笔号1
+
+                        // 调用添加圆的函数
+                        nErr = JczLmc.lmc1_AddCircleToLib(card, centerX, centerY, radius, entNameCir, penNo);
+                       // nErr = JczLmc.AddCircleToLib(card, centerX, centerY, radius, entName, penNo);
+
+                        if (nErr == 0)
+                        {
+                            // 如果需要填充，可以后续调用填充函数
+                            if (param.bOpen && radius > 0)
+                            {
+                                // 创建填充对象名称
+                                string hatchEntName = entNameCir + "_Hatch";
+                                nErr = JczLmc.lmc1_HatchEnt(card, entNameCir, hatchEntName);
+                                if (nErr == 0)
+                                {
+                                    AddMsg($"卡{card} 添加圆并填充成功 -> {entNameCir}");
+                                }
+                                else
+                                {
+                                    AddMsg($"卡{card} 添加圆成功，但填充失败 -> {JczLmc.GetErrorText(nErr)}");
+                                }
+                            }
+                            else
+                            {
+                                AddMsg($"卡{card} 添加圆成功 -> {entNameCir} (圆心:{centerX},{centerY} 半径:{radius})");
+                            }
+
+                            // 刷新对象列表
+                        //    RefreshEntityList(card);
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card} 添加圆失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                        break;
                     case 35:  // 添加线段
                               // 参数映射：
                               // dParam1 = X1 (起点X)
@@ -733,11 +794,11 @@ namespace BJJCZ_BaseDevelop
                               // strEntyName = 对象名称
                               // ind1 = 笔号 (默认2)
                               // bOpen = 是否填充 (线段填充无效，但保留参数)
-                        int penNo = param.ind1 > 0 ? param.ind1 : 2;
+                        int penNo2 = param.ind1 > 0 ? param.ind1 : 2;
 
                         nErr = AddLineToLib(card, param.dParam1, param.dParam2,
                                             param.dParam3, param.dParam4,
-                                            param.strEntyName, penNo, param.bOpen);
+                                            param.strEntyName, penNo2, param.bOpen);
 
                         if (nErr == 0)
                         {
@@ -897,10 +958,10 @@ namespace BJJCZ_BaseDevelop
                 alImParam.height = 100;
                 alImParam.dWidth = 100;
                 alImParam.width = 100;
-                /*imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height *//*alImParam.width, alImParam.height*//*));*/
                 imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "Hor1" /*alImParam.width, alImParam.height*/ ));
+                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height /*alImParam.width, alImParam.height*/));
+                /*imLaserRoute[card] = MakeWhiteTransparent(
+                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "Hor1" *//*alImParam.width, alImParam.height*//* ));*/
                 if (imLaserRoute[card] == null)
                     imLaserRoute[card] = MakeWhiteTransparent(
                         (Bitmap)Image.FromFile(@".\data\route.png"), 50);
@@ -1047,7 +1108,7 @@ namespace BJJCZ_BaseDevelop
                 // 向客户端发送请求嵌入的消息
             //    RequestClientToEmbed();
 
-                AddMsg("已最小化到系统托盘，已请求客户端重新嵌入");
+            //    AddMsg("已最小化到系统托盘，已请求客户端重新嵌入");
             }
         }
 

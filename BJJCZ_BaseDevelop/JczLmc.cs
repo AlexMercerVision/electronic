@@ -499,18 +499,25 @@ namespace BJJCZ_BaseDevelop
         /// </summary>
         public static Image lmc1_GetEzdFileEntityPrevBitmap(int cardSN, string entName)
         {
-            IntPtr hBmp = lmc1_GetEzdFilePrevBitmap(cardSN, entName);
-            if (hBmp == IntPtr.Zero) return null;
-            Image img = Image.FromHbitmap(hBmp);
-            DeleteObject(hBmp);
-            return img;
+            try
+            {
+                IntPtr hBmp = lmc1_GetEzdFilePrevBitmap(cardSN, entName);
+                if (hBmp == IntPtr.Zero) return null;
+                Image img = Image.FromHbitmap(hBmp);
+                DeleteObject(hBmp);
+                return img;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // ==================== 对象名称与数量辅助方法 ====================
-       /* public static int lmc1_GetEntityCount(int cardSN)
-        {
-            return lmc1_GetEntityCount(cardSN);
-        }*/
+            /* public static int lmc1_GetEntityCount(int cardSN)
+             {
+                 return lmc1_GetEntityCount(cardSN);
+             }*/
 
         public static string lmc1_GetEntityNameByIndex(int cardSN, int index)
         {

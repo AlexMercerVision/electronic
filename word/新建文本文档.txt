@@ -1,0 +1,14 @@
+mJM_ChangedHandler  
+Job_Running   Addlog
+UpdateUIExe  AddLog
+AnaEventForJob 
+mJM_UserResultAvailable   
+RunOneTimeFinished
+cogJobResultHistory_CurrentItemChanged 
+OnJobResultReady 
+AnaEventForJob   Addlog
+mJM_ChangedHandler 
+mJM_Stopped 
+mJM_Stopped
+
+ bRunOneTimeFinished[iJobIndex] = 2;

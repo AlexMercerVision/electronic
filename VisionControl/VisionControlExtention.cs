@@ -482,7 +482,7 @@ namespace VisionControl
               }*/
             iDeepInferTime++;
 
-            bRunOneTimeFinished[iJobIndex] = 2;
+           
             infer_end_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks);
             start2end_time[iJobIndex] = infer_end_time[iJobIndex].Subtract(infer_start_time[iJobIndex]).Duration();
             cost_milliseconds[iJobIndex] = (int)start2end_time[iJobIndex].TotalMilliseconds;
@@ -1298,26 +1298,27 @@ namespace VisionControl
         public CogPMAlignMultiTool _pmaMTGrey
         {
             //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool); }
+            get { return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool); }
 
         }
         public CogPMAlignTool _pmaMT
         {
+           
             //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool); }
+            get { return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool); }
 
         }
         public CogBlobTool _blobCalib
         {
             //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool); }
+            get { return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool); }
 
         }
         public bool setBlob(CogBlobTool blobT)
         {
             try
             {
-                (mJM.Job(1).VisionTool as CogToolGroup).Tools["CogBlobTool1"] = blobT;
+                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] = blobT;
                 return true;
             }
             catch
@@ -1329,7 +1330,7 @@ namespace VisionControl
         {
             try
             {
-                (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] = pma;
+                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] = pma;
                 return true;
             }
             catch
@@ -1341,7 +1342,7 @@ namespace VisionControl
         {
             try
             {
-                (mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] = pma;
+                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] = pma;
                 return true;
             }
             catch
@@ -1472,57 +1473,6 @@ namespace VisionControl
             }
         }
 
-        public void GetAlignRegion(ref AlignImParam alImParam)
-        {
-            try
-            {
-                CogAffineTransformTool cogTrans = ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
-                alImParam.dCenX = cogTrans.Region.CenterX;
-                alImParam.dCenY = cogTrans.Region.CenterY;
-                alImParam.dWidth = cogTrans.Region.SideXLength;
-                alImParam.dHeight = cogTrans.Region.SideYLength;
-
-                cogTrans.Run();
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
-                alImParam.width = cogIm.Width;
-                alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
-                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile.Append(cogIm);
-                mImageFile.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-
-        }
-
-        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
-        {
-            try
-            {
-                CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
-                alImParam.dCenX = cogTrans.Region.CenterX;
-                alImParam.dCenY = cogTrans.Region.CenterY;
-                alImParam.dWidth = cogTrans.Region.SideXLength;
-                alImParam.dHeight = cogTrans.Region.SideYLength;
-
-                cogTrans.Run();
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
-                alImParam.width = cogIm.Width;
-                alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
-                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile.Append(cogIm);
-                mImageFile.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-
-        }
 
        /* public void GetPMAParam(ref PMAlignParam pmaParam)
         {
@@ -3589,15 +3539,15 @@ namespace VisionControl
                             else
                             {
                                 cogRDMainUser.Image = cogImg;
-                                AddGrap(cogRDMainUser, DL_result[iJobIndex]);
-                                AddGrapOkNg(cogRDMainUser, pmaRes[iJobIndex].bOk);
+                            //    AddGrap(cogRDMainUser, DL_result[iJobIndex]);
+                            //    AddGrapOkNg(cogRDMainUser, pmaRes[iJobIndex].bOk);
                                 cogRDMainUser.Fit(true);
                             }
                             break;
                         case 1:
                             cogRDSub1.Image = cogImg;
-                            AddGrap(cogRDSub1, DL_result[iJobIndex]);
-                            AddGrapOkNg(cogRDSub1, pmaRes[iJobIndex].bOk);
+                        //    AddGrap(cogRDSub1, DL_result[iJobIndex]);
+                        //    AddGrapOkNg(cogRDSub1, pmaRes[iJobIndex].bOk);
                             cogRDSub1.Fit(true);
                             break;
                         case 2:

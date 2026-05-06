@@ -5,11 +5,13 @@ using System.Windows.Forms;
 using Cognex.VisionPro;
 
 using Cognex.VisionPro.ToolGroup;
-
+using Cognex.VisionPro.ImageFile;
 using Cognex.VisionPro.Blob;
 using Cognex.VisionPro.Caliper;
-
+using Cognex.VisionPro.ImageProcessing;
 using Cognex.VisionPro.CalibFix;
+using Cognex.VisionPro.ToolBlock;
+
 using CommonCls;
 using System.Threading;
 namespace VisionControl
@@ -320,5 +322,57 @@ namespace VisionControl
         }
         #endregion
 
+
+        public void GetAlignRegion(ref AlignImParam alImParam)
+        {
+            try
+            {
+                CogAffineTransformTool cogTrans = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                alImParam.dCenX = cogTrans.Region.CenterX;
+                alImParam.dCenY = cogTrans.Region.CenterY;
+                alImParam.dWidth = cogTrans.Region.SideXLength;
+                alImParam.dHeight = cogTrans.Region.SideYLength;
+
+                cogTrans.Run();
+                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                alImParam.width = cogIm.Width;
+                alImParam.height = cogIm.Height;
+                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
+                mImageFile.Append(cogIm);
+                mImageFile.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+
+        }
+
+        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
+        {
+            try
+            {
+                CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                alImParam.dCenX = cogTrans.Region.CenterX;
+                alImParam.dCenY = cogTrans.Region.CenterY;
+                alImParam.dWidth = cogTrans.Region.SideXLength;
+                alImParam.dHeight = cogTrans.Region.SideYLength;
+
+                cogTrans.Run();
+                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                alImParam.width = cogIm.Width;
+                alImParam.height = cogIm.Height;
+                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
+                mImageFile.Append(cogIm);
+                mImageFile.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+
+        }
     }
 }

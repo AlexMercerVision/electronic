@@ -107,7 +107,7 @@ namespace VisionApplication
         private int iLayoutType = 1;                            // 窗口布局类型
         private bool bVPPParamChanged = false;                  // VisionPro参数改变标志
         private RunTimeStatus rts = new RunTimeStatus();        // 运行时状态
-        private AlignImParam alImParam = new AlignImParam();    // 图像对齐参数
+        private AlignImParam[] alImParam = new AlignImParam[2];    // 图像对齐参数
         private CDL cdl = new CDL();                            // 深度学习推理类
         private ResultInfo strResInfo = new ResultInfo();       // 结果信息
         private DetStat detStat = new DetStat();                // 检测统计
@@ -318,7 +318,10 @@ namespace VisionApplication
                         this.vpWin.TabIndex = 2;
 
                         //2025年8月26日
-                     //   vpWin.GetAlignRegion(ref alImParam);
+                        alImParam[0] = new AlignImParam();
+                         vpWin.GetAlignRegion(ref alImParam[0],0);
+                        alImParam[1] = new AlignImParam();
+                        vpWin.GetAlignRegion(ref alImParam[1], 1);
                     }
                     else
                     {
@@ -771,7 +774,7 @@ namespace VisionApplication
 
             try
             {
-                operLog.strOperEvent = "创建文件夹";
+               // operLog.strOperEvent = "创建文件夹";
                 if (!Directory.Exists(cup.p_Paf.strLogPath))
                 {
                     Directory.CreateDirectory(cup.p_Paf.strLogPath);
@@ -795,8 +798,8 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = ex.Message;
             }
-            if (operLog.iEventStatus == -1)
-                AddLog();
+           /* if (operLog.iEventStatus == -1)
+                AddLog();*/
 
             return bRet;
         }
@@ -1925,11 +1928,16 @@ namespace VisionApplication
 
         private void AnaEventForJob(int jobIndex)
         {
-            bool ok = pmaRes[jobIndex].bOk;
+            bool ok = pmaRes[jobIndex].bLocated;
             string faceName = (jobIndex == 0) ? "A面" : "B面";
             operLog.strOperEvent = $"{faceName} 检测完成";
             operLog.iEventStatus = ok ? 2 : -2;
             operLog.strFailReason = ok ? "OK" : "NG";
+            operLog.strFailReason = "分数:" + pmaRes[jobIndex].dPMAScore.ToString("0.00")
+                    + "，X:" + pmaRes[jobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[jobIndex].dTY.ToString("0.00")
+                    + "，R:" + pmaRes[jobIndex].dTR.ToString("0.00");
+
+            
             AddLog();
         }
        /* private void AnaEvent()
@@ -2076,53 +2084,96 @@ namespace VisionApplication
         }
 
         //  DateTime dtOperLog = new DateTime();
+        private string _lastLogHash = "";  // 记录最后一条日志的哈希值
+
         private void AddLog()
         {
-            if (dgvLog.RowCount > 20)
-                dgvLog.Rows.RemoveAt(19);
+            // 生成日志的唯一标识（基于内容和时间）
+            string logKey = $"{operLog.dtOperTime.Ticks}_{operLog.strOperEvent}_{operLog.iEventStatus}";
 
-            int ind = 0;// dgvLog.Rows.Add();
-            dgvLog.Rows.Insert(0, 1);
-            //  dtOperLog= DateTime.Now;
-            operLog.dtOperTime = DateTime.Now;
-            dgvLog.Rows[ind].Cells[0].Value = operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss");
-            dgvLog.Rows[ind].Cells[1].Value = operLog.strOperEvent;
-            switch (operLog.iEventStatus)
+            // 如果与最后一条日志完全相同，跳过
+            if (logKey == _lastLogHash)
             {
-                case 0:
-                case 2:
-                case 9:
-                case 10:
-                    dgvLog.Rows[ind].Cells[2].Value = "操作正常";
-                    dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Black;
-                    break;
-                case -1:
-                    dgvLog.Rows[ind].Cells[2].Value = "操作失败";
-                    dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                    break;
-                case -2:
-                    dgvLog.Rows[ind].Cells[2].Value = "操作正常";
-                    dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                    break;
-                case 1:
-                    dgvLog.Rows[ind].Cells[2].Value = "操作超时";
-                    dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                    break;
-                default:
-                    dgvLog.Rows[ind].Cells[2].Value = "操作异常";
-                    dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                    break;
+                // 只写文件，不更新UI
+               // fo.WriteOperLog(cup.p_Paf.strLogPath + "\\Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt", operLog);
+                return;
             }
 
-            dgvLog.Rows[ind].Cells[4].Value = operLog.strUserName;
-            if (operLog.iEventStatus <0 || operLog.iEventStatus == 1
-                || operLog.iEventStatus == 2 || operLog.iEventStatus == 9)
+            _lastLogHash = logKey;
+            if(operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss") == "0001-01-01 00:00:00")
+                operLog.dtOperTime = DateTime.Now;
+            // 延迟执行，避免与 DataGridView 的当前操作冲突
+            this.BeginInvoke(new Action(() =>
             {
-                dgvLog.Rows[ind].Cells[3].Value = operLog.strFailReason;
-            }
+                try
+                {
+                    if (dgvLog.IsDisposed || !dgvLog.IsHandleCreated)
+                        return;
 
-            fo.WriteOperLog(cup.p_Paf.strLogPath + "\\Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt", operLog);
-            //   dgvLog.Rows.Insert(0, dgvr);
+                    // 再次检查是否已经存在相同内容的最后一条记录（防止排队导致的重复）
+                    if (dgvLog.Rows.Count > 0)
+                    {
+                        var lastRow = dgvLog.Rows[0];
+                        if (lastRow.Cells[0].Value?.ToString() == operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss") &&
+                            lastRow.Cells[1].Value?.ToString() == operLog.strOperEvent)
+                        {
+                            // 最后一条记录相同，不添加
+                            return;
+                        }
+                    }
+
+                    if (dgvLog.RowCount > 20)
+                        dgvLog.Rows.RemoveAt(19);
+
+                    int ind = 0;
+                    dgvLog.Rows.Insert(0, 1);
+
+                    dgvLog.Rows[ind].Cells[0].Value = operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    dgvLog.Rows[ind].Cells[1].Value = operLog.strOperEvent;
+
+                    switch (operLog.iEventStatus)
+                    {
+                        case 0:
+                        case 2:
+                        case 9:
+                        case 10:
+                            dgvLog.Rows[ind].Cells[2].Value = "操作正常";
+                            dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Black;
+                            break;
+                        case -1:
+                            dgvLog.Rows[ind].Cells[2].Value = "操作失败";
+                            dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                            break;
+                        case -2:
+                            dgvLog.Rows[ind].Cells[2].Value = "操作正常";
+                            dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                            break;
+                        case 1:
+                            dgvLog.Rows[ind].Cells[2].Value = "操作超时";
+                            dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                            break;
+                        default:
+                            dgvLog.Rows[ind].Cells[2].Value = "操作异常";
+                            dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                            break;
+                    }
+
+                    dgvLog.Rows[ind].Cells[4].Value = operLog.strUserName;
+
+                    if (operLog.iEventStatus < 0 || operLog.iEventStatus == 1 ||
+                        operLog.iEventStatus == 2 || operLog.iEventStatus == 9)
+                    {
+                        dgvLog.Rows[ind].Cells[3].Value = operLog.strFailReason;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"AddLog 异常: {ex.Message}");
+                }
+            }));
+
+            // 文件写入
+           // fo.WriteOperLog(cup.p_Paf.strLogPath + "\\Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt", operLog);
         }
         #endregion  自定义操作区
 
@@ -6097,7 +6148,7 @@ namespace VisionApplication
             try
             {
                 rts.iIsRunning = 1;
-
+                vpWin._bRunOneTimeFinished[iJobIndex] = 0;
                 if (vpWin.RunOneTimeSplite(iJobIndex))
                 {
                     int count = 0;
@@ -6114,7 +6165,7 @@ namespace VisionApplication
                     pmaRes = vpWin._PMARes;
 
                     // 视觉检测完成后，判断是否需要激光标刻
-                    if (rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
+                    if (rts.initStatus.bJCZ == 0 /*&& rts.onLS.bLock*/)
                     {
                         // 异步执行激光标刻，不阻塞UI
                         Task.Run(async () =>
@@ -6167,7 +6218,7 @@ namespace VisionApplication
             UpdateStatisticsForJob(0);  //更新统计数据
             if (cup.p_RTSP.bUpdateRecord)
             {                
-                AnaEventForJob(iJobIndex);
+               // AnaEventForJob(iJobIndex);
                 //AddEventLog(iEventStatus);  //已取消颜色显示
             }
             if(cup.p_RTSP.bUpdateIO)  //启用IO输出
