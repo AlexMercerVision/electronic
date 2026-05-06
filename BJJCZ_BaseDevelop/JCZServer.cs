@@ -454,6 +454,44 @@ namespace BJJCZ_BaseDevelop
             }
         }
 
+        // 在 JczLmc.cs 的 #region 添加删除对象 区域添加
+
+        /// <summary>
+        /// 添加线段到指定板卡
+        /// </summary>
+        public int AddLineToLib(int cardSN, double x1, double y1, double x2, double y2,
+                                        string entName, int penNo, bool hatch = false)
+        {
+            double[,] points = new double[2, 2];
+            points[0, 0] = x1; points[0, 1] = y1;
+            points[1, 0] = x2; points[1, 1] = y2;
+            return JczLmc.lmc1_AddCurveToLib(cardSN, points, 2, entName, penNo, hatch ? 1 : 0);
+        }
+
+        /// <summary>
+        /// 添加矩形到指定板卡
+        /// </summary>
+        public  int AddRectangleToLib(int cardSN, double x, double y, double width, double height,
+                                             string entName, int penNo, bool hatch = false)
+        {
+            double[,] points = new double[5, 2];  // 5个点（闭合回到起点）
+            points[0, 0] = x; points[0, 1] = y;           // 左下
+            points[1, 0] = x; points[1, 1] = y + height;  // 左上
+            points[2, 0] = x + width; points[2, 1] = y + height; // 右上
+            points[3, 0] = x + width; points[3, 1] = y;        // 右下
+            points[4, 0] = x; points[4, 1] = y;           // 回到起点（闭合）
+            return JczLmc.lmc1_AddCurveToLib(cardSN, points, 5, entName, penNo, hatch ? 1 : 0);
+        }
+
+        /// <summary>
+        /// 添加点到指定板卡（可用于点阵标定）
+        /// </summary>
+        public  int AddPointToLib(int cardSN, double x, double y, string entName,
+                                         int penNo, double delayMs = 100)
+        {
+            // 使用打点函数，不是添加对象到数据库
+            return JczLmc.lmc1_MarkPoint(cardSN, x, y, delayMs, penNo);
+        }
         // =============== 核心命令解析（简化版，保留原有逻辑）===============
         private void CMDAna(LCZControlParam param)
         {
@@ -490,13 +528,59 @@ namespace BJJCZ_BaseDevelop
             int nErr = 0;
             bool needResponse = true;
 
-            switch (param.cmdType)
+            try
             {
-                case 0:
-                case 100:
-                    nErr = JczInitErrs[card];
-                    if (nErr == 0)
-                    {
+                switch (param.cmdType)
+                {
+                    case 0:
+                    case 100:
+                        nErr = JczInitErrs[card];
+                        if (nErr == 0)
+                        {
+                            nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
+                            if (nErr == 0)
+                            {
+                                nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                                strEntNames[card] = new string[nEntNums[card]];
+                                iPenNos[card] = new int[nEntNums[card]];
+                                for (int i = 0; i < nEntNums[card]; i++)
+                                {
+                                    strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
+                                    iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                                }
+                                UpdateEntTable(card);
+                                RefreshPreview(card);
+                            }
+                            else
+                            {
+                                AddMsg($"卡{card} 加载文件失败 -> {JczLmc.GetErrorText(nErr)}");
+                            }
+                        }
+                        break;
+
+                    case 1:
+                        nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
+                        JczInitErrs[card] = nErr;
+                        AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
+                        if (nErr != 0)
+                        {
+                            bSimulateMode[card] = true;
+                            AddMsg($"卡{card} 已切换至模拟模式");
+                        }
+                        break;
+
+                    case 2:
+                        nErr = JczLmc.lmc1_Close();
+                        JczInitErrs[card] = nErr;
+                        AddMsg($"卡{card} 关闭 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
+
+                    case 3:
+                        nErr = JczLmc.lmc1_LaserOn(card, param.bOpen);
+                        AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
+
+                    case 4:
                         nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
                         if (nErr == 0)
                         {
@@ -511,205 +595,240 @@ namespace BJJCZ_BaseDevelop
                             UpdateEntTable(card);
                             RefreshPreview(card);
                         }
-                        else
-                        {
-                            AddMsg($"卡{card} 加载文件失败 -> {JczLmc.GetErrorText(nErr)}");
-                        }
-                    }
-                    break;
+                        AddMsg($"卡{card} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
 
-                case 1:
-                    nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
-                    JczInitErrs[card] = nErr;
-                    AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
-                    if (nErr != 0)
-                    {
-                        bSimulateMode[card] = true;
-                        AddMsg($"卡{card} 已切换至模拟模式");
-                    }
-                    break;
+                    case 5:
+                        nErr = JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                        AddMsg($"卡{card} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
 
-                case 2:
-                    nErr = JczLmc.lmc1_Close();
-                    JczInitErrs[card] = nErr;
-                    AddMsg($"卡{card} 关闭 -> {JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 3:
-                    nErr = JczLmc.lmc1_LaserOn(card, param.bOpen);
-                    AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 4:
-                    nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
-                    if (nErr == 0)
-                    {
-                        nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
-                        strEntNames[card] = new string[nEntNums[card]];
-                        iPenNos[card] = new int[nEntNums[card]];
-                        for (int i = 0; i < nEntNums[card]; i++)
-                        {
-                            strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
-                            iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
-                        }
-                        UpdateEntTable(card);
-                        RefreshPreview(card);
-                    }
-                    AddMsg($"卡{card} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 5:
-                    nErr = JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
-                    AddMsg($"卡{card} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
-                    break;
-
-                case 10:
-                case 110:
-                    if (!bInMark[card])
-                    {
-                        if (param.cmdType == 110) JczLmc.lmc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
-                        int markSeq = param.ind3;
-                        var worker = new BackgroundWorker();
-                        worker.DoWork += (s, ev) =>
-                        {
-                            bInMark[card] = true;
-                            nErr = JczLmc.lmc1_Mark(card, false);
-                            bInMark[card] = false;
-                            AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
-                            var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
-                            SendResponse(result);
-                        };
-                        worker.RunWorkerAsync();
-                        needResponse = false;
-                    }
-                    else param.nErr = 19;
-                    break;
-
-                case 11:
-                    nErr = JczLmc.lmc1_StopMark(card);
-                    bInRed[card] = false;
-                    break;
-
-                case 12:
-                case 13:
-                    if (!bInMark[card])
-                    {
-                        if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; Thread.Sleep(50); }
-                        if (param.bOpen)
-                        {
-                            bInRed[card] = true;
-                            var workerRed = new BackgroundWorker();
-                            workerRed.DoWork += (s, ev) =>
-                            {
-                                while (param.bOpen && bInRed[card])
-                                {
-                                    if (param.cmdType == 12) JczLmc.lmc1_RedLightMark(card);
-                                    else JczLmc.lmc1_RedLightMarkContourByEnt(card, null);
-                                    Thread.Sleep(10);
-                                }
-                                bInRed[card] = false;
-                            };
-                            workerRed.RunWorkerAsync();
-                        }
-                    }
-                    break;
-
-                case 15:
-                    nErr = JczLmc.lmc1_GotoPos(card, param.dParam1, param.dParam2);
-                    break;
-
-                case 21:
-                    if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
-                        nErr = JczLmc.lmc1_MarkEntity(card, strEntNames[card][iEntIndices[card]]);
-                    else nErr = 18;
-                    break;
-
-                case 22:
-                    if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
-                    {
+                    case 10:
+                    case 110:
                         if (!bInMark[card])
                         {
-                            if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; }
+                            if (param.cmdType == 110) JczLmc.lmc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
+                            int markSeq = param.ind3;
+                            var worker = new BackgroundWorker();
+                            worker.DoWork += (s, ev) =>
+                            {
+                                bInMark[card] = true;
+                                nErr = JczLmc.lmc1_Mark(card, false);
+                                bInMark[card] = false;
+                                AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
+                                var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
+                                SendResponse(result);
+                            };
+                            worker.RunWorkerAsync();
+                            needResponse = false;
+                        }
+                        else param.nErr = 19;
+                        break;
+
+                    case 11:
+                        nErr = JczLmc.lmc1_StopMark(card);
+                        bInRed[card] = false;
+                        break;
+
+                    case 12:
+                    case 13:
+                        if (!bInMark[card])
+                        {
+                            if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; Thread.Sleep(50); }
                             if (param.bOpen)
                             {
                                 bInRed[card] = true;
-                                string entName = strEntNames[card][iEntIndices[card]];
-                                var workerEntRed = new BackgroundWorker();
-                                workerEntRed.DoWork += (s, ev) =>
+                                var workerRed = new BackgroundWorker();
+                                workerRed.DoWork += (s, ev) =>
                                 {
                                     while (param.bOpen && bInRed[card])
                                     {
-                                        JczLmc.lmc1_RedLightMarkContourByEnt(card, entName);
+                                        if (param.cmdType == 12) JczLmc.lmc1_RedLightMark(card);
+                                        else JczLmc.lmc1_RedLightMarkContourByEnt(card, null);
                                         Thread.Sleep(10);
                                     }
                                     bInRed[card] = false;
                                 };
-                                workerEntRed.RunWorkerAsync();
+                                workerRed.RunWorkerAsync();
                             }
                         }
-                    }
-                    break;
+                        break;
 
-                case 23:
-                    if (param.ind1 < strEntNames[card]?.Length)
-                        nErr = JczLmc.lmc1_RotateEnt(card, strEntNames[card][param.ind1],
-                                                     param.dParam3, param.dParam4, param.dParam5);
-                    RefreshPreview(card);
-                    break;
+                    case 15:
+                        nErr = JczLmc.lmc1_GotoPos(card, param.dParam1, param.dParam2);
+                        break;
 
-                case 24:
-                    if (param.ind1 < strEntNames[card]?.Length)
-                        nErr = JczLmc.lmc1_MoveEnt(card, strEntNames[card][param.ind1],
-                                                   param.dParam1, param.dParam2);
-                    RefreshPreview(card);
-                    break;
+                    case 21:
+                        if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
+                            nErr = JczLmc.lmc1_MarkEntity(card, strEntNames[card][iEntIndices[card]]);
+                        else nErr = 18;
+                        break;
 
-                case 25:
-                    if (param.ind1 < strEntNames[card]?.Length)
-                        nErr = JczLmc.lmc1_ScaleEnt(card, strEntNames[card][param.ind1],
-                                                    param.dParam1, param.dParam2,
-                                                    param.dParam3, param.dParam4);
-                    RefreshPreview(card);
-                    break;
+                    case 22:
+                        if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
+                        {
+                            if (!bInMark[card])
+                            {
+                                if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; }
+                                if (param.bOpen)
+                                {
+                                    bInRed[card] = true;
+                                    string entName = strEntNames[card][iEntIndices[card]];
+                                    var workerEntRed = new BackgroundWorker();
+                                    workerEntRed.DoWork += (s, ev) =>
+                                    {
+                                        while (param.bOpen && bInRed[card])
+                                        {
+                                            JczLmc.lmc1_RedLightMarkContourByEnt(card, entName);
+                                            Thread.Sleep(10);
+                                        }
+                                        bInRed[card] = false;
+                                    };
+                                    workerEntRed.RunWorkerAsync();
+                                }
+                            }
+                        }
+                        break;
 
-                case 27:
-                    nErr = JczLmc.lmc1_SetRotateMoveParam(card, param.dParam1, param.dParam2,
-                                                          param.dParam3, param.dParam4, param.dParam5);
-                    break;
+                    case 23:
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_RotateEnt(card, strEntNames[card][param.ind1],
+                                                         param.dParam3, param.dParam4, param.dParam5);
+                        RefreshPreview(card);
+                        break;
 
-                case 28:
-                    if (param.bOpen)
-                        nErr = JczLmc.lmc1_GroupEnt2(card, strEntNames[card],
-                                                     strEntNames[card].Length, "grpEnt", 2);
-                    else
-                        nErr = JczLmc.lmc1_UnGroupEnt(card, "grpEnt");
-                    break;
+                    case 24:
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_MoveEnt(card, strEntNames[card][param.ind1],
+                                                       param.dParam1, param.dParam2);
+                        RefreshPreview(card);
+                        break;
 
-                case 40:
-                    nErr = JczLmc.lmc1_SetDevCfg(card);
-                    break;
+                    case 25:
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_ScaleEnt(card, strEntNames[card][param.ind1],
+                                                        param.dParam1, param.dParam2,
+                                                        param.dParam3, param.dParam4);
+                        RefreshPreview(card);
+                        break;
 
-                case 42:
-                    alImParam.width = param.ind1;
-                    alImParam.height = param.ind2;
-                    alImParam.dCenX = param.dParam1;
-                    alImParam.dCenY = param.dParam2;
-                    alImParam.dWidth = param.dParam3;
-                    alImParam.dHeight = param.dParam4;
-                    break;
+                    case 27:
+                        nErr = JczLmc.lmc1_SetRotateMoveParam(card, param.dParam1, param.dParam2,
+                                                              param.dParam3, param.dParam4, param.dParam5);
+                        break;
 
-                case 90:
-                    splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
-                    splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
-                    splitContainer1.Panel1Collapsed = (param.dParam1 == 0 && param.dParam2 == 0);
-                    splitContainer3.Panel1Collapsed = (param.dParam3 == 0);
-                    splitContainer3.Panel2Collapsed = (param.dParam4 == 0);
-                    splitContainer1.Panel2Collapsed = (param.dParam3 == 0 && param.dParam4 == 0);
-                    break;
+                    case 28:
+                        if (param.bOpen)
+                            nErr = JczLmc.lmc1_GroupEnt2(card, strEntNames[card],
+                                                         strEntNames[card].Length, "grpEnt", 2);
+                        else
+                            nErr = JczLmc.lmc1_UnGroupEnt(card, "grpEnt");
+                        break;
+                    case 35:  // 添加线段
+                              // 参数映射：
+                              // dParam1 = X1 (起点X)
+                              // dParam2 = Y1 (起点Y)  
+                              // dParam3 = X2 (终点X)
+                              // dParam4 = Y2 (终点Y)
+                              // strEntyName = 对象名称
+                              // ind1 = 笔号 (默认2)
+                              // bOpen = 是否填充 (线段填充无效，但保留参数)
+                        int penNo = param.ind1 > 0 ? param.ind1 : 2;
 
-                default:
-                    nErr = 20;
-                    break;
+                        nErr = AddLineToLib(card, param.dParam1, param.dParam2,
+                                            param.dParam3, param.dParam4,
+                                            param.strEntyName, penNo, param.bOpen);
+
+                        if (nErr == 0)
+                        {
+                            // 刷新对象列表
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                            }
+
+                            UpdateEntTable(card);
+                            RefreshPreview(card);
+                            AddMsg($"卡{card} 添加线段成功 -> {param.strEntyName}");
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card} 添加线段失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                        break;
+                    case 36:  // 添加矩形
+                              // 参数映射：
+                              // dParam1 = X (左下角X)
+                              // dParam2 = Y (左下角Y)
+                              // dParam3 = Width (宽度)
+                              // dParam4 = Height (高度)
+                              // strEntyName = 对象名称
+                              // ind1 = 笔号
+                              // bOpen = 是否填充
+
+                        int rectPenNo = param.ind1 > 0 ? param.ind1 : 2;
+
+                        nErr = AddRectangleToLib(card, param.dParam1, param.dParam2,
+                                                  param.dParam3, param.dParam4,
+                                                  param.strEntyName, rectPenNo, param.bOpen);
+
+                        if (nErr == 0)
+                        {
+                            // 刷新对象列表
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                            }
+
+                            UpdateEntTable(card);
+                            RefreshPreview(card);
+                            AddMsg($"卡{card} 添加矩形成功 -> {param.strEntyName}");
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                        break;
+                    case 40:
+                        nErr = JczLmc.lmc1_SetDevCfg(card);
+                        break;
+
+                    case 42:
+                        alImParam.width = param.ind1;
+                        alImParam.height = param.ind2;
+                        alImParam.dCenX = param.dParam1;
+                        alImParam.dCenY = param.dParam2;
+                        alImParam.dWidth = param.dParam3;
+                        alImParam.dHeight = param.dParam4;
+                        break;
+
+                    case 90:
+                        splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
+                        splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
+                        splitContainer1.Panel1Collapsed = (param.dParam1 == 0 && param.dParam2 == 0);
+                        splitContainer3.Panel1Collapsed = (param.dParam3 == 0);
+                        splitContainer3.Panel2Collapsed = (param.dParam4 == 0);
+                        splitContainer1.Panel2Collapsed = (param.dParam3 == 0 && param.dParam4 == 0);
+                        break;
+
+                    default:
+                        nErr = 20;
+                        break;
+                }
+            }
+            catch(Exception ex)
+            {
+
             }
 
             if (needResponse)
@@ -774,12 +893,14 @@ namespace BJJCZ_BaseDevelop
             try
             {
                 if (bSimulateMode[card]) return;
-                alImParam.width = 1000;
-                alImParam.height = 1000;
+                alImParam.width = 200;
+                alImParam.height = 100;
                 alImParam.dWidth = 100;
                 alImParam.width = 100;
+                /*imLaserRoute[card] = MakeWhiteTransparent(
+                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height *//*alImParam.width, alImParam.height*//*));*/
                 imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, alImParam.width, alImParam.height));
+                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "Hor1" /*alImParam.width, alImParam.height*/ ));
                 if (imLaserRoute[card] == null)
                     imLaserRoute[card] = MakeWhiteTransparent(
                         (Bitmap)Image.FromFile(@".\data\route.png"), 50);

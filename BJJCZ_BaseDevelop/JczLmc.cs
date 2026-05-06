@@ -429,47 +429,47 @@ namespace BJJCZ_BaseDevelop
         [DllImport("gdi32.dll")]
         private static extern IntPtr CreateBitmap(int nWidth, int nHeight, uint cPlanes, uint cBitsPerPel, byte[] lpvBits);
 
+        /* public static Image lmc1_GetCurPreviewImage3(int cardSN, IntPtr hwnd, int bmpwidth, int bmpheight)
+         {
+             IntPtr hBmp = lmc1_GetPrevBitmap(cardSN, hwnd, bmpwidth, bmpheight);
+             if (hBmp == IntPtr.Zero) return null;
+
+             try
+             {
+                 // 获取位图信息
+                 BITMAP bmpInfo = new BITMAP();
+                 GetObject(hBmp, Marshal.SizeOf(typeof(BITMAP)), ref bmpInfo);
+
+                 if (bmpInfo.bmWidth == 0 || bmpInfo.bmHeight == 0)
+                     return null;
+
+                 // 获取位图数据
+                 int bitsSize = bmpInfo.bmWidthBytes * bmpInfo.bmHeight;
+                 byte[] bits = new byte[bitsSize];
+                 GetBitmapBits(hBmp, bitsSize, bits);
+
+                 // 重新创建位图
+                 IntPtr newHBmp = CreateBitmap(bmpInfo.bmWidth, bmpInfo.bmHeight,
+                                                bmpInfo.bmPlanes, bmpInfo.bmBitsPixel, bits);
+
+                 if (newHBmp == IntPtr.Zero)
+                     return null;
+
+                 Image img = Image.FromHbitmap(newHBmp);
+                 DeleteObject(newHBmp);
+                 return img;
+             }
+             catch (Exception ex)
+             {
+              //   Debug.WriteLine($"创建图像失败: {ex.Message}");
+                 return null;
+             }
+             finally
+             {
+                 DeleteObject(hBmp);
+             }
+         }*/
         public static Image lmc1_GetCurPreviewImage3(int cardSN, IntPtr hwnd, int bmpwidth, int bmpheight)
-        {
-            IntPtr hBmp = lmc1_GetPrevBitmap(cardSN, hwnd, bmpwidth, bmpheight);
-            if (hBmp == IntPtr.Zero) return null;
-
-            try
-            {
-                // 获取位图信息
-                BITMAP bmpInfo = new BITMAP();
-                GetObject(hBmp, Marshal.SizeOf(typeof(BITMAP)), ref bmpInfo);
-
-                if (bmpInfo.bmWidth == 0 || bmpInfo.bmHeight == 0)
-                    return null;
-
-                // 获取位图数据
-                int bitsSize = bmpInfo.bmWidthBytes * bmpInfo.bmHeight;
-                byte[] bits = new byte[bitsSize];
-                GetBitmapBits(hBmp, bitsSize, bits);
-
-                // 重新创建位图
-                IntPtr newHBmp = CreateBitmap(bmpInfo.bmWidth, bmpInfo.bmHeight,
-                                               bmpInfo.bmPlanes, bmpInfo.bmBitsPixel, bits);
-
-                if (newHBmp == IntPtr.Zero)
-                    return null;
-
-                Image img = Image.FromHbitmap(newHBmp);
-                DeleteObject(newHBmp);
-                return img;
-            }
-            catch (Exception ex)
-            {
-             //   Debug.WriteLine($"创建图像失败: {ex.Message}");
-                return null;
-            }
-            finally
-            {
-                DeleteObject(hBmp);
-            }
-        }
-        /*public static Image lmc1_GetCurPreviewImage3(int cardSN, IntPtr hwnd,int bmpwidth, int bmpheight)
         {
             IntPtr hBmp = lmc1_GetPrevBitmap(cardSN, hwnd, bmpwidth, bmpheight);
             if (hBmp == IntPtr.Zero) return null;
@@ -484,7 +484,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-               // WriteLine($"FromHbitmap 失败: {ex.Message}");
+                // WriteLine($"FromHbitmap 失败: {ex.Message}");
                 return null;
             }
             finally
@@ -492,12 +492,12 @@ namespace BJJCZ_BaseDevelop
                 // 删除原始 HBITMAP
                 DeleteObject(hBmp);
             }
-        }*/
+        }
 
         /// <summary>
         /// 获取指定卡指定对象的预览图像
         /// </summary>
-        public static Image lmc1_GetEzdFilePrevBitmap(int cardSN, string entName, int bmpwidth, int bmpheight)
+        public static Image lmc1_GetEzdFileEntityPrevBitmap(int cardSN, string entName)
         {
             IntPtr hBmp = lmc1_GetEzdFilePrevBitmap(cardSN, entName);
             if (hBmp == IntPtr.Zero) return null;

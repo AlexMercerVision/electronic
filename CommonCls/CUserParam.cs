@@ -280,10 +280,10 @@ namespace CommonCls
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct IOPortParam
     {
-        public int AcqTrig;
-        public int DetTrig;
-        public int EndAcqTrig;
-        public int EndDetTrig;
+        public int APlane;
+        public int BPlane;
+        public int EndAPlane;
+        public int EndBPlane;
         public int OkOut;
         public int NGOut;
         public int defIn1;

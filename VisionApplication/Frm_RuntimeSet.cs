@@ -786,10 +786,10 @@ namespace VisionApplication
         {
             try
             {
-                cup.p_IOPP.AcqTrig = cmbAcqTrig.SelectedIndex;
-                cup.p_IOPP.DetTrig = cmbDetTrig.SelectedIndex;
-                cup.p_IOPP.EndAcqTrig = cmbEndAcqTrig.SelectedIndex;
-                cup.p_IOPP.EndDetTrig = cmbEndDetTrig.SelectedIndex;
+                cup.p_IOPP.APlane = cmbAPlane.SelectedIndex;
+                cup.p_IOPP.BPlane = cmbBPlane.SelectedIndex;
+                cup.p_IOPP.EndAPlane = cmbEndAPlane.SelectedIndex;
+                cup.p_IOPP.EndBPlane = cmbEndBPlane.SelectedIndex;
                 cup.p_IOPP.OkOut = cmbOkOut.SelectedIndex;
                 cup.p_IOPP.NGOut = cmbNgOut.SelectedIndex;
                 cup.p_IOPP.IOTimeDelay =Int32.Parse( cmbIOTimeDelay.Text);
@@ -1383,10 +1383,10 @@ namespace VisionApplication
         {
             try
             {
-                cmbAcqTrig.SelectedIndex= cup.p_IOPP.AcqTrig;
-                cmbDetTrig.SelectedIndex = cup.p_IOPP.DetTrig;
-                cmbEndAcqTrig.SelectedIndex = cup.p_IOPP.EndAcqTrig;
-                cmbEndDetTrig.SelectedIndex = cup.p_IOPP.EndDetTrig;
+                cmbAPlane.SelectedIndex= cup.p_IOPP.APlane;
+                cmbBPlane.SelectedIndex = cup.p_IOPP.BPlane;
+                cmbEndAPlane.SelectedIndex = cup.p_IOPP.EndAPlane;
+                cmbEndBPlane.SelectedIndex = cup.p_IOPP.EndBPlane;
                 cmbOkOut.SelectedIndex = cup.p_IOPP.OkOut;
                 cmbNgOut.SelectedIndex = cup.p_IOPP.NGOut;
 

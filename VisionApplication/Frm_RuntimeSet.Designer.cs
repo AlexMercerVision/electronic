@@ -193,10 +193,10 @@ namespace VisionApplication
             this.chkOkOut = new System.Windows.Forms.CheckBox();
             this.cmbNgOut = new System.Windows.Forms.ComboBox();
             this.cmbOkOut = new System.Windows.Forms.ComboBox();
-            this.cmbEndDetTrig = new System.Windows.Forms.ComboBox();
-            this.cmbEndAcqTrig = new System.Windows.Forms.ComboBox();
-            this.cmbDetTrig = new System.Windows.Forms.ComboBox();
-            this.cmbAcqTrig = new System.Windows.Forms.ComboBox();
+            this.cmbEndBPlane = new System.Windows.Forms.ComboBox();
+            this.cmbEndAPlane = new System.Windows.Forms.ComboBox();
+            this.cmbBPlane = new System.Windows.Forms.ComboBox();
+            this.cmbAPlane = new System.Windows.Forms.ComboBox();
             this.label92 = new System.Windows.Forms.Label();
             this.label96 = new System.Windows.Forms.Label();
             this.label94 = new System.Windows.Forms.Label();
@@ -1320,7 +1320,7 @@ namespace VisionApplication
             // label56
             // 
             this.label56.AutoSize = true;
-            this.label56.Location = new System.Drawing.Point(22, 93);
+            this.label56.Location = new System.Drawing.Point(21, 127);
             this.label56.Name = "label56";
             this.label56.Size = new System.Drawing.Size(83, 12);
             this.label56.TabIndex = 0;
@@ -1350,13 +1350,12 @@ namespace VisionApplication
             // 
             // btManuMarkFile
             // 
-            this.btManuMarkFile.Location = new System.Drawing.Point(585, 122);
+            this.btManuMarkFile.Location = new System.Drawing.Point(584, 91);
             this.btManuMarkFile.Name = "btManuMarkFile";
             this.btManuMarkFile.Size = new System.Drawing.Size(75, 23);
             this.btManuMarkFile.TabIndex = 2;
             this.btManuMarkFile.Text = "选择路径";
             this.btManuMarkFile.UseVisualStyleBackColor = true;
-            this.btManuMarkFile.Visible = false;
             this.btManuMarkFile.Click += new System.EventHandler(this.btPathChoose_Click);
             // 
             // btVpp
@@ -1388,11 +1387,10 @@ namespace VisionApplication
             // 
             // tbManuMarkFilePath
             // 
-            this.tbManuMarkFilePath.Location = new System.Drawing.Point(147, 122);
+            this.tbManuMarkFilePath.Location = new System.Drawing.Point(146, 91);
             this.tbManuMarkFilePath.Name = "tbManuMarkFilePath";
             this.tbManuMarkFilePath.Size = new System.Drawing.Size(412, 21);
             this.tbManuMarkFilePath.TabIndex = 1;
-            this.tbManuMarkFilePath.Visible = false;
             // 
             // label88
             // 
@@ -1407,12 +1405,11 @@ namespace VisionApplication
             // label54
             // 
             this.label54.AutoSize = true;
-            this.label54.Location = new System.Drawing.Point(21, 124);
+            this.label54.Location = new System.Drawing.Point(20, 93);
             this.label54.Name = "label54";
             this.label54.Size = new System.Drawing.Size(83, 12);
             this.label54.TabIndex = 0;
             this.label54.Text = "激光标刻文件:";
-            this.label54.Visible = false;
             // 
             // tbPlayback
             // 
@@ -1423,7 +1420,7 @@ namespace VisionApplication
             // 
             // tbMarkPicPath
             // 
-            this.tbMarkPicPath.Location = new System.Drawing.Point(147, 89);
+            this.tbMarkPicPath.Location = new System.Drawing.Point(146, 123);
             this.tbMarkPicPath.Name = "tbMarkPicPath";
             this.tbMarkPicPath.Size = new System.Drawing.Size(412, 21);
             this.tbMarkPicPath.TabIndex = 1;
@@ -1431,7 +1428,7 @@ namespace VisionApplication
             // 
             // btMarkPic
             // 
-            this.btMarkPic.Location = new System.Drawing.Point(585, 88);
+            this.btMarkPic.Location = new System.Drawing.Point(584, 122);
             this.btMarkPic.Name = "btMarkPic";
             this.btMarkPic.Size = new System.Drawing.Size(75, 23);
             this.btMarkPic.TabIndex = 2;
@@ -2123,10 +2120,10 @@ namespace VisionApplication
             this.tabIO.Controls.Add(this.chkOkOut);
             this.tabIO.Controls.Add(this.cmbNgOut);
             this.tabIO.Controls.Add(this.cmbOkOut);
-            this.tabIO.Controls.Add(this.cmbEndDetTrig);
-            this.tabIO.Controls.Add(this.cmbEndAcqTrig);
-            this.tabIO.Controls.Add(this.cmbDetTrig);
-            this.tabIO.Controls.Add(this.cmbAcqTrig);
+            this.tabIO.Controls.Add(this.cmbEndBPlane);
+            this.tabIO.Controls.Add(this.cmbEndAPlane);
+            this.tabIO.Controls.Add(this.cmbBPlane);
+            this.tabIO.Controls.Add(this.cmbAPlane);
             this.tabIO.Controls.Add(this.label92);
             this.tabIO.Controls.Add(this.label96);
             this.tabIO.Controls.Add(this.label94);
@@ -2159,6 +2156,7 @@ namespace VisionApplication
             this.cmbIOTimeDelay.Name = "cmbIOTimeDelay";
             this.cmbIOTimeDelay.Size = new System.Drawing.Size(98, 20);
             this.cmbIOTimeDelay.TabIndex = 4;
+            this.cmbIOTimeDelay.Visible = false;
             // 
             // label95
             // 
@@ -2168,6 +2166,7 @@ namespace VisionApplication
             this.label95.Size = new System.Drawing.Size(17, 12);
             this.label95.TabIndex = 3;
             this.label95.Text = "ms";
+            this.label95.Visible = false;
             // 
             // chkNgOut
             // 
@@ -2227,10 +2226,10 @@ namespace VisionApplication
             this.cmbOkOut.Size = new System.Drawing.Size(121, 20);
             this.cmbOkOut.TabIndex = 1;
             // 
-            // cmbEndDetTrig
+            // cmbEndBPlane
             // 
-            this.cmbEndDetTrig.FormattingEnabled = true;
-            this.cmbEndDetTrig.Items.AddRange(new object[] {
+            this.cmbEndBPlane.FormattingEnabled = true;
+            this.cmbEndBPlane.Items.AddRange(new object[] {
             "无",
             "In1",
             "In2",
@@ -2240,15 +2239,16 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbEndDetTrig.Location = new System.Drawing.Point(83, 188);
-            this.cmbEndDetTrig.Name = "cmbEndDetTrig";
-            this.cmbEndDetTrig.Size = new System.Drawing.Size(121, 20);
-            this.cmbEndDetTrig.TabIndex = 1;
+            this.cmbEndBPlane.Location = new System.Drawing.Point(83, 188);
+            this.cmbEndBPlane.Name = "cmbEndBPlane";
+            this.cmbEndBPlane.Size = new System.Drawing.Size(121, 20);
+            this.cmbEndBPlane.TabIndex = 1;
+            this.cmbEndBPlane.Visible = false;
             // 
-            // cmbEndAcqTrig
+            // cmbEndAPlane
             // 
-            this.cmbEndAcqTrig.FormattingEnabled = true;
-            this.cmbEndAcqTrig.Items.AddRange(new object[] {
+            this.cmbEndAPlane.FormattingEnabled = true;
+            this.cmbEndAPlane.Items.AddRange(new object[] {
             "无",
             "In1",
             "In2",
@@ -2258,15 +2258,16 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbEndAcqTrig.Location = new System.Drawing.Point(83, 139);
-            this.cmbEndAcqTrig.Name = "cmbEndAcqTrig";
-            this.cmbEndAcqTrig.Size = new System.Drawing.Size(121, 20);
-            this.cmbEndAcqTrig.TabIndex = 1;
+            this.cmbEndAPlane.Location = new System.Drawing.Point(83, 139);
+            this.cmbEndAPlane.Name = "cmbEndAPlane";
+            this.cmbEndAPlane.Size = new System.Drawing.Size(121, 20);
+            this.cmbEndAPlane.TabIndex = 1;
+            this.cmbEndAPlane.Visible = false;
             // 
-            // cmbDetTrig
+            // cmbBPlane
             // 
-            this.cmbDetTrig.FormattingEnabled = true;
-            this.cmbDetTrig.Items.AddRange(new object[] {
+            this.cmbBPlane.FormattingEnabled = true;
+            this.cmbBPlane.Items.AddRange(new object[] {
             "无",
             "In1",
             "In2",
@@ -2276,15 +2277,15 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbDetTrig.Location = new System.Drawing.Point(83, 83);
-            this.cmbDetTrig.Name = "cmbDetTrig";
-            this.cmbDetTrig.Size = new System.Drawing.Size(121, 20);
-            this.cmbDetTrig.TabIndex = 1;
+            this.cmbBPlane.Location = new System.Drawing.Point(83, 83);
+            this.cmbBPlane.Name = "cmbBPlane";
+            this.cmbBPlane.Size = new System.Drawing.Size(121, 20);
+            this.cmbBPlane.TabIndex = 1;
             // 
-            // cmbAcqTrig
+            // cmbAPlane
             // 
-            this.cmbAcqTrig.FormattingEnabled = true;
-            this.cmbAcqTrig.Items.AddRange(new object[] {
+            this.cmbAPlane.FormattingEnabled = true;
+            this.cmbAPlane.Items.AddRange(new object[] {
             "无",
             "In1",
             "In2",
@@ -2294,10 +2295,10 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbAcqTrig.Location = new System.Drawing.Point(83, 38);
-            this.cmbAcqTrig.Name = "cmbAcqTrig";
-            this.cmbAcqTrig.Size = new System.Drawing.Size(121, 20);
-            this.cmbAcqTrig.TabIndex = 1;
+            this.cmbAPlane.Location = new System.Drawing.Point(83, 38);
+            this.cmbAPlane.Name = "cmbAPlane";
+            this.cmbAPlane.Size = new System.Drawing.Size(121, 20);
+            this.cmbAPlane.TabIndex = 1;
             // 
             // label92
             // 
@@ -2308,6 +2309,7 @@ namespace VisionApplication
             this.label92.Size = new System.Drawing.Size(53, 12);
             this.label92.TabIndex = 0;
             this.label92.Text = "检测结束";
+            this.label92.Visible = false;
             // 
             // label96
             // 
@@ -2318,6 +2320,7 @@ namespace VisionApplication
             this.label96.Size = new System.Drawing.Size(53, 12);
             this.label96.TabIndex = 0;
             this.label96.Text = "脉冲时长";
+            this.label96.Visible = false;
             // 
             // label94
             // 
@@ -2325,9 +2328,9 @@ namespace VisionApplication
             this.label94.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label94.Location = new System.Drawing.Point(347, 87);
             this.label94.Name = "label94";
-            this.label94.Size = new System.Drawing.Size(41, 12);
+            this.label94.Size = new System.Drawing.Size(47, 12);
             this.label94.TabIndex = 0;
-            this.label94.Text = "NG输出";
+            this.label94.Text = "B面输出";
             // 
             // label90
             // 
@@ -2335,9 +2338,9 @@ namespace VisionApplication
             this.label90.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label90.Location = new System.Drawing.Point(24, 86);
             this.label90.Name = "label90";
-            this.label90.Size = new System.Drawing.Size(53, 12);
+            this.label90.Size = new System.Drawing.Size(47, 12);
             this.label90.TabIndex = 0;
-            this.label90.Text = "检测触发";
+            this.label90.Text = "B面触发";
             // 
             // label91
             // 
@@ -2348,6 +2351,7 @@ namespace VisionApplication
             this.label91.Size = new System.Drawing.Size(53, 12);
             this.label91.TabIndex = 0;
             this.label91.Text = "采集结束";
+            this.label91.Visible = false;
             // 
             // label93
             // 
@@ -2355,9 +2359,9 @@ namespace VisionApplication
             this.label93.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label93.Location = new System.Drawing.Point(347, 38);
             this.label93.Name = "label93";
-            this.label93.Size = new System.Drawing.Size(41, 12);
+            this.label93.Size = new System.Drawing.Size(47, 12);
             this.label93.TabIndex = 0;
-            this.label93.Text = "OK输出";
+            this.label93.Text = "A面输出";
             // 
             // label89
             // 
@@ -2365,9 +2369,9 @@ namespace VisionApplication
             this.label89.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label89.Location = new System.Drawing.Point(24, 40);
             this.label89.Name = "label89";
-            this.label89.Size = new System.Drawing.Size(53, 12);
+            this.label89.Size = new System.Drawing.Size(47, 12);
             this.label89.TabIndex = 0;
-            this.label89.Text = "采集触发";
+            this.label89.Text = "A面触发";
             // 
             // tabDL
             // 
@@ -4272,7 +4276,7 @@ namespace VisionApplication
         private System.Windows.Forms.Label label88;
         private System.Windows.Forms.TabPage tabIO;
         private System.Windows.Forms.ComboBox cmbOkOut;
-        private System.Windows.Forms.ComboBox cmbAcqTrig;
+        private System.Windows.Forms.ComboBox cmbAPlane;
         private System.Windows.Forms.Label label92;
         private System.Windows.Forms.Label label94;
         private System.Windows.Forms.Label label90;
@@ -4280,9 +4284,9 @@ namespace VisionApplication
         private System.Windows.Forms.Label label93;
         private System.Windows.Forms.Label label89;
         private System.Windows.Forms.ComboBox cmbNgOut;
-        private System.Windows.Forms.ComboBox cmbEndDetTrig;
-        private System.Windows.Forms.ComboBox cmbEndAcqTrig;
-        private System.Windows.Forms.ComboBox cmbDetTrig;
+        private System.Windows.Forms.ComboBox cmbEndBPlane;
+        private System.Windows.Forms.ComboBox cmbEndAPlane;
+        private System.Windows.Forms.ComboBox cmbBPlane;
         private System.Windows.Forms.GroupBox groupBox13;
         private System.Windows.Forms.GroupBox groupBox14;
         private System.Windows.Forms.CheckBox chkConnCam;

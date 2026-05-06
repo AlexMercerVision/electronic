@@ -191,6 +191,9 @@ namespace VisionApplication
             this.toolStripStatus_Hand = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_No = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel_CardStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel_CardInitStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel_LaserStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_inferTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_ExcuteTimes = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
@@ -399,6 +402,7 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
+            this.btFunParam = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -812,7 +816,7 @@ namespace VisionApplication
             this.menu_View_EventStatus.Checked = true;
             this.menu_View_EventStatus.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_EventStatus.Name = "menu_View_EventStatus";
-            this.menu_View_EventStatus.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_EventStatus.Size = new System.Drawing.Size(160, 22);
             this.menu_View_EventStatus.Text = "状态标志";
             this.menu_View_EventStatus.Click += new System.EventHandler(this.menu_View_EventStatus_Click);
             // 
@@ -821,7 +825,7 @@ namespace VisionApplication
             this.menu_View_SystemLog.Checked = true;
             this.menu_View_SystemLog.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_SystemLog.Name = "menu_View_SystemLog";
-            this.menu_View_SystemLog.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_SystemLog.Size = new System.Drawing.Size(160, 22);
             this.menu_View_SystemLog.Text = "操作日志";
             this.menu_View_SystemLog.Click += new System.EventHandler(this.menu_View_SystemLog_Click);
             // 
@@ -830,7 +834,7 @@ namespace VisionApplication
             this.menu_View_LaserWin.Checked = true;
             this.menu_View_LaserWin.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_LaserWin.Name = "menu_View_LaserWin";
-            this.menu_View_LaserWin.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_LaserWin.Size = new System.Drawing.Size(160, 22);
             this.menu_View_LaserWin.Text = "激光标刻服务端";
             this.menu_View_LaserWin.Click += new System.EventHandler(this.menu_View_LaserWin_Click);
             // 
@@ -839,7 +843,7 @@ namespace VisionApplication
             this.menu_View_ResultStatics.Checked = true;
             this.menu_View_ResultStatics.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_ResultStatics.Name = "menu_View_ResultStatics";
-            this.menu_View_ResultStatics.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_ResultStatics.Size = new System.Drawing.Size(160, 22);
             this.menu_View_ResultStatics.Text = "参数设置";
             this.menu_View_ResultStatics.Click += new System.EventHandler(this.menu_View_ResultStatics_Click);
             // 
@@ -853,7 +857,7 @@ namespace VisionApplication
             this.menu_View_Layout5,
             this.menu_View_LayoutEq});
             this.menu_View_Layout.Name = "menu_View_Layout";
-            this.menu_View_Layout.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Layout.Size = new System.Drawing.Size(160, 22);
             this.menu_View_Layout.Text = "窗口布局";
             // 
             // menu_View_Layout1
@@ -901,7 +905,7 @@ namespace VisionApplication
             // menu_View_Fit
             // 
             this.menu_View_Fit.Name = "menu_View_Fit";
-            this.menu_View_Fit.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_Fit.Size = new System.Drawing.Size(160, 22);
             this.menu_View_Fit.Text = "图像适应窗口";
             this.menu_View_Fit.Click += new System.EventHandler(this.menu_View_Fit_Click);
             // 
@@ -1766,9 +1770,12 @@ namespace VisionApplication
             this.toolStripStatus_Hand,
             this.toolStripStatusLabel1,
             this.toolStripStatus_No,
+            this.toolStripStatusLabel_CardStatus,
+            this.toolStripStatusLabel_CardInitStatus,
+            this.toolStripStatusLabel_LaserStatus,
             this.toolStripStatus_inferTime,
             this.toolStripStatus_ExcuteTimes});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 846);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 839);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(986, 35);
             this.statusStrip1.TabIndex = 7;
@@ -1891,6 +1898,25 @@ namespace VisionApplication
             this.toolStripStatus_No.Size = new System.Drawing.Size(12, 30);
             this.toolStripStatus_No.Text = " ";
             // 
+            // toolStripStatusLabel_CardStatus
+            // 
+            this.toolStripStatusLabel_CardStatus.BackColor = System.Drawing.SystemColors.Control;
+            this.toolStripStatusLabel_CardStatus.Name = "toolStripStatusLabel_CardStatus";
+            this.toolStripStatusLabel_CardStatus.Size = new System.Drawing.Size(0, 30);
+            // 
+            // toolStripStatusLabel_CardInitStatus
+            // 
+            this.toolStripStatusLabel_CardInitStatus.BackColor = System.Drawing.SystemColors.Control;
+            this.toolStripStatusLabel_CardInitStatus.Name = "toolStripStatusLabel_CardInitStatus";
+            this.toolStripStatusLabel_CardInitStatus.Size = new System.Drawing.Size(20, 30);
+            this.toolStripStatusLabel_CardInitStatus.Text = "   ";
+            // 
+            // toolStripStatusLabel_LaserStatus
+            // 
+            this.toolStripStatusLabel_LaserStatus.Name = "toolStripStatusLabel_LaserStatus";
+            this.toolStripStatusLabel_LaserStatus.Size = new System.Drawing.Size(24, 30);
+            this.toolStripStatusLabel_LaserStatus.Text = "    ";
+            // 
             // toolStripStatus_inferTime
             // 
             this.toolStripStatus_inferTime.BackColor = System.Drawing.SystemColors.ButtonHighlight;
@@ -1915,6 +1941,7 @@ namespace VisionApplication
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.BackColor = System.Drawing.SystemColors.Control;
+            this.splitContainer1.Panel1.Controls.Add(this.btFunParam);
             this.splitContainer1.Panel1.Controls.Add(this.btFunMark);
             this.splitContainer1.Panel1.Controls.Add(this.btRedLight_Preview);
             this.splitContainer1.Panel1.Controls.Add(this.picLogo);
@@ -1927,7 +1954,7 @@ namespace VisionApplication
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
-            this.splitContainer1.Size = new System.Drawing.Size(986, 777);
+            this.splitContainer1.Size = new System.Drawing.Size(986, 770);
             this.splitContainer1.SplitterDistance = 108;
             this.splitContainer1.TabIndex = 8;
             // 
@@ -1971,7 +1998,7 @@ namespace VisionApplication
             this.picLogo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.picLogo.BackColor = System.Drawing.Color.White;
             this.picLogo.Image = ((System.Drawing.Image)(resources.GetObject("picLogo.Image")));
-            this.picLogo.Location = new System.Drawing.Point(5, 860);
+            this.picLogo.Location = new System.Drawing.Point(5, 853);
             this.picLogo.Name = "picLogo";
             this.picLogo.Size = new System.Drawing.Size(100, 55);
             this.picLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -1986,7 +2013,7 @@ namespace VisionApplication
             this.btFunSet.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunSet.ForeColor = System.Drawing.Color.Red;
             this.btFunSet.Image = ((System.Drawing.Image)(resources.GetObject("btFunSet.Image")));
-            this.btFunSet.Location = new System.Drawing.Point(6, 549);
+            this.btFunSet.Location = new System.Drawing.Point(3, 651);
             this.btFunSet.Name = "btFunSet";
             this.btFunSet.Size = new System.Drawing.Size(100, 90);
             this.btFunSet.TabIndex = 0;
@@ -2085,14 +2112,13 @@ namespace VisionApplication
             // splitContainer3.Panel1
             // 
             this.splitContainer3.Panel1.Controls.Add(this.splitContainer2);
-          //  this.splitContainer3.Panel1.SizeChanged += new System.EventHandler(this.splitContainer3_Panel1_SizeChanged);
             // 
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer3.Panel2.Controls.Add(this.splitContainer4);
-            this.splitContainer3.Size = new System.Drawing.Size(874, 777);
-            this.splitContainer3.SplitterDistance = 590;
+            this.splitContainer3.Size = new System.Drawing.Size(874, 770);
+            this.splitContainer3.SplitterDistance = 591;
             this.splitContainer3.TabIndex = 0;
             // 
             // splitContainer2
@@ -2110,7 +2136,7 @@ namespace VisionApplication
             // 
             this.splitContainer2.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer2.Panel2.Controls.Add(this.tabControl1);
-            this.splitContainer2.Size = new System.Drawing.Size(874, 590);
+            this.splitContainer2.Size = new System.Drawing.Size(874, 591);
             this.splitContainer2.SplitterDistance = 514;
             this.splitContainer2.TabIndex = 0;
             // 
@@ -2124,7 +2150,7 @@ namespace VisionApplication
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(356, 590);
+            this.tabControl1.Size = new System.Drawing.Size(356, 591);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPageCam
@@ -2140,7 +2166,7 @@ namespace VisionApplication
             this.tabPageCam.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCam.Location = new System.Drawing.Point(4, 24);
             this.tabPageCam.Name = "tabPageCam";
-            this.tabPageCam.Size = new System.Drawing.Size(348, 562);
+            this.tabPageCam.Size = new System.Drawing.Size(348, 631);
             this.tabPageCam.TabIndex = 3;
             this.tabPageCam.Text = "相机设置";
             // 
@@ -2830,7 +2856,7 @@ namespace VisionApplication
             this.tabPageBase.Location = new System.Drawing.Point(4, 24);
             this.tabPageBase.Name = "tabPageBase";
             this.tabPageBase.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBase.Size = new System.Drawing.Size(347, 562);
+            this.tabPageBase.Size = new System.Drawing.Size(348, 563);
             this.tabPageBase.TabIndex = 0;
             this.tabPageBase.Text = "模板匹配";
             // 
@@ -3380,7 +3406,7 @@ namespace VisionApplication
             this.tabPageCalib.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCalib.Location = new System.Drawing.Point(4, 24);
             this.tabPageCalib.Name = "tabPageCalib";
-            this.tabPageCalib.Size = new System.Drawing.Size(347, 562);
+            this.tabPageCalib.Size = new System.Drawing.Size(348, 631);
             this.tabPageCalib.TabIndex = 4;
             this.tabPageCalib.Text = "激光视觉标定";
             // 
@@ -4066,7 +4092,7 @@ namespace VisionApplication
             this.dgvMarkCood.Name = "dgvMarkCood";
             this.dgvMarkCood.RowHeadersWidth = 62;
             this.dgvMarkCood.RowTemplate.Height = 23;
-            this.dgvMarkCood.Size = new System.Drawing.Size(577, 132);
+            this.dgvMarkCood.Size = new System.Drawing.Size(578, 132);
             this.dgvMarkCood.TabIndex = 89;
             // 
             // colImgX
@@ -4173,7 +4199,7 @@ namespace VisionApplication
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.splitContainer6);
-            this.splitContainer4.Size = new System.Drawing.Size(874, 183);
+            this.splitContainer4.Size = new System.Drawing.Size(874, 175);
             this.splitContainer4.SplitterDistance = 114;
             this.splitContainer4.TabIndex = 0;
             // 
@@ -4373,7 +4399,7 @@ namespace VisionApplication
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
-            this.splitContainer6.Size = new System.Drawing.Size(756, 183);
+            this.splitContainer6.Size = new System.Drawing.Size(756, 175);
             this.splitContainer6.SplitterDistance = 413;
             this.splitContainer6.TabIndex = 0;
             // 
@@ -4394,7 +4420,7 @@ namespace VisionApplication
             this.dgvLog.RowHeadersWidth = 62;
             this.dgvLog.RowTemplate.Height = 23;
             this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dgvLog.Size = new System.Drawing.Size(413, 183);
+            this.dgvLog.Size = new System.Drawing.Size(413, 175);
             this.dgvLog.TabIndex = 0;
             // 
             // ClmnTime
@@ -4464,7 +4490,7 @@ namespace VisionApplication
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.groupBox1.Location = new System.Drawing.Point(702, 1120);
+            this.groupBox1.Location = new System.Drawing.Point(702, 1113);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(246, 65);
             this.groupBox1.TabIndex = 44;
@@ -4647,12 +4673,29 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
+            // btFunParam
+            // 
+            this.btFunParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btFunParam.FlatAppearance.BorderSize = 4;
+            this.btFunParam.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btFunParam.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btFunParam.ForeColor = System.Drawing.Color.Red;
+            this.btFunParam.Image = ((System.Drawing.Image)(resources.GetObject("btFunParam.Image")));
+            this.btFunParam.Location = new System.Drawing.Point(3, 559);
+            this.btFunParam.Name = "btFunParam";
+            this.btFunParam.Size = new System.Drawing.Size(100, 90);
+            this.btFunParam.TabIndex = 7;
+            this.btFunParam.Text = "参数设置";
+            this.btFunParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btFunParam.UseVisualStyleBackColor = true;
+            this.btFunParam.Click += new System.EventHandler(this.btFunParam_Click);
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.ClientSize = new System.Drawing.Size(986, 881);
+            this.ClientSize = new System.Drawing.Size(986, 874);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.groupBox1);
@@ -5129,5 +5172,9 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripButton toolBt_JCZ_Conn;
         private System.Windows.Forms.ToolStripButton toolBt_Len2Ori;
         private System.Windows.Forms.ToolStripButton toolBt_StopLaser;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_CardStatus;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_CardInitStatus;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_LaserStatus;
+        private System.Windows.Forms.Button btFunParam;
     }
 }
