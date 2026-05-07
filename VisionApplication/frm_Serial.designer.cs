@@ -319,7 +319,7 @@
             // btn_cancel
             // 
             this.btn_cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_cancel.Location = new System.Drawing.Point(860, 311);
+            this.btn_cancel.Location = new System.Drawing.Point(428, 346);
             this.btn_cancel.Name = "btn_cancel";
             this.btn_cancel.Size = new System.Drawing.Size(75, 29);
             this.btn_cancel.TabIndex = 65;
@@ -331,7 +331,7 @@
             // 
             this.btn_sure.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btn_sure.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btn_sure.Location = new System.Drawing.Point(776, 311);
+            this.btn_sure.Location = new System.Drawing.Point(344, 346);
             this.btn_sure.Name = "btn_sure";
             this.btn_sure.Size = new System.Drawing.Size(75, 29);
             this.btn_sure.TabIndex = 64;
@@ -2200,7 +2200,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(973, 487);
+            this.ClientSize = new System.Drawing.Size(511, 287);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.rdbSinwave);
             this.Controls.Add(this.comboBox1);

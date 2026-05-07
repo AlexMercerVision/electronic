@@ -2115,7 +2115,8 @@ namespace VisionApplication
                     {
                         var lastRow = dgvLog.Rows[0];
                         if (lastRow.Cells[0].Value?.ToString() == operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss") &&
-                            lastRow.Cells[1].Value?.ToString() == operLog.strOperEvent)
+                            lastRow.Cells[1].Value?.ToString() == operLog.strOperEvent &&
+                            lastRow.Cells[3].Value?.ToString() == operLog.strFailReason)
                         {
                             // 最后一条记录相同，不添加
                             return;

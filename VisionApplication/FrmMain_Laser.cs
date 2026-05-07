@@ -492,15 +492,61 @@ namespace VisionApplication
             // 服务启动成功，管道已连接，启用相应激光按钮
             this.BeginInvoke(new Action(() => EnableLaserButtons(true)));
 
-           /* operLog.iEventStatus = 0;
-            operLog.strOperEvent = "服务端与双管道初始化完成";
-            AddLog();*/
-        }
+            for (int card = 0; card < MaxLaserCards; card++)
+            {
+                if (bInitJCZ[card] == 0) // 板卡初始化成功
+                {
+                   LoadDefaultEzdForCard(card);
+                }
+            }
+                /* operLog.iEventStatus = 0;
+                 operLog.strOperEvent = "服务端与双管道初始化完成";
+                 AddLog();*/
+            }
 
+        private async void LoadDefaultEzdForCard(int card)
+        {
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            string ezdFileName = "route" + (card + 1).ToString() + "ezd";
+            string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, ezdFileName);
+            if (!File.Exists(templatePath))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"加载激光模板(卡{card + 1})";
+                operLog.strFailReason = "文件不存在";
+                AddLog();
+                return;
+            }
+
+            var param = new LCZControlParam
+            {
+                cmdType = 4,          // 加载文件命令
+                cardSN = card,
+                strFileName = templatePath,
+                ind3 = 0
+            };
+
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = $"加载激光模板(卡{card + 1})成功";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"加载激光模板(卡{card + 1})失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
         /// <summary>
         /// 将JCZServer嵌入到splitContainer6.Panel2中
         /// </summary>
-         private const int SW_SHOW = 5;              // 显示窗口
+        private const int SW_SHOW = 5;              // 显示窗口
         private void EmbedJCZServerToPanel()
         {
             if (_jczServerHwnd == IntPtr.Zero) return;
@@ -1019,8 +1065,8 @@ namespace VisionApplication
             currentCardSN = cardSN;
             vpWin._iJobIndex = cardSN;
 
-            // 更新界面按钮可用性状态
-            UpdateLaserButtonStates();
+            // 更新界面按钮可用性状态  要修改
+           // UpdateLaserButtonStates();
         }
 
         /// <summary>

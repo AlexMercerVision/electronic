@@ -1723,7 +1723,7 @@ namespace VisionControl
 
                 bRunOneTimeFinished[iJobIndex] = 0;
                 iJobIndex = 0;
-                mJM.Job(0).Run();
+                mJM.Job(iJobIndex).Run();
 
             }
             catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)

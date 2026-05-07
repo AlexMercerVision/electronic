@@ -701,7 +701,7 @@ namespace CommonCls
                         if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height*3)
                             bImgSrcData[wsInd] = new byte[width * height * 3];
                         cup.p_Cam[wsInd].iMonoType = 1;
-                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);
+                   //     bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);
 
                         return 1;
                     }
@@ -724,7 +724,7 @@ namespace CommonCls
                         /*if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
                             bImgSrcData[wsInd] = new byte[width * height * 3];*/
                         cup.p_Cam[wsInd].iMonoType =0;
-                        bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
+                     //   bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
                          
                         return 0;
                     }
