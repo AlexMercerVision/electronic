@@ -706,7 +706,7 @@ namespace BJJCZ_BaseDevelop
                     case 24:
                         if (param.ind1 < strEntNames[card]?.Length)
                             nErr = JczLmc.lmc1_MoveEnt(card, strEntNames[card][param.ind1],
-                                                       param.dParam1, param.dParam2);
+                                                      ref param.dParam1,ref param.dParam2);
                         RefreshPreview(card);
                         break;
 
@@ -860,6 +860,118 @@ namespace BJJCZ_BaseDevelop
                             AddMsg($"卡{card} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
+                    case 37:    // 获取/设置填充参数
+                        if (param.bOpen)  // 打开填充参数设置对话框
+                        {
+                            try
+                            {
+                                // 获取当前对象的填充参数（如果已有填充）
+                                HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
+                                GetHatchParamForEntity(card, param.strEntyName, ref hp);
+
+                                // 显示填充参数设置对话框
+                                FrmHatch fh = new FrmHatch(hp);
+                                DialogResult dr = fh.ShowDialog();
+
+                                if (dr == DialogResult.OK)
+                                {
+                                    hp = fh.hp;
+                                    // 先移除原有填充（如果存在）
+                                    JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
+                                    // 设置新的填充参数
+                                    SetHatchParamForEntity(card, hp);
+                                    // 为对象添加填充
+                                    string hatchEntName = param.strEntyName + "_Hatch";
+                                    nErr = JczLmc.lmc1_HatchEnt(card, param.strEntyName, hatchEntName);
+
+                                    if (nErr == 0)
+                                    {
+                                        AddMsg($"卡{card} 为对象 {param.strEntyName} 设置填充成功");
+                                        // 保存文件
+                                        if (!string.IsNullOrEmpty(param.strFileName))
+                                        {
+                                            JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                                        }
+                                        RefreshPreview(card);
+                                        UpdateEntTable(card);
+                                    }
+                                    else
+                                    {
+                                        AddMsg($"卡{card} 设置填充失败: {JczLmc.GetErrorText(nErr)}");
+                                    }
+                                }
+                                else if (dr == DialogResult.Abort)  // 删除填充
+                                {
+                                    nErr = JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
+                                    if (nErr == 0)
+                                    {
+                                        AddMsg($"卡{card} 删除对象 {param.strEntyName} 填充成功");
+                                        if (!string.IsNullOrEmpty(param.strFileName))
+                                        {
+                                            JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                                        }
+                                        RefreshPreview(card);
+                                        UpdateEntTable(card);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AddMsg($"卡{card} 设置填充参数异常: {ex.Message}");
+                                nErr = -1;
+                            }
+                        }
+                        else  // 仅获取填充参数（不显示对话框）
+                        {
+                            HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
+                            GetHatchParamForEntity(card, param.strEntyName, ref hp);
+                            nErr = 0;
+                        }
+                        break;
+
+                    case 38:  // 填充对象
+                        try
+                        {
+                            // 检查对象是否存在
+                            if (string.IsNullOrEmpty(param.strEntyName))
+                            {
+                                AddMsg($"卡{card} 填充对象失败: 对象名称为空");
+                                nErr = 20;
+                                break;
+                            }
+
+                            string hatchEntName = param.strEntyName + "_Hatch";
+
+                            // 先尝试移除已有的填充（避免重复填充）
+                       //     JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
+
+                            // 添加填充
+                            nErr = JczLmc.lmc1_HatchEnt(card, param.strEntyName, hatchEntName);
+
+                            if (nErr == 0)
+                            {
+                                AddMsg($"卡{card} 为对象 {param.strEntyName} 添加填充成功");
+                              //  RefreshPreview(card);
+                             //   UpdateEntTable(card);
+
+                                // 如果需要保存文件
+                                if (!string.IsNullOrEmpty(param.strFileName))
+                                {
+                                    nErr = JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                                    AddMsg($"卡{card} 保存文件: {JczLmc.GetErrorText(nErr)}");
+                                }
+                            }
+                            else
+                            {
+                                AddMsg($"卡{card} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AddMsg($"卡{card} 填充对象异常: {ex.Message}");
+                            nErr = -1;
+                        }
+                        break;
                     case 40:
                         nErr = JczLmc.lmc1_SetDevCfg(card);
                         break;
@@ -899,7 +1011,96 @@ namespace BJJCZ_BaseDevelop
                 SendResponse(param);
             }
         }
+        /// <summary>
+        /// 获取对象的填充参数
+        /// </summary>
+        private void GetHatchParamForEntity(int card, string entName, ref HatchParam hp)
+        {
+            int nErr = 0;
+            try
+            {
+                if (string.IsNullOrEmpty(entName))
+                {
+                    AddMsg($"卡{card} 获取填充参数失败: 对象名称为空");
+                    return;
+                }
 
+                // 调用JczLmc的获取填充参数函数
+                nErr = JczLmc.lmc1_GetHatchEntParam2(card, entName,
+                    ref hp.bEnableContour,
+                    hp.nParamIndex,
+                    ref hp.bEnableHatch,
+                    ref hp.bContourFirst,
+                    ref hp.nPenNo,
+                    ref hp.nHatchType,
+                    ref hp.bHatchAllCalc,
+                    ref hp.bHatchEdge,
+                    ref hp.bHatchAverageLine,
+                    ref hp.dHatchAngle,
+                    ref hp.dHatchLineDist,
+                    ref hp.dHatchEdgeDist,
+                    ref hp.dHatchStartOffset,
+                    ref hp.dHatchEndOffset,
+                    ref hp.dHatchLineReduction,
+                    ref hp.dHatchLoopDist,
+                    ref hp.nEdgeLoop,
+                    ref hp.bHatchLoopRev,
+                    ref hp.bHatchAutoRotate,
+                    ref hp.dHatchRotateAngle,
+                    ref hp.bHatchCross,
+                    ref hp.nParamIndex);  // dCycCount
+
+                if (nErr != 0)
+                {
+                    AddMsg($"卡{card} 对象 {entName} 无填充参数，使用默认值");
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card} 获取填充参数异常: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 设置对象的填充参数
+        /// </summary>
+        private void SetHatchParamForEntity(int card, HatchParam hp)
+        {
+            int nErr = 0;
+            try
+            {
+                nErr = JczLmc.lmc1_SetHatchEntParam2(card, null,
+                    hp.bEnableContour,
+                    hp.nParamIndex,
+                    hp.bEnableHatch,
+                    hp.bContourFirst,
+                    hp.nPenNo,
+                    hp.nHatchType,
+                    hp.bHatchAllCalc,
+                    hp.bHatchEdge,
+                    hp.bHatchAverageLine,
+                    hp.dHatchAngle,
+                    hp.dHatchLineDist,
+                    hp.dHatchEdgeDist,
+                    hp.dHatchStartOffset,
+                    hp.dHatchEndOffset,
+                    hp.dHatchLineReduction,
+                    hp.dHatchLoopDist,
+                    hp.nEdgeLoop,
+                    hp.bHatchLoopRev,
+                    hp.bHatchAutoRotate,
+                    hp.dHatchRotateAngle,
+                    hp.bHatchCross,
+                    hp.nParamIndex);
+
+                AddMsg($"卡{card} 设置填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"设置填充参数异常: {ex.Message}");
+                nErr = -1;
+            }
+        }
         private void SimulateCommand(LCZControlParam param)
         {
             int clientSeq = param.ind3;
@@ -959,7 +1160,7 @@ namespace BJJCZ_BaseDevelop
                 alImParam.dWidth = 100;
                 alImParam.width = 100;
                 imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height /*alImParam.width, alImParam.height*/));
+                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width*10, pictureBox1.Height*10 /*alImParam.width, alImParam.height*/));
                 /*imLaserRoute[card] = MakeWhiteTransparent(
                     (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "Hor1" *//*alImParam.width, alImParam.height*//* ));*/
                 if (imLaserRoute[card] == null)

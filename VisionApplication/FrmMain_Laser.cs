@@ -1887,7 +1887,7 @@ namespace VisionApplication
                 int card = currentCardSN;
                 var dispatcher = laserDispatchers[card];
                 if (dispatcher == null) return;
-
+                lczParams[currentCardSN].strFileName = filename;
                 var param = new LCZControlParam
                 {
                     strFileName = filename,
@@ -1919,7 +1919,7 @@ namespace VisionApplication
             var dispatcher = laserDispatchers[card];
             if (dispatcher == null) return;
 
-            var param = new LCZControlParam { cmdType = 5, cardSN = card };
+            var param = new LCZControlParam { cmdType = 5, cardSN = card,strFileName= lczParams[currentCardSN].strFileName };
             try
             {
                 await dispatcher.SendCommandAsync(param);
@@ -2946,8 +2946,8 @@ namespace VisionApplication
 
             try
             {
-                // 1. 动态创建标定模板
-                bool created = await CreateCalibTemplateAsync();
+                // 1. 动态创建标定模板（如果需要动态创建，取消注释）
+                /* bool created = await CreateCalibTemplateAsync();
                 if (!created)
                 {
                     operLog.iEventStatus = -1;
@@ -2955,7 +2955,7 @@ namespace VisionApplication
                     operLog.strFailReason = "创建标定模板失败";
                     AddLog();
                     return;
-                }
+                }*/
 
                 // 2. 加载模板文件
                 string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "calibTemplate.ezd");
@@ -2972,6 +2972,7 @@ namespace VisionApplication
                 if (loadResult.nErr != 0)
                 {
                     operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "标刻标定模板";
                     operLog.strFailReason = $"加载模板失败: {GetErrorText(loadResult.nErr)}";
                     AddLog();
                     return;
@@ -2979,47 +2980,70 @@ namespace VisionApplication
 
                 await Task.Delay(100);
 
-                // 3. 开始标刻
+                // 3. 显示等待窗体
+                loadingForm = new LoadingForm();
+                var tcs = new TaskCompletionSource<bool>();
+
+                this.Invoke(new Action(() =>
+                {
+                    loadingForm.Show();
+                    if (loadingForm.IsHandleCreated)
+                    {
+                        tcs.SetResult(true);
+                    }
+                    else
+                    {
+                        loadingForm.Shown += (s, args) => tcs.SetResult(true);
+                    }
+                }));
+
+                await tcs.Task;
+
+                // 4. 开始标刻 - 等待标刻完成
                 var markParam = new LCZControlParam
                 {
-                    cmdType = 10,
+                    cmdType = 4,  // 4， 
                     cardSN = card,
                     ind3 = 1
                 };
 
-                loadingForm = new LoadingForm();
-                _ = Task.Run(() => loadingForm.ShowDialog());
-
                 var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
 
-                loadingForm?.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                loadingForm = null;
+                // 标刻完成后，等待激光稳定和材料冷却
+                await Task.Delay(500);
 
-                if (markResult.nErr == 0)
+                // 5. 标刻完成后才采集图像
+                CaptureCalibImage();
+
+                // 6. 等待图像采集和处理完成
+                await Task.Delay(300);
+
+                // 7. 进行Blob分析，获取标定点坐标
+                bool blobSuccess = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, card);
+
+                if (blobSuccess)
                 {
-                    await Task.Delay(200);
-                    CaptureCalibImage();
-
                     // 更新标定数据表格
-                    vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, card);
                     UpdateCalibPointTable();
 
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = "标刻标定模板";
+                    operLog.strFailReason = $"成功获取 {dCalibPointIm.Length / 2} 个标定点";
                     AddLog();
+
+                    // 可选：自动进行标定计算
+                    // btCalib_Click(sender, e);
                 }
                 else
                 {
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "标刻标定模板";
-                    operLog.strFailReason = GetErrorText(markResult.nErr);
+                    operLog.strFailReason = "Blob分析失败，未检测到足够的标定点";
                     AddLog();
                 }
             }
             catch (Exception ex)
             {
-                loadingForm?.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                loadingForm = null;
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "标刻标定模板";
                 operLog.strFailReason = ex.Message;
@@ -3027,6 +3051,9 @@ namespace VisionApplication
             }
             finally
             {
+                // 安全关闭等待窗体
+                SafeCloseLoadingForm();
+
                 iLaserWorkingTypes[card] = 0;
                 btFunMark.FlatStyle = FlatStyle.Popup;
             }
@@ -3117,7 +3144,7 @@ namespace VisionApplication
                 // 5. 等待稳定
                 await Task.Delay(100);
 
-                // 6. 复位旋转平移
+                /*// 6. 复位旋转平移
                 var resetParam = new LCZControlParam
                 {
                     cmdType = 27,
@@ -3138,7 +3165,7 @@ namespace VisionApplication
                     operLog.strFailReason = $"复位失败: {GetErrorText(resetResult.nErr)}";
                     AddLog();
                     return;
-                }
+                }*/
 
                 // 7. 开始标刻
                 var markParam = new LCZControlParam
@@ -3150,35 +3177,31 @@ namespace VisionApplication
 
                 // 显示等待窗体
                 loadingForm = new LoadingForm();
-                var showLoadingTask = Task.Run(() => loadingForm.ShowDialog());
+                var tcs = new TaskCompletionSource<bool>();
+
+                // 确保在 UI 线程上显示并等待加载完成
+                this.Invoke(new Action(() =>
+                {
+                    loadingForm.Show();
+                    // 确保窗体完全加载后再设置结果
+                    loadingForm.Shown += (s, args) => tcs.SetResult(true);
+                }));
+
+                await tcs.Task;
 
                 try
                 {
+                    // 标刻操作...
                     var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
 
-                    // 关闭等待窗体
-                    if (loadingForm != null)
-                    {
-                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                        loadingForm = null;
-                    }
+                    // 安全关闭 LoadingForm
+                    SafeCloseLoadingForm();
 
                     if (markResult.nErr == 0)
                     {
-                        // 8. 标刻完成后采集十字图像
                         await Task.Delay(200);
                         CaptureCrossImage();
-
-                        operLog.iEventStatus = 0;
-                        operLog.strOperEvent = "标刻十字";
-                        AddLog();
-                    }
-                    else
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = "标刻十字";
-                        operLog.strFailReason = GetErrorText(markResult.nErr);
-                        AddLog();
+                        // ...
                     }
                 }
                 catch (TimeoutException)
@@ -3196,11 +3219,7 @@ namespace VisionApplication
             }
             catch (Exception ex)
             {
-                if (loadingForm != null)
-                {
-                    loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                    loadingForm = null;
-                }
+                SafeCloseLoadingForm();
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "标刻十字";
                 operLog.strFailReason = ex.Message;
@@ -3212,7 +3231,24 @@ namespace VisionApplication
                 btFunMark.FlatStyle = FlatStyle.Popup;
             }
         }
-      
+        private void SafeCloseLoadingForm()
+        {
+            if (loadingForm != null && loadingForm.IsHandleCreated && !loadingForm.IsDisposed)
+            {
+                try
+                {
+                    loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
+                }
+                catch (InvalidOperationException)
+                {
+                    // 句柄未创建，尝试直接关闭
+                    loadingForm.Close();
+                }
+                
+            }
+            loadingForm = null;
+        }
+
         /// <summary>
         /// 标刻正方形并采集图像（用于9点标定）
         /// </summary>
@@ -3282,7 +3318,7 @@ namespace VisionApplication
                 await Task.Delay(100);
 
                 // 6. 复位旋转平移
-                var resetParam = new LCZControlParam
+                /*var resetParam = new LCZControlParam
                 {
                     cmdType = 27,
                     cardSN = card,
@@ -3302,7 +3338,7 @@ namespace VisionApplication
                     operLog.strFailReason = $"复位失败: {GetErrorText(resetResult.nErr)}";
                     AddLog();
                     return;
-                }
+                }*/
 
                 // 7. 开始标刻
                 var markParam = new LCZControlParam
@@ -3312,20 +3348,25 @@ namespace VisionApplication
                     ind3 = 3  // 标记为方框标刻
                 };
 
-                // 显示等待窗体
+                // 显示等待窗体（使用安全显示方式）
                 loadingForm = new LoadingForm();
-                var showLoadingTask = Task.Run(() => loadingForm.ShowDialog());
+                var tcs = new TaskCompletionSource<bool>();
+
+                // 在 UI 线程上显示并等待窗体加载完成
+                this.Invoke(new Action(() =>
+                {
+                    loadingForm.Show();
+                    loadingForm.Shown += (s, args) => tcs.SetResult(true);
+                }));
+
+                await tcs.Task;
 
                 try
                 {
                     var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
 
-                    // 关闭等待窗体
-                    if (loadingForm != null)
-                    {
-                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                        loadingForm = null;
-                    }
+                    // 安全关闭等待窗体
+                    SafeCloseLoadingForm();
 
                     if (markResult.nErr == 0)
                     {
@@ -3343,11 +3384,7 @@ namespace VisionApplication
                 }
                 catch (TimeoutException)
                 {
-                    if (loadingForm != null)
-                    {
-                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                        loadingForm = null;
-                    }
+                    SafeCloseLoadingForm();
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "标刻方框";
                     operLog.strFailReason = "标刻超时";
@@ -3356,11 +3393,7 @@ namespace VisionApplication
             }
             catch (Exception ex)
             {
-                if (loadingForm != null)
-                {
-                    loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                    loadingForm = null;
-                }
+                SafeCloseLoadingForm();
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "标刻方框";
                 operLog.strFailReason = ex.Message;

@@ -192,7 +192,7 @@ namespace BJJCZ_BaseDevelop
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SaveEntLibToFile", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_SaveEntLibToFile(int cardSN, string strFileName);
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
        // [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr lmc1_GetPrevBitmap(int cardSN, IntPtr hwnd, int nBmpWidth, int nBmpHeight);
 
@@ -207,7 +207,7 @@ namespace BJJCZ_BaseDevelop
         public static extern int lmc1_GetEntSize(int cardSN, string pEntName, ref double dMinx, ref double dMiny, ref double dMaxx, ref double dMaxy, ref double dZ);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_MoveEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int lmc1_MoveEnt(int cardSN, string pEntName, double dMovex, double dMovey);
+        public static extern int lmc1_MoveEnt(int cardSN, string pEntName, ref double dMovex,ref double dMovey);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_ScaleEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_ScaleEnt(int cardSN, string strEntName, double dCenx, double dCeny, double dScaleX, double dScaleY);
@@ -608,7 +608,7 @@ namespace BJJCZ_BaseDevelop
         [Obsolete("请使用带卡序号的重载")]
         public static int ChangeEntName(string strEntName, string strNewEntName) => lmc1_ChangeEntName(0, strEntName, strNewEntName);
         [Obsolete("请使用带卡序号的重载")]
-        public static int MoveEnt(string strEntName, double dMovex, double dMovey) => lmc1_MoveEnt(0, strEntName, dMovex, dMovey);
+        public static int MoveEnt(string strEntName, double dMovex, double dMovey) => lmc1_MoveEnt(0, strEntName, ref dMovex,ref  dMovey);
         [Obsolete("请使用带卡序号的重载")]
         public static int ScaleEnt(string strEntName, double dCenx, double dCeny, double dScaleX, double dScaleY) => lmc1_ScaleEnt(0, strEntName, dCenx, dCeny, dScaleX, dScaleY);
         [Obsolete("请使用带卡序号的重载")]
