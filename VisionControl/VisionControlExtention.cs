@@ -185,30 +185,137 @@ namespace VisionControl
 
 
         #region  VP执行运算
+        // VisionControl.cs 或 VisionControlExtention.cs 中添加
+        private int[] _aliveToolIndices = new int[maxCameraNum];   // 每个工位当前应执行的工具序号
+        private readonly object _aliveLock = new object();
+        private bool _isActivating = false;
+        private System.Timers.Timer _aliveTimer;
+
+        private void StartAliveTimer()
+        {
+            if (_aliveTimer == null)
+            {
+                _aliveTimer = new System.Timers.Timer(8000); // 间隔5秒
+                _aliveTimer.Elapsed += OnAliveTimerElapsed;
+                _aliveTimer.AutoReset = true;
+                _aliveTimer.Start();
+            }
+        }
+
+        private void StopAliveTimer()
+        {
+            if (_aliveTimer != null)
+            {
+                _aliveTimer.Stop();
+                _aliveTimer.Dispose();
+                _aliveTimer = null;
+            }
+        }
+
+        private void OnAliveTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (this.InvokeRequired)
+                this.BeginInvoke(new Action(() => ActivateRun()));
+            else
+            {
+                if (cup.p_RTSP.bAutoRunVPP)
+                    ActivateRun();
+            }
+               
+        }
+        // 防假死定时器
         //防假死激活运行
         public void ActivateRun()
         {
-            if (mJM == null || mJM.JobsRunningState != CogJobsRunningStateConstants.None)
-                return;
-
-            if (mCurrentRunState == RunState.RunningOnce)
-                return;
-
-            inactiveTime++;
-            inactiveTime = inactiveTime % 10;
-            int toolNum= (mJM.Job(0).VisionTool as CogToolGroup).Tools.Count;  //获取任务中工具的数量
-            if (inactiveTime == 0)   //连续10次不活跃，执行一个工具
+            // 防止重入
+            if (_isActivating) return;
+            lock (_aliveLock)
             {
-                bActivateRun = true;
-               (mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].Run();  // //20250620  根据脚本代码，此处应该是阻塞执行，不用判断是否执行完毕 
-
-                // ((mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].RunStatus.Result== CogToolResultConstants.Accept) 
-                bActivateRun = false;
-                iToolIndex += 1;
-                iToolIndex = iToolIndex % toolNum;
+                if (_isActivating) return;
+                _isActivating = true;
             }
 
+            try
+            {
+                if (mJM == null) return;
+
+                // 只在完全空闲（无任务运行）时执行，避免干扰正常检测
+                if (mJM.JobsRunningState != CogJobsRunningStateConstants.None) return;
+                if (mCurrentRunState != RunState.Stopped) return;
+
+                // 获取所有启用的工位索引（根据 cup.p_CD.bListProcess）
+                List<int> enabledJobs = new List<int>();
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup != null && cup.p_CD.bListProcess != null && cup.p_CD.bListProcess.Length > i)
+                        enabledJobs.Add(i);
+                }
+                if (enabledJobs.Count == 0) return;
+
+                // 轮流选择一个工位执行（轮询方式，保证每个工位都有机会）
+                // 使用静态索引轮询，避免长时间停留在同一个工位
+                const int totalTicks = 10000;
+                int tick = Environment.TickCount;
+                int jobIndex = (tick / 5000) % enabledJobs.Count;   // 每5秒切换一次工位
+                int actualJob = enabledJobs[jobIndex];
+
+                // 获取该工位的工具组
+                var toolGroup = mJM.Job(actualJob).VisionTool as CogToolGroup;
+                if (toolGroup == null) return;
+
+                int toolCount = toolGroup.Tools.Count;
+                if (toolCount == 0) return;
+
+                // 轮流执行该工位下的工具
+                int toolIdx = _aliveToolIndices[actualJob] % toolCount;
+                var tool = toolGroup.Tools[toolIdx];
+
+                try
+                {
+                    bActivateRun = true;
+                    tool.Run();      // 执行工具（同步，但通常很快）
+                }
+                catch (Exception ex)
+                {
+                    // 记录错误但不中断，避免日志风暴
+                    System.Diagnostics.Debug.WriteLine($"ActivateRun Job{actualJob} Tool{toolIdx} 执行失败: {ex.Message}");
+                }
+                finally
+                {
+                    bActivateRun = false;
+                }
+
+                // 移动到该工位的下一个工具
+                _aliveToolIndices[actualJob] = (toolIdx + 1) % toolCount;
+            }
+            finally
+            {
+                lock (_aliveLock) { _isActivating = false; }
+            }
         }
+        /* public void ActivateRun()
+         {
+             if (mJM == null || mJM.JobsRunningState != CogJobsRunningStateConstants.None)
+                 return;
+
+             if (mCurrentRunState == RunState.RunningOnce)
+                 return;
+
+             inactiveTime++;
+             inactiveTime = inactiveTime % 10;
+             int toolNum= (mJM.Job(0).VisionTool as CogToolGroup).Tools.Count;  //获取任务中工具的数量
+             if (inactiveTime == 0)   //连续10次不活跃，执行一个工具
+             4y{
+                 bActivateRun = true;
+                (mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].Run();  // //20250620  根据脚本代码，此处应该是阻塞执行，不用判断是否执行完毕 
+
+                 // ((mJM.Job(0).VisionTool as CogToolGroup).Tools[iToolIndex].RunStatus.Result== CogToolResultConstants.Accept) 
+                 bActivateRun = false;
+                 iToolIndex += 1;
+                 iToolIndex = iToolIndex % toolNum;
+             }
+
+         }*/
         bool[] bSureCheck = new bool[6];
         //VP执行一次运算
         private void AddGrapOkNg(CogRecordDisplay cogDisp, bool bOk)

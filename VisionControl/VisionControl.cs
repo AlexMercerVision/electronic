@@ -159,6 +159,7 @@ namespace VisionControl
         {
             try
             {
+                StopAliveTimer();
                 AttachToJobManager(false);
                 if (bVPPParamChanged)
                     SaveVPP();
@@ -366,6 +367,7 @@ namespace VisionControl
                 { }
             }
 
+            StartAliveTimer();
             // start heartbeats, if QuickBuild app is configured for them
             //st 2023年4月29日
             mJM.RequestHeartbeat();

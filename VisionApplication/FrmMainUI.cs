@@ -4557,11 +4557,11 @@ namespace VisionApplication
                     dirJudge(true);
                 }
 
-                if (cup.p_RTSP.bAutoRunVPP)
+               /* if (cup.p_RTSP.bAutoRunVPP)
                 {
                     if (rts.initStatus.bVPPInit && vpWin._iTaskType != 3)
                         vpWin.ActivateRun();
-                }
+                }*/
                 vpWin.iModelRole = rts.iModelRole;
             }
             catch
