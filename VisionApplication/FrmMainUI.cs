@@ -1273,6 +1273,7 @@ namespace VisionApplication
             else
             {
                 rts.cs.iStatus[iCamInd] = 3;
+                bSucc = true;
             }
             return bSucc;
 
@@ -1321,6 +1322,7 @@ namespace VisionApplication
                 camera2 = hIKVisionCamera.MultiCameraInit((int)cameraNum, ref rts.cs.iStatus);
 
                 // 5. 获取每个相机的载荷大小（PayloadSize）
+                //    在某些相机上，PayloadSize 与分辨率、像素格式相关，必须在设置分辨率等参数后读取
                 bool bPayloadOk = true;
                 for (int ind = 0; ind < maxCameraNum; ind++)
                 {
@@ -1337,12 +1339,45 @@ namespace VisionApplication
                         bPayloadOk = false;
                         continue;
                     }
-                    /* nRet = camera2[iCamInd].MV_CC_GetIntValue_NET(handle, "PayloadSize", &stIntValue);
-                     if (nRet == MV_OK)
-                     {
-                         printf("单帧图像数据大小: %d 字节\n", stIntValue.nCurValue);
-                     }*/
-                   // MVCC_INTVALUE stIntValue = { 0 };
+
+                    // 先尝试设置相机参数（包括分辨率），以确保随后读取到正确的 PayloadSize
+                    if (!SetCamParam(iCamInd))
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败(预设)";
+                        operLog.strFailReason = "异常错误";
+                        AddLog();
+                        // 我们不立即中止，仍尝试读取 PayloadSize，但标记为可能有问题
+                    }
+
+                    // 强制将相机分辨率设置为设备支持的最大值（如果当前值小于最大值）
+                    try
+                    {
+                        MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
+                        MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
+                        int retW = camera2[iCamInd].MV_CC_GetIntValue_NET("Width", ref stW);
+                        int retH = camera2[iCamInd].MV_CC_GetIntValue_NET("Height", ref stH);
+                        if (retW == MyCamera.MV_OK && retH == MyCamera.MV_OK)
+                        {
+                            uint wMax = stW.nMax;
+                            uint hMax = stH.nMax;
+                            // 如果当前值小于最大值，则尝试设置为最大
+                            if (stW.nCurValue < (int)wMax)
+                            {
+                                camera2[iCamInd].MV_CC_SetIntValue_NET("Width", wMax);
+                            }
+                            if (stH.nCurValue < (int)hMax)
+                            {
+                                camera2[iCamInd].MV_CC_SetIntValue_NET("Height", hMax);
+                            }
+                            // 等待设置生效
+                            Thread.Sleep(50);
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略，后续会通过抓帧回退获取 payload
+                    }
 
                     // 优先通过标准属性获取PayloadSize
                     if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) == MyCamera.MV_OK)
@@ -1352,12 +1387,21 @@ namespace VisionApplication
                     }
                     else
                     {
-                        // 属性不支持时，直接报错，不再尝试抓图（避免长时间阻塞）
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = $"检测位{ind + 1}获取相机PayloadSize失败";
-                        operLog.strFailReason = "相机可能不支持该属性或未正确配置";
-                        AddLog();
-                        bPayloadOk = false;
+                        // 回退方式：尝试抓一帧判断长度
+                        nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
+                        if (nRet == MyCamera.MV_OK)
+                        {
+                            nPayloadSizeS[iCamInd] = stFrameInfo1.stFrameInfo.nFrameLen;
+                            rts.cs.iStatus[iCamInd] = 1;
+                        }
+                        else
+                        {
+                            operLog.iEventStatus = -1;
+                            operLog.strOperEvent = $"检测位{ind + 1}获取相机PayloadSize失败";
+                            operLog.strFailReason = "相机可能不支持该属性或未正确配置";
+                            AddLog();
+                            bPayloadOk = false;
+                        }
                     }
                 }
                 if (!bPayloadOk)
@@ -1366,7 +1410,7 @@ namespace VisionApplication
                     goto outofInit;
                 }
 
-                // 6. 设置相机参数（曝光、增益、ROI等）
+                // 6. 设置相机参数（曝光、增益、ROI等）——有可能在上面已设置过，只有当状态小于2时再设置
                 bool bSetParamOk = true;
                 for (int ind = 0; ind < maxCameraNum; ind++)
                 {
@@ -1374,17 +1418,20 @@ namespace VisionApplication
                         continue;
 
                     int iCamInd = cup.p_CD.camInd[ind];
-                    if (!SetCamParam(iCamInd))
+                    if (rts.cs.iStatus[iCamInd] < 2)
                     {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败";
-                        operLog.strFailReason = "异常错误";
-                        AddLog();
-                        bSetParamOk = false;
-                    }
-                    else
-                    {
-                        rts.cs.iStatus[iCamInd] = 2;
+                        if (!SetCamParam(iCamInd))
+                        {
+                            operLog.iEventStatus = -1;
+                            operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败";
+                            operLog.strFailReason = "异常错误";
+                            AddLog();
+                            bSetParamOk = false;
+                        }
+                        else
+                        {
+                            rts.cs.iStatus[iCamInd] = 2;
+                        }
                     }
                 }
                 if (!bSetParamOk)
@@ -2571,7 +2618,7 @@ namespace VisionApplication
                             }
                             if (cup.p_VPPRTP.bAcqFromCam)     //从相机获取，则启用触发模式
                             {
-                                /*rts.onLS.bTrigg = !rts.onLS.bTrigg;
+                                rts.onLS.bTrigg = !rts.onLS.bTrigg;
                                 // rts.onLS.bTrigg = true;
                                 if (rts.onLS.bTrigg)  //执行连续运行
                                 {
@@ -2597,9 +2644,9 @@ namespace VisionApplication
                                     operLog.strOperEvent = "关闭触发模式";
                                     //   ((Button)sender).Image = global::VisionApplication.Properties.Resources.LoopRun2;
 
-                                }*/
-                                
-                                vpWin._iTaskType = 3;
+                                }
+
+                                /*vpWin._iTaskType = 3;
                                 if (vpWin.bMainTaskFinished)
                                 {
                                     bTrig = false;
@@ -2621,7 +2668,7 @@ namespace VisionApplication
                                     operLog.iEventStatus = 0;
                                     ((Button)sender).Enabled = false;
                                   
-                                }
+                                }*/
 
 
                             }
