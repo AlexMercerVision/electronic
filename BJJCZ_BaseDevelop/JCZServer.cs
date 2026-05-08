@@ -498,6 +498,40 @@ namespace BJJCZ_BaseDevelop
             // 使用打点函数，不是添加对象到数据库
             return JczLmc.lmc1_MarkPoint(cardSN, x, y, delayMs, penNo);
         }
+
+        /// <summary>
+        /// 阻塞等待标刻完成（同步版本，适合 BackgroundWorker）
+        /// </summary>
+        public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
+        {
+            // 开始标刻
+            int nErr = JczLmc.lmc1_Mark(cardSN, bFlyMark);
+            if (nErr != 0)
+            {
+                return nErr;
+            }
+
+            // 轮询等待标刻完成
+            int elapsedMs = 0;
+            int checkInterval = 10;  // 每10ms检查一次
+
+            while (elapsedMs < timeoutMs)
+            {
+                int finishStatus = JczLmc.lmc1_IsMarkFinish(cardSN);
+                // IsMarkFinish 返回值：1=待机（完成），0=加工中
+                if (finishStatus == 1)
+                {
+                    return 0;
+                }
+
+                System.Threading.Thread.Sleep(checkInterval);
+                elapsedMs += checkInterval;
+            }
+
+            // 超时，尝试停止
+            JczLmc.lmc1_StopMark(cardSN);
+            return 10;  // 返回超时错误码
+        }
         // =============== 核心命令解析（简化版，保留原有逻辑）===============
         private void CMDAna(LCZControlParam param)
         {
@@ -619,7 +653,8 @@ namespace BJJCZ_BaseDevelop
                             worker.DoWork += (s, ev) =>
                             {
                                 bInMark[card] = true;
-                                nErr = JczLmc.lmc1_Mark(card, false);
+                                //nErr = JczLmc.lmc1_Mark(card, false);
+                                  nErr =  lmc1_MarkBlocking(card, false);
                                 bInMark[card] = false;
                                 AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
                                 var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
@@ -1159,10 +1194,10 @@ namespace BJJCZ_BaseDevelop
                 alImParam.height = 100;
                 alImParam.dWidth = 100;
                 alImParam.width = 100;
-                imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width*10, pictureBox1.Height*10 /*alImParam.width, alImParam.height*/));
                 /*imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "Hor1" *//*alImParam.width, alImParam.height*//* ));*/
+                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height *//*alImParam.width, alImParam.height*//*));*/
+                imLaserRoute[card] = MakeWhiteTransparent(
+                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "特征圆9Fill"));
                 if (imLaserRoute[card] == null)
                     imLaserRoute[card] = MakeWhiteTransparent(
                         (Bitmap)Image.FromFile(@".\data\route.png"), 50);

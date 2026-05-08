@@ -3986,34 +3986,125 @@ namespace VisionApplication
             LightControlTurnOn();
 
         }
+        /// <summary>
+        /// 光源控制（根据当前选中的工位控制对应的光源）
+        /// </summary>
+        /// <summary>
+        /// 光源控制（根据当前选中的工位控制对应的光源）
+        /// </summary>
         private void LightControlTurnOn()
         {
+            // 检查相机是否已选择
             if (icamSelectInd < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "光源控制";
+                operLog.strFailReason = "未选择相机";
+                AddLog();
                 return;
+            }
+
             bool bSucc;
+            int targetBrightness;
+
+            // 根据当前按钮状态决定开关
             if (!toolBtSta_Triggle.Checked)
             {
-                bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
+                // 打开光源：使用配置的亮度值
+                targetBrightness = GetLightBrightnessForCurrentJob();
+                bSucc = csd.SetLightBrightnessByJob(iJobIndex, targetBrightness);
+
+                if (bSucc)
+                {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"光源控制-打开(工位{iJobIndex + 1})";
+                    operLog.strFailReason = $"亮度:{targetBrightness}";
+                    AddLog();
+                }
             }
             else
             {
-                bSucc = csd.AdjBright(0);
+                // 关闭光源：亮度设为0
+                bSucc = csd.SetLightBrightnessByJob(iJobIndex, 0);
+
+                if (bSucc)
+                {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"光源控制-关闭(工位{iJobIndex + 1})";
+                    AddLog();
+                }
             }
+
             if (bSucc)
             {
+                // 切换按钮状态
                 toolBtSta_Triggle.Checked = !toolBtSta_Triggle.Checked;
+
                 if (toolBtSta_Triggle.Checked)
                 {
                     toolBtSta_Triggle.Image = global::VisionApplication.Properties.Resources.LightOn;
-                    toolBtSta_Triggle.ToolTipText = "光源关闭";
+                    toolBtSta_Triggle.ToolTipText = "光源开启";
                 }
                 else
                 {
                     toolBtSta_Triggle.Image = global::VisionApplication.Properties.Resources.LightOff;
-                    toolBtSta_Triggle.ToolTipText = "光源打开";
+                    toolBtSta_Triggle.ToolTipText = "光源关闭";
                 }
             }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "光源控制";
+                operLog.strFailReason = "串口通信失败";
+                AddLog();
+            }
+        }
+        /// <summary>
+        /// 获取当前工位对应的光源亮度配置值
+        /// </summary>
+        /// <summary>
+        /// 获取当前工位对应的光源亮度配置值
+        /// </summary>
+        private int GetLightBrightnessForCurrentJob()
+        {
+            int defaultBrightness = 128;  // 默认亮度
 
+            switch (iJobIndex)
+            {
+                case 0:  // A面 - 主光源
+                         // p_LS 是结构体，不能与 null 比较，直接检查 indent 数组
+                    if (csd.p_LS.indent != null && csd.p_LS.indent.Length > 0)
+                        return csd.p_LS.indent[0];
+                    break;
+                case 1:  // B面 - 侧光源1
+                         // p_LS2 是数组，可以检查是否为 null，但数组元素是结构体
+                    if (csd.p_LS2 != null && csd.p_LS2.Length > 0)
+                    {
+                        // 直接访问结构体成员，检查 indent 数组
+                        if (csd.p_LS2[0].indent != null && csd.p_LS2[0].indent.Length > 0)
+                            return csd.p_LS2[0].indent[0];
+                    }
+                    break;
+                case 2:  // 其他 - 侧光源2
+                    if (csd.p_LS2 != null && csd.p_LS2.Length > 1)
+                    {
+                        if (csd.p_LS2[1].indent != null && csd.p_LS2[1].indent.Length > 0)
+                            return csd.p_LS2[1].indent[0];
+                    }
+                    break;
+            }
+
+            return defaultBrightness;
+        }
+        /// <summary>
+        /// 根据视觉检测结果自动设置光源亮度（可选扩展）
+        /// </summary>
+        public bool AutoSetLightBrightnessByVisionResult(int jobIndex)
+        {
+            // 可以根据当前图像亮度自动调节
+            // 或者根据预设的光源参数表调节
+            int brightness = GetLightBrightnessForCurrentJob();
+            return csd.SetLightBrightnessByJob(jobIndex, brightness);
         }
 
         private void menuTask_FeedBack_Det_Click(object sender, EventArgs e)
@@ -5346,118 +5437,294 @@ namespace VisionApplication
             //    AddLog();
             return bSucc;
         }
-         
-        private void PortProc(ref string[] strPortName)
+
+        /// <summary>
+        /// 获取按COM号排序的串口列表
+        /// 去除原有的错误过滤逻辑，只做排序
+        /// </summary>
+        private List<string> GetSortedPorts()
         {
-            if (strPortName == null || strPortName.Length == 0)
-            {
-                return;
-            }
-            for (int i = 0; i < strPortName.Length; i++)
-            {
-                //strPortNameTmp.Add(strPortName[i]);
-                comInd.Add(int.Parse(strPortName[i].Substring(3, strPortName[i].Length - 3)));
+            string[] ports = SerialPort.GetPortNames();
+            List<string> sortedPorts = new List<string>();
 
-            }
-            // strPortNameTmp.Sort();
-            comInd.Sort();
-            bool bCont = false;
-            for (int i = 0; i < comInd.Count - 1; i++)
+            try
             {
-                if (comInd[i + 1] - comInd[i] != 1)
+                // 提取COM号并排序
+                var comNumbers = new List<int>();
+                foreach (string port in ports)
                 {
-                    if (!bCont)
+                    if (port.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
                     {
-                        comInd.RemoveAt(i);
-                        //  strPortNameTmp.RemoveAt(i);
-                    }
-                    else
-                    {
-                        //  strPortNameTmp.Remove("COM" + comInd[i+1].ToString());
-                        comInd.RemoveAt(i + 1);
-
+                        int comNumber;
+                        if (int.TryParse(port.Substring(3), out comNumber))
+                        {
+                            comNumbers.Add(comNumber);
+                        }
                     }
                 }
-                else
+
+                comNumbers.Sort();
+
+                foreach (int num in comNumbers)
                 {
-                    bCont = true;
+                    sortedPorts.Add("COM" + num);
                 }
             }
-
-            strPortName = new string[comInd.Count];
-            for (int i = 0; i < strPortName.Length; i++)
+            catch
             {
-                strPortName[i] = "COM" + comInd[i].ToString();
+                // 如果解析失败，直接按字符串排序
+                sortedPorts = new List<string>(ports);
+                sortedPorts.Sort();
             }
-            //  Array.Copy(strPortNameTmp, strPortName, strPortNameTmp.Count);
-            // strPortName=strPortNameTmp
+
+            return sortedPorts;
         }
 
+        /// <summary>
+        /// 根据配置的索引获取串口名称
+        /// </summary>
+        /// <param name="configIndex">配置索引(0-3)</param>
+        /// <returns>串口名称，如果未找到返回空字符串</returns>
+        private string GetPortNameByConfigIndex(int configIndex)
+        {
+            List<string> sortedPorts = GetSortedPorts();
+
+            if (configIndex >= 0 && configIndex < sortedPorts.Count)
+            {
+                return sortedPorts[configIndex];
+            }
+
+            // 如果配置索引超出范围，尝试返回可用的第一个串口
+            if (sortedPorts.Count > 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "串口配置";
+                operLog.strFailReason = $"配置索引{configIndex}超出可用串口范围(共{sortedPorts.Count}个)，使用默认串口{sortedPorts[0]}";
+                AddLog();
+                return sortedPorts[0];
+            }
+
+            return "";
+        }
+
+        /// <summary>
+        /// 初始化串口（替换原有的InitSerial方法中的PortProc调用）
+        /// </summary>
         private void InitSerial()
         {
-            serialInd = cup.p_SD.serInd;
-            strPortName = SerialPort.GetPortNames();
-            PortProc(ref strPortName);                      //规整串口，挑选按循序排列的4个串口
-            //st  2022年10月31日
+            // 初始化串口数组
             for (int i = 0; i < 4; i++)
             {
                 sPortAll[i] = new SerialPort();
             }
-            //  int iConnNum = 0;
+
+            // 获取可用串口列表
+            List<string> availablePorts = GetSortedPorts();
+
             operLog.strOperEvent = "串口初始化";
-            if (strPortName == null || strPortName.Length == 0)
+
+            if (availablePorts.Count == 0)
             {
                 operLog.iEventStatus = -1;
-                operLog.strFailReason = "搜索串口失败";
+                operLog.strFailReason = "未搜索到可用串口";
                 AddLog();
+                return;
             }
-            else
-            {
-                int ind = 0;
-                for (int i = 0; i < 4; i++)
-                {
-                   
-                    if (cup.p_SD.bUsed[i])
-                    {
-                        bool bSucc = InitSerialIndex(i);
-                        if (bSucc)
-                        {
-                            // cup.p_SD.
-                            operLog.strOperEvent = "打开串口" + (i + 1) + "成功";
-                            operLog.iEventStatus = 0;
-                        }
-                        else
-                        {
-                            operLog.strFailReason = "打开串口" + (i + 1) + "失败";
-                            //  operLog.strOperEvent = "打开串口" + (i + 1) + "失败";
-                            operLog.iEventStatus = -1;
-                        }
-                        AddLog();
-                    }
 
-                    ind++;
+            // 更新状态栏显示可用串口信息
+            toolStripStatus_Ser.Text = $"可用串口: {string.Join(", ", availablePorts)}";
+
+            int openedCount = 0;
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (!cup.p_SD.bUsed[i])
+                {
+                    // 未使用的串口，状态显示为灰色
+                    UpdateSerialStatusIndicator(i, SerialStatus.Disabled);
+                    continue;
+                }
+
+                // 获取配置的串口索引
+                int configIndex = cup.p_SD.serInd[i];
+
+                // 获取对应的串口名称
+                string portName = GetPortNameByConfigIndex(configIndex);
+
+                if (string.IsNullOrEmpty(portName))
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"串口{i + 1}初始化";
+                    operLog.strFailReason = $"配置索引{configIndex}超出可用范围";
+                    AddLog();
+                    UpdateSerialStatusIndicator(i, SerialStatus.Failed);
+                    continue;
+                }
+
+                // 打开串口
+                if (OpenSerialPort(sPortAll[i], portName))
+                {
+                    openedCount++;
+                    UpdateSerialStatusIndicator(i, SerialStatus.Success);
+
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"串口{i + 1}({portName})打开成功";
+                    AddLog();
+                }
+                else
+                {
+                    UpdateSerialStatusIndicator(i, SerialStatus.Failed);
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"串口{i + 1}({portName})打开失败";
+                    operLog.strFailReason = "请检查设备连接";
+                    AddLog();
                 }
             }
-            rts.initStatus.bSerInit = false;
 
+            // 设置特殊串口引用
+            if (sPortAll[0] != null) sPortMain = sPortAll[0];
+            if (sPortAll[1] != null) sPortSub[0] = sPortAll[1];
+            if (sPortAll[2] != null) sPortSub[1] = sPortAll[2];
+            if (sPortAll[3] != null) sPortCy = sPortAll[3];
 
-
-            //st 2022年10月31日  是否需要保留
-            sPortSub[0] = new SerialPort();
-            sPortSub[1] = new SerialPort();
-
-            sPortMain = sPortAll[0];//serialInd[0]
-            sPortSub[0] = sPortAll[1];  //
-            sPortSub[1] = sPortAll[2]; //serialInd[2]
-            sPortCy = sPortAll[3];// serialInd[3]
-                                  //  csd._sPortAll = sPortAll;
             csd._sPort = sPortMain;
             csd._sPortSub = sPortSub;
             csd._sPortCy = sPortCy;
-            TipInfo();
-            sPortCy.DataReceived += new SerialDataReceivedEventHandler(PortGetCylinder);  //启用串口数据回调
 
-           
+            // 注册数据接收事件
+            if (sPortCy != null && sPortCy.IsOpen)
+            {
+                sPortCy.DataReceived += new SerialDataReceivedEventHandler(PortGetCylinder);
+            }
+
+            rts.initStatus.bSerInit = (openedCount > 0);
+
+            // 更新UI显示
+            UpdateSerialUIStatus();
+        }
+
+        /// <summary>
+        /// 串口状态枚举
+        /// </summary>
+        private enum SerialStatus
+        {
+            Disabled,   // 未使用
+            Success,    // 成功
+            Failed      // 失败
+        }
+
+        /// <summary>
+        /// 更新串口状态指示器
+        /// </summary>
+        private void UpdateSerialStatusIndicator(int index, SerialStatus status)
+        {
+            Color color;
+            switch (status)
+            {
+                case SerialStatus.Success:
+                    color = Color.Green;
+                    break;
+                case SerialStatus.Failed:
+                    color = Color.Red;
+                    break;
+                default:
+                    color = Color.Gray;
+                    break;
+            }
+
+            switch (index)
+            {
+                case 0:
+                    toolStripStatus_Ser1.ForeColor = color;
+                    break;
+                case 1:
+                    toolStripStatus_Ser2.ForeColor = color;
+                    break;
+                case 2:
+                    toolStripStatus_Ser3.ForeColor = color;
+                    break;
+                case 3:
+                    toolStripStatus_Ser4.ForeColor = color;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 打开串口
+        /// </summary>
+        private bool OpenSerialPort(SerialPort serialPort, string portName)
+        {
+            if (serialPort == null)
+                return false;
+
+            try
+            {
+                // 如果已经打开，先关闭
+                if (serialPort.IsOpen)
+                {
+                    serialPort.Close();
+                }
+
+                serialPort.PortName = portName;
+                serialPort.BaudRate = cup.p_SD.BaudRate;
+                serialPort.DataBits = cup.p_SD.DataBits;
+                serialPort.Parity = (Parity)cup.p_SD.parity;
+                serialPort.StopBits = (StopBits)cup.p_SD.stopBits;
+                serialPort.WriteTimeout = cup.p_SD.WriteTimeout;
+              //  serialPort.ReadTimeout = cup.p_SD.ReadTimeout;
+
+                serialPort.Open();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"打开串口{portName}失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 更新串口相关的UI状态
+        /// </summary>
+        private void UpdateSerialUIStatus()
+        {
+            // 检查所有串口状态
+            bool allOpen = true;
+            bool anyOpen = false;
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (cup.p_SD.bUsed[i])
+                {
+                    if (sPortAll[i] != null && sPortAll[i].IsOpen)
+                    {
+                        anyOpen = true;
+                    }
+                    else
+                    {
+                        allOpen = false;
+                    }
+                }
+            }
+
+            if (allOpen && anyOpen)
+            {
+                toolStripStatus_Ser.Text = "所有串口已连接";
+                toolStripStatus_Ser.ForeColor = Color.Green;
+                toolBt_ConnSer.Checked = true;
+            }
+            else if (anyOpen)
+            {
+                toolStripStatus_Ser.Text = "部分串口已连接";
+                toolStripStatus_Ser.ForeColor = Color.Orange;
+                toolBt_ConnSer.Checked = true;
+            }
+            else
+            {
+                toolStripStatus_Ser.Text = "串口未连接";
+                toolStripStatus_Ser.ForeColor = Color.Red;
+                toolBt_ConnSer.Checked = false;
+            }
         }
         private void InitTimer()
         {
@@ -5508,7 +5775,7 @@ namespace VisionApplication
             // 00:换成二进制就是 0000 0000 = X32 - X31 - X30 - X29 - X28 - X27 - X26 - X25输入口的当前状态0 = OFF，1 = ON
             //  9C 5C: 前面所有字节的 CRC 校验码
 
-            else if (Readlen == 10 && inf[0] == 0x01 && inf[1] == 0x45
+            else if (Readlen%10==0 && inf[0] == 0x01 && inf[1] == 0x45
                 && inf[2] == 0x05 && inf[3] == 0x01)
             {
                 //2025年10月08日  根据设置的触发条件，判断IO输入
@@ -5549,6 +5816,65 @@ namespace VisionApplication
 
         }
 
+        /*private void ExeIOTrig(int TrigType)
+        {
+            //未登录，禁止操作
+            if (rts.iModelRole < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "执行功能操作";
+                operLog.strFailReason = "用户身份未验证";
+                AddLog();
+                MessageBox.Show("用户身份未验证，无法操作");
+                return;
+            }
+
+            switch (TrigType)
+            {
+                case 1:  //A 面触发
+                         // if (cup.p_IOPP.EndBPlane == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
+                    {
+                        if (bRunCondiction(1)) //运行条件判断
+                        {
+                            // 避免重复触发，可增加防抖或状态判断
+                            if (lblIn1.ForeColor != Color.Red)
+                            {
+                                lblIn1.Invoke(new Action(() => lblIn1.ForeColor = Color.Red));
+                                // 启动 A 面（工位 0）一次运行
+                                Task.Run(() => RunOneTimeForFace(0));
+                            }
+                        }
+
+                    }
+
+                    break;
+
+                case 2:  //B面触发
+                    {
+                        if (bRunCondiction(1)) //运行条件判断
+                        {
+                            // 避免重复触发，可增加防抖或状态判断
+                            if (lblIn2.ForeColor != Color.Red)
+                            {
+                                lblIn2.Invoke(new Action(() => lblIn2.ForeColor = Color.Red));
+                                // 启动 A 面（工位 0）一次运行
+                                Task.Run(() => RunOneTimeForFace(1));
+                            }
+                        }
+
+                    }
+                    break;
+                case 3:  //停止采集
+                    PreviewImage(2);  //停止实时预览
+                    break;
+
+                case 4:  //停止检测
+                    StopRun();
+                    break;
+            }
+
+        }*/
+
         private void ExeIOTrig(int TrigType)
         {
             //未登录，禁止操作
@@ -5574,7 +5900,7 @@ namespace VisionApplication
                             {
                                 lblIn1.Invoke(new Action(() => lblIn1.ForeColor = Color.Red));
                                 // 启动 A 面（工位 0）一次运行
-                                Task.Run(() => RunOneTimeForFace(0));
+                                Task.Run(() => RunOneTimeForFace(1));
                             }
                         }
                            
@@ -5591,7 +5917,7 @@ namespace VisionApplication
                             {
                                 lblIn2.Invoke(new Action(() => lblIn2.ForeColor = Color.Red));
                                 // 启动 A 面（工位 0）一次运行
-                                Task.Run(() => RunOneTimeForFace(1));
+                                Task.Run(() => RunOneTimeForFace(0));
                             }
                         }
 
@@ -6139,6 +6465,7 @@ namespace VisionApplication
         }
 
         
+
         private void timerIOOut_Tick(object sender, EventArgs e)
         {
            
@@ -6220,7 +6547,7 @@ namespace VisionApplication
                         {
                             try
                             {
-                                await LaserMarkAfterVisionDetAsync();
+                                await LaserMarkAfterVisionDetAsync(iJobIndex);
                             }
                             catch (Exception ex)
                             {

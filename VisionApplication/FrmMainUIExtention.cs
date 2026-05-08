@@ -271,8 +271,8 @@ namespace VisionApplication
                 return;
             cup.p_Cam[icamSelectInd].iBrightness = (uint)tbBirghtness.Value;
             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
-            bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
-
+          //  bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
+            bool bSucc =  csd.SetLightBrightnessByJob(icamSelectInd, (int)cup.p_Cam[icamSelectInd].iBrightness);
             if (bSucc)
             {
                 tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
@@ -299,8 +299,8 @@ namespace VisionApplication
             cup.p_Cam[icamSelectInd].iBrightness = (uint)nudContrast.Value;
             hIKVisionCamera.StopGrabbing(icamSelectInd);
             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
-            bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
-
+          //  bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
+            bool bSucc = csd.SetLightBrightnessByJob(icamSelectInd, (int)cup.p_Cam[icamSelectInd].iBrightness);
             hIKVisionCamera.StartGrabbing(icamSelectInd);
             if (bSucc)
             {
@@ -614,11 +614,17 @@ namespace VisionApplication
         private void bnGetParam_Click(object sender, EventArgs e)
         {
             int icamInd = cbDeviceList.SelectedIndex;
-            if (icamInd >= 0)
+            if (icamInd < 0) return;
+
+            // 空和边界检查
+            if (camera2 == null || icamInd >= camera2.Length || camera2[icamInd] == null)
             {
-                hIKVisionCamera.GetCamParam(cup.p_Cam[icamInd], camera2[icamInd]);
-                UpdateCamParamToUI();
+                MessageBox.Show("相机未初始化或索引无效，请先连接并初始化相机。");
+                return;
             }
+
+            hIKVisionCamera.GetCamParam(cup.p_Cam[icamInd], camera2[icamInd]);
+            UpdateCamParamToUI();
 
         }
 

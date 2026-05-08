@@ -1747,24 +1747,31 @@ namespace VisionApplication
             if (btFunMark.FlatStyle == FlatStyle.Popup)
             {
                 iLaserWorkingTypes[card] = 1;
-                btFunMark.FlatStyle = FlatStyle.Flat;
-
-                var param = new LCZControlParam
-                {
-                    cmdType = 110,
-                    cardSN = card,
-                    ind1 = 0
-                };
+                UpdateButtonStyle(btFunMark, true);
 
                 try
                 {
-                    // 标刻可能耗时较长，设置30秒超时
+                    var param = new LCZControlParam
+                    {
+                        cmdType = 110,      // 使用110命令
+                        cardSN = card,
+                        ind1 = 0
+                    };
+
+                    // ✅ 等待标刻完成，不固定延时
                     var result = await dispatcher.SendCommandAsync(param, 30000);
+
                     if (result.nErr != 0)
                     {
                         operLog.iEventStatus = -1;
                         operLog.strOperEvent = "激光加工";
                         operLog.strFailReason = GetErrorText(result.nErr);
+                        AddLog();
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "激光加工完成";
                         AddLog();
                     }
                 }
@@ -1778,8 +1785,16 @@ namespace VisionApplication
                 finally
                 {
                     iLaserWorkingTypes[card] = 0;
-                    btFunMark.FlatStyle = FlatStyle.Popup;
+                    UpdateButtonStyle(btFunMark, false);
                 }
+            }
+            else
+            {
+                // 停止加工
+                var param = new LCZControlParam { cmdType = 11, cardSN = card };
+                await dispatcher.SendCommandAsync(param, 5000);
+                iLaserWorkingTypes[card] = 0;
+                UpdateButtonStyle(btFunMark, false);
             }
         }
 
@@ -2163,8 +2178,12 @@ namespace VisionApplication
         /// <summary>
         /// 采集十字图像（用于标定验证）
         /// </summary>
+        /// <summary>
+        /// 采集十字图像（用于标定验证）
+        /// </summary>
         private void CaptureCrossImage()
         {
+            // 检查相机是否可用
             if (cbDeviceList.SelectedIndex < 0)
             {
                 operLog.iEventStatus = -1;
@@ -2172,7 +2191,9 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            operLog.strOperEvent = "采集图像";
+
+            operLog.strOperEvent = "采集十字图像";
+
             if (cup.p_VPPRTP.bAcqFromCam && !rts.initStatus.bCamInit)
             {
                 operLog.iEventStatus = -1;
@@ -2180,29 +2201,34 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            if (!vpWin.bMainTaskFinished)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "当前任务没有结束";
-                AddLog();
-                return;
-            }
 
+            // 使用当前工位索引而不是固定值
             vpWin._iTaskType = 0;
             rts.iTaskType = vpWin._iTaskType;
-            bool bRet = false;
 
             vpWin.bMainTaskFinished = false;
-            if (cup.p_VPPRTP.bAcqFromCam)  // 实时采集
+
+            if (cup.p_VPPRTP.bAcqFromCam)
             {
-                bRet = vpWin.PreViewCrossImage(cbDeviceList.SelectedIndex);
+                // 使用当前选中的工位采集图像
+                int currentJobIndex = iJobIndex;  // 当前工位索引
+                bool bRet = vpWin.PreViewCrossImage(currentJobIndex);
+
                 if (!bRet)
                 {
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = "采集图像失败";
                 }
+                else
+                {
+                    operLog.iEventStatus = 0;
+                }
+
                 vpWin.bMainTaskFinished = true;
             }
-        }
 
+            AddLog();
+        }
         #endregion
 
         // ============================================================
@@ -2637,6 +2663,44 @@ namespace VisionApplication
         #endregion
 
         /// <summary>
+        /// 更新按钮样式
+        /// </summary>
+        private void UpdateButtonStyle(Button btn, bool isActive)
+        {
+            if (btn.InvokeRequired)
+            {
+                btn.Invoke(new Action(() => UpdateButtonStyle(btn, isActive)));
+                return;
+            }
+
+            btn.FlatStyle = isActive ? FlatStyle.Flat : FlatStyle.Popup;
+        }
+
+        /// <summary>
+        /// 获取标定模板路径
+        /// </summary>
+        private string GetCalibTemplatePath()
+        {
+            if (!string.IsNullOrEmpty(cup.p_Paf.strExportPath))
+                return cup.p_Paf.strExportPath;
+            return Path.Combine(cup.p_Paf.ManuMarkPath, "calibTemplate.ezd");
+        }
+
+        /// <summary>
+        /// 加载标定模板
+        /// </summary>
+        private async Task<LCZControlParam> LoadCalibTemplateAsync(LaserCommandDispatcher dispatcher, int card, string templatePath)
+        {
+            var loadParam = new LCZControlParam
+            {
+                cmdType = 4,
+                cardSN = card,
+                strFileName = templatePath,
+                ind3 = 1
+            };
+            return await dispatcher.SendCommandAsync(loadParam, 5000);
+        }
+        /// <summary>
         /// 创建十字线文件（用于标定）
         /// </summary>
         private async Task<bool> CreateCrossTemplateAsync()
@@ -2926,8 +2990,12 @@ namespace VisionApplication
         /// <summary>
         /// 标刻9点标定模板
         /// </summary>
+        /// <summary>
+        /// 标刻9点标定模板（方形阵列圆点）
+        /// </summary>
         private async void btMarkCalib_Click(object sender, EventArgs e)
         {
+            // 1. 激光条件检查
             if (!LaserCondiction(1))
             {
                 operLog.iEventStatus = -1;
@@ -2939,36 +3007,34 @@ namespace VisionApplication
 
             int card = currentCardSN;
             var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
+            if (dispatcher == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻标定模板";
+                operLog.strFailReason = "激光调度器未初始化";
+                AddLog();
+                return;
+            }
 
+            // 2. 设置激光工作状态
             iLaserWorkingTypes[card] = 1;
-            btFunMark.FlatStyle = FlatStyle.Flat;
+            UpdateButtonStyle(btFunMark, true);
 
             try
             {
-                // 1. 动态创建标定模板（如果需要动态创建，取消注释）
-                /* bool created = await CreateCalibTemplateAsync();
-                if (!created)
+                // 3. 获取模板路径
+                string templatePath = GetCalibTemplatePath();
+                if (!File.Exists(templatePath))
                 {
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "标刻标定模板";
-                    operLog.strFailReason = "创建标定模板失败";
+                    operLog.strFailReason = $"标定模板文件不存在: {templatePath}";
                     AddLog();
                     return;
-                }*/
+                }
 
-                // 2. 加载模板文件
-                string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "calibTemplate.ezd");
-
-                var loadParam = new LCZControlParam
-                {
-                    cmdType = 4,
-                    cardSN = card,
-                    strFileName = templatePath,
-                    ind3 = 1
-                };
-
-                var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
+                // 4. 加载模板文件
+                var loadResult = await LoadCalibTemplateAsync(dispatcher, card, templatePath);
                 if (loadResult.nErr != 0)
                 {
                     operLog.iEventStatus = -1;
@@ -2978,69 +3044,46 @@ namespace VisionApplication
                     return;
                 }
 
-                await Task.Delay(100);
-
-                // 3. 显示等待窗体
-                loadingForm = new LoadingForm();
-                var tcs = new TaskCompletionSource<bool>();
-
-                this.Invoke(new Action(() =>
+                // 5. 执行标刻并等待完成（响应会通过 dispatcher 返回）
+                //    显示等待窗体
+                await ShowLoadingFormAsync(async () =>
                 {
-                    loadingForm.Show();
-                    if (loadingForm.IsHandleCreated)
+                    var markParam = new LCZControlParam
                     {
-                        tcs.SetResult(true);
-                    }
-                    else
+                        cmdType = 110,              // 激光标刻（先清除旋转平移）
+                        cardSN = card,
+                        ind3 = 1
+                    };
+
+                    // ✅ 关键：等待标刻完成的响应，而不是固定延时
+                    var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
+
+                    if (markResult.nErr != 0)
                     {
-                        loadingForm.Shown += (s, args) => tcs.SetResult(true);
+                        throw new Exception($"标刻失败: {GetErrorText(markResult.nErr)}");
                     }
-                }));
+                });
 
-                await tcs.Task;
+                // 6. 标刻完成后，等待激光稳定（短时间内置延时是合理的）
+                await Task.Delay(200);
 
-                // 4. 开始标刻 - 等待标刻完成
-                var markParam = new LCZControlParam
-                {
-                    cmdType = 4,  // 4， 
-                    cardSN = card,
-                    ind3 = 1
-                };
-
-                var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
-
-                // 标刻完成后，等待激光稳定和材料冷却
-                await Task.Delay(500);
-
-                // 5. 标刻完成后才采集图像
-                CaptureCalibImage();
-
-                // 6. 等待图像采集和处理完成
-                await Task.Delay(300);
-
-                // 7. 进行Blob分析，获取标定点坐标
-                bool blobSuccess = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, card);
+                // 7. 采集图像并分析
+                bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync(card);
 
                 if (blobSuccess)
                 {
-                    // 更新标定数据表格
-                    UpdateCalibPointTable();
-
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = "标刻标定模板";
                     operLog.strFailReason = $"成功获取 {dCalibPointIm.Length / 2} 个标定点";
                     AddLog();
-
-                    // 可选：自动进行标定计算
-                    // btCalib_Click(sender, e);
                 }
-                else
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "标刻标定模板";
-                    operLog.strFailReason = "Blob分析失败，未检测到足够的标定点";
-                    AddLog();
-                }
+            }
+            catch (TimeoutException ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻标定模板";
+                operLog.strFailReason = $"标刻超时: {ex.Message}";
+                AddLog();
             }
             catch (Exception ex)
             {
@@ -3051,14 +3094,85 @@ namespace VisionApplication
             }
             finally
             {
-                // 安全关闭等待窗体
                 SafeCloseLoadingForm();
-
                 iLaserWorkingTypes[card] = 0;
-                btFunMark.FlatStyle = FlatStyle.Popup;
+                UpdateButtonStyle(btFunMark, false);
+                // ✅ 标刻完成后重新加载标准模板
+                await ReloadCurrentRouteTemplateAsync();
             }
         }
 
+        /// <summary>
+        /// 显示等待窗体并执行异步操作
+        /// </summary>
+        private async Task ShowLoadingFormAsync(Func<Task> asyncAction)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+
+            this.Invoke(new Action(() =>
+            {
+                loadingForm = new LoadingForm();
+                loadingForm.Shown += async (s, args) =>
+                {
+                    try
+                    {
+                        await asyncAction();
+                        tcs.SetResult(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                    finally
+                    {
+                        SafeCloseLoadingForm();
+                    }
+                };
+                loadingForm.Show();
+            }));
+
+            await tcs.Task;
+        }
+
+        /// <summary>
+        /// 采集并分析标定图像（异步版本）
+        /// </summary>
+        private async Task<bool> CaptureAndAnalyzeCalibImageAsync(int card)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+
+            this.Invoke(new Action(() =>
+            {
+                try
+                {
+                    // 采集图像
+                    CaptureCalibImage();
+
+                    // 进行Blob分析
+                    bool success = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, card);
+
+                    if (success)
+                    {
+                        UpdateCalibPointTable();
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "标刻标定模板";
+                        operLog.strFailReason = "Blob分析失败，未检测到足够的标定点";
+                        AddLog();
+                    }
+
+                    tcs.SetResult(success);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            }));
+
+            return await tcs.Task;
+        }
         private void btUpdateCalibDate_Click(object sender, EventArgs e)
         {
             CaptureCalibImage();
@@ -3083,7 +3197,6 @@ namespace VisionApplication
         /// <param name="e"></param>
         private async void btMarkCross_Click(object sender, EventArgs e)
         {
-            // 1. 检查标刻条件
             if (!LaserCondiction(1))
             {
                 operLog.iEventStatus = -1;
@@ -3104,15 +3217,12 @@ namespace VisionApplication
                 return;
             }
 
-            // 2. 更新UI状态
             iLaserWorkingTypes[card] = 1;
-            btFunMark.FlatStyle = FlatStyle.Flat;
+            UpdateButtonStyle(btFunMark, true);
 
             try
             {
-                // 3. 加载十字线文件
                 string crossPath = Path.Combine(cup.p_Paf.ManuMarkPath, "Cross.ezd");
-
                 if (!File.Exists(crossPath))
                 {
                     operLog.iEventStatus = -1;
@@ -3122,15 +3232,14 @@ namespace VisionApplication
                     return;
                 }
 
-                // 4. 发送加载文件命令
+                // 加载文件
                 var loadParam = new LCZControlParam
                 {
                     cmdType = 4,
                     cardSN = card,
                     strFileName = crossPath,
-                    ind3 = 2  // 标记为十字标刻
+                    ind3 = 2
                 };
-
                 var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
                 if (loadResult.nErr != 0)
                 {
@@ -3141,85 +3250,39 @@ namespace VisionApplication
                     return;
                 }
 
-                // 5. 等待稳定
-                await Task.Delay(100);
-
-                /*// 6. 复位旋转平移
-                var resetParam = new LCZControlParam
+                // 执行标刻并等待完成
+                await ShowLoadingFormAsync(async () =>
                 {
-                    cmdType = 27,
-                    cardSN = card,
-                    dParam1 = 0,
-                    dParam2 = 0,
-                    dParam3 = 0,
-                    dParam4 = 0,
-                    dParam5 = 0,
-                    ind3 = 2
-                };
-
-                var resetResult = await dispatcher.SendCommandAsync(resetParam, 3000);
-                if (resetResult.nErr != 0)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "标刻十字";
-                    operLog.strFailReason = $"复位失败: {GetErrorText(resetResult.nErr)}";
-                    AddLog();
-                    return;
-                }*/
-
-                // 7. 开始标刻
-                var markParam = new LCZControlParam
-                {
-                    cmdType = 10,
-                    cardSN = card,
-                    ind3 = 2  // 标记为十字标刻
-                };
-
-                // 显示等待窗体
-                loadingForm = new LoadingForm();
-                var tcs = new TaskCompletionSource<bool>();
-
-                // 确保在 UI 线程上显示并等待加载完成
-                this.Invoke(new Action(() =>
-                {
-                    loadingForm.Show();
-                    // 确保窗体完全加载后再设置结果
-                    loadingForm.Shown += (s, args) => tcs.SetResult(true);
-                }));
-
-                await tcs.Task;
-
-                try
-                {
-                    // 标刻操作...
+                    var markParam = new LCZControlParam
+                    {
+                        cmdType = 110,      // 使用110命令
+                        cardSN = card,
+                        ind3 = 2
+                    };
                     var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
-
-                    // 安全关闭 LoadingForm
-                    SafeCloseLoadingForm();
-
-                    if (markResult.nErr == 0)
+                    if (markResult.nErr != 0)
                     {
-                        await Task.Delay(200);
-                        CaptureCrossImage();
-                        // ...
+                        throw new Exception($"标刻失败: {GetErrorText(markResult.nErr)}");
                     }
-                }
-                catch (TimeoutException)
-                {
-                    if (loadingForm != null)
-                    {
-                        loadingForm.Invoke((MethodInvoker)delegate { loadingForm.Close(); });
-                        loadingForm = null;
-                    }
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "标刻十字";
-                    operLog.strFailReason = "标刻超时";
-                    AddLog();
-                }
+                });
+
+                // 等待激光稳定后采集图像
+                await Task.Delay(200);
+                CaptureCrossImage();
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "标刻十字";
+                AddLog();
+            }
+            catch (TimeoutException)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻十字";
+                operLog.strFailReason = "标刻超时";
+                AddLog();
             }
             catch (Exception ex)
             {
-                SafeCloseLoadingForm();
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "标刻十字";
                 operLog.strFailReason = ex.Message;
@@ -3227,8 +3290,56 @@ namespace VisionApplication
             }
             finally
             {
+                SafeCloseLoadingForm();
                 iLaserWorkingTypes[card] = 0;
-                btFunMark.FlatStyle = FlatStyle.Popup;
+                UpdateButtonStyle(btFunMark, false);
+                // ✅ 标刻完成后重新加载标准模板
+                await ReloadCurrentRouteTemplateAsync();
+            }
+        }
+
+        /// <summary>
+        /// 重新加载当前板卡对应的标准模板文件（routeX.ezd）
+        /// </summary>
+        private async Task ReloadCurrentRouteTemplateAsync()
+        {
+            int card = currentCardSN;
+            var dispatcher = laserDispatchers[card];
+            if (dispatcher == null) return;
+
+            string ezdFileName = (card == 0) ? "route1.ezd" : "route2.ezd";
+            string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, ezdFileName);
+
+            if (!File.Exists(templatePath))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"重新加载激光模板(卡{card + 1})";
+                operLog.strFailReason = "文件不存在";
+                AddLog();
+                return;
+            }
+
+            var param = new LCZControlParam
+            {
+                cmdType = 4,          // 加载文件命令
+                cardSN = card,
+                strFileName = templatePath,
+                ind3 = 0
+            };
+
+            try
+            {
+                await dispatcher.SendCommandAsync(param);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = $"重新加载激光模板(卡{card + 1})成功";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"重新加载激光模板(卡{card + 1})失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
             }
         }
         private void SafeCloseLoadingForm()
@@ -3254,6 +3365,9 @@ namespace VisionApplication
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
+        /// <summary>
+        /// 标刻正方形并采集图像（用于视野标定）
+        /// </summary>
         private async void btMarkSquare_Click(object sender, EventArgs e)
         {
             // 1. 检查标刻条件
@@ -3279,11 +3393,11 @@ namespace VisionApplication
 
             // 2. 更新UI状态
             iLaserWorkingTypes[card] = 1;
-            btFunMark.FlatStyle = FlatStyle.Flat;
+            UpdateButtonStyle(btFunMark, true);
 
             try
             {
-                // 3. 加载方框文件
+                // 3. 获取方框文件路径
                 string squarePath = Path.Combine(cup.p_Paf.ManuMarkPath, "Square.ezd");
 
                 if (!File.Exists(squarePath))
@@ -3314,86 +3428,46 @@ namespace VisionApplication
                     return;
                 }
 
-                // 5. 等待稳定
-                await Task.Delay(100);
-
-                // 6. 复位旋转平移
-                /*var resetParam = new LCZControlParam
+                // 5. 执行标刻并等待完成（使用异步等待，而非固定延时）
+                await ShowLoadingFormAsync(async () =>
                 {
-                    cmdType = 27,
-                    cardSN = card,
-                    dParam1 = 0,
-                    dParam2 = 0,
-                    dParam3 = 0,
-                    dParam4 = 0,
-                    dParam5 = 0,
-                    ind3 = 3
-                };
+                    var markParam = new LCZControlParam
+                    {
+                        cmdType = 110,      // 使用110命令（先清除旋转平移）
+                        cardSN = card,
+                        ind3 = 3            // 标记为方框标刻
+                    };
 
-                var resetResult = await dispatcher.SendCommandAsync(resetParam, 3000);
-                if (resetResult.nErr != 0)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "标刻方框";
-                    operLog.strFailReason = $"复位失败: {GetErrorText(resetResult.nErr)}";
-                    AddLog();
-                    return;
-                }*/
-
-                // 7. 开始标刻
-                var markParam = new LCZControlParam
-                {
-                    cmdType = 10,
-                    cardSN = card,
-                    ind3 = 3  // 标记为方框标刻
-                };
-
-                // 显示等待窗体（使用安全显示方式）
-                loadingForm = new LoadingForm();
-                var tcs = new TaskCompletionSource<bool>();
-
-                // 在 UI 线程上显示并等待窗体加载完成
-                this.Invoke(new Action(() =>
-                {
-                    loadingForm.Show();
-                    loadingForm.Shown += (s, args) => tcs.SetResult(true);
-                }));
-
-                await tcs.Task;
-
-                try
-                {
+                    // ✅ 关键：等待标刻完成的响应
                     var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
 
-                    // 安全关闭等待窗体
-                    SafeCloseLoadingForm();
+                    if (markResult.nErr != 0)
+                    {
+                        throw new Exception($"标刻失败: {GetErrorText(markResult.nErr)}");
+                    }
+                });
 
-                    if (markResult.nErr == 0)
-                    {
-                        operLog.iEventStatus = 0;
-                        operLog.strOperEvent = "标刻方框";
-                        AddLog();
-                    }
-                    else
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = "标刻方框";
-                        operLog.strFailReason = GetErrorText(markResult.nErr);
-                        AddLog();
-                    }
-                }
-                catch (TimeoutException)
-                {
-                    SafeCloseLoadingForm();
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "标刻方框";
-                    operLog.strFailReason = "标刻超时";
-                    AddLog();
-                }
+                // 6. 标刻完成后，等待激光稳定（短时间内置延时是合理的）
+                await Task.Delay(200);
+
+                // 7. 采集图像（如果需要）
+                // 注意：方框标定通常不需要自动采集图像，如果不需要可以注释
+                 CaptureSquareImage();
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "标刻方框";
+                operLog.strFailReason = "标刻完成";
+                AddLog();
+            }
+            catch (TimeoutException)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻方框";
+                operLog.strFailReason = "标刻超时";
+                AddLog();
             }
             catch (Exception ex)
             {
-                SafeCloseLoadingForm();
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "标刻方框";
                 operLog.strFailReason = ex.Message;
@@ -3401,8 +3475,60 @@ namespace VisionApplication
             }
             finally
             {
+                SafeCloseLoadingForm();
                 iLaserWorkingTypes[card] = 0;
-                btFunMark.FlatStyle = FlatStyle.Popup;
+                UpdateButtonStyle(btFunMark, false);
+                // ✅ 标刻完成后重新加载标准模板
+                await ReloadCurrentRouteTemplateAsync();
+            }
+        }
+        /// <summary>
+        /// 采集方框标定图像
+        /// </summary>
+        private void CaptureSquareImage()
+        {
+            operLog.strOperEvent = "采集方框标定图像";
+
+            if (!vpWin.bMainTaskFinished)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = "当前任务没有结束";
+                AddLog();
+                return;
+            }
+
+            if (cup.p_VPPRTP.bAcqFromCam && !rts.initStatus.bCamInit)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = "相机未初始化";
+                AddLog();
+                return;
+            }
+
+            if (cup.p_VPPRTP.bAcqFromCam && cbDeviceList.SelectedIndex < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = "没有选择相机";
+                AddLog();
+                return;
+            }
+
+            vpWin._iTaskType = 0;
+            rts.iTaskType = vpWin._iTaskType;
+            bool bRet = false;
+
+            vpWin.bMainTaskFinished = false;
+            if (cup.p_VPPRTP.bAcqFromCam)
+            {
+                bRet = vpWin.PreViewCrossImage(iJobIndex);
+                vpWin.bMainTaskFinished = true;
+            }
+
+            if (!bRet)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = "采集图像失败";
+                AddLog();
             }
         }
         /// <summary>
@@ -3600,7 +3726,7 @@ namespace VisionApplication
                 }
 
                 // 如果视觉检测需要激光标刻（例如结果 OK 且锁标刻开启）
-                if (visionOk && rts.initStatus.bJCZ == 0 && rts.onLS.bLock)
+                if (visionOk && rts.initStatus.bJCZ == 0 /*&& rts.onLS.bLock*/)
                 {
                     await LaserMarkAfterVisionDetAsync(faceIndex);
                 }
@@ -3653,7 +3779,8 @@ namespace VisionApplication
                 await dispatcher.SendCommandAsync(paramShift);
 
                 // 加载激光模板
-                string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, "route.ezd");
+                string ezdFileName = "route" + (faceIndex+1).ToString() + ".ezd";
+                string templatePath = Path.Combine(cup.p_Paf.ManuMarkPath, ezdFileName);
                 var loadParam = new LCZControlParam
                 {
                     cmdType = 4,
@@ -3778,44 +3905,43 @@ namespace VisionApplication
         /// 发送命令并异步等待响应。
         /// 使用 ind3 字段传递序列号，服务器必须原样返回。
         /// </summary>
-        public async Task<LCZControlParam> SendCommandAsync(LCZControlParam param, int? timeoutMs = null)
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(LaserCommandDispatcher));
+        /*  public async Task<LCZControlParam> SendCommandAsync(LCZControlParam param, int? timeoutMs = null)
+          {
+              if (_disposed)
+                  throw new ObjectDisposedException(nameof(LaserCommandDispatcher));
 
-            int timeout = timeoutMs ?? DefaultTimeoutMs;
-            int seq = Interlocked.Increment(ref _cmdSeq);
-            param.cardSN = _cardSN;
-            param.ind3 = seq;               // 将序列号存入 ind3 字段，与服务器约定
+              int timeout = timeoutMs ?? DefaultTimeoutMs;
+              int seq = Interlocked.Increment(ref _cmdSeq);
+              param.cardSN = _cardSN;
+              param.ind3 = seq;               // 将序列号存入 ind3 字段，与服务器约定
 
-            var tcs = new TaskCompletionSource<LCZControlParam>(TaskCreationOptions.RunContinuationsAsynchronously);
-            if (!_pendingCommands.TryAdd(seq, tcs))
-                throw new InvalidOperationException("Duplicate sequence number.");
+              var tcs = new TaskCompletionSource<LCZControlParam>(TaskCreationOptions.RunContinuationsAsynchronously);
+              if (!_pendingCommands.TryAdd(seq, tcs))
+                  throw new InvalidOperationException("Duplicate sequence number.");
 
-            // 发送命令（SendParam 需线程安全）
-            _pipeClient.SendParam(param);
+              // 发送命令（SendParam 需线程安全）
+              _pipeClient.SendParam(param);
 
-            // 超时处理
-            using (var cts = new CancellationTokenSource(timeout))
-            {
-                cts.Token.Register(() =>
-                {
-                    if (_pendingCommands.TryRemove(seq, out var oldTcs))
-                        oldTcs.TrySetException(new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）"));
-                }, useSynchronizationContext: false);
+              // 超时处理
+              using (var cts = new CancellationTokenSource(timeout))
+              {
+                  cts.Token.Register(() =>
+                  {
+                      if (_pendingCommands.TryRemove(seq, out var oldTcs))
+                          oldTcs.TrySetException(new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）"));
+                  }, useSynchronizationContext: false);
 
-                try
-                {
-                    return await tcs.Task.ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）");
-                }
-            }
-        }
-
-        /// <summary>
+                  try
+                  {
+                      return await tcs.Task.ConfigureAwait(false);
+                  }
+                  catch (OperationCanceledException)
+                  {
+                      throw new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）");
+                  }
+              }
+          }
+          /// <summary>
         /// 处理收到的响应（由管道消息回调调用）。
         /// </summary>
         public void HandleResponse(LCZControlParam response)
@@ -3833,6 +3959,64 @@ namespace VisionApplication
             }
         }
 
+  */
+        public async Task<LCZControlParam> SendCommandAsync(LCZControlParam param, int? timeoutMs = null)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(LaserCommandDispatcher));
+
+            int timeout = timeoutMs ?? DefaultTimeoutMs;
+            int seq = Interlocked.Increment(ref _cmdSeq);
+            param.cardSN = _cardSN;
+            param.ind3 = seq;
+
+            var tcs = new TaskCompletionSource<LCZControlParam>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!_pendingCommands.TryAdd(seq, tcs))
+                throw new InvalidOperationException("Duplicate sequence number.");
+
+            // 添加日志：发送命令
+            System.Diagnostics.Debug.WriteLine($"[卡{_cardSN}] 发送命令 {param.cmdType}, seq={seq}");
+
+            _pipeClient.SendParam(param);
+
+            using (var cts = new CancellationTokenSource(timeout))
+            {
+                cts.Token.Register(() =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"[卡{_cardSN}] 命令 {param.cmdType}, seq={seq} 超时");
+                    if (_pendingCommands.TryRemove(seq, out var oldTcs))
+                        oldTcs.TrySetException(new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）"));
+                }, useSynchronizationContext: false);
+
+                try
+                {
+                    var result = await tcs.Task.ConfigureAwait(false);
+                    System.Diagnostics.Debug.WriteLine($"[卡{_cardSN}] 收到命令 {param.cmdType}, seq={seq} 响应, nErr={result.nErr}");
+                    return result;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new TimeoutException($"命令 {param.cmdType} 超时（卡{_cardSN}）");
+                }
+            }
+        }
+
+        public void HandleResponse(LCZControlParam response)
+        {
+            int seq = response.ind3;
+            System.Diagnostics.Debug.WriteLine($"[卡{_cardSN}] HandleResponse: seq={seq}, cmdType={response.cmdType}, nErr={response.nErr}");
+
+            if (_pendingCommands.TryRemove(seq, out var tcs))
+            {
+                tcs.TrySetResult(response);
+                ResponseReceived?.Invoke(response);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[卡{_cardSN}] 未匹配的响应 seq={seq}");
+            }
+        }
+      
         public void Dispose()
         {
             if (_disposed) return;

@@ -2518,42 +2518,83 @@ namespace VisionControl
                 return false;
             }
         }
+        /// <summary>
+        /// 采集十字图像（用于标定验证）
+        /// </summary>
+        /// <param name="wsInd">工位索引（0=A面，1=B面）</param>
+        /// <returns>是否成功</returns>
         public bool PreViewCrossImage(int wsInd)
         {
-            //  string strTime = DateTime.Now.ToString("yyyyMMddHHmmss");
-            //  string[] strImageFileS = new string[maxCameraNum];
             try
             {
                 Thread.Sleep(20);
-                //采集  
-                if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
+
+                // 采集图像
+                if (cup.p_CD.bListProcess[wsInd])
                 {
                     bTaskFinish[wsInd] = false;
                     ci8gAcq[wsInd] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
                 }
 
-
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[wsInd] != null)  //启用的检测面才做采集
+                // 显示图像
+                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[wsInd] != null)
                 {
+                    DisplayImageByJobIndex(wsInd, ci8gAcq[wsInd]);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"PreViewCrossImage 异常: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 根据工位索引显示图像到对应的控件
+        /// </summary>
+        /// <param name="jobIndex">工位索引（0=A面，1=B面）</param>
+        /// <param name="image">要显示的图像</param>
+        private void DisplayImageByJobIndex(int jobIndex, ICogImage image)
+        {
+            if (image == null) return;
+
+            switch (jobIndex)
+            {
+                case 0:  // A面 - 主显示区
                     if (iModelRole == 10)
                     {
-                        cogRDMain.Display.Image = ci8gAcq[wsInd];
+                        cogRDMain.Display.Image = image;
                         cogRDMain.Display.Fit(true);
                     }
                     else
                     {
-                        cogRDMainUser.Image = ci8gAcq[wsInd];
+                        cogRDMainUser.Image = image;
                         cogRDMainUser.Fit(true);
                     }
-                    //      SetCalibBlobImage(ci8gAcq[wsInd]);
+                    break;
 
-                }
-                //存储 
-                return true;
-            }
-            catch
-            {
-                return false;
+                case 1:  // B面 - 子显示区1
+                    cogRDSub1.Image = image;
+                    cogRDSub1.Fit(true);
+                    break;
+
+                case 2:  // 其他 - 子显示区2
+                    cogRDSub2.Image = image;
+                    cogRDSub2.Fit(true);
+                    break;
+
+                    // 如果需要更多工位，取消注释
+                    // case 3:
+                    //     cogRDSub3.Image = image;
+                    //     cogRDSub3.Fit(true);
+                    //     break;
+                    // case 4:
+                    //     cogRDSub4.Image = image;
+                    //     cogRDSub4.Fit(true);
+                    //     break;
             }
         }
         public bool bEqualDisr = false;

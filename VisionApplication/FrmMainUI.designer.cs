@@ -297,6 +297,7 @@ namespace VisionApplication
             this.cmbPMATrainAlg = new System.Windows.Forms.ComboBox();
             this.btPMAlignParam = new System.Windows.Forms.Button();
             this.tabPageCalib = new System.Windows.Forms.TabPage();
+            this.btMarkSquare = new System.Windows.Forms.Button();
             this.panel7 = new System.Windows.Forms.Panel();
             this.tbCalibSkew = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
@@ -312,10 +313,9 @@ namespace VisionApplication
             this.label66 = new System.Windows.Forms.Label();
             this.tbCalibCentX = new System.Windows.Forms.TextBox();
             this.label68 = new System.Windows.Forms.Label();
+            this.btMarkCross = new System.Windows.Forms.Button();
             this.label59 = new System.Windows.Forms.Label();
             this.label58 = new System.Windows.Forms.Label();
-            this.btMarkSquare = new System.Windows.Forms.Button();
-            this.btMarkCross = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btCalibBlobParam = new System.Windows.Forms.Button();
             this.trackBarThre = new System.Windows.Forms.TrackBar();
@@ -926,7 +926,6 @@ namespace VisionApplication
             this.menuUnion.Name = "menuUnion";
             this.menuUnion.Size = new System.Drawing.Size(68, 22);
             this.menuUnion.Text = "通信控制";
-            this.menuUnion.Visible = false;
             // 
             // menuTask_FeedBack
             // 
@@ -2857,7 +2856,7 @@ namespace VisionApplication
             this.tabPageBase.Location = new System.Drawing.Point(4, 24);
             this.tabPageBase.Name = "tabPageBase";
             this.tabPageBase.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBase.Size = new System.Drawing.Size(348, 660);
+            this.tabPageBase.Size = new System.Drawing.Size(348, 564);
             this.tabPageBase.TabIndex = 0;
             this.tabPageBase.Text = "模板匹配";
             // 
@@ -3408,9 +3407,24 @@ namespace VisionApplication
             this.tabPageCalib.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCalib.Location = new System.Drawing.Point(4, 24);
             this.tabPageCalib.Name = "tabPageCalib";
-            this.tabPageCalib.Size = new System.Drawing.Size(348, 660);
+            this.tabPageCalib.Size = new System.Drawing.Size(348, 564);
             this.tabPageCalib.TabIndex = 4;
             this.tabPageCalib.Text = "激光视觉标定";
+            // 
+            // btMarkSquare
+            // 
+            this.btMarkSquare.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMarkSquare.BackgroundImage")));
+            this.btMarkSquare.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMarkSquare.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btMarkSquare.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.btMarkSquare.Location = new System.Drawing.Point(276, 375);
+            this.btMarkSquare.Name = "btMarkSquare";
+            this.btMarkSquare.Size = new System.Drawing.Size(64, 62);
+            this.btMarkSquare.TabIndex = 10;
+            this.btMarkSquare.Text = "方形标刻";
+            this.btMarkSquare.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btMarkSquare.UseVisualStyleBackColor = true;
+            this.btMarkSquare.Click += new System.EventHandler(this.btMarkSquare_Click);
             // 
             // panel7
             // 
@@ -3560,6 +3574,21 @@ namespace VisionApplication
             this.label68.TabIndex = 91;
             this.label68.Text = "斜切";
             // 
+            // btMarkCross
+            // 
+            this.btMarkCross.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMarkCross.BackgroundImage")));
+            this.btMarkCross.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMarkCross.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btMarkCross.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.btMarkCross.Location = new System.Drawing.Point(209, 375);
+            this.btMarkCross.Name = "btMarkCross";
+            this.btMarkCross.Size = new System.Drawing.Size(64, 62);
+            this.btMarkCross.TabIndex = 10;
+            this.btMarkCross.Text = "十字标刻";
+            this.btMarkCross.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btMarkCross.UseVisualStyleBackColor = true;
+            this.btMarkCross.Click += new System.EventHandler(this.btMarkCross_Click);
+            // 
             // label59
             // 
             this.label59.AutoSize = true;
@@ -3579,36 +3608,6 @@ namespace VisionApplication
             this.label58.Size = new System.Drawing.Size(57, 12);
             this.label58.TabIndex = 96;
             this.label58.Text = "模板参数";
-            // 
-            // btMarkSquare
-            // 
-            this.btMarkSquare.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMarkSquare.BackgroundImage")));
-            this.btMarkSquare.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMarkSquare.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btMarkSquare.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btMarkSquare.Location = new System.Drawing.Point(276, 375);
-            this.btMarkSquare.Name = "btMarkSquare";
-            this.btMarkSquare.Size = new System.Drawing.Size(64, 62);
-            this.btMarkSquare.TabIndex = 10;
-            this.btMarkSquare.Text = "方形标刻";
-            this.btMarkSquare.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btMarkSquare.UseVisualStyleBackColor = true;
-            this.btMarkSquare.Click += new System.EventHandler(this.btMarkSquare_Click);
-            // 
-            // btMarkCross
-            // 
-            this.btMarkCross.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMarkCross.BackgroundImage")));
-            this.btMarkCross.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMarkCross.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btMarkCross.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btMarkCross.Location = new System.Drawing.Point(209, 375);
-            this.btMarkCross.Name = "btMarkCross";
-            this.btMarkCross.Size = new System.Drawing.Size(64, 62);
-            this.btMarkCross.TabIndex = 10;
-            this.btMarkCross.Text = "十字标刻";
-            this.btMarkCross.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btMarkCross.UseVisualStyleBackColor = true;
-            this.btMarkCross.Click += new System.EventHandler(this.btMarkCross_Click);
             // 
             // panel1
             // 

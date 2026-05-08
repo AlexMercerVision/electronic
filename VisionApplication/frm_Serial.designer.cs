@@ -268,11 +268,11 @@
             // lblOrdFull
             // 
             this.lblOrdFull.AutoSize = true;
-            this.lblOrdFull.Font = new System.Drawing.Font("隶书", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOrdFull.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblOrdFull.ForeColor = System.Drawing.Color.Red;
             this.lblOrdFull.Location = new System.Drawing.Point(253, 18);
             this.lblOrdFull.Name = "lblOrdFull";
-            this.lblOrdFull.Size = new System.Drawing.Size(0, 19);
+            this.lblOrdFull.Size = new System.Drawing.Size(0, 24);
             this.lblOrdFull.TabIndex = 62;
             // 
             // cbxDataBits1
@@ -319,24 +319,26 @@
             // btn_cancel
             // 
             this.btn_cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_cancel.Location = new System.Drawing.Point(428, 346);
+            this.btn_cancel.Location = new System.Drawing.Point(431, 346);
             this.btn_cancel.Name = "btn_cancel";
             this.btn_cancel.Size = new System.Drawing.Size(75, 29);
             this.btn_cancel.TabIndex = 65;
             this.btn_cancel.Text = "取消";
             this.btn_cancel.UseVisualStyleBackColor = true;
+            this.btn_cancel.Visible = false;
             this.btn_cancel.Click += new System.EventHandler(this.btn_cancel_Click);
             // 
             // btn_sure
             // 
             this.btn_sure.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btn_sure.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btn_sure.Location = new System.Drawing.Point(344, 346);
+            this.btn_sure.Location = new System.Drawing.Point(347, 346);
             this.btn_sure.Name = "btn_sure";
             this.btn_sure.Size = new System.Drawing.Size(75, 29);
             this.btn_sure.TabIndex = 64;
             this.btn_sure.Text = "确定";
             this.btn_sure.UseVisualStyleBackColor = true;
+            this.btn_sure.Visible = false;
             this.btn_sure.Click += new System.EventHandler(this.btn_sure_Click);
             // 
             // groupBox2
@@ -481,22 +483,22 @@
             // lblStatus
             // 
             this.lblStatus.AutoSize = true;
-            this.lblStatus.Font = new System.Drawing.Font("隶书", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblStatus.ForeColor = System.Drawing.Color.Red;
             this.lblStatus.Location = new System.Drawing.Point(212, 23);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(89, 19);
+            this.lblStatus.Size = new System.Drawing.Size(86, 24);
             this.lblStatus.TabIndex = 62;
             this.lblStatus.Text = "串口关闭";
             // 
             // lblOrderStatus
             // 
             this.lblOrderStatus.AutoSize = true;
-            this.lblOrderStatus.Font = new System.Drawing.Font("隶书", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOrderStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblOrderStatus.ForeColor = System.Drawing.Color.Red;
             this.lblOrderStatus.Location = new System.Drawing.Point(325, 257);
             this.lblOrderStatus.Name = "lblOrderStatus";
-            this.lblOrderStatus.Size = new System.Drawing.Size(129, 19);
+            this.lblOrderStatus.Size = new System.Drawing.Size(124, 24);
             this.lblOrderStatus.TabIndex = 62;
             this.lblOrderStatus.Text = "命令发送失败";
             // 
@@ -1860,7 +1862,7 @@
             // 
             // btSubPort
             // 
-            this.btSubPort.Location = new System.Drawing.Point(257, 546);
+            this.btSubPort.Location = new System.Drawing.Point(247, 122);
             this.btSubPort.Name = "btSubPort";
             this.btSubPort.Size = new System.Drawing.Size(52, 29);
             this.btSubPort.TabIndex = 63;
@@ -1872,7 +1874,7 @@
             // txtOrderSubPort
             // 
             this.txtOrderSubPort.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.txtOrderSubPort.Location = new System.Drawing.Point(26, 549);
+            this.txtOrderSubPort.Location = new System.Drawing.Point(7, 127);
             this.txtOrderSubPort.Name = "txtOrderSubPort";
             this.txtOrderSubPort.Size = new System.Drawing.Size(211, 21);
             this.txtOrderSubPort.TabIndex = 62;
@@ -1886,6 +1888,7 @@
             this.groupBox6.Controls.Add(this.txtIntensity2_3);
             this.groupBox6.Controls.Add(this.txtIntensity2_2);
             this.groupBox6.Controls.Add(this.txtIntensity2_1);
+            this.groupBox6.Controls.Add(this.btSubPort);
             this.groupBox6.Controls.Add(this.label57);
             this.groupBox6.Controls.Add(this.label61);
             this.groupBox6.Controls.Add(this.label62);
@@ -1896,13 +1899,13 @@
             this.groupBox6.Controls.Add(this.bt2_Ch2);
             this.groupBox6.Controls.Add(this.bt2_Ch3);
             this.groupBox6.Controls.Add(this.lblStatus2);
-            this.groupBox6.Location = new System.Drawing.Point(23, 397);
+            this.groupBox6.Controls.Add(this.txtOrderSubPort);
+            this.groupBox6.Location = new System.Drawing.Point(8, 385);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Size = new System.Drawing.Size(494, 202);
             this.groupBox6.TabIndex = 66;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "光源通道";
-            this.groupBox6.Visible = false;
             // 
             // txtIntensity2_4
             // 
@@ -1953,7 +1956,7 @@
             // label62
             // 
             this.label62.AutoSize = true;
-            this.label62.Location = new System.Drawing.Point(13, 133);
+            this.label62.Location = new System.Drawing.Point(12, 112);
             this.label62.Name = "label62";
             this.label62.Size = new System.Drawing.Size(65, 12);
             this.label62.TabIndex = 62;
@@ -2022,22 +2025,22 @@
             // lblStatus2
             // 
             this.lblStatus2.AutoSize = true;
-            this.lblStatus2.Font = new System.Drawing.Font("隶书", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblStatus2.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblStatus2.ForeColor = System.Drawing.Color.Red;
             this.lblStatus2.Location = new System.Drawing.Point(217, 17);
             this.lblStatus2.Name = "lblStatus2";
-            this.lblStatus2.Size = new System.Drawing.Size(89, 19);
+            this.lblStatus2.Size = new System.Drawing.Size(86, 24);
             this.lblStatus2.TabIndex = 62;
             this.lblStatus2.Text = "串口关闭";
             // 
             // lblOrderStatus2
             // 
             this.lblOrderStatus2.AutoSize = true;
-            this.lblOrderStatus2.Font = new System.Drawing.Font("隶书", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblOrderStatus2.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblOrderStatus2.ForeColor = System.Drawing.Color.Red;
             this.lblOrderStatus2.Location = new System.Drawing.Point(315, 556);
             this.lblOrderStatus2.Name = "lblOrderStatus2";
-            this.lblOrderStatus2.Size = new System.Drawing.Size(129, 19);
+            this.lblOrderStatus2.Size = new System.Drawing.Size(124, 24);
             this.lblOrderStatus2.TabIndex = 62;
             this.lblOrderStatus2.Text = "命令发送失败";
             this.lblOrderStatus2.Visible = false;
@@ -2074,6 +2077,7 @@
             this.rdbSinglePulse.TabStop = true;
             this.rdbSinglePulse.Text = "单脉冲";
             this.rdbSinglePulse.UseVisualStyleBackColor = true;
+            this.rdbSinglePulse.Visible = false;
             // 
             // rdbSquarewave
             // 
@@ -2085,6 +2089,7 @@
             this.rdbSquarewave.TabStop = true;
             this.rdbSquarewave.Text = "方波";
             this.rdbSquarewave.UseVisualStyleBackColor = true;
+            this.rdbSquarewave.Visible = false;
             // 
             // rdbSinwave
             // 
@@ -2096,6 +2101,7 @@
             this.rdbSinwave.TabStop = true;
             this.rdbSinwave.Text = "正弦波";
             this.rdbSinwave.UseVisualStyleBackColor = true;
+            this.rdbSinwave.Visible = false;
             // 
             // label54
             // 
@@ -2105,6 +2111,7 @@
             this.label54.Size = new System.Drawing.Size(65, 12);
             this.label54.TabIndex = 62;
             this.label54.Text = "脉冲宽度：";
+            this.label54.Visible = false;
             // 
             // textBox1
             // 
@@ -2114,6 +2121,7 @@
             this.textBox1.Size = new System.Drawing.Size(47, 21);
             this.textBox1.TabIndex = 62;
             this.textBox1.Text = "10";
+            this.textBox1.Visible = false;
             // 
             // textBox2
             // 
@@ -2123,6 +2131,7 @@
             this.textBox2.Size = new System.Drawing.Size(47, 21);
             this.textBox2.TabIndex = 62;
             this.textBox2.Text = "2";
+            this.textBox2.Visible = false;
             // 
             // label55
             // 
@@ -2132,6 +2141,7 @@
             this.label55.Size = new System.Drawing.Size(41, 12);
             this.label55.TabIndex = 62;
             this.label55.Text = "频率：";
+            this.label55.Visible = false;
             // 
             // textBox3
             // 
@@ -2141,6 +2151,7 @@
             this.textBox3.Size = new System.Drawing.Size(47, 21);
             this.textBox3.TabIndex = 62;
             this.textBox3.Text = "2";
+            this.textBox3.Visible = false;
             // 
             // label56
             // 
@@ -2150,6 +2161,7 @@
             this.label56.Size = new System.Drawing.Size(41, 12);
             this.label56.TabIndex = 62;
             this.label56.Text = "频率：";
+            this.label56.Visible = false;
             // 
             // btExe
             // 
@@ -2159,6 +2171,7 @@
             this.btExe.TabIndex = 63;
             this.btExe.Text = "开始";
             this.btExe.UseVisualStyleBackColor = true;
+            this.btExe.Visible = false;
             // 
             // label58
             // 
@@ -2170,6 +2183,7 @@
             this.label58.Size = new System.Drawing.Size(41, 12);
             this.label58.TabIndex = 5;
             this.label58.Text = "通道：";
+            this.label58.Visible = false;
             // 
             // comboBox1
             // 
@@ -2183,6 +2197,7 @@
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(97, 20);
             this.comboBox1.TabIndex = 0;
+            this.comboBox1.Visible = false;
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.cbxPortName1_SelectedIndexChanged);
             // 
             // checkBox1
@@ -2194,19 +2209,19 @@
             this.checkBox1.TabIndex = 70;
             this.checkBox1.Text = "循环";
             this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.Visible = false;
             // 
             // frm_Serial
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(511, 287);
+            this.ClientSize = new System.Drawing.Size(514, 590);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.rdbSinwave);
             this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.rdbSquarewave);
             this.Controls.Add(this.rdbSinglePulse);
-            this.Controls.Add(this.btSubPort);
             this.Controls.Add(this.btExe);
             this.Controls.Add(this.btnSend);
             this.Controls.Add(this.chkEditProcess);
@@ -2216,7 +2231,6 @@
             this.Controls.Add(this.textBox3);
             this.Controls.Add(this.label54);
             this.Controls.Add(this.textBox2);
-            this.Controls.Add(this.txtOrderSubPort);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.txtOrder1);
             this.Controls.Add(this.groupBox4);

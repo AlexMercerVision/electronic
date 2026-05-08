@@ -151,62 +151,142 @@ namespace VisionApplication
         }
      //   List<string> strPortNameTmp=new List<string>();
         List<int> comInd=new List<int>();
-        private void PortProc(ref string[] strPortName)
+        /// <summary>
+        /// 获取系统中所有可用的串口列表（按COM号排序）
+        /// </summary>
+        private List<string> GetAvailableSerialPorts()
         {
-            if (strPortName == null || strPortName.Length == 0)
-            {
-                return;
-            }
-            for (int i = 0; i < strPortName.Length; i++)
-            {
-                //strPortNameTmp.Add(strPortName[i]);
-                comInd.Add(int.Parse(strPortName[i].Substring(3, strPortName[i].Length - 3)));
+            string[] ports = SerialPort.GetPortNames();
+            var sortedPorts = new List<string>();
 
-            }
-            // strPortNameTmp.Sort();
-            comInd.Sort();
-            bool bCont = false;
-            for (int i = 0; i < comInd.Count - 1; i++)
+            try
             {
-                if (comInd[i + 1] - comInd[i] != 1)
+                var comNumbers = new List<int>();
+                foreach (string port in ports)
                 {
-                    if (!bCont)
+                    if (port.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
                     {
-                        comInd.RemoveAt(i);
-                        //  strPortNameTmp.RemoveAt(i);
-                    }
-                    else
-                    {
-                        //  strPortNameTmp.Remove("COM" + comInd[i+1].ToString());
-                        comInd.RemoveAt(i + 1);
-
+                        int comNumber;
+                        if (int.TryParse(port.Substring(3), out comNumber))
+                        {
+                            comNumbers.Add(comNumber);
+                        }
                     }
                 }
-                else
+
+                comNumbers.Sort();
+
+                foreach (int num in comNumbers)
                 {
-                    bCont = true;
+                    sortedPorts.Add("COM" + num);
                 }
             }
-
-            strPortName = new string[comInd.Count];
-            for (int i = 0; i < strPortName.Length; i++)
+            catch
             {
-                strPortName[i] = "COM" + comInd[i].ToString();
+                sortedPorts = new List<string>(ports);
+                sortedPorts.Sort();
             }
-            //  Array.Copy(strPortNameTmp, strPortName, strPortNameTmp.Count);
-            // strPortName=strPortNameTmp
+
+            return sortedPorts;
         }
 
+        /// <summary>
+        /// 刷新UI中的串口选择控件
+        /// </summary>
+        private void RefreshSerialPortComboBoxes()
+        {
+            List<string> ports = GetAvailableSerialPorts();
+
+            // 保存当前选中项
+            string[] selectedItems = new string[4];
+            if (cbxPortName1 != null) selectedItems[0] = cbxPortName1.Text;
+            if (cbxPortName2 != null) selectedItems[1] = cbxPortName2.Text;
+            if (cbxPortName3 != null) selectedItems[2] = cbxPortName3.Text;
+            if (cbxPortName4 != null) selectedItems[3] = cbxPortName4.Text;
+
+            // 刷新列表
+            if (cbxPortName1 != null)
+            {
+                cbxPortName1.Items.Clear();
+                foreach (string port in ports)
+                    cbxPortName1.Items.Add(port);
+                if (cbxPortName1.Items.Contains(selectedItems[0]))
+                    cbxPortName1.Text = selectedItems[0];
+                else if (cbxPortName1.Items.Count > 0)
+                    cbxPortName1.SelectedIndex = 0;
+            }
+
+            if (cbxPortName2 != null)
+            {
+                cbxPortName2.Items.Clear();
+                foreach (string port in ports)
+                    cbxPortName2.Items.Add(port);
+                if (cbxPortName2.Items.Contains(selectedItems[1]))
+                    cbxPortName2.Text = selectedItems[1];
+                else if (cbxPortName2.Items.Count > 0)
+                    cbxPortName2.SelectedIndex = 0;
+            }
+
+            if (cbxPortName3 != null)
+            {
+                cbxPortName3.Items.Clear();
+                foreach (string port in ports)
+                    cbxPortName3.Items.Add(port);
+                if (cbxPortName3.Items.Contains(selectedItems[2]))
+                    cbxPortName3.Text = selectedItems[2];
+                else if (cbxPortName3.Items.Count > 0)
+                    cbxPortName3.SelectedIndex = 0;
+            }
+
+            if (cbxPortName4 != null)
+            {
+                cbxPortName4.Items.Clear();
+                foreach (string port in ports)
+                    cbxPortName4.Items.Add(port);
+                if (cbxPortName4.Items.Contains(selectedItems[3]))
+                    cbxPortName4.Text = selectedItems[3];
+                else if (cbxPortName4.Items.Count > 0)
+                    cbxPortName4.SelectedIndex = 0;
+            }
+        }
+
+        /// <summary>
+        /// 获取指定索引的串口名称（用于配置保存）
+        /// </summary>
+        private int GetPortIndex(string portName)
+        {
+            List<string> ports = GetAvailableSerialPorts();
+            return ports.IndexOf(portName);
+        }
+
+        /// <summary>
+        /// 验证串口配置是否有效
+        /// </summary>
+        private bool ValidateSerialConfiguration()
+        {
+            List<string> ports = GetAvailableSerialPorts();
+
+            if (ports.Count == 0)
+            {
+                MessageBox.Show("未检测到任何可用的串口设备，请检查硬件连接。", "警告",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            return true;
+        }
         private void Frm_RuntimeSet_Load(object sender, EventArgs e)
         {
             bMaskChanged = true;
-            strPortName = SerialPort.GetPortNames(); 
-            PortProc(ref strPortName);
+
+            // 获取排序后的串口列表
+            List<string> sortedPorts = GetAvailableSerialPorts();
+            strPortName = sortedPorts.ToArray();
 
             setParam();
             bMaskChanged = false;
-            for (int i = 0; i < 3; i++)
-                tabControl1.TabPages.Remove(tabControl1.TabPages[8]);
+            for (int i = 0; i <4; i++)
+                tabControl1.TabPages.Remove(tabControl1.TabPages[7]);
         }
 
         private void btOK_Click(object sender, EventArgs e)

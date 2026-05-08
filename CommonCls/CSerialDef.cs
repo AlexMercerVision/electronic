@@ -288,7 +288,126 @@ namespace CommonCls
             return order;
         }
 
+        /// <summary>
+        /// 获取当前工位对应的光源亮度
+        /// </summary>
+        public int GetLightBrightnessByJob(int jobIndex)
+        {
+            switch (jobIndex)
+            {
+                case 0:  // A面 - 主光源
+                         // 结构体始终不为 null，直接检查 indent 数组
+                    if (p_LS.indent != null && p_LS.indent.Length > 0)
+                        return p_LS.indent[0];
+                    break;
+                case 1:  // B面 - 侧光源1
+                    if (p_LS2 != null && p_LS2.Length > 0)
+                    {
+                        // p_LS2[0] 是结构体，不能与 null 比较，直接访问其成员
+                        if (p_LS2[0].indent != null && p_LS2[0].indent.Length > 0)
+                            return p_LS2[0].indent[0];
+                    }
+                    break;
+                case 2:  // 其他 - 侧光源2
+                    if (p_LS2 != null && p_LS2.Length > 1)
+                    {
+                        if (p_LS2[1].indent != null && p_LS2[1].indent.Length > 0)
+                            return p_LS2[1].indent[0];
+                    }
+                    break;
+            }
+            return 0;
+        }
 
+        /// <summary>
+        /// 设置主光源亮度（0-255）
+        /// </summary>
+        public bool SetMainLightBrightness(int brightness)
+        {
+            try
+            {
+                if (sPortMain == null || !sPortMain.IsOpen)
+                    return false;
+
+                brightness = Math.Max(0, Math.Min(255, brightness));
+                string strOrder = turnONArb("1234", brightness);
+                sPortMain.Write(strOrder);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 设置侧光源亮度（指定索引，0-255）
+        /// </summary>
+        public bool SetSubLightBrightness(int subIndex, int brightness)
+        {
+            try
+            {
+                if (subIndex < 0 || subIndex >= sPortSub.Length)
+                    return false;
+
+                if (sPortSub[subIndex] == null || !sPortSub[subIndex].IsOpen)
+                    return false;
+
+                brightness = Math.Max(0, Math.Min(255, brightness));
+                string strOrder = turnONArb("1234", brightness);
+                sPortSub[subIndex].Write(strOrder);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 根据工位索引设置对应的光源亮度
+        /// </summary>
+        public bool SetLightBrightnessByJob(int jobIndex, int brightness)
+        {
+            brightness = Math.Max(0, Math.Min(255, brightness));
+
+            switch (jobIndex)
+            {
+                case 0:  // A面 - 主光源
+                    return SetMainLightBrightness(brightness);
+                case 1:  // B面 - 侧光源1
+                    return SetSubLightBrightness(0, brightness);
+                case 2:  // 其他 - 侧光源2
+                    return SetSubLightBrightness(1, brightness);
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 关闭所有光源
+        /// </summary>
+        public bool TurnOffAllLights()
+        {
+            bool result = true;
+
+            if (sPortMain != null && sPortMain.IsOpen)
+            {
+                try { turnOFFAllMain(sPortMain); }
+                catch { result = false; }
+            }
+
+            for (int i = 0; i < sPortSub.Length; i++)
+            {
+                if (sPortSub[i] != null && sPortSub[i].IsOpen)
+                {
+                    try { turnOFFAllSub(sPortSub[i], i); }
+                    catch { result = false; }
+                }
+            }
+
+            return result;
+        }
         public bool AdjBright(int indentity)
         {
             try
