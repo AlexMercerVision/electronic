@@ -322,7 +322,7 @@ namespace VisionControl
         }
         #endregion
 
-
+        // 获取合金电阻图像区域
         public void GetAlignRegion(ref AlignImParam alImParam)
         {
             try
@@ -374,5 +374,143 @@ namespace VisionControl
             }
 
         }
+
+        //采集9点标定板图像
+        public bool PreViewCalibImage(int wsInd,int iCamIndex)
+        {
+            string strTime = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string[] strImageFileS = new string[maxCameraNum];
+            try
+            {
+                Thread.Sleep(20);
+                //采集  
+                if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
+                {
+                    bTaskFinish[wsInd] = false;
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex);
+                }
+
+                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
+                {
+                    switch(wsInd)
+                    {
+                        case 0:
+                            if (iModelRole == 10)
+                            {
+                                cogRDMain.Display.Image = ci8gAcq[iCamIndex];
+                                cogRDMain.Display.Fit(true);
+                            }
+                            else
+                            {
+                                cogRDMainUser.Image = ci8gAcq[iCamIndex];
+                                cogRDMainUser.Fit(true);
+                            }
+                            break;
+                        case 1:
+                            cogRDSub1.Image= ci8gAcq[iCamIndex];
+                            cogRDSub1.Fit(true);
+                            break;
+                    }
+                    
+                    SetCalibBlobImage(ci8gAcq[iCamIndex], wsInd);
+
+                }
+                //存储 
+                if (bRecord)
+                {
+                    //  cup.p_LI.strPrefix[i]
+                    //  for (int i=0;i<maxCameraNum;i++)
+                    {
+                        strImageFileS[wsInd] = cup.p_Paf.strResSavePath + "\\calib_" + wsInd.ToString()+"_"+ strTime + ".jpg";
+                    }
+
+                    //   for (int i = 0; i < maxCameraNum; i++)
+                    {
+                        if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)
+                        {
+                            mImageFile.Open(strImageFileS[wsInd], CogImageFileModeConstants.Write);
+                            mImageFile.Append(ci8gAcq[iCamIndex]);
+                            mImageFile.Close();
+                        }
+                    }
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        /// <summary>
+        /// 采集十字图像（用于标定验证）
+        /// </summary>
+        /// <param name="wsInd">工位索引（0=A面，1=B面）</param>
+        /// <returns>是否成功</returns>
+        public bool PreViewCrossImage(int wsInd, int iCamIndex)
+        {
+            try
+            {
+                Thread.Sleep(20);
+
+                // 采集图像
+                if (cup.p_CD.bListProcess[wsInd])
+                {
+                    bTaskFinish[wsInd] = false;
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex);
+                }
+
+                // 显示图像
+                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)
+                {
+                    DisplayImageByJobIndex(wsInd, ci8gAcq[iCamIndex]);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"PreViewCrossImage 异常: {ex.Message}");
+                return false;
+            }
+        }
+
+
+        public bool PreViewOneCalibImageFromFile(int wsInd)
+        {
+            try
+            {
+                int iCamIndex = cup.p_CD.camInd[wsInd];
+                ci8gAcq = acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex);
+                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq != null && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
+                {
+                    switch(wsInd)
+                    {
+                        case 0:
+                            if (iModelRole == 10)
+                            {
+                                cogRDMain.Display.Image = ci8gAcq[iCamIndex];
+                            }
+                            else
+                            {
+                                cogRDMainUser.Image = ci8gAcq[iCamIndex];
+                            }
+                            break;
+                        case 1:
+                            cogRDSub1.Image = ci8gAcq[iCamIndex];
+                            break;
+                    }
+                    
+                }
+
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+
     }
 }

@@ -604,9 +604,10 @@ namespace VisionControl
             {  
                 if (iJobIndex >= 0)
                 {
+                    
                     //2026年4月12日 修改了采集图像函数
-                    if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess, iJobIndex) ||
-                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFileWithSrcData(iFileIndex, cup.p_CD.bListProcess, iJobIndex)>=0)
+                    if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) ||
+                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFileWithSrcData(iFileIndex, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) >=0)
                     {
                         ci8gAcq = acqFIFO._ci8gAcq;
                         ci8gFX = acqFIFO.ci8gAcqFX;
@@ -700,7 +701,7 @@ namespace VisionControl
                 //采集图像或者读取图像，包括重构光度立体图
 
 
-                if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType) ||
+                if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess,iJobIndex,cup.p_CD.camInd[iJobIndex]) ||
                     !cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAllFromFile(iFileIndex, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType))
                 {
                     //st 2022年12月22日  深度学习推理
@@ -1775,8 +1776,8 @@ namespace VisionControl
 
         public bool CallbackProcOneTime()
         {
-
-            if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
+            return false;  //暂时没采用触发采集模式
+           /* if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
                 return false;
 
             // update control state here to prevent an error from a quick button doubleclick
@@ -1844,7 +1845,7 @@ namespace VisionControl
                 strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 return false;
             }
-            return true;
+            return true;*/
 
         }
 
@@ -2131,9 +2132,10 @@ namespace VisionControl
         {
             try
             {
-                ci8gAcq = acqFIFO.GrabOneFrameCogFromFileSingle(iFileInd, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType);
+                
                 for (int i = 0; i < maxCameraNum; i++)
                 {
+                    ci8gAcq = acqFIFO.GrabOneFrameCogFromFileSingle(iFileInd, cup.p_CD.bListProcess[i], i,cup.p_CD.camInd[i]);
                     if (cup.p_CD.bListProcess[i] && ci8gAcq != null && ci8gAcq[i] != null)  //启用的检测面才做采集
                     {
                         switch (i)
@@ -2337,15 +2339,16 @@ namespace VisionControl
         {
             try
             {
-                int iImageType= acqFIFO.GrabOneFrameCogFromFile(iFileInd, cup.p_CD.bListProcess, wsInd);
+                int iCamInd = cup.p_CD.camInd[wsInd];
+                int iImageType= acqFIFO.GrabOneFrameCogFromFile(iFileInd, cup.p_CD.bListProcess, wsInd, iCamInd);
                 ICogImage ci=null;
                 if (iImageType==0)
                 {
-                    ci = acqFIFO.ci8gAcq[wsInd];
+                    ci = acqFIFO.ci8gAcq[iCamInd];
                 }
                 else if (iImageType == 1)
                 {
-                    ci = acqFIFO.ci24ColorAcq[wsInd];
+                    ci = acqFIFO.ci24ColorAcq[iCamInd];
                 }                 
 
                 switch (wsInd)
@@ -2414,36 +2417,6 @@ namespace VisionControl
                          ReadVPResult();
                          ShowVPResult();
                      }*/
-
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool PreViewOneCalibImageFromFile(int wsInd)
-        {
-            try
-            {
-                ci8gAcq = acqFIFO.GrabOneFrameCogFromFileCalib(wsInd);
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq != null && ci8gAcq[wsInd] != null)  //启用的检测面才做采集
-                {
-                    if (iModelRole == 10)
-                    {
-                        cogRDMain.Display.Image = ci8gAcq[wsInd];
-                        if (bLoadVPRes)
-                        {
-
-                        }
-                    }
-                    else
-                    {
-                        cogRDMainUser.Image = ci8gAcq[wsInd];
-
-                    }
-                }
 
             }
             catch
@@ -2569,95 +2542,7 @@ namespace VisionControl
 
 
         }
-        public bool PreViewCalibImage(int wsInd)
-        {
-            string strTime = DateTime.Now.ToString("yyyyMMddHHmmss");
-            string[] strImageFileS = new string[maxCameraNum];
-            try
-            {
-                Thread.Sleep(20);
-                //采集  
-                if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
-                {
-                    bTaskFinish[wsInd] = false;
-                    ci8gAcq[wsInd] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
-                }
-
-
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[wsInd] != null)  //启用的检测面才做采集
-                {
-                    if (iModelRole == 10)
-                    {
-                        cogRDMain.Display.Image = ci8gAcq[wsInd];
-                        cogRDMain.Display.Fit(true);
-                    }
-                    else
-                    {
-                        cogRDMainUser.Image = ci8gAcq[wsInd];
-                        cogRDMainUser.Fit(true);
-                    }
-                    SetCalibBlobImage(ci8gAcq[wsInd], wsInd);
-
-                }
-                //存储 
-                if (bRecord)
-                {
-                    //  cup.p_LI.strPrefix[i]
-                    //  for (int i=0;i<maxCameraNum;i++)
-                    {
-                        strImageFileS[cup.p_VPPRTP.iXBType] = cup.p_Paf.strResSavePath + "\\calib_" + strTime + ".jpg";
-                    }
-
-                    //   for (int i = 0; i < maxCameraNum; i++)
-                    {
-                        if (cup.p_CD.bListProcess[cup.p_VPPRTP.iXBType] && ci8gAcq[cup.p_VPPRTP.iXBType] != null)
-                        {
-                            mImageFile.Open(strImageFileS[cup.p_VPPRTP.iXBType], CogImageFileModeConstants.Write);
-                            mImageFile.Append(ci8gAcq[wsInd]);
-                            mImageFile.Close();
-                        }
-                    }
-                }
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        /// <summary>
-        /// 采集十字图像（用于标定验证）
-        /// </summary>
-        /// <param name="wsInd">工位索引（0=A面，1=B面）</param>
-        /// <returns>是否成功</returns>
-        public bool PreViewCrossImage(int wsInd)
-        {
-            try
-            {
-                Thread.Sleep(20);
-
-                // 采集图像
-                if (cup.p_CD.bListProcess[wsInd])
-                {
-                    bTaskFinish[wsInd] = false;
-                    ci8gAcq[wsInd] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
-                }
-
-                // 显示图像
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[wsInd] != null)
-                {
-                    DisplayImageByJobIndex(wsInd, ci8gAcq[wsInd]);
-                    return true;
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"PreViewCrossImage 异常: {ex.Message}");
-                return false;
-            }
-        }
+      
 
         /// <summary>
         /// 根据工位索引显示图像到对应的控件

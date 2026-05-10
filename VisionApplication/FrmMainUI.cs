@@ -4547,7 +4547,8 @@ namespace VisionApplication
                     for (int i = 0; i < maxCameraNum; i++)
                     {
                         //判断相机是否在线
-                        if (!acqFIFO.IsCamConn(i))
+                        int iCamIndex = cup.p_CD.camInd[i];
+                        if (!acqFIFO.IsCamConn(iCamIndex))
                             rts.cs.iStatus[i] = 0;
                     }
                 }

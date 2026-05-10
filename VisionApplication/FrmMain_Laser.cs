@@ -2212,7 +2212,7 @@ namespace VisionApplication
             {
                 // 使用当前选中的工位采集图像
                 int currentJobIndex = iJobIndex;  // 当前工位索引
-                bool bRet = vpWin.PreViewCrossImage(currentJobIndex);
+                bool bRet = vpWin.PreViewCrossImage(currentJobIndex,cup.p_CD.camInd[currentJobIndex]);
 
                 if (!bRet)
                 {
@@ -3520,7 +3520,7 @@ namespace VisionApplication
             vpWin.bMainTaskFinished = false;
             if (cup.p_VPPRTP.bAcqFromCam)
             {
-                bRet = vpWin.PreViewCrossImage(iJobIndex);
+                bRet = vpWin.PreViewCrossImage(iJobIndex,cup.p_CD.camInd[iJobIndex]);
                 vpWin.bMainTaskFinished = true;
             }
 
@@ -3551,10 +3551,10 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            if (cup.p_VPPRTP.bAcqFromCam && cbDeviceList.SelectedIndex < 0)
+            if (cup.p_VPPRTP.bAcqFromCam && iJobIndex < 0)
             {
                 operLog.iEventStatus = -1;
-                operLog.strFailReason = "没有选择相机";
+                operLog.strFailReason = "没有选择工位";
                 AddLog();
                 return;
             }
@@ -3566,7 +3566,7 @@ namespace VisionApplication
             vpWin.bMainTaskFinished = false;
             if (cup.p_VPPRTP.bAcqFromCam)
             {
-                bRet = vpWin.PreViewCalibImage(cbDeviceList.SelectedIndex);
+                bRet = vpWin.PreViewCalibImage(iJobIndex,cup.p_CD.camInd[iJobIndex]);
                 if (!bRet) { }
                 vpWin.bMainTaskFinished = true;
             }

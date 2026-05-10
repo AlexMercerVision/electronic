@@ -80,7 +80,6 @@ namespace CommonCls
         #endregion
 
         #region 图像数据字段
-
         /// <summary>将图像数据转为Cog格式用（CogImage8Grey格式）</summary>
         private CogImage8Grey cogImage8Grey = new CogImage8Grey();
         private CogImage8Root cogImage8Root = new CogImage8Root();
@@ -88,18 +87,16 @@ namespace CommonCls
         /// <summary>多相机多方向图像数组 [相机索引, 图像索引] (0-4:多方向图,5:光度图)</summary>
         public HObject[,] hObjFXA = new HObject[maxCameraNum, 6];
         
-        /// <summary>五个通道的灰度图（全光图）</summary>
-        public CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum];
-
-        /// <summary>五个通道的光度图</summary>
+        /// <summary>多通道的灰度图（全光图）</summary>
+        public CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum]; 
+        /// <summary>多通道的光度图</summary>
         public CogImage8Grey[] ci8gAcqFX = new CogImage8Grey[maxCameraNum];
+         /// <summary>彩色图像（Cognex 24位平面彩色）</summary>
+        public CogImage24PlanarColor[] ci24ColorAcq = new CogImage24PlanarColor[maxCameraNum];
         
         /// <summary>原始图像字节数据（用于深度学习等）</summary>
         public byte[][] bImgSrcData = new byte[maxCameraNum][];
-
-        /// <summary>彩色图像（Cognex 24位平面彩色）</summary>
-        public CogImage24PlanarColor[] ci24ColorAcq = new CogImage24PlanarColor[maxCameraNum];
-
+         
         /// <summary>彩色图像（Halcon 三通道 HObject）</summary>
         public HObject[] hColorImg = new HObject[maxCameraNum];
          
@@ -169,11 +166,9 @@ namespace CommonCls
         public ImgAcqFIFO()
         {
         }
-
         #endregion
 
         #region 属性
-
         /// <summary>旋转镜像类型赋值与读取</summary>
         public int _rtType
         {
@@ -268,11 +263,11 @@ namespace CommonCls
 
         /// <summary>打开指定序号相机的自动曝光</summary>
         /// <param name="CamNum">相机数量</param>
-        public void OpenExposureAuto(int iCamInd)
+        public void OpenExposureAuto(int iCamIndex)
         {
            // for (int iCamInd = 0; iCamInd < CamNum; iCamInd++)
             {
-                _cameras[iCamInd].MV_CC_SetEnumValue_NET("ExposureAuto", 2);
+                _cameras[iCamIndex].MV_CC_SetEnumValue_NET("ExposureAuto", 2);
                 Thread.Sleep(2);
             }
         }
@@ -291,10 +286,10 @@ namespace CommonCls
 
         /// <summary>检查指定索引相机是否已连接</summary>
         /// <param name="i">相机索引</param>
-        public bool IsCamConn(int i)
+        public bool IsCamConn(int iCamIndex)
         {
-            if (_cameras != null && _cameras[i] != null)
-                return _cameras[i].MV_CC_IsDeviceConnected_NET();
+            if (_cameras != null && _cameras[iCamIndex] != null)
+                return _cameras[iCamIndex].MV_CC_IsDeviceConnected_NET();
             else
                 return false;
         }
@@ -316,11 +311,10 @@ namespace CommonCls
         #endregion
 
         #region 图像采集（实时）
-
         /// <summary>采集单帧图像转Halcon格式，用于光度立体法（Halcon HObject格式）</summary>
-        public HObject GrabOneFrameHObj(int iCamInd)
+        public HObject GrabOneFrameHObj(int iCamIndex)
         {
-            if (_cameraStatus.iStatus[iCamInd] < 2)
+            if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return null;
            
             HImage image = new HImage();
@@ -328,12 +322,12 @@ namespace CommonCls
             {
                 if (_cameraType == 0)
                 {
-                    if (_cameras == null || _cameras[iCamInd] == null)
+                    if (_cameras == null || _cameras[iCamIndex] == null)
                         return null;
-                    nRet = _cameras[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 1000);
+                    nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 1000);
                     if (nRet == MyCamera.MV_OK)
                     {
-                        image.GenImage1("byte", (int)stFrameInfo.nWidth, (int)stFrameInfo.nHeight, m_BufForDriverS[iCamInd]);
+                        image.GenImage1("byte", (int)stFrameInfo.nWidth, (int)stFrameInfo.nHeight, m_BufForDriverS[iCamIndex]);
                     }
                     else
                     {
@@ -342,7 +336,7 @@ namespace CommonCls
                 }
                 else
                 {
-                    nRet = _cameras[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
+                    nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
                     if (nRet == MyCamera.MV_OK)
                     {
                         image.GenImage1("byte", (int)stFrameInfoWithData.stFrameInfo.nWidth, (int)stFrameInfoWithData.stFrameInfo.nHeight, stFrameInfoWithData.pBufAddr);
@@ -358,21 +352,20 @@ namespace CommonCls
             }
             return image;
         }
-
         /// <summary>采集单帧图像转Cog格式,VP 算法使用
-        public CogImage8Grey GrabOneFrameCog(int iCamInd)
+        public CogImage8Grey GrabOneFrameCog(int iCamIndex)
         {
-            if (_cameraStatus.iStatus[iCamInd] < 2)
+            if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return null;
 
             if (_cameraType == 0)
             {
-                nRet = _cameras[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000);
+                nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
                 if (nRet == MyCamera.MV_OK)
                 {
                      //保留byte[]型数据
-                    IntPtrToByteArray(m_BufForDriverS[iCamInd], (int)nPayloadSizeS[iCamInd], ref bImgSrcData[iCamInd]);                  
-                    cogImage8Root.Initialize((Int32)stFrameInfo.nWidth, (Int32)stFrameInfo.nHeight, m_BufForDriverS[iCamInd], (Int32)stFrameInfo.nWidth, null);
+                    IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);                  
+                    cogImage8Root.Initialize((Int32)stFrameInfo.nWidth, (Int32)stFrameInfo.nHeight, m_BufForDriverS[iCamIndex], (Int32)stFrameInfo.nWidth, null);
                     cogImage8Grey.SetRoot(cogImage8Root);
                     
                 }
@@ -383,7 +376,7 @@ namespace CommonCls
             }
             else
             {
-                nRet = _cameras[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
+                nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
                 if (nRet == MyCamera.MV_OK)
                 {
                     // 从 frameInfoForOther 中获取图像宽高和像素数据指针
@@ -391,7 +384,7 @@ namespace CommonCls
                     int height = (int)stFrameInfoWithData.stFrameInfo.nHeight;
                     IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
                     //保留byte[]型数据
-                    IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamInd], ref bImgSrcData[iCamInd]);
+                    IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
 
                     // 初始化 CogImage8Root
                     cogImage8Root.Initialize(width, height, imagePtr, width, null);
@@ -404,25 +397,23 @@ namespace CommonCls
                     return null;
                 } 
             }
-            ci8gAcq[iCamInd] = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey);
+            ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey);
            // ci8gAcq[iCamInd] = cogImage8Grey.Copy();
-            return ci8gAcq[iCamInd];
+            return ci8gAcq[iCamIndex];
         }
-
-        /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用
-      
-        public CogImage24PlanarColor GrabOneFrameCogColor(int iCamInd)
+        /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用     
+        public CogImage24PlanarColor GrabOneFrameCogColor(int iCamIndex)
         {
-            if (_cameraStatus.iStatus[iCamInd] < 2)
+            if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return null;
             if (_cameraType == 0)
             {
-                nRet = _cameras[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000);
+                nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
                 if (nRet == MyCamera.MV_OK)
                 {
                     //保留byte[]型数据
-                    IntPtrToByteArray(m_BufForDriverS[iCamInd], (int)nPayloadSizeS[iCamInd], ref bImgSrcData[iCamInd]);
-                    ci24ColorAcq[iCamInd] = new CogImage24PlanarColor(IntPtrToBitmap(m_BufForDriverS[iCamInd], stFrameInfo.nWidth, stFrameInfo.nHeight));
+                    IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
+                    ci24ColorAcq[iCamIndex] = new CogImage24PlanarColor(IntPtrToBitmap(m_BufForDriverS[iCamIndex], stFrameInfo.nWidth, stFrameInfo.nHeight));
                     //  nRet = _cameras[iCamInd].MV_CC_FreeImageBuffer_NET(ref stFrameInfoWithData);
                    
                 }
@@ -433,7 +424,7 @@ namespace CommonCls
             }
             else
             {
-                nRet = _cameras[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
+                nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
                 if (nRet == MyCamera.MV_OK)
                 {
                     MyCamera.MvGvspPixelType enType = MyCamera.MvGvspPixelType.PixelType_Gvsp_Undefined;
@@ -458,38 +449,39 @@ namespace CommonCls
                     IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
 
                     //保留byte[]型数据
-                    IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamInd], ref bImgSrcData[iCamInd]);
+                    IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
                      
-                    ci24ColorAcq[iCamInd] = new CogImage24PlanarColor(IntPtrToBitmap(stFrameInfoWithData.pBufAddr, width, height));
-                    nRet = _cameras[iCamInd].MV_CC_FreeImageBuffer_NET(ref stFrameInfoWithData);                     
+                    ci24ColorAcq[iCamIndex] = new CogImage24PlanarColor(IntPtrToBitmap(stFrameInfoWithData.pBufAddr, width, height));
+                    nRet = _cameras[iCamIndex].MV_CC_FreeImageBuffer_NET(ref stFrameInfoWithData);                     
                 }
                 else
                 {
                     return null;
                 }
             }
-            ci24ColorAcq[iCamInd] = (CogImage24PlanarColor)CogFlipRotateIm(ci24ColorAcq[iCamInd]);
-            return ci24ColorAcq[iCamInd];
+            ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)CogFlipRotateIm(ci24ColorAcq[iCamIndex]);
+            return ci24ColorAcq[iCamIndex];
 
         }
-
         //采集一帧Cog格式图像
-        public bool GrabOneFrameCogFormat(bool bRecord, bool[] bListProcess, int wsInd)
+        public bool GrabOneFrameCogFormat(bool bRecord, bool bListProcess,int wsInd, int iCamIndex)
         {
-            if (_cameraStatus.iStatus[wsInd] < 2)
+            //根据工位获取相机编号
+         //   int iCamIndex = cup.p_CD.camInd[wsInd];
+            if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return false;
-            if(!bListProcess[wsInd])
+            if(!bListProcess)
                 return false;
             try
             {
-                if (cup.p_Cam[wsInd].iMonoType == 0)
-                    GrabOneFrameCog(wsInd);         //实时运行时采集一帧黑白Cog格式图像
+                if (cup.p_Cam[iCamIndex].iMonoType == 0)
+                    GrabOneFrameCog(iCamIndex);         //实时运行时采集一帧黑白Cog格式图像
                 else
-                    GrabOneFrameCogColor(wsInd);    //实时运行时采集一帧彩色Cog格式图像
+                    GrabOneFrameCogColor(iCamIndex);    //实时运行时采集一帧彩色Cog格式图像
 
                 if (bRecord)                        //判断保存运行时采集图像条件
                 {
-                    SaveCogImage(wsInd);            //保存运行时采集图像，考虑是否用线程                  
+                    SaveCogImage(wsInd,iCamIndex);            //保存图像按照工位编号保存                  
                 }
                 return true;
             }
@@ -501,16 +493,16 @@ namespace CommonCls
             
         }
         /// <summary>采集图像到byte数组</summary>
-        public bool GrabOneFrameByte(int iCamInd)
+        public bool GrabOneFrameByte(int iCamIndex)
         {
             try
             {
                 if (_cameraType == 0)
                 {
-                    nRet = _cameras[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000);
+                    nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
                     if (nRet == MyCamera.MV_OK)
                     {
-                        IntPtrToByteArray(m_BufForDriverS[iCamInd], (int)nPayloadSizeS[iCamInd], ref bImgSrcData[iCamInd]);
+                        IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
                     }
                     else
                     {
@@ -519,10 +511,10 @@ namespace CommonCls
                 }
                 else
                 {
-                    nRet = _cameras[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
+                    nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
                     if (nRet == MyCamera.MV_OK)
                     {
-                        IntPtrToByteArray(stFrameInfoWithData.pBufAddr, (int)nPayloadSizeS[iCamInd], ref bImgSrcData[iCamInd]);
+                        IntPtrToByteArray(stFrameInfoWithData.pBufAddr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
                     }
                     else
                     {
@@ -545,22 +537,21 @@ namespace CommonCls
             // 创建Bitmap，指定PixelFormat为Format24bppRgb
             return new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, ptr);
         }
-
         /// <summary>批量采集所有相机图像（CogImage8Grey数组）</summary>
         public CogImage8Grey[] GrabOneFrameCog()
         {
-            for (int iCamInd = 0; iCamInd < maxCameraNum; iCamInd++)
+            for (int iCamIndex = 0; iCamIndex < maxCameraNum; iCamIndex++)
             {
-                if (_cameraStatus.iStatus[iCamInd] < 2)
+                if (_cameraStatus.iStatus[iCamIndex] < 2)
                    continue;
                 CogImage8Grey cogImage8Grey = new CogImage8Grey();
                 if (_cameraType == 0)
                 {
-                    nRet = _cameras[iCamInd].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamInd], nPayloadSizeS[iCamInd], ref stFrameInfo, 10000);
+                    nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
                     if (nRet == MyCamera.MV_OK)
                     {
                         CogImage8Root cogImage8Root = new CogImage8Root();
-                        cogImage8Root.Initialize((Int32)stFrameInfo.nWidth, (Int32)stFrameInfo.nHeight, m_BufForDriverS[iCamInd], (Int32)stFrameInfo.nWidth, null);
+                        cogImage8Root.Initialize((Int32)stFrameInfo.nWidth, (Int32)stFrameInfo.nHeight, m_BufForDriverS[iCamIndex], (Int32)stFrameInfo.nWidth, null);
                         cogImage8Grey.SetRoot(cogImage8Root);
                     }
                     else
@@ -570,7 +561,7 @@ namespace CommonCls
                 }
                 else
                 {
-                    nRet = _cameras[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
+                    nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
                     if (nRet == MyCamera.MV_OK)
                     {
                         // 从 frameInfoForOther 中获取图像宽高和像素数据指针
@@ -590,55 +581,136 @@ namespace CommonCls
                 }
                 // 应用旋转/镜像（如果需要）
                 cogImage8Grey = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey);
-                ci8gAcq[iCamInd] = cogImage8Grey.Copy();
+                ci8gAcq[iCamIndex] = cogImage8Grey.Copy();
             }
             return ci8gAcq;
         }
-
         #endregion
 
-        #region 图像采集（从文件）
 
-        /// <summary>从文件读取一组图像（所有相机）</summary>
-        public CogImage8Grey[] GrabOneFrameCogFromFile(int iFileInd, bool[] bListProcess)
+        #region 图像采集（从文件）
+        /// <summary>从文件读取一组灰度图像（所有相机）</summary>
+        public void GrabOneFrameCogFromFile(int iFileInd, bool[] bListProcess)
         {
             int tWait = 5;
             int ind = iFileInd * 6;
-            HObject objTmp;
+         //   HObject objTmp;
             try
             {
-                for (int i = 0; i < maxCameraNum; i++)
+                ICogImage ci;
+                int iCamIndex;
+                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
                 {
-                    if (i == 0)
+                    if (wsInd == 0)
                     {
                         ind = iFileInd * 6;
-                        int iStart = (Path.GetFileName(strFiles[i][ind])).IndexOf(cup.p_LI.strPrefix[i]) + 5;
-                        int iEnd = (Path.GetFileName(strFiles[i][ind])).IndexOf("_00");
+                        int iStart = (Path.GetFileName(strFiles[wsInd][ind])).IndexOf(cup.p_LI.strPrefix[wsInd]) + 5;
+                        int iEnd = (Path.GetFileName(strFiles[wsInd][ind])).IndexOf("_00");
                         if (iStart == 0)
                         {
-                            iStart = cup.p_LI.strPrefix[i].Length;
+                            iStart = cup.p_LI.strPrefix[wsInd].Length;
                         }
-                        strTime = (Path.GetFileName(strFiles[i][ind])).Substring(iStart, iEnd - iStart);
+                        strTime = (Path.GetFileName(strFiles[wsInd][ind])).Substring(iStart, iEnd - iStart);
                     }
                     else
                         ind = iFileInd * cmAcqNum;
-                    if (bListProcess[i])
+                    if (bListProcess[wsInd])
                     {
-                        HOperatorSet.ReadImage(out objTmp, strFiles[i][ind]);
-                        ci8gAcq[i] = HObj2CogImage(objTmp);
+                        ci = ReadCogImage(strFiles[wsInd][ind]);  //文件按照工位编号读取
+                        iCamIndex = cup.p_CD.camInd[wsInd];
+                        if (ci is CogImage24PlanarColor)
+                        {
+                            ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)ci;
+                            cup.p_Cam[iCamIndex].iMonoType = 1;
+
+                            //暂时不需要byte格式数据
+                            /*int width = ci24ColorAcq[iCamIndex].Width;
+                            int height = ci24ColorAcq[iCamIndex].Height;
+                            if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height*3)
+                                bImgSrcData[iCamIndex] = new byte[width * height * 3];
+                            bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);*/ 
+                        }
+                        else
+                        {
+                            ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
+                            cup.p_Cam[iCamIndex].iMonoType = 0; 
+                            /*int width = ci8gAcq[wsInd].Width;
+                           int height = ci8gAcq[wsInd].Height;
+                          if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
+                               bImgSrcData[wsInd] = new byte[width * height * 3];*/
+
+                            //   bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
+                             
+                        }
+ 
                         Thread.Sleep(tWait);
                     }
                 }
             }
             catch
             {
-                return null;
+                return  ;
             }
-            return ci8gAcq;
+            return  ;
         }
+        public int GrabOneFrameCogFromFileWithSrcData(int iFileInd, bool bListProcess, int wsInd, int iCamIndex)
+        {
+            int tWait = 5;
+            HObject objTmp;
+            try
+            {
+                if (bListProcess)
+                {
+                    ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd]);  //文件按照工位编号读取
 
-        /// <summary>从文件读取单帧图像（指定工位）</summary>
-        public int GrabOneFrameCogFromFile(int iFileInd, bool[] bListProcess, int wsInd)
+                    if (ci is CogImage24PlanarColor)
+                    {
+                        ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)ci;
+                        cup.p_Cam[iCamIndex].iMonoType = 1;
+
+                        //暂时不需要byte格式数据
+                        /*int width = ci24ColorAcq[iCamIndex].Width;
+                        int height = ci24ColorAcq[iCamIndex].Height;
+                        if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height*3)
+                            bImgSrcData[iCamIndex] = new byte[width * height * 3];
+                        
+                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);*/
+
+                        return 1;
+                    }
+                    else
+                    {
+                        ci8gAcq[wsInd] = (CogImage8Grey)ci;
+                        cup.p_Cam[wsInd].iMonoType = 0;
+
+
+                        /*int width = ci8gAcq[wsInd].Width;
+                       int height = ci8gAcq[wsInd].Height;
+                      if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
+                           bImgSrcData[wsInd] = new byte[width * height * 3];*/
+
+                        //   bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
+
+                        return 0;
+                    }
+                    /*HOperatorSet.ReadImage(out objTmp, strFiles[wsInd][iFileInd]);
+                   ci8gAcq[wsInd] = HObj2CogImage(objTmp);
+                   Thread.Sleep(tWait);*/
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+            catch
+            {
+                return -1;
+            }
+
+        }
+        
+        /// <summary>从文件读取单帧图像（指定工位）,并判断文件色彩类型</summary>
+        public int GrabOneFrameCogFromFile(int iFileInd, bool[] bListProcess, int wsInd, int iCamIndex)
         {
             int tWait = 5;
             HObject objTmp;
@@ -646,18 +718,18 @@ namespace CommonCls
             {
                 if (bListProcess[wsInd])
                 {
-                   ICogImage ci= ReadCogImage(strFiles[wsInd][iFileInd]);
+                   ICogImage ci= ReadCogImage(strFiles[wsInd][iFileInd]);  //文件存储是根据工位编号存储
                     if (ci is CogImage24PlanarColor)
                     {
-                        ci24ColorAcq[wsInd]= (CogImage24PlanarColor)ci;
+                        ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)ci;
 
-                        cup.p_Cam[wsInd].iMonoType = 1;
+                        cup.p_Cam[iCamIndex].iMonoType = 1;
                         return 1;
                     }
                     else
                     {
-                        ci8gAcq[wsInd] = (CogImage8Grey)ci;
-                        cup.p_Cam[wsInd].iMonoType = 0;
+                        ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
+                        cup.p_Cam[iCamIndex].iMonoType = 0;
                         return 0;
                     }
                      /*HOperatorSet.ReadImage(out objTmp, strFiles[wsInd][iFileInd]);
@@ -684,75 +756,17 @@ namespace CommonCls
                 return ms.ToArray();
             }
         }
-        public int GrabOneFrameCogFromFileWithSrcData(int iFileInd, bool[] bListProcess, int wsInd)
+       
+        public CogImage8Grey[] GrabOneFrameCogFromFileSingle(int iFileInd, bool bListProcess, int wsInd,int iCamIndex)
         {
             int tWait = 5;
             HObject objTmp;
             try
             {
-                if (bListProcess[wsInd])
-                {
-                    ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd]);
-                    if (ci is CogImage24PlanarColor)
-                    {
-                        ci24ColorAcq[wsInd] = (CogImage24PlanarColor)ci;
-                        int width = ci24ColorAcq[wsInd].Width;
-                        int height = ci24ColorAcq[wsInd].Height;
-                        if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height*3)
-                            bImgSrcData[wsInd] = new byte[width * height * 3];
-                        cup.p_Cam[wsInd].iMonoType = 1;
-                   //     bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);
-
-                        return 1;
-                    }
-                    else
-                    {
-                        /* ci24ColorAcq[wsInd] = (CogImage24PlanarColor)ci;
-                         int width = ci24ColorAcq[wsInd].Width;
-                         int height = ci24ColorAcq[wsInd].Height;
-                         if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
-                             bImgSrcData[wsInd] = new byte[width * height * 3];
-                         cup.p_Cam[wsInd].iMonoType = 1;
-                         bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);
-
-                         return 1;*/
-
-                        ci8gAcq[wsInd] = (CogImage8Grey)ci;
-
-                        int width = ci8gAcq[wsInd].Width;
-                        int height = ci8gAcq[wsInd].Height;
-                        /*if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
-                            bImgSrcData[wsInd] = new byte[width * height * 3];*/
-                        cup.p_Cam[wsInd].iMonoType =0;
-                     //   bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
-                         
-                        return 0;
-                    }
-                    /*HOperatorSet.ReadImage(out objTmp, strFiles[wsInd][iFileInd]);
-                   ci8gAcq[wsInd] = HObj2CogImage(objTmp);
-                   Thread.Sleep(tWait);*/
-                }
-                else
-                {
-                    return -1;
-                }
-            }
-            catch
-            {
-                return -1;
-            }
-
-        }
-        public CogImage8Grey[] GrabOneFrameCogFromFileSingle(int iFileInd, bool[] bListProcess, int wsInd)
-        {
-            int tWait = 5;
-            HObject objTmp;
-            try
-            {
-                if (bListProcess[wsInd])
+                if (bListProcess)
                 {
                     HOperatorSet.ReadImage(out objTmp, strFiles[wsInd][iFileInd]);
-                    ci8gAcq[wsInd] = HObj2CogImage(objTmp);
+                    ci8gAcq[iCamIndex] = HObj2CogImage(objTmp);
                     Thread.Sleep(tWait);
                 }
             }
@@ -763,16 +777,20 @@ namespace CommonCls
             return ci8gAcq;
         }
 
-        /// <summary>从标定文件读取图像</summary>
-        public CogImage8Grey[] GrabOneFrameCogFromFileCalib(int wsInd)
+        /// <summary>从标定文件读取图像，索引混乱要修改 2026年5月10日</summary> 
+        public CogImage8Grey[] GrabOneFrameCogFromFileCalib(int wsInd,int iCamIndex)
         {
             int tWait = 5;
             HObject objTmp;
             try
             {
-                HOperatorSet.ReadImage(out objTmp, cup.p_Paf.strExportPath);
-                ci8gAcq[wsInd] = HObj2CogImage(objTmp);
-                Thread.Sleep(tWait);
+
+                ICogImage ci = ReadCogImage(cup.p_Paf.strExportPath);  //文件存储是根据工位编号存储 
+                {
+                    ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
+                    cup.p_Cam[iCamIndex].iMonoType = 0;
+                    
+                } 
             }
             catch
             {
@@ -1125,17 +1143,18 @@ namespace CommonCls
         }
 
         /// <summary>光度立体法（单工位）</summary>
-        public bool FXSurfaceAll(bool bRecord, bool[] bListProcess, int wsInd)
+        public bool FXSurfaceAll(bool bRecord, bool[] bListProcess, int wsInd,int iCamIndex)
         {
             int tWait = 5;
             try
             {
+               // int iCamIndex = cup.p_CD.camInd[wsInd];
                 if (bListProcess[wsInd])
                 {
-                    hObjFXA[wsInd, 0] = GrabOneFrameHObj(cup.p_CD.camInd[wsInd]);
+                    hObjFXA[iCamIndex, 0] = GrabOneFrameHObj(iCamIndex);
                     {
-                        ci8gAcq[wsInd] = HObj2CogImage(hObjFXA[wsInd, 0]);
-                        ci8gAcq[wsInd] = (CogImage8Grey)CogFlipRotateIm(ci8gAcq[wsInd]);
+                        ci8gAcq[iCamIndex] = HObj2CogImage(hObjFXA[iCamIndex, 0]);
+                        ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(ci8gAcq[iCamIndex]);
                     }
                     Thread.Sleep(tWait);
                     if (bRecord)
@@ -1554,7 +1573,7 @@ namespace CommonCls
         #endregion
 
         #region 文件保存与删除
-        private void SaveCogImage(int wsInd)
+        private void SaveCogImage(int wsInd,int iCamIndex)
         {
             //if (bRecord)
             {
@@ -1568,10 +1587,10 @@ namespace CommonCls
                     if (cup.p_CD.bListProcess[wsInd])
                     {
                         mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
-                        if (cup.p_Cam[wsInd].iMonoType == 0 && ci8gAcq[wsInd] != null)
-                            mImageFile.Append(ci8gAcq[wsInd]);
-                        else if (ci24ColorAcq[wsInd] != null)
-                            mImageFile.Append(ci24ColorAcq[wsInd]); 
+                        if (cup.p_Cam[wsInd].iMonoType == 0 && ci8gAcq[iCamIndex] != null)
+                            mImageFile.Append(ci8gAcq[iCamIndex]);
+                        else if (ci24ColorAcq[iCamIndex] != null)
+                            mImageFile.Append(ci24ColorAcq[iCamIndex]); 
                         mImageFile.Close();
                     }
                 }
@@ -1760,10 +1779,11 @@ namespace CommonCls
             string strImageFile;
             for (int i = 0; i < maxCameraNum; i++)
             {
+                int iCamIndex = cup.p_CD.camInd[i];
                 strImageFile = strConSavePathS[i] + "\\" + cup.p_LI.strPrefix[i] + strTime + "_00" + ".jpg";
-                if (cup.p_CD.bListProcess[i] && bImgSrcData[i] != null)
+                if (cup.p_CD.bListProcess[i] && bImgSrcData[iCamIndex] != null)
                 {
-                    SaveByteArrayAsJpg_OpenCV(bImgSrcData[i], stFrameInfo.nWidth, stFrameInfo.nHeight, 1, strImageFile);
+                    SaveByteArrayAsJpg_OpenCV(bImgSrcData[iCamIndex], stFrameInfo.nWidth, stFrameInfo.nHeight, 1, strImageFile);
                 }
             }
         }
