@@ -67,7 +67,7 @@ namespace CommonCls
 
         /// <summary>每个相机的载荷大小（图像数据字节数）</summary>
         private UInt32[] nPayloadSizeS = new UInt32[maxCameraNum];
-
+        private UInt32[] m_nBufSizeForDriver = new UInt32[maxCameraNum];
         /// <summary>每个相机的驱动缓冲区指针</summary>
         public IntPtr[] m_BufForDriverS = new IntPtr[maxCameraNum];
 
@@ -79,6 +79,66 @@ namespace CommonCls
 
         #endregion
 
+
+        #region
+        // 新增公共方法：根据相机参数分配缓冲区
+        public bool AllocateBuffers(CameraParam[] camParams, int[] camIndices, bool[] bListProcess)
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                if (!bListProcess[i]) continue;
+                int idx = camIndices[i];
+                uint needed = (uint)(camParams[idx].iWidth * camParams[idx].iHeight * (camParams[idx].iMonoType == 0 ? 1 : 3));
+                if (needed > m_nBufSizeForDriver[idx])
+                {
+                    FreeBuffer(idx);                     // 释放旧内存
+                    m_BufForDriverS[idx] = Marshal.AllocHGlobal((int)needed);
+                    if (m_BufForDriverS[idx] == IntPtr.Zero)
+                        return false;
+                    m_nBufSizeForDriver[idx] = needed;
+                }
+                nPayloadSizeS[idx] = needed;
+            }
+            return true;
+        }
+
+        private void FreeBuffer(int camIndex)
+        {
+            if (m_BufForDriverS[camIndex] != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(m_BufForDriverS[camIndex]);
+                m_BufForDriverS[camIndex] = IntPtr.Zero;
+                m_nBufSizeForDriver[camIndex] = 0;
+            }
+        }
+
+        public void FreeAllBuffers()
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+                FreeBuffer(i);
+        }
+
+        // 提供只读访问（供采集函数内部使用）
+        public IntPtr GetBufferPtr(int camIndex) => m_BufForDriverS[camIndex];
+        public UInt32 GetPayloadSize(int camIndex) => nPayloadSizeS[camIndex];
+        // 在相机参数变化时重新分配单路缓冲区
+        public bool ReallocateBuffer(int camIndex, uint newPayloadSize)
+        {
+            if (newPayloadSize > m_nBufSizeForDriver[camIndex])
+            {
+                FreeBuffer(camIndex);
+                m_BufForDriverS[camIndex] = Marshal.AllocHGlobal((int)newPayloadSize);
+                if (m_BufForDriverS[camIndex] == IntPtr.Zero)
+                    return false;
+                m_nBufSizeForDriver[camIndex] = newPayloadSize;
+            }
+            nPayloadSizeS[camIndex] = newPayloadSize;
+            return true;
+        }
+
+        #endregion
+
+
         #region 图像数据字段
         /// <summary>将图像数据转为Cog格式用（CogImage8Grey格式）</summary>
         private CogImage8Grey cogImage8Grey = new CogImage8Grey();
@@ -86,7 +146,9 @@ namespace CommonCls
         
         /// <summary>多相机多方向图像数组 [相机索引, 图像索引] (0-4:多方向图,5:光度图)</summary>
         public HObject[,] hObjFXA = new HObject[maxCameraNum, 6];
-        
+         /// <summary>彩色图像（Halcon 三通道 HObject）</summary>
+        public HObject[] hColorImg = new HObject[maxCameraNum];
+
         /// <summary>多通道的灰度图（全光图）</summary>
         public CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum]; 
         /// <summary>多通道的光度图</summary>
@@ -97,8 +159,7 @@ namespace CommonCls
         /// <summary>原始图像字节数据（用于深度学习等）</summary>
         public byte[][] bImgSrcData = new byte[maxCameraNum][];
          
-        /// <summary>彩色图像（Halcon 三通道 HObject）</summary>
-        public HObject[] hColorImg = new HObject[maxCameraNum];
+       
          
         #endregion
 
@@ -150,7 +211,7 @@ namespace CommonCls
         public string strTime;
 
         /// <summary>从文件读取的图像路径数组</summary>
-        public string[][] strFiles = new string[maxCameraNum][];
+        public string[][] strFiles = new string[maxCameraNum][];   //按工位编号
 
         /// <summary>错误信息</summary>
         public string strErrInfo = "";
@@ -295,18 +356,18 @@ namespace CommonCls
         }
 
         /// <summary>设置单个相机的驱动缓冲区和载荷大小</summary>
-        public void SetBuff(IntPtr _Buff, UInt32 _PayloadSize, int iCamIndex)
+      /*  public void   SetBuff(IntPtr _Buff, UInt32 _PayloadSize, int iCamIndex)
         {
             m_BufForDriverS[iCamIndex] = _Buff;
             nPayloadSizeS[iCamIndex] = _PayloadSize;
-        }
+        }*/
 
         /// <summary>批量设置所有相机的驱动缓冲区和载荷大小</summary>
-        public void SetBuff(IntPtr[] _Buff, UInt32[] _PayloadSize)
+      /*  public void SetBuff(IntPtr[] _Buff, UInt32[] _PayloadSize)
         {
             m_BufForDriverS = _Buff;
             nPayloadSizeS = _PayloadSize;
-        }
+        }*/
 
         #endregion
 
