@@ -1107,7 +1107,7 @@ namespace VisionApplication
             cbDeviceList.Items.Clear();
             for (int i = 0; i < maxCameraNum; i++)
             {
-                if (cup.p_CD.bListProcess[i] && cup.p_CD.camInd[i] < cameraNum)
+                if (cup.p_CD.bListProcess[i] && cup.p_CD.camInd[i] < cameraNum && items.Count>i)
                 {
                     cbDeviceList.Items.Add(items[i]);  //添加相机列表
                     if (cup.p_Cam[cup.p_CD.camInd[i]].strCamName != items[i])  //更新相机名称
@@ -6648,7 +6648,180 @@ namespace VisionApplication
             StartService("Cognex Security Service");
         }
 
-        
+
+
+
+        /// <summary>
+        /// 设置 ROI 为全尺寸（相机最大分辨率）
+        /// </summary>
+        private void btSetROIFull_Click(object sender, EventArgs e)
+        {
+            int icamInd = cbDeviceList.SelectedIndex;
+            if (icamInd < 0)
+            {
+                MessageBox.Show("请先选择相机");
+                return;
+            }
+            if (camera2 == null || camera2[icamInd] == null)
+            {
+                MessageBox.Show("相机未初始化");
+                return;
+            }
+
+            // 获取相机的最大分辨率（Width/Height 的最大值）
+            MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
+            MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
+            int retW = camera2[icamInd].MV_CC_GetIntValue_NET("Width", ref stW);
+            int retH = camera2[icamInd].MV_CC_GetIntValue_NET("Height", ref stH);
+            if (retW != MyCamera.MV_OK || retH != MyCamera.MV_OK)
+            {
+                MessageBox.Show("无法获取相机的最大分辨率，请检查相机连接");
+                return;
+            }
+            uint maxWidth = stW.nMax;
+            uint maxHeight = stH.nMax;
+
+            // 设置 ROI 参数：偏移为0，宽高为最大值
+            cup.p_Cam[icamInd].iROI[0] = 0;
+            cup.p_Cam[icamInd].iROI[1] = 0;
+            cup.p_Cam[icamInd].iROI[2] = maxWidth;
+            cup.p_Cam[icamInd].iROI[3] = maxHeight;
+
+            // 将 ROI 设置应用到相机硬件
+            bool bSucc = hIKVisionCamera.SetROIParam(cup.p_Cam[icamInd], camera2[icamInd]);
+            if (bSucc)
+            {
+                // 更新 UI 中的数值显示
+                numROIOffSetX.Value = 0;
+                numROIOffSetY.Value = 0;
+                numROIWidth.Value = maxWidth;
+                numROIHeight.Value = maxHeight;
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "设置ROI全尺寸";
+                operLog.strFailReason = $"宽度={maxWidth}, 高度={maxHeight}";
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "设置ROI全尺寸";
+                operLog.strFailReason = "调用相机接口失败";
+            }
+            AddLog();
+        }
+
+
+
+        /// <summary>
+        /// Gamma 使能复选框的状态变化事件
+        /// </summary>
+        private void chkGamma_Enable_CheckedChanged(object sender, EventArgs e)
+        {
+            if (icamSelectInd < 0 || camera2 == null || camera2[icamSelectInd] == null)
+                return;
+
+            bool bEnable = chkGamma_Enable.Checked;   // true=开启 Gamma，false=关闭
+
+            // 部分相机需要在停止采集状态下修改 GammaEnable
+            bool wasGrabbing = false;
+          //  if (hIKVisionCamera.IsGrabbing(icamSelectInd))  // 假设有该方法，若没有则直接调用 StopGrabbing
+            {
+                wasGrabbing = true;
+                hIKVisionCamera.StopGrabbing(icamSelectInd);
+            }
+
+            bool bSuccess = hIKVisionCamera.SetGammaEnable(bEnable, camera2[icamSelectInd]);
+
+            if (wasGrabbing)
+                hIKVisionCamera.StartGrabbing(icamSelectInd);
+
+            if (bSuccess)
+            {
+                // 更新 UI 状态：当 Gamma 禁用时，用户模式复选框和 Gamma 值调节控件应不可用
+                chkGamma_UserMode.Enabled = bEnable;
+                tbGamma.Enabled = (bEnable && chkGamma_UserMode.Checked);
+                nudGamma.Enabled = (bEnable && chkGamma_UserMode.Checked);
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = $"Gamma {(bEnable ? "开启" : "关闭")}";
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "设置 Gamma 使能";
+                operLog.strFailReason = "调用相机接口失败";
+            }
+            AddLog();
+        }
+
+        /// <summary>
+        /// Gamma 用户模式复选框的状态变化事件
+        /// 勾选代表使用用户自定义 Gamma 值（User 模式），未勾选代表使用 sRGB 标准曲线
+        /// </summary>
+        private void chkGamma_UserMode_CheckedChanged(object sender, EventArgs e)
+        {
+            if (icamSelectInd < 0 || camera2 == null || camera2[icamSelectInd] == null)
+                return;
+
+            // 只有 Gamma 使能开启时，才允许切换模式
+            if (!chkGamma_Enable.Checked)
+            {
+                // 若 Gamma 未启用，提示用户先启用 Gamma
+                chkGamma_UserMode.Checked = false;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "切换 Gamma 模式";
+                operLog.strFailReason = "请先启用 Gamma 校正";
+                AddLog();
+                return;
+            }
+
+            bool isUserMode = chkGamma_UserMode.Checked;
+            int mode = isUserMode ? 0 : 1;   // 0=User, 1=sRGB
+
+            // 停止采集（部分相机要求）
+            bool wasGrabbing = false;
+        //    if (hIKVisionCamera.IsGrabbing(icamSelectInd))
+            {
+                wasGrabbing = true;
+                hIKVisionCamera.StopGrabbing(icamSelectInd);
+            }
+
+            bool bSuccess = hIKVisionCamera.SetGammaSelector(mode, camera2[icamSelectInd]);
+
+            if (wasGrabbing)
+                hIKVisionCamera.StartGrabbing(icamSelectInd);
+
+            if (bSuccess)
+            {
+                // 更新 Gamma 值控件的可用性：User 模式下可调，sRGB 模式下不可调
+                tbGamma.Enabled = isUserMode;
+                nudGamma.Enabled = isUserMode;
+
+                // 如果切换到 User 模式，需要将界面上当前的 Gamma 值重新写入相机
+                if (isUserMode)
+                {
+                    // 确保 Gamma 使能仍然为开启（代码前面已经检查）
+                    float gammaVal = (float)cup.p_Cam[icamSelectInd].dGamma;
+                    // 再次写入一次（保证相机值与界面一致）
+                    hIKVisionCamera.SetGamma(ref gammaVal, camera2[icamSelectInd]);
+                    // 更新显示控件
+                    tbGamma.Value = (int)(gammaVal * 10);
+                    nudGamma.Value = (decimal)gammaVal;
+                }
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = $"Gamma 模式切换至 {(isUserMode ? "User (可调)" : "sRGB")}";
+            }
+            else
+            {
+                // 若设置失败，恢复复选框状态
+                chkGamma_UserMode.Checked = !isUserMode;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "切换 Gamma 模式";
+                operLog.strFailReason = "调用相机接口失败";
+            }
+            AddLog();
+        }
 
         private void timerIOOut_Tick(object sender, EventArgs e)
         {

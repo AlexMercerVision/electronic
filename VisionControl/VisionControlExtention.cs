@@ -607,7 +607,7 @@ namespace VisionControl
                     
                     //2026年4月12日 修改了采集图像函数
                     if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) ||
-                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFileWithSrcData(iFileIndex, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) >=0)
+                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFile(iFileIndex, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) >=0)
                     {
                         ci8gAcq = acqFIFO._ci8gAcq;
                         ci8gFX = acqFIFO.ci8gAcqFX;
@@ -2259,8 +2259,8 @@ namespace VisionControl
 
                 //  HObject hIm = new HObject();
                 int wsInd = iJobIndex;
-             //   cogRDMain.Display.cogRecordDisplay.Record = null;
-               
+                //   cogRDMain.Display.cogRecordDisplay.Record = null;
+                int iCamIndex = cup.p_CD.camInd[wsInd];
                 while (hikCanGrab)
                 {
                     try
@@ -2270,11 +2270,11 @@ namespace VisionControl
                         if (cup.p_CD.bListProcess[wsInd])
                         {
                             //黑白
-                            if (cup.p_Cam[wsInd].iMonoType == 0)
+                            if (cup.p_Cam[iCamIndex].iMonoType == 0)
                             {
-                                acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
+                                acqFIFO.GrabOneFrameCog(iCamIndex);
                                 Thread.Sleep(2);
-                                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[wsInd] != null)  //启用的检测面 
+                                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
                                 {
                                     /*  if (iModelRole == 10)
                                       {
@@ -2287,19 +2287,19 @@ namespace VisionControl
                                     switch (wsInd)
                                     {
                                         case 0:
-                                            cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                                            cogRDMainUser.Image = acqFIFO.ci8gAcq[iCamIndex];
                                             break;
                                         case 1:
-                                            cogRDSub1.Image = acqFIFO.ci8gAcq[wsInd];
+                                            cogRDSub1.Image = acqFIFO.ci8gAcq[iCamIndex];
                                             break;
                                     }
                                 }
                             }
                             else  //彩色
                             {
-                                acqFIFO.GrabOneFrameCogColor(cup.p_CD.camInd[wsInd]);
+                                acqFIFO.GrabOneFrameCogColor(iCamIndex);
                                 Thread.Sleep(2);
-                                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[wsInd] != null)  //启用的检测面 
+                                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
                                 {
                                   /*  if (iModelRole == 10)
                                     {
@@ -2312,10 +2312,10 @@ namespace VisionControl
                                     switch (wsInd)
                                     {
                                         case 0:
-                                            cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                            cogRDMainUser.Image = acqFIFO.ci24ColorAcq[iCamIndex];
                                             break;
                                         case 1:
-                                            cogRDSub1.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                            cogRDSub1.Image = acqFIFO.ci24ColorAcq[iCamIndex];
                                             break;
                                     }
                                 }
@@ -2449,16 +2449,17 @@ namespace VisionControl
             string[] strImageFileS = new string[maxCameraNum];
             try
             {
+                int iCamIndex = cup.p_CD.camInd[wsInd];
                 //   GrabThreadProcessHalcon();
                 // 将海康数据类型转为Mat
                 if (cup.p_CD.bListProcess[wsInd])
                 {
                     //黑白
-                    if (cup.p_Cam[wsInd].iMonoType == 0)
+                    if (cup.p_Cam[iCamIndex].iMonoType == 0)
                     {
-                        acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[wsInd]);
+                        acqFIFO.GrabOneFrameCog(iCamIndex);
                         Thread.Sleep(2);
-                        if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[wsInd] != null)  //启用的检测面 
+                        if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
                         {
                             /*if (iModelRole == 10)
                             {
@@ -2471,19 +2472,19 @@ namespace VisionControl
                             switch(wsInd)
                             {
                                 case 0:
-                                    cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
+                                    cogRDMainUser.Image = acqFIFO.ci8gAcq[iCamIndex];
                                     break;
                                 case 1:
-                                    cogRDSub1.Image= acqFIFO.ci8gAcq[wsInd];
+                                    cogRDSub1.Image= acqFIFO.ci8gAcq[iCamIndex];
                                     break;
                             }
                         }
                     }
                     else  //彩色
                     {
-                        acqFIFO.GrabOneFrameCogColor(cup.p_CD.camInd[wsInd]);
+                        acqFIFO.GrabOneFrameCogColor(iCamIndex);
                         Thread.Sleep(2);
-                        if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[wsInd] != null)  //启用的检测面 
+                        if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
                         {
                             /*if (iModelRole == 10)
                             {
@@ -2496,10 +2497,10 @@ namespace VisionControl
                             switch (wsInd)
                             {
                                 case 0:
-                                    cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                    cogRDMainUser.Image = acqFIFO.ci24ColorAcq[iCamIndex];
                                     break;
                                 case 1:
-                                    cogRDSub1.Image = acqFIFO.ci24ColorAcq[wsInd];
+                                    cogRDSub1.Image = acqFIFO.ci24ColorAcq[iCamIndex];
                                     break;
                             }
                         }

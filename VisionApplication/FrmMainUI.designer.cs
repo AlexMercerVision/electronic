@@ -219,6 +219,7 @@ namespace VisionApplication
             this.numROIOffSetX = new System.Windows.Forms.NumericUpDown();
             this.label19 = new System.Windows.Forms.Label();
             this.label20 = new System.Windows.Forms.Label();
+            this.btSetROIFull = new System.Windows.Forms.Button();
             this.btSetROI = new System.Windows.Forms.Button();
             this.btGetROI = new System.Windows.Forms.Button();
             this.label21 = new System.Windows.Forms.Label();
@@ -243,6 +244,8 @@ namespace VisionApplication
             this.tbBirghtness = new System.Windows.Forms.TrackBar();
             this.tbGain = new System.Windows.Forms.TrackBar();
             this.tbExposure = new System.Windows.Forms.TrackBar();
+            this.chkGamma_UserMode = new System.Windows.Forms.CheckBox();
+            this.chkGamma_Enable = new System.Windows.Forms.CheckBox();
             this.chkAutoExposure = new System.Windows.Forms.CheckBox();
             this.cmbResulation = new System.Windows.Forms.ComboBox();
             this.cmbPixelFormat = new System.Windows.Forms.ComboBox();
@@ -2208,6 +2211,7 @@ namespace VisionApplication
             this.groupBox4.Controls.Add(this.numROIOffSetX);
             this.groupBox4.Controls.Add(this.label19);
             this.groupBox4.Controls.Add(this.label20);
+            this.groupBox4.Controls.Add(this.btSetROIFull);
             this.groupBox4.Controls.Add(this.btSetROI);
             this.groupBox4.Controls.Add(this.btGetROI);
             this.groupBox4.Controls.Add(this.label21);
@@ -2319,12 +2323,23 @@ namespace VisionApplication
             this.label20.TabIndex = 9;
             this.label20.Text = "Y起点";
             // 
+            // btSetROIFull
+            // 
+            this.btSetROIFull.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.btSetROIFull.Location = new System.Drawing.Point(179, 86);
+            this.btSetROIFull.Name = "btSetROIFull";
+            this.btSetROIFull.Size = new System.Drawing.Size(65, 25);
+            this.btSetROIFull.TabIndex = 7;
+            this.btSetROIFull.Text = "全尺寸";
+            this.btSetROIFull.UseVisualStyleBackColor = true;
+            this.btSetROIFull.Click += new System.EventHandler(this.btSetROIFull_Click);
+            // 
             // btSetROI
             // 
             this.btSetROI.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btSetROI.Location = new System.Drawing.Point(140, 86);
+            this.btSetROI.Location = new System.Drawing.Point(91, 86);
             this.btSetROI.Name = "btSetROI";
-            this.btSetROI.Size = new System.Drawing.Size(100, 25);
+            this.btSetROI.Size = new System.Drawing.Size(65, 25);
             this.btSetROI.TabIndex = 7;
             this.btSetROI.Text = "设置ROI";
             this.btSetROI.UseVisualStyleBackColor = true;
@@ -2333,9 +2348,9 @@ namespace VisionApplication
             // btGetROI
             // 
             this.btGetROI.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btGetROI.Location = new System.Drawing.Point(15, 86);
+            this.btGetROI.Location = new System.Drawing.Point(7, 86);
             this.btGetROI.Name = "btGetROI";
-            this.btGetROI.Size = new System.Drawing.Size(100, 25);
+            this.btGetROI.Size = new System.Drawing.Size(65, 25);
             this.btGetROI.TabIndex = 7;
             this.btGetROI.Text = "获取ROI";
             this.btGetROI.UseVisualStyleBackColor = true;
@@ -2377,6 +2392,8 @@ namespace VisionApplication
             this.groupBox2.Controls.Add(this.tbBirghtness);
             this.groupBox2.Controls.Add(this.tbGain);
             this.groupBox2.Controls.Add(this.tbExposure);
+            this.groupBox2.Controls.Add(this.chkGamma_UserMode);
+            this.groupBox2.Controls.Add(this.chkGamma_Enable);
             this.groupBox2.Controls.Add(this.chkAutoExposure);
             this.groupBox2.Controls.Add(this.cmbResulation);
             this.groupBox2.Controls.Add(this.cmbPixelFormat);
@@ -2669,6 +2686,30 @@ namespace VisionApplication
             this.tbExposure.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbExposure.Value = 10000;
             this.tbExposure.ValueChanged += new System.EventHandler(this.tbExposure_ValueChanged);
+            // 
+            // chkGamma_UserMode
+            // 
+            this.chkGamma_UserMode.AutoSize = true;
+            this.chkGamma_UserMode.Location = new System.Drawing.Point(292, 112);
+            this.chkGamma_UserMode.Name = "chkGamma_UserMode";
+            this.chkGamma_UserMode.Size = new System.Drawing.Size(54, 18);
+            this.chkGamma_UserMode.TabIndex = 14;
+            this.chkGamma_UserMode.Text = "用户";
+            this.chkGamma_UserMode.UseVisualStyleBackColor = true;
+            this.chkGamma_UserMode.CheckedChanged += new System.EventHandler(this.chkGamma_UserMode_CheckedChanged);
+            this.chkGamma_UserMode.Click += new System.EventHandler(this.chkAutoExposure_Click);
+            // 
+            // chkGamma_Enable
+            // 
+            this.chkGamma_Enable.AutoSize = true;
+            this.chkGamma_Enable.Location = new System.Drawing.Point(292, 91);
+            this.chkGamma_Enable.Name = "chkGamma_Enable";
+            this.chkGamma_Enable.Size = new System.Drawing.Size(54, 18);
+            this.chkGamma_Enable.TabIndex = 14;
+            this.chkGamma_Enable.Text = "使能";
+            this.chkGamma_Enable.UseVisualStyleBackColor = true;
+            this.chkGamma_Enable.CheckedChanged += new System.EventHandler(this.chkGamma_Enable_CheckedChanged);
+            this.chkGamma_Enable.Click += new System.EventHandler(this.chkAutoExposure_Click);
             // 
             // chkAutoExposure
             // 
@@ -5148,5 +5189,8 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_CardInitStatus;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_LaserStatus;
         private System.Windows.Forms.Button btFunParam;
+        private System.Windows.Forms.Button btSetROIFull;
+        private System.Windows.Forms.CheckBox chkGamma_Enable;
+        private System.Windows.Forms.CheckBox chkGamma_UserMode;
     }
 }

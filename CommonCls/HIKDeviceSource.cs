@@ -271,24 +271,84 @@ namespace CommonCls
         /// <param name="type">0: Mono8, 1: RGB8_Packed</param>
         /// <param name="cam">相机对象</param>
         /// <returns>成功返回 true</returns>
+        /// <summary>
+        /// 自适应设置像素格式。不依赖外部传入的 type，而是根据相机能力自动选择彩色/黑白格式。
+        /// </summary>
+        /// <param name="type">传入时忽略，传出时返回实际选择的格式：0=Mono8（黑白），1=彩色（BGR8/RGB8/Bayer等）</param>
+        /// <param name="cam">相机对象</param>
+        /// <returns>是否成功</returns>
+        /// <summary>
+        /// 设置像素格式。如果 type = 0 则强制设为 Mono8；如果 type = 1 则尝试多种彩色格式，成功后保持 type=1，
+        /// 若全部彩色格式都失败则回退到 Mono8 并将 type 改为 0。
+        /// </summary>
+        /// <param name="type">0: 黑白模式，1: 彩色模式（自动适配）</param>
+        /// <param name="cam">相机对象</param>
+        /// <returns>是否设置成功</returns>
         public bool SetPixelFormat(ref int type, MyCamera cam)
         {
-            uint pixelType;
-            switch (type)
+            // 黑白模式：直接设置 Mono8
+            if (type == 0)
             {
-                case 0:
-                    pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;
-                    break;
-                case 1:
-                    pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed;
-                    break;
-                default:
-                    pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;
-                    break;
+                int ret = cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8);
+                if (ret == MyCamera.MV_OK)
+                {
+                    // 确保外部类型为 0
+                    type = 0;
+                    return true;
+                }
+                return false;
             }
-            int ret = cam.MV_CC_SetPixelFormat_NET(pixelType);
-            return ret == MyCamera.MV_OK;
+
+            // 彩色模式：依次尝试常见的彩色格式
+            uint[] colorFormats = {
+        (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed,
+        (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed,
+        (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerRG8,
+        (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGB8,
+        (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGR8,
+        (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerBG8
+    };
+
+            foreach (uint fmt in colorFormats)
+            {
+                int ret = cam.MV_CC_SetPixelFormat_NET(fmt);
+                if (ret == MyCamera.MV_OK)
+                {
+                    // 彩色格式设置成功，保持 type = 1
+                    type = 1;
+                    return true;
+                }
+            }
+
+            // 所有彩色格式都失败，回退到黑白模式
+            if (cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8) == MyCamera.MV_OK)
+            {
+                type = 0;
+                return true;
+            }
+
+            // 彻底失败
+            type = 0;
+            return false;
         }
+        /*  public bool SetPixelFormat(ref int type, MyCamera cam)
+          {
+              uint pixelType;
+              switch (type)
+              {
+                  case 0:
+                      pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;
+                      break;
+                  case 1:
+                      pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed;
+                      break;
+                  default:
+                      pixelType = (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;
+                      break;
+              }
+              int ret = cam.MV_CC_SetPixelFormat_NET(pixelType);
+              return ret == MyCamera.MV_OK;
+          }*/
 
         /// <summary>
         /// 设置分辨率（宽度和高度）。
@@ -345,7 +405,67 @@ namespace CommonCls
             int ret = cam.MV_CC_SetGamma_NET(value);
             return ret == MyCamera.MV_OK;
         }
+        /// <summary>
+        /// 设置 Gamma 使能（开启/关闭）
+        /// </summary>
+        /// <param name="enable">true=开启 Gamma，false=关闭</param>
+        /// <param name="camera">相机对象</param>
+        /// <returns>是否成功</returns>
+        public bool SetGammaEnable(bool enable, MyCamera camera)
+        {
+            if (camera == null) return false;
+            uint uEnable = enable ? 1u : 0u;
+            int ret = camera.MV_CC_SetEnumValue_NET("GammaEnable", uEnable);
+            if (ret != MyCamera.MV_OK)
+            {
+                // 记录错误日志
+                System.Diagnostics.Debug.WriteLine($"设置 GammaEnable 失败，错误码:0x{ret:X}");
+                return false;
+            }
+            return true;
+        }
 
+        /// <summary>
+        /// 设置 Gamma 模式（曲线类型）
+        /// </summary>
+        /// <param name="mode">0=User（用户自定义），1=sRGB（标准 RGB 曲线）</param>
+        /// <param name="camera">相机对象</param>
+        /// <returns>是否成功</returns>
+        public bool SetGammaSelector(int mode, MyCamera camera)
+        {
+            if (camera == null) return false;
+            if (mode != 0 && mode != 1)
+                mode = 0; // 默认 User 模式
+            int ret = camera.MV_CC_SetEnumValue_NET("GammaSelector", (uint)mode);
+            if (ret != MyCamera.MV_OK)
+            {
+                System.Diagnostics.Debug.WriteLine($"设置 GammaSelector 失败，错误码:0x{ret:X}");
+                return false;
+            }
+            return true;
+        }
+
+
+       
+
+        /// <summary>
+        /// 设置 Gamma 数值（仅在 User 模式下有效）
+        /// </summary>
+        /// <param name="gammaValue">Gamma 值，通常范围 0.1~4.0</param>
+        /// <param name="camera">相机对象</param>
+        /// <returns>是否成功</returns>
+       /* public bool SetGamma(ref float gammaValue, MyCamera camera)
+        {
+            if (camera == null) return false;
+            // 注意：某些相机 Gamma 属性是浮点型，请使用 SetFloatValue
+            int ret = camera.MV_CC_SetFloatValue_NET("Gamma", gammaValue);
+            if (ret != MyCamera.MV_OK)
+            {
+                System.Diagnostics.Debug.WriteLine($"设置 Gamma 值失败，错误码:0x{ret:X}");
+                return false;
+            }
+            return true;
+        }*/
         /// <summary>
         /// 设置增益（关闭自动增益）。
         /// </summary>

@@ -327,56 +327,43 @@ namespace VisionApplication
                     return;
                 hIKVisionCamera.StopGrabbing(icamSelectInd);
 
-                cup.p_Cam[icamSelectInd].iMonoType = cmbPixelFormat.SelectedIndex;
-                if (cmbPixelFormat.SelectedIndex < 0)
-                    cmbPixelFormat.SelectedIndex = 0;
-                
-                // 设置像素格式到相机
-                bool bSucc = hIKVisionCamera.SetPixelFormat(ref cup.p_Cam[icamSelectInd].iMonoType, camera2[icamSelectInd]);
-
-                //修改图像色彩格式，重新分配空间
-                if (bSucc)  
+                int desiredType = cmbPixelFormat.SelectedIndex;   // 0 或 1
+                bool bSucc = hIKVisionCamera.SetPixelFormat(ref desiredType, camera2[icamSelectInd]);
+                if (!bSucc)
                 {
-                    operLog.iEventStatus = 0;
-                    operLog.strFailReason = "";
-                    string strRes = cmbResulation.Text;
-                    int ind = strRes.IndexOf('*');
-                    if(ind>0)
-                    {
-                        cup.p_Cam[icamSelectInd].iWidth = uint.Parse(strRes.Substring(0, ind));
-                        cup.p_Cam[icamSelectInd].iHeight = uint.Parse(strRes.Substring(ind + 1, strRes.Length - ind - 1));
-                    }
-                    else
-                    {
-
-                    }
-                    // 计算新的载荷大小（单通道灰度图或三通道彩色图）
-                    uint newPayloadSize=0;
-                    if (cmbPixelFormat.SelectedIndex == 0 )
-                    {
-                        nPayloadSizeS[icamSelectInd] = cup.p_Cam[icamSelectInd].iWidth* cup.p_Cam[icamSelectInd].iHeight;                        
-                    }
-                    else
-                    {
-                        nPayloadSizeS[icamSelectInd] = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
-                    }
-
-                    // 让 AcqFIFO 重新分配缓冲区（内部会自动释放旧内存并分配新内存）
-                    if (!acqFIFO.ReallocateBuffer(icamSelectInd, newPayloadSize))
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = "修改相机图像格式";
-                        operLog.strFailReason = "重新分配缓冲区失败";
-                        AddLog();
-                        // 恢复原格式或提示错误
-                        return;
-                    }
+                    // 设置失败，恢复原选择
+                    cmbPixelFormat.SelectedIndex = cup.p_Cam[icamSelectInd].iMonoType;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "修改相机图像格式";
+                    operLog.strFailReason = "设置像素格式失败";
+                    AddLog();
+                    hIKVisionCamera.StartGrabbing(icamSelectInd);
+                    return;
                 }
+
+                // 更新配置和UI
+                cup.p_Cam[icamSelectInd].iMonoType = desiredType;
+                if (cmbPixelFormat.SelectedIndex != desiredType)
+                    cmbPixelFormat.SelectedIndex = desiredType;
+
+                // 重新计算载荷大小
+                uint newPayloadSize;
+                if (desiredType == 0)
+                    newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight;
                 else
+                    newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
+
+                if (!acqFIFO.ReallocateBuffer(icamSelectInd, newPayloadSize))
                 {
                     operLog.iEventStatus = -1;
-                    operLog.strFailReason = "";
+                    operLog.strOperEvent = "修改相机图像格式";
+                    operLog.strFailReason = "重新分配缓冲区失败";
+                    AddLog();
+                    hIKVisionCamera.StartGrabbing(icamSelectInd);
+                    return;
                 }
+
+                operLog.iEventStatus = 0;
                 operLog.strOperEvent = "修改相机图像格式";
                 hIKVisionCamera.StartGrabbing(icamSelectInd);
                 AddLog();
