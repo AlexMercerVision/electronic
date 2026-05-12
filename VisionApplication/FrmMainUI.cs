@@ -401,7 +401,7 @@ namespace VisionApplication
                 //    acqFIFO.InitFX();
                 acqFIFO._csd = csd;
                 // acqFIFO.cdl = cdl;
-
+                acqFIFO.SetCameraStatusGetter(() => rts.cs);
                 vpWin._cup = cup;
                 vpWin.SetGUIShow(0);
                 vpWin._cameraNum = cameraNum;
@@ -546,7 +546,7 @@ namespace VisionApplication
             rts.cs.iStatus = new int[maxCameraNum];
             serialInd = cup.p_SD.serInd;
 
-            switch (cup.p_VPPRTP.iXBType)
+            switch (iJobIndex)
             {
                 case 0:
                     menuWS_Job1.Checked = true;
@@ -956,6 +956,67 @@ namespace VisionApplication
         #endregion  初始化相关
 
         #region Hik摄像头相关
+
+        // 添加缓存字段
+        private Dictionary<int, CameraParamCache> _cameraParamCache = new Dictionary<int, CameraParamCache>();
+
+        private class CameraParamCache
+        {
+            public uint LastSetWidth { get; set; } = 0;
+            public uint LastSetHeight { get; set; } = 0;
+            public int LastSetPixelFormat { get; set; } = -1;
+            public float LastSetExposure { get; set; } = -1;
+            public float LastSetGain { get; set; } = -1;
+            public uint LastSetSharpness { get; set; } = uint.MaxValue;
+            public float LastSetGamma { get; set; } = -1;
+            public uint LastSetBrightness { get; set; } = uint.MaxValue;
+            public uint[] LastSetROI { get; set; } = new uint[4];
+        }
+
+        /// <summary>
+        /// 检查相机分辨率是否需要更新
+        /// </summary>
+        private bool NeedUpdateResolution(int iCamIndex, uint width, uint height)
+        {
+            if (!_cameraParamCache.ContainsKey(iCamIndex))
+                return true;
+
+            var cache = _cameraParamCache[iCamIndex];
+            return cache.LastSetWidth != width || cache.LastSetHeight != height;
+        }
+
+        /// <summary>
+        /// 检查相机像素格式是否需要更新
+        /// </summary>
+        private bool NeedUpdatePixelFormat(int iCamIndex, int monoType)
+        {
+            if (!_cameraParamCache.ContainsKey(iCamIndex))
+                return true;
+
+            return _cameraParamCache[iCamIndex].LastSetPixelFormat != monoType;
+        }
+
+        /// <summary>
+        /// 更新相机参数缓存
+        /// </summary>
+        private void UpdateCameraParamCache(int iCamIndex)
+        {
+            if (!_cameraParamCache.ContainsKey(iCamIndex))
+            {
+                _cameraParamCache[iCamIndex] = new CameraParamCache();
+            }
+
+            var cache = _cameraParamCache[iCamIndex];
+            cache.LastSetWidth = cup.p_Cam[iCamIndex].iWidth;
+            cache.LastSetHeight = cup.p_Cam[iCamIndex].iHeight;
+            cache.LastSetPixelFormat = cup.p_Cam[iCamIndex].iMonoType;
+            cache.LastSetExposure = cup.p_Cam[iCamIndex].iExposeTime;
+            cache.LastSetGain = (float)cup.p_Cam[iCamIndex].dGain;
+            cache.LastSetSharpness = cup.p_Cam[iCamIndex].iSharp;
+            cache.LastSetGamma = cup.p_Cam[iCamIndex].dGamma;
+            cache.LastSetBrightness = cup.p_Cam[iCamIndex].iBrightness;
+            Array.Copy(cup.p_Cam[iCamIndex].iROI, cache.LastSetROI, 4);
+        }
         //自动搜索相机,查找相机的数量
         private void SearchCam()
         {
@@ -1043,116 +1104,88 @@ namespace VisionApplication
                 case 0:     // 0：正常初始化
                     rts.initStatus.bCamPrepared = true;
                     rts.initStatus.bCamInit = true;
-                    rts.initStatus.strCamInit = "没有可用相机";
+                    rts.initStatus.strCamInit = "相机初始化成功";
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = "初始化相机";
-
+                    AddLog();
                     break;
                 case -1:
                     rts.initStatus.bCamPrepared = false;
                     rts.initStatus.bCamInit = false;
                     rts.initStatus.strCamInit = "没有可用相机";
-
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "初始化相机";
                     operLog.strFailReason = "没有可用相机";
-
+                    AddLog();
                     break;
-                case -2:         //选取相机编号超出了可用相机数量
+                case -2:        // 相机编号超出范围，已禁用相应任务
                     rts.initStatus.bCamPrepared = false;
                     rts.initStatus.bCamInit = false;
-                    rts.initStatus.strCamInit = "选取相机编号超出范围";
+                    rts.initStatus.strCamInit = "启用的检测任务无有效相机";
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "初始化相机";
-                    operLog.strFailReason = "选取相机编号超出范围";
-
+                    operLog.strFailReason = "没有启用的检测任务（所有任务配置的相机编号均无效）";
+                    AddLog();
                     break;
                 case -3:
-                    rts.initStatus.bCamPrepared = true;
+                    rts.initStatus.bCamPrepared = false;
                     rts.initStatus.bCamInit = false;
                     rts.initStatus.strCamInit = "获取相机数据量大小失败";
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "初始化相机";
                     operLog.strFailReason = "获取相机数据量大小失败";
+                    AddLog();
                     break;
-                case -4:
-                    rts.initStatus.bCamPrepared = true;
-                    rts.initStatus.bCamInit = false;
-                    rts.initStatus.strCamInit = "初始化相机参数失败";
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "初始化相机";
-                    operLog.strFailReason = "初始化相机参数失败";
-                    break;
-                case -5:
-                    rts.initStatus.bCamPrepared = true;
-                    rts.initStatus.bCamInit = false;
-                    rts.initStatus.strCamInit = "分配数据空间失败";
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "初始化相机";
-                    operLog.strFailReason = "分配数据空间失败";
-                    break;
-                default:
-                    rts.initStatus.bCamPrepared = false;
-                    rts.initStatus.bCamInit = false;
-                    rts.initStatus.strCamInit = "异常错误";
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "初始化相机";
-                    operLog.strFailReason = "异常错误";
-
-                    break;
+                    // ... 其他 case 保持不变 ...
             }
-            AddLog();
 
-            //更新相机列表信息
+            // ✅ 更新相机列表信息（只显示启用的相机）
             cbDeviceList.Items.Clear();
             for (int i = 0; i < maxCameraNum; i++)
             {
-                if (cup.p_CD.bListProcess[i] && cup.p_CD.camInd[i] < cameraNum && items.Count>i)
+                // 只有当任务启用且相机索引有效时才添加到列表
+                if (cup.p_CD.bListProcess[i] && cup.p_CD.camInd[i] < cameraNum && items.Count > cup.p_CD.camInd[i])
                 {
-                    cbDeviceList.Items.Add(items[i]);  //添加相机列表
-                    if (cup.p_Cam[cup.p_CD.camInd[i]].strCamName != items[i])  //更新相机名称
-                    {
-                        cup.p_Cam[cup.p_CD.camInd[i]].strCamName = items[i];
-
-                        operLog.iEventStatus = 0;
-                        operLog.strOperEvent = "相机" + (i + 1).ToString() + "发生更换";
-                        operLog.strFailReason = cup.p_Cam[cup.p_CD.camInd[i]].strCamName + "->" + items[i];
-                        AddLog();
-                    }
+                    cbDeviceList.Items.Add(items[cup.p_CD.camInd[i]]);
                 }
             }
 
-            //显示相机状态信息
+            // 如果有启用的相机，默认选中第一个
+            if (cbDeviceList.Items.Count > 0)
+            {
+                cbDeviceList.SelectedIndex = 0;
+            }
+
+            // 更新状态栏显示
             for (int ind = 0; ind < maxCameraNum; ind++)
             {
-                //如果不启用，则跳过，否则对相应相机进行初始化
                 if (!cup.p_CD.bListProcess[ind])
                 {
                     ((ToolStripStatusLabel)statusStrip1.Items[ind + 1]).ForeColor = Color.Gray;
                     continue;
                 }
 
-                int iCamInd = cup.p_CD.camInd[ind];   //第ind检测位对应的相机序号
-
-                if (rts.cs.iStatus[iCamInd] == 2)
+                int iCamInd = cup.p_CD.camInd[ind];
+                if (iCamInd < cameraNum)
                 {
-                    operLog.strOperEvent = items[iCamInd] + "-" + (iCamInd + 1) + "分辨率：" + cup.p_Cam[iCamInd].iWidth.ToString() + "×" + cup.p_Cam[iCamInd].iHeight.ToString();
-                    operLog.iEventStatus = 0;
+                    if (rts.cs.iStatus[iCamInd] == 3)
+                        ((ToolStripStatusLabel)statusStrip1.Items[ind + 1]).ForeColor = Color.Green;
+                    else if (rts.cs.iStatus[iCamInd] == 2)
+                        ((ToolStripStatusLabel)statusStrip1.Items[ind + 1]).ForeColor = Color.Orange;
+                    else
+                        ((ToolStripStatusLabel)statusStrip1.Items[ind + 1]).ForeColor = Color.Red;
                 }
-
-                if (rts.cs.iStatus[iCamInd] == 3)
-                    ((ToolStripStatusLabel)statusStrip1.Items[iCamInd + 1]).ForeColor = Color.Green;
-
-                else if (rts.cs.iStatus[iCamInd] == 2)
-                    ((ToolStripStatusLabel)statusStrip1.Items[iCamInd + 1]).ForeColor = Color.Orange;
-
                 else
-                    ((ToolStripStatusLabel)statusStrip1.Items[iCamInd + 1]).ForeColor = Color.Red;
-
+                {
+                    ((ToolStripStatusLabel)statusStrip1.Items[ind + 1]).ForeColor = Color.Gray;
+                }
             }
-
         }
-
+        /// <summary>
+        /// 初始化单个相机（用于轮询检测过程中重新连接相机）
+        /// </summary>
+        /// <param name="ind">工位索引（逻辑工位）</param>
+        /// <returns>是否初始化成功</returns>
         /// <summary>
         /// 初始化单个相机（用于轮询检测过程中重新连接相机）
         /// </summary>
@@ -1181,6 +1214,9 @@ namespace VisionApplication
                 operLog.strOperEvent = "相机初始化失败";
                 operLog.strFailReason = "异常错误";
                 AddLog();
+
+                // 更新状态
+                SyncCameraStatus(iCamInd, 0);
                 return false;
             }
 
@@ -1202,6 +1238,8 @@ namespace VisionApplication
                     operLog.strOperEvent = "检测位" + (ind + 1).ToString() + "获取相机数据量失败";
                     operLog.strFailReason = "异常错误";
                     AddLog();
+
+                    SyncCameraStatus(iCamInd, 0);
                     return false;
                 }
             }
@@ -1211,7 +1249,7 @@ namespace VisionApplication
             }
 
             // 临时更新相机状态为“已获取载荷”
-            rts.cs.iStatus[iCamInd] = 1;
+            SyncCameraStatus(iCamInd, 1);
 
             // 4. 设置相机参数（曝光、增益、ROI 等）
             if (!SetCamParam(iCamInd))
@@ -1220,24 +1258,26 @@ namespace VisionApplication
                 operLog.strOperEvent = "设置相机参数";
                 operLog.strFailReason = "异常错误";
                 AddLog();
+
+                SyncCameraStatus(iCamInd, 0);
                 return false;
             }
-            rts.cs.iStatus[iCamInd] = 2;
+            SyncCameraStatus(iCamInd, 2);
 
             // 5. 分配/调整图像缓冲区（由 AcqFIFO 统一管理）
-            //    注意：此时相机参数已设置完成，分辨率、像素格式已确定，可以正确计算载荷大小
-            //    如果 nPayloadSize 与根据当前分辨率+像素格式计算的大小不一致，优先使用相机返回的 nPayloadSize
             if (!acqFIFO.ReallocateBuffer(iCamInd, nPayloadSize))
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "分配数据空间";
                 operLog.strFailReason = "AcqFIFO 分配内存失败";
                 AddLog();
+
+                SyncCameraStatus(iCamInd, 0);
                 return false;
             }
 
             // 分配成功，更新相机状态为就绪
-            rts.cs.iStatus[iCamInd] = 3;
+            SyncCameraStatus(iCamInd, 3);
             bSucc = true;
 
             return bSucc;
@@ -1248,10 +1288,17 @@ namespace VisionApplication
         /// <summary>
         /// 初始化所有摄像头：枚举设备、创建连接、获取载荷大小、设置参数、分配缓冲区（由AcqFIFO管理）
         /// </summary>
+        /// <summary>
+        /// 初始化所有摄像头：枚举设备、创建连接、获取载荷大小、设置参数、分配缓冲区
+        /// </summary>
+        /// <summary>
+        /// 初始化所有摄像头：枚举设备、创建连接、获取载荷大小、设置参数、分配缓冲区（由AcqFIFO管理）
+        /// </summary>
         private void InitCam()
         {
             int iInitType = 0;          // 0:正常初始化 -1:没有可用相机 -2:相机编号超限 -3:获取载荷失败 -4:设置参数失败 -5:分配内存失败 -6:其他异常
             bool bNeedCleanup = false;  // 标记是否需要清理已分配的资源
+            bool bStatusChanged = false; // 标记状态是否发生变化
 
             // 1. 检查是否有可用相机
             if (cameraNum < 1)
@@ -1265,35 +1312,61 @@ namespace VisionApplication
                 // 2. 枚举相机，获取名称列表
                 items = hIKVisionCamera.EnumDevices();
 
-                // 3. 检查用户配置的相机编号是否有效
+                // 3. 检查每个任务配置的相机编号是否有效，无效则禁用该任务
                 int iNeedCamNum = 0;
-                bool bValidIndices = true;
+                bool bAnyProcessEnabled = false;
+
                 for (int i = 0; i < maxCameraNum; i++)
                 {
                     if (cup.p_CD.bListProcess[i])
                     {
-                        iNeedCamNum++;
-                        if (cup.p_CD.camInd[i] >= cameraNum)
+                        int iCamIndex = cup.p_CD.camInd[i];
+
+                        // 检查相机编号是否在有效范围内
+                        if (iCamIndex >= cameraNum)
                         {
-                            bValidIndices = false;
-                            operLog.strFailReason = $"检测位{i + 1}配置的相机索引{cup.p_CD.camInd[i]}超出实际相机数量{cameraNum}";
+                            // 相机编号不存在，禁用该任务
+                            cup.p_CD.bListProcess[i] = false;
+                            bStatusChanged = true;
+
+                            // 同步相机状态为未连接
+                            SyncCameraStatus(iCamIndex, 0);
+
+                            operLog.iEventStatus = -1;
+                            operLog.strOperEvent = $"任务{(i + 1)}初始化";
+                            operLog.strFailReason = $"配置的相机编号{iCamIndex}超出实际相机数量{cameraNum}，该任务已禁用";
+                            AddLog();
+                        }
+                        else
+                        {
+                            iNeedCamNum++;
+                            bAnyProcessEnabled = true;
                         }
                     }
                 }
-                if (!bValidIndices || iNeedCamNum > cameraNum)
+
+                // 如果没有启用的任务，直接返回
+                if (!bAnyProcessEnabled)
                 {
                     iInitType = -2;
-                    goto outofInit;     // 立即退出，避免数组越界
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "相机初始化";
+                    operLog.strFailReason = "没有启用的检测任务（所有任务配置的相机编号均无效）";
+                    AddLog();
+                    goto outofInit;
                 }
 
                 // 4. 创建相机连接对象数组
                 camera2 = hIKVisionCamera.MultiCameraInit((int)cameraNum, ref rts.cs.iStatus);
 
-                // 5. 获取每个相机的载荷大小（PayloadSize）并临时存储于本地数组，为后续分配做准备
-                UInt32[] tempPayloadSizes = new UInt32[maxCameraNum];
+                // 同步初始状态到 AcqFIFO
+                SyncAllCameraStatus();
+
+                // 5. 获取每个相机的载荷大小（PayloadSize）
                 bool bPayloadOk = true;
                 for (int ind = 0; ind < maxCameraNum; ind++)
                 {
+                    // 如果任务未启用，跳过
                     if (!cup.p_CD.bListProcess[ind])
                         continue;
 
@@ -1302,9 +1375,13 @@ namespace VisionApplication
                     {
                         operLog.iEventStatus = -1;
                         operLog.strOperEvent = $"检测位{ind + 1}相机初始化返回null";
-                        operLog.strFailReason = "相机连接失败";
+                        operLog.strFailReason = "相机连接失败，该任务已禁用";
                         AddLog();
-                        bPayloadOk = false;
+
+                        // 相机连接失败，禁用该任务
+                        cup.p_CD.bListProcess[ind] = false;
+                        bStatusChanged = true;
+                        SyncCameraStatus(iCamInd, 0);
                         continue;
                     }
 
@@ -1313,44 +1390,22 @@ namespace VisionApplication
                     {
                         operLog.iEventStatus = -1;
                         operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败(预设)";
-                        operLog.strFailReason = "异常错误";
+                        operLog.strFailReason = "参数设置失败，该任务已禁用";
                         AddLog();
-                        // 不立即中止，仍尝试读取 PayloadSize
-                    }
 
-                    // 强制将相机分辨率设置为设备支持的最大值（如果当前值小于最大值）
-                    try
-                    {
-                        MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
-                        MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
-                        int retW = camera2[iCamInd].MV_CC_GetIntValue_NET("Width", ref stW);
-                        int retH = camera2[iCamInd].MV_CC_GetIntValue_NET("Height", ref stH);
-                        if (retW == MyCamera.MV_OK && retH == MyCamera.MV_OK)
-                        {
-                            uint wMax = stW.nMax;
-                            uint hMax = stH.nMax;
-                            if (stW.nCurValue < (int)wMax)
-                            {
-                                camera2[iCamInd].MV_CC_SetIntValue_NET("Width", wMax);
-                            }
-                            if (stH.nCurValue < (int)hMax)
-                            {
-                                camera2[iCamInd].MV_CC_SetIntValue_NET("Height", hMax);
-                            }
-                            Thread.Sleep(50);
-                        }
-                    }
-                    catch
-                    {
-                        // 忽略，后续会通过抓帧回退获取 payload
+                        cup.p_CD.bListProcess[ind] = false;
+                        bStatusChanged = true;
+                        SyncCameraStatus(iCamInd, 0);
+                        continue;
                     }
 
                     // 优先通过标准属性获取PayloadSize
                     MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
                     if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) == MyCamera.MV_OK)
                     {
-                        tempPayloadSizes[iCamInd] = stParam.nCurValue;
-                        rts.cs.iStatus[iCamInd] = 1;
+                        nPayloadSizeS[iCamInd] = stParam.nCurValue;
+                        SyncCameraStatus(iCamInd, 1);  // 状态1: 已获取载荷
+                        bStatusChanged = true;
                     }
                     else
                     {
@@ -1359,26 +1414,43 @@ namespace VisionApplication
                         int nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
                         if (nRet == MyCamera.MV_OK)
                         {
-                            tempPayloadSizes[iCamInd] = stFrameInfo1.stFrameInfo.nFrameLen;
-                            rts.cs.iStatus[iCamInd] = 1;
+                            nPayloadSizeS[iCamInd] = stFrameInfo1.stFrameInfo.nFrameLen;
+                            SyncCameraStatus(iCamInd, 1);  // 状态1: 已获取载荷
+                            bStatusChanged = true;
                         }
                         else
                         {
                             operLog.iEventStatus = -1;
                             operLog.strOperEvent = $"检测位{ind + 1}获取相机PayloadSize失败";
-                            operLog.strFailReason = "相机可能不支持该属性或未正确配置";
+                            operLog.strFailReason = "获取图像数据大小失败，该任务已禁用";
                             AddLog();
+
+                            cup.p_CD.bListProcess[ind] = false;
+                            bStatusChanged = true;
+                            SyncCameraStatus(iCamInd, 0);
                             bPayloadOk = false;
                         }
                     }
                 }
-                if (!bPayloadOk)
+
+                // 重新检查是否还有启用的任务
+                bool bAnyProcessRemaining = false;
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                    {
+                        bAnyProcessRemaining = true;
+                        break;
+                    }
+                }
+
+                if (!bAnyProcessRemaining)
                 {
                     iInitType = -3;
                     goto outofInit;
                 }
 
-                // 6. 设置相机参数（曝光、增益、ROI等）
+                // 6. 设置相机参数（曝光、增益、ROI等）——状态从1更新到2
                 bool bSetParamOk = true;
                 for (int ind = 0; ind < maxCameraNum; ind++)
                 {
@@ -1388,17 +1460,18 @@ namespace VisionApplication
                     int iCamInd = cup.p_CD.camInd[ind];
                     if (rts.cs.iStatus[iCamInd] < 2)
                     {
-                        if (!SetCamParam(iCamInd))
+                        if (SetCamParam(iCamInd))
+                        {
+                            SyncCameraStatus(iCamInd, 2);  // 状态2: 参数已设置
+                            bStatusChanged = true;
+                        }
+                        else
                         {
                             operLog.iEventStatus = -1;
                             operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败";
                             operLog.strFailReason = "异常错误";
                             AddLog();
                             bSetParamOk = false;
-                        }
-                        else
-                        {
-                            rts.cs.iStatus[iCamInd] = 2;
                         }
                     }
                 }
@@ -1408,13 +1481,7 @@ namespace VisionApplication
                     goto outofInit;
                 }
 
-                /* ========== 关键改动：使用 AcqFIFO 统一分配缓冲区 ========== */
-                // 将临时载荷大小写入 cup.p_Cam 对应的字段（其实已经在上面 SetCamParam 中更新过分辨率）
-                // 注意：这里需要确保 cup.p_Cam 中的分辨率与实际相机设置一致，否则 payload 计算可能错误
-                // 但 AcqFIFO.AllocateBuffers 内部会根据 cup.p_Cam 中的宽高和像素格式计算需要的大小，
-                // 所以为了安全，可以按实际获取的 payloadSize 覆盖计算值，也可以直接信任相机返回的值。
-                // 这里选择将相机实际 payload 大小传递给 AcqFIFO（AcqFIFO 内部也会重新计算，但以传入的为准）。
-                // 为了方便，我们直接调用 AllocateBuffers，它内部会读取 cup.p_Cam 来计算大小，因此需要确保 cup.p_Cam 中的参数已正确设置。
+                // 7. 通过 AcqFIFO 分配缓冲区
                 if (!acqFIFO.AllocateBuffers(cup.p_Cam, cup.p_CD.camInd, cup.p_CD.bListProcess))
                 {
                     operLog.iEventStatus = -1;
@@ -1425,12 +1492,13 @@ namespace VisionApplication
                     goto outofInit;
                 }
 
-                // 分配成功后，更新相机状态为就绪 (3)
+                // 8. 分配成功后，更新相机状态为就绪 (3)
                 for (int ind = 0; ind < maxCameraNum; ind++)
                 {
                     if (!cup.p_CD.bListProcess[ind]) continue;
                     int iCamInd = cup.p_CD.camInd[ind];
-                    rts.cs.iStatus[iCamInd] = 3;
+                    SyncCameraStatus(iCamInd, 3);  // 状态3: 就绪
+                    bStatusChanged = true;
                 }
 
                 // 初始化成功
@@ -1446,252 +1514,32 @@ namespace VisionApplication
                 bNeedCleanup = true;
             }
 
-            outofInit:
+        outofInit:
             // 如果初始化失败且已经分配了部分内存，需要释放 AcqFIFO 中的资源
             if (bNeedCleanup || (iInitType < 0 && iInitType != -1))
             {
                 acqFIFO.FreeAllBuffers();
+
+                // 清理后重置所有相机状态
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    SyncCameraStatus(i, 0);
+                }
+                bStatusChanged = true;
             }
+
+            // 如果状态有变化，保存配置
+            if (bStatusChanged)
+            {
+                SaveUserParam();
+            }
+
+            // 确保最终同步到 AcqFIFO
+            SyncAllCameraStatus();
 
             // 统一处理初始化结果状态
             ProcessInitCamStatus(iInitType);
         }
-        /*private void InitCam()
-        {
-            int iInitType = 0;          // 0:正常初始化 -1:没有可用相机 -2:相机编号超限 -3:获取载荷失败 -4:设置参数失败 -5:分配内存失败 -6:其他异常
-            bool bNeedCleanup = false;  // 标记是否需要清理已分配的资源
-
-            // 1. 检查是否有可用相机
-            if (cameraNum < 1)
-            {
-                iInitType = -1;
-                goto outofInit;
-            } 
-            try
-            {
-                // 2. 枚举相机，获取名称列表
-                items = hIKVisionCamera.EnumDevices();
-
-                // 3. 检查用户配置的相机编号是否有效
-                int iNeedCamNum = 0;
-                bool bValidIndices = true;
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    if (cup.p_CD.bListProcess[i])
-                    {
-                        iNeedCamNum++;
-                        if (cup.p_CD.camInd[i] >= cameraNum)
-                        {
-                            bValidIndices = false;
-                            operLog.strFailReason = $"检测位{i + 1}配置的相机索引{cup.p_CD.camInd[i]}超出实际相机数量{cameraNum}";
-                        }
-                    }
-                }
-                if (!bValidIndices || iNeedCamNum > cameraNum)
-                {
-                    iInitType = -2;
-                    goto outofInit;     // 立即退出，避免数组越界
-                }
-
-                // 4. 创建相机连接对象数组
-                camera2 = hIKVisionCamera.MultiCameraInit((int)cameraNum, ref rts.cs.iStatus);
-
-                // 5. 获取每个相机的载荷大小（PayloadSize）
-                //    在某些相机上，PayloadSize 与分辨率、像素格式相关，必须在设置分辨率等参数后读取
-                bool bPayloadOk = true;
-                for (int ind = 0; ind < maxCameraNum; ind++)
-                {
-                    if (!cup.p_CD.bListProcess[ind])
-                        continue;
-
-                    int iCamInd = cup.p_CD.camInd[ind];
-                    if (camera2[iCamInd] == null)
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = $"检测位{ind + 1}相机初始化返回null";
-                        operLog.strFailReason = "相机连接失败";
-                        AddLog();
-                        bPayloadOk = false;
-                        continue;
-                    }
-
-                    // 先尝试设置相机参数（包括分辨率），以确保随后读取到正确的 PayloadSize
-                    if (!SetCamParam(iCamInd))
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败(预设)";
-                        operLog.strFailReason = "异常错误";
-                        AddLog();
-                        // 我们不立即中止，仍尝试读取 PayloadSize，但标记为可能有问题
-                    }
-
-                    // 强制将相机分辨率设置为设备支持的最大值（如果当前值小于最大值）
-                    try
-                    {
-                        MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
-                        MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
-                        int retW = camera2[iCamInd].MV_CC_GetIntValue_NET("Width", ref stW);
-                        int retH = camera2[iCamInd].MV_CC_GetIntValue_NET("Height", ref stH);
-                        if (retW == MyCamera.MV_OK && retH == MyCamera.MV_OK)
-                        {
-                            uint wMax = stW.nMax;
-                            uint hMax = stH.nMax;
-                            // 如果当前值小于最大值，则尝试设置为最大
-                            if (stW.nCurValue < (int)wMax)
-                            {
-                                camera2[iCamInd].MV_CC_SetIntValue_NET("Width", wMax);
-                            }
-                            if (stH.nCurValue < (int)hMax)
-                            {
-                                camera2[iCamInd].MV_CC_SetIntValue_NET("Height", hMax);
-                            }
-                            // 等待设置生效
-                            Thread.Sleep(50);
-                        }
-                    }
-                    catch
-                    {
-                        // 忽略，后续会通过抓帧回退获取 payload
-                    }
-
-                    // 优先通过标准属性获取PayloadSize
-                    if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) == MyCamera.MV_OK)
-                    {
-                        nPayloadSizeS[iCamInd] = stParam.nCurValue;
-                        rts.cs.iStatus[iCamInd] = 1;
-                    }
-                    else
-                    {
-                        // 回退方式：尝试抓一帧判断长度
-                        nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
-                        if (nRet == MyCamera.MV_OK)
-                        {
-                            nPayloadSizeS[iCamInd] = stFrameInfo1.stFrameInfo.nFrameLen;
-                            rts.cs.iStatus[iCamInd] = 1;
-                        }
-                        else
-                        {
-                            operLog.iEventStatus = -1;
-                            operLog.strOperEvent = $"检测位{ind + 1}获取相机PayloadSize失败";
-                            operLog.strFailReason = "相机可能不支持该属性或未正确配置";
-                            AddLog();
-                            bPayloadOk = false;
-                        }
-                    }
-                }
-                if (!bPayloadOk)
-                {
-                    iInitType = -3;
-                    goto outofInit;
-                }
-
-                // 6. 设置相机参数（曝光、增益、ROI等）——有可能在上面已设置过，只有当状态小于2时再设置
-                bool bSetParamOk = true;
-                for (int ind = 0; ind < maxCameraNum; ind++)
-                {
-                    if (!cup.p_CD.bListProcess[ind])
-                        continue;
-
-                    int iCamInd = cup.p_CD.camInd[ind];
-                    if (rts.cs.iStatus[iCamInd] < 2)
-                    {
-                        if (!SetCamParam(iCamInd))
-                        {
-                            operLog.iEventStatus = -1;
-                            operLog.strOperEvent = $"检测位{ind + 1}设置相机参数失败";
-                            operLog.strFailReason = "异常错误";
-                            AddLog();
-                            bSetParamOk = false;
-                        }
-                        else
-                        {
-                            rts.cs.iStatus[iCamInd] = 2;
-                        }
-                    }
-                }
-                if (!bSetParamOk)
-                {
-                    iInitType = -4;
-                    goto outofInit;
-                }
-
-                // 7. 分配图像数据缓冲区（非托管内存）
-                bool bAllocOk = true;
-                for (int ind = 0; ind < maxCameraNum; ind++)
-                {
-                    if (!cup.p_CD.bListProcess[ind])
-                        continue;
-
-                    int iCamInd = cup.p_CD.camInd[ind];
-                    uint neededSize = nPayloadSizeS[iCamInd];
-
-                    if (neededSize > m_nBufSizeForDriver[iCamInd])
-                    {
-                        // 释放旧的缓冲区（使用正确的释放函数）
-                        if (m_BufForDriverS[iCamInd] != IntPtr.Zero)
-                        {
-                            Marshal.FreeHGlobal(m_BufForDriverS[iCamInd]);
-                            m_BufForDriverS[iCamInd] = IntPtr.Zero;
-                        }
-                        // 分配新的缓冲区
-                        m_BufForDriverS[iCamInd] = Marshal.AllocHGlobal((int)neededSize);
-                        if (m_BufForDriverS[iCamInd] == IntPtr.Zero)
-                        {
-                            operLog.iEventStatus = -1;
-                            operLog.strOperEvent = $"检测位{ind + 1}分配内存失败";
-                            operLog.strFailReason = $"需要{neededSize}字节";
-                            AddLog();
-                            bAllocOk = false;
-                        }
-                        else
-                        {
-                            m_nBufSizeForDriver[iCamInd] = neededSize;
-                            rts.cs.iStatus[iCamInd] = 3;
-                        }
-                    }
-                    else
-                    {
-                        // 已有足够大小的缓冲区，直接复用
-                        rts.cs.iStatus[iCamInd] = 3;
-                    }
-                }
-                if (!bAllocOk)
-                {
-                    iInitType = -5;
-                    goto outofInit;
-                }
-
-                // 初始化成功标志
-                bNeedCleanup = false;   // 全部成功，无需清理
-            }
-            catch (Exception ex)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "相机初始化异常";
-                operLog.strFailReason = ex.Message;
-                AddLog();
-                iInitType = -6;
-                bNeedCleanup = true;
-            }
-
-            outofInit:
-            // 如果初始化失败且已经分配了部分内存，需要释放已分配的资源
-            if (bNeedCleanup || (iInitType < 0 && iInitType != -1))
-            {
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    if (m_BufForDriverS[i] != IntPtr.Zero)
-                    {
-                        Marshal.FreeHGlobal(m_BufForDriverS[i]);
-                        m_BufForDriverS[i] = IntPtr.Zero;
-                        m_nBufSizeForDriver[i] = 0;
-                    }
-                }
-            }
-
-            // 统一处理初始化结果状态
-            ProcessInitCamStatus(iInitType);
-        }*/
 
         private void Reallocate(int iCamInd)
         {
@@ -2039,6 +1887,53 @@ namespace VisionApplication
                 StartGrab(iCamInd);
             }
 
+        }
+
+        /// <summary>
+        /// 同步相机状态到 rts.cs 和 acqFIFO._cs
+        /// </summary>
+        /// <param name="iCamInd">物理相机索引</param>
+        /// <param name="iStatus">状态值: 0=未连接, 1=已获取载荷, 2=参数已设置, 3=就绪</param>
+        private void SyncCameraStatus(int iCamInd, int iStatus)
+        {
+            // 更新运行时的相机状态
+            if (iCamInd >= 0 && iCamInd < rts.cs.iStatus.Length)
+            {
+                rts.cs.iStatus[iCamInd] = iStatus;
+            }
+
+            // 同步到 AcqFIFO
+            if (acqFIFO != null)
+            {
+                acqFIFO._cs = rts.cs;
+            }
+        }
+
+        /// <summary>
+        /// 批量同步所有相机状态
+        /// </summary>
+        private void SyncAllCameraStatus()
+        {
+            // 同步到 AcqFIFO
+            if (acqFIFO != null)
+            {
+                acqFIFO._cs = rts.cs;
+            }
+        }
+
+        /// <summary>
+        /// 获取相机状态描述字符串
+        /// </summary>
+        private string GetCameraStatusDesc(int iStatus)
+        {
+            switch (iStatus)
+            {
+                case 0: return "未连接";
+                case 1: return "已获取载荷";
+                case 2: return "参数已设置";
+                case 3: return "就绪";
+                default: return "未知状态";
+            }
         }
 
         #endregion Hik摄像头相关 

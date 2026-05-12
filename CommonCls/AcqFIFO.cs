@@ -243,7 +243,26 @@ namespace CommonCls
             get { return _cameraStatus; }
             set { _cameraStatus = value; }
         }
+        // AcqFIFO.cs 中添加
+        private Func<CameraStatus> _getCameraStatusFunc = null;
 
+        /// <summary>
+        /// 设置获取相机状态的委托（用于实时获取最新状态）
+        /// </summary>
+        public void SetCameraStatusGetter(Func<CameraStatus> getStatusFunc)
+        {
+            _getCameraStatusFunc = getStatusFunc;
+        }
+
+        /// <summary>
+        /// 获取当前相机状态（实时）
+        /// </summary>
+        private CameraStatus GetCurrentCameraStatus()
+        {
+            if (_getCameraStatusFunc != null)
+                return _getCameraStatusFunc();
+            return _cameraStatus;
+        }
         /// <summary>灰度图像数组赋值与读取</summary>
         public CogImage8Grey[] _ci8gAcq
         {
@@ -417,6 +436,7 @@ namespace CommonCls
         /// <summary>采集单帧灰度图像转Cog格式,VP 算法使用
         public CogImage8Grey GrabOneFrameCog(int iCamIndex)
         {
+            CameraStatus currentStatus = GetCurrentCameraStatus();
             if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return null;
 
@@ -468,8 +488,12 @@ namespace CommonCls
         /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用     
         public CogImage24PlanarColor GrabOneFrameCogColor(int iCamIndex)
         {
-            if (_cameraStatus.iStatus[iCamIndex] < 2)
+            CameraStatus currentStatus = GetCurrentCameraStatus();
+            if (currentStatus.iStatus[iCamIndex] < 2)
                 return null;
+
+            /*if (_cameraStatus.iStatus[iCamIndex] < 2)
+                return null;*/
             if (_cameraType == 0)
             {
                 nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);

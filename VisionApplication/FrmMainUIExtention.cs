@@ -317,113 +317,230 @@ namespace VisionApplication
 
         }
         //修改图像格式
+        /// <summary>
+        /// 修改图像格式
+        /// </summary>
         private void cmbPixelFormat_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (icamSelectInd >= 0)
+            // 1. 参数有效性检查
+            if (icamSelectInd < 0)
             {
-                if (icamSelectInd < 0)
-                    return;
-                if (camera2 == null || camera2[icamSelectInd] == null)
-                    return;
-                hIKVisionCamera.StopGrabbing(icamSelectInd);
-
-                int desiredType = cmbPixelFormat.SelectedIndex;   // 0 或 1
-                bool bSucc = hIKVisionCamera.SetPixelFormat(ref desiredType, camera2[icamSelectInd]);
-                if (!bSucc)
-                {
-                    // 设置失败，恢复原选择
-                    cmbPixelFormat.SelectedIndex = cup.p_Cam[icamSelectInd].iMonoType;
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "修改相机图像格式";
-                    operLog.strFailReason = "设置像素格式失败";
-                    AddLog();
-                    hIKVisionCamera.StartGrabbing(icamSelectInd);
-                    return;
-                }
-
-                // 更新配置和UI
-                cup.p_Cam[icamSelectInd].iMonoType = desiredType;
-                if (cmbPixelFormat.SelectedIndex != desiredType)
-                    cmbPixelFormat.SelectedIndex = desiredType;
-
-                // 重新计算载荷大小
-                uint newPayloadSize;
-                if (desiredType == 0)
-                    newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight;
-                else
-                    newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
-
-                if (!acqFIFO.ReallocateBuffer(icamSelectInd, newPayloadSize))
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "修改相机图像格式";
-                    operLog.strFailReason = "重新分配缓冲区失败";
-                    AddLog();
-                    hIKVisionCamera.StartGrabbing(icamSelectInd);
-                    return;
-                }
-
-                operLog.iEventStatus = 0;
+                operLog.iEventStatus = -1;
                 operLog.strOperEvent = "修改相机图像格式";
-                hIKVisionCamera.StartGrabbing(icamSelectInd);
+                operLog.strFailReason = "未选择相机";
                 AddLog();
+                return;
             }
+
+            if (camera2 == null || camera2[icamSelectInd] == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改相机图像格式";
+                operLog.strFailReason = "相机未初始化";
+                AddLog();
+                return;
+            }
+
+            if (cmbPixelFormat.SelectedIndex < 0)
+            {
+                return;
+            }
+
+            // 2. ✅ 检查是否需要更新（避免重复设置相同的像素格式）
+            int desiredType = cmbPixelFormat.SelectedIndex;
+            if (desiredType == cup.p_Cam[icamSelectInd].iMonoType)
+            {
+                // 像素格式未变化，无需操作
+                return;
+            }
+
+            // 3. 停止采集
+            hIKVisionCamera.StopGrabbing(icamSelectInd);
+
+            // 4. 设置像素格式
+            bool bSucc = hIKVisionCamera.SetPixelFormat(ref desiredType, camera2[icamSelectInd]);
+
+            if (!bSucc)
+            {
+                // 设置失败，恢复原选择
+                cmbPixelFormat.SelectedIndex = cup.p_Cam[icamSelectInd].iMonoType;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改相机图像格式";
+                operLog.strFailReason = "设置像素格式失败";
+                AddLog();
+                hIKVisionCamera.StartGrabbing(icamSelectInd);
+                return;
+            }
+
+            // 5. 更新配置和UI
+            cup.p_Cam[icamSelectInd].iMonoType = desiredType;
+            if (cmbPixelFormat.SelectedIndex != desiredType)
+                cmbPixelFormat.SelectedIndex = desiredType;
+
+            // 6. 重新计算载荷大小
+            uint newPayloadSize;
+            if (desiredType == 0)  // 黑白
+                newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight;
+            else  // 彩色
+                newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
+
+            // 7. 重新分配缓冲区
+            if (!acqFIFO.ReallocateBuffer(icamSelectInd, newPayloadSize))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改相机图像格式";
+                operLog.strFailReason = "重新分配缓冲区失败";
+                AddLog();
+                hIKVisionCamera.StartGrabbing(icamSelectInd);
+                return;
+            }
+
+            // 8. ✅ 更新相机参数缓存
+            UpdateCameraParamCache(icamSelectInd);
+
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "修改相机图像格式";
+            operLog.strFailReason = $"已切换至{(desiredType == 0 ? "黑白" : "彩色")}模式";
+
+            // 9. 重新开始采集
+            hIKVisionCamera.StartGrabbing(icamSelectInd);
+
+            // 10. 记录日志
+            AddLog();
         }
         //修改图像分辨率
         // 修改图像分辨率
+        /// <summary>
+        /// 修改相机分辨率
+        /// </summary>
         private void cmbResulation_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // 1. 参数有效性检查
             if (icamSelectInd < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改相机分辨率";
+                operLog.strFailReason = "未选择相机";
+                AddLog();
                 return;
+            }
+
             if (camera2 == null || camera2[icamSelectInd] == null)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改相机分辨率";
+                operLog.strFailReason = "相机未初始化";
+                AddLog();
                 return;
+            }
 
-            hIKVisionCamera.StopGrabbing(icamSelectInd);
-
-            // 解析用户选择的分辨率字符串（例如 "3072*2048"）
+            // 2. 解析用户选择的分辨率字符串（例如 "3072*2048"）
             string strRes = cmbResulation.Text;
             int ind = strRes.IndexOf('*');
-            cup.p_Cam[icamSelectInd].iWidth = uint.Parse(strRes.Substring(0, ind));
-            cup.p_Cam[icamSelectInd].iHeight = uint.Parse(strRes.Substring(ind + 1, strRes.Length - ind - 1));
+            if (ind <= 0 || ind >= strRes.Length - 1)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改相机分辨率";
+                operLog.strFailReason = "分辨率格式错误";
+                AddLog();
+                return;
+            }
 
-            // 应用分辨率到相机硬件
+            uint newWidth = uint.Parse(strRes.Substring(0, ind));
+            uint newHeight = uint.Parse(strRes.Substring(ind + 1, strRes.Length - ind - 1));
+
+            // 3. ✅ 检查是否需要更新（避免重复设置相同的分辨率）
+            if (newWidth == cup.p_Cam[icamSelectInd].iWidth &&
+                newHeight == cup.p_Cam[icamSelectInd].iHeight)
+            {
+                // 分辨率未变化，无需操作
+                return;
+            }
+
+            // 4. 停止采集
+            hIKVisionCamera.StopGrabbing(icamSelectInd);
+
+            // 5. 保存新分辨率到配置
+            cup.p_Cam[icamSelectInd].iWidth = newWidth;
+            cup.p_Cam[icamSelectInd].iHeight = newHeight;
+
+            // 6. 应用分辨率到相机硬件
             bool bSucc = hIKVisionCamera.SetResolution(ref cup.p_Cam[icamSelectInd].iWidth,
                                                        ref cup.p_Cam[icamSelectInd].iHeight,
                                                        camera2[icamSelectInd]);
 
             if (bSucc)
             {
-                // 计算新的载荷大小（根据当前像素格式）
+                // 7. 计算新的载荷大小（根据当前像素格式）
                 uint newPayloadSize;
-                if (cup.p_Cam[icamSelectInd].iMonoType == 0)
+                if (cup.p_Cam[icamSelectInd].iMonoType == 0)  // 黑白
                     newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight;
-                else
+                else  // 彩色
                     newPayloadSize = cup.p_Cam[icamSelectInd].iWidth * cup.p_Cam[icamSelectInd].iHeight * 3;
 
-                // 让 AcqFIFO 重新分配缓冲区
+                // 8. 让 AcqFIFO 重新分配缓冲区
                 if (!acqFIFO.ReallocateBuffer(icamSelectInd, newPayloadSize))
                 {
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "修改相机分辨率";
                     operLog.strFailReason = "重新分配缓冲区失败";
                     AddLog();
+
+                    // 恢复原来的选择
+                    string oldRes = cup.p_Cam[icamSelectInd].iWidth.ToString() + "*" + cup.p_Cam[icamSelectInd].iHeight.ToString();
+                    cmbResulation.Text = oldRes;
+
+                    hIKVisionCamera.StartGrabbing(icamSelectInd);
                     return;
                 }
 
+                // 9. ✅ 更新 UI 显示相机实际设置的分辨率（可能与请求值不同）
+                if (cup.p_Cam[icamSelectInd].iWidth != newWidth || cup.p_Cam[icamSelectInd].iHeight != newHeight)
+                {
+                    string actualRes = cup.p_Cam[icamSelectInd].iWidth.ToString() + "*" + cup.p_Cam[icamSelectInd].iHeight.ToString();
+                    cmbResulation.Text = actualRes;
+                    operLog.strFailReason = $"请求分辨率:{newWidth}*{newHeight}，实际分辨率:{actualRes}";
+                }
+                else
+                {
+                    operLog.strFailReason = "";
+                }
+
                 operLog.iEventStatus = 0;
-                operLog.strFailReason = "";
+                operLog.strOperEvent = "修改相机分辨率";
+
+                // 10. ✅ 更新相机参数缓存（用于后续检查）
+                UpdateCameraParamCache(icamSelectInd);
             }
             else
             {
                 operLog.iEventStatus = -1;
-                operLog.strFailReason = "";
+                operLog.strOperEvent = "修改相机分辨率";
+                operLog.strFailReason = "SetResolution 调用失败";
+
+                // 恢复配置中的旧值
+                string strOldRes = cmbResulation.Items.Count > 0 ? cmbResulation.Items[0].ToString() : "";
+                if (!string.IsNullOrEmpty(strOldRes))
+                {
+                    int oldInd = strOldRes.IndexOf('*');
+                    if (oldInd > 0)
+                    {
+                        cup.p_Cam[icamSelectInd].iWidth = uint.Parse(strOldRes.Substring(0, oldInd));
+                        cup.p_Cam[icamSelectInd].iHeight = uint.Parse(strOldRes.Substring(oldInd + 1));
+                    }
+                }
+
+                // 恢复下拉框显示
+                string oldResText = cup.p_Cam[icamSelectInd].iWidth.ToString() + "*" + cup.p_Cam[icamSelectInd].iHeight.ToString();
+                cmbResulation.Text = oldResText;
             }
 
-            operLog.strOperEvent = "修改相机分辨率";
+            // 11. 重新开始采集
             hIKVisionCamera.StartGrabbing(icamSelectInd);
+
+            // 12. 记录日志
             AddLog();
         }
-
         //获取ROI区域
         private void btGetROI_Click(object sender, EventArgs e)
         {
