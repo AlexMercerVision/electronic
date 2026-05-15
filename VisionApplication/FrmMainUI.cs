@@ -1,39 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.IO.Pipes;
-using System.Management;
-using System.Xml;
-using System.ServiceProcess;
+﻿using Cognex.VisionPro.Blob;
+//using PipeChanel;
+using Cognex.VisionPro.PMAlign;
+using CommonCls;
 using HalconDotNet;
-//using HOperatorSet_EX;
-using System.Runtime.InteropServices;
- 
-using System.Drawing.Imaging;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.IO.Ports;
 /*using System.IO.Pipes;
 
 using OpenCvSharp;
 using OpenCvSharp.Extensions;*/
 
 using MvCamCtrl.NET;  // 海康相机
+using PipeChanel;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 //using gRPC_ClientAPP;
 using System.Diagnostics;
+using System.Drawing;
+ 
+using System.Drawing.Imaging;
+using System.IO;
+using System.IO.Pipes;
+using System.IO.Ports;
+using System.Linq;
+using System.Management;
+
+   
+using System.Threading.Tasks;   // 可选，如果使用 Task.Run 则需要，上述代码未使用 Task
+//using HOperatorSet_EX;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.ServiceProcess;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
  
 using CameraHandle = System.Int32;
-using CommonCls;
-//using PipeChanel;
-using Cognex.VisionPro.PMAlign;
-using Cognex.VisionPro.Blob;
 
 namespace VisionApplication
 {
@@ -478,52 +482,56 @@ namespace VisionApplication
         //工程拷贝后可能存在盘符不一致情况，修改路径盘符
         private void ReplaceDrive()
         {
-            string tmppath;
-            string curDriver = Environment.CurrentDirectory.Substring(0, 1);
-            if (!File.Exists(cup.p_Paf.strVPPFilePath))
+            try
             {
-                tmppath = curDriver + cup.p_Paf.strVPPFilePath.Substring(1);
-                if (File.Exists(tmppath))
+                string tmppath;
+                string curDriver = Environment.CurrentDirectory.Substring(0, 1);
+                if (!File.Exists(cup.p_Paf.strVPPFilePath))
                 {
-                    cup.p_Paf.strVPPFilePath = tmppath;
+                    tmppath = curDriver + cup.p_Paf.strVPPFilePath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strVPPFilePath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strConSavePath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strConSavePath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strErrPath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strExportPath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strLogPath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strLogPath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strPlaybackPath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strPlaybackPath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strResSavePath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strResSavePath = tmppath;
+                    }
+                    tmppath = curDriver + cup.p_Paf.strSigSavePath.Substring(1);
+                    if (File.Exists(tmppath))
+                    {
+                        cup.p_Paf.strSigSavePath = tmppath;
+                    }
+                    SaveUserParam();
                 }
-                tmppath = curDriver + cup.p_Paf.strConSavePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strConSavePath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strErrPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strExportPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strLogPath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strLogPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strPlaybackPath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strPlaybackPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strResSavePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strResSavePath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strSigSavePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strSigSavePath = tmppath;
-                }
-                SaveUserParam();
             }
+            catch { }
         }
         //初始化用户参数
         private void InitUserParam()
@@ -2447,8 +2455,9 @@ namespace VisionApplication
             operLog.strFailReason = iModelRole.ToString();
             AddLog();
         }
-        
- 
+
+       
+
         private void FrmMainUI_Load(object sender, EventArgs e)
         {
 
@@ -2474,6 +2483,7 @@ namespace VisionApplication
                 iProcess = 30;
                 fw.SetProgress(30, "正在加载硬件驱动");
 
+                EnsureJCZServerRunning();          // 确保 JCZServer 进程正常
                 jczPipThread = new Thread(InitJCZ);
                 jczPipThread.Start();
 

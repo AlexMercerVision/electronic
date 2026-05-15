@@ -183,7 +183,9 @@ namespace VisionApplication
                 return;
             }
 
-            sPortMain.Write(txtOrder1.Text.Trim()); 
+            sPortMain.Write(txtOrder1.Text.Trim());
+
+            UpdateSideLightOrder();
         }
         private void btSubPort_Click(object sender, EventArgs e)
         {
@@ -1079,6 +1081,150 @@ namespace VisionApplication
                 lblStatus2.Text = "串口关闭";
             }
              
+        }
+
+        private void txtIntensityCh1_TextChanged(object sender, EventArgs e)
+        {
+            UpdateMainLightOrder();
+        }
+
+        private void txtIntensityCh2_TextChanged(object sender, EventArgs e)
+        {
+            UpdateSideLightOrder();
+        }
+
+
+        private void UpdateIndentity(int wsInd)
+        {
+            int ch1=100,ch2 = 100, ch3 = 100, ch4 = 100;
+            switch (wsInd)
+            {
+                case 0:
+                    // 获取4个通道的亮度值
+                      ch1 = GetIntensityFromTextBox(txtIntensity1);
+                      ch2 = GetIntensityFromTextBox(txtIntensity2);
+                      ch3 = GetIntensityFromTextBox(txtIntensity3);
+                      ch4 = GetIntensityFromTextBox(txtIntensity4);    
+                    break;
+                case 1:
+                    // 获取4个通道的亮度值
+                      ch1 = GetIntensityFromTextBox(txtIntensity2_1);
+                      ch2 = GetIntensityFromTextBox(txtIntensity2_2);
+                      ch3 = GetIntensityFromTextBox(txtIntensity2_3);
+                      ch4 = GetIntensityFromTextBox(txtIntensity2_4);
+                  
+                    break;
+            }
+            if (p_LS2 != null)
+            {
+                p_LS2[wsInd].indent[0] = ch1;
+                p_LS2[wsInd].indent[1] = ch2;
+                p_LS2[wsInd].indent[2] = ch3;
+                p_LS2[wsInd].indent[3] = ch4;
+            }
+
+        }
+        /// <summary>
+        /// 更新主光源命令（txtOrder1）
+        /// 根据4个通道的亮度值生成命令字符串
+        /// 命令格式示例：S100T150F200T250FC#
+        /// S: 通道1亮度, T: 通道2亮度, F: 通道3亮度, 第二个T: 通道4亮度, C#: 结束符
+        /// </summary>
+        private void UpdateMainLightOrder()
+        {
+            try
+            {
+                // 获取4个通道的亮度值
+                int ch1 = GetIntensityFromTextBox(txtIntensity1);
+                int ch2 = GetIntensityFromTextBox(txtIntensity2);
+                int ch3 = GetIntensityFromTextBox(txtIntensity3);
+                int ch4 = GetIntensityFromTextBox(txtIntensity4);
+
+                // 生成命令字符串
+                // 格式: S{通道1}T{通道2}F{通道3}T{通道4}C#
+                string command = $"S{ch1}T{ch2}T{ch3}T{ch4}TC#";
+
+                // 更新文本框
+                txtOrder1.Text = command;
+
+
+                // 将亮度值同步到 p_LS2 的 indent 数组中（前4个元素对应通道1~4）
+                if (p_LS2 != null)
+                {                    
+                    p_LS2[0].indent[0] = ch1;
+                    p_LS2[0].indent[1] = ch2;
+                    p_LS2[0].indent[2] = ch3;
+                    p_LS2[0].indent[3] = ch4;
+                }
+
+                // 可选：如果串口已打开，自动发送命令
+                // if (sPortMain != null && sPortMain.IsOpen)
+                // {
+                //     sPortMain.Write(command);
+                // }
+            }
+            catch (Exception ex)
+            {
+                // 忽略转换错误
+            }
+        }
+
+        /// <summary>
+        /// 更新侧光源命令（txtOrderSubPort）
+        /// </summary>
+        private void UpdateSideLightOrder()
+        {
+            try
+            {
+                // 获取4个通道的亮度值
+                int ch1 = GetIntensityFromTextBox(txtIntensity2_1);
+                int ch2 = GetIntensityFromTextBox(txtIntensity2_2);
+                int ch3 = GetIntensityFromTextBox(txtIntensity2_3);
+                int ch4 = GetIntensityFromTextBox(txtIntensity2_4);
+
+                // 生成命令字符串
+                string command = $"S{ch1}T{ch2}T{ch3}T{ch4}TC#";
+
+                // 更新文本框
+                txtOrderSubPort.Text = command;
+
+
+                if (p_LS2 != null)
+                {
+                    p_LS2[0].indent[0] = ch1;
+                    p_LS2[0].indent[1] = ch2;
+                    p_LS2[0].indent[2] = ch3;
+                    p_LS2[0].indent[3] = ch4;
+                }
+
+                // 可选：如果串口已打开，自动发送命令
+                // if (sPortSub[cmbFXLightSource.SelectedIndex] != null && 
+                //     sPortSub[cmbFXLightSource.SelectedIndex].IsOpen)
+                // {
+                //     sPortSub[cmbFXLightSource.SelectedIndex].Write(command);
+                // }
+            }
+            catch (Exception ex)
+            {
+                // 忽略转换错误
+            }
+        }
+
+        /// <summary>
+        /// 从TextBox安全获取整数值
+        /// </summary>
+        private int GetIntensityFromTextBox(TextBox textBox)
+        {
+            if (textBox == null || string.IsNullOrWhiteSpace(textBox.Text))
+                return 0;
+
+            int value;
+            if (int.TryParse(textBox.Text, out value))
+            {
+                // 限制范围 0-255
+                return Math.Max(0, Math.Min(255, value));
+            }
+            return 0;
         }
 
 

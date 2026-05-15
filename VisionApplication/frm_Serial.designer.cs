@@ -238,7 +238,7 @@
             // 
             // btnSend
             // 
-            this.btnSend.Location = new System.Drawing.Point(257, 250);
+            this.btnSend.Location = new System.Drawing.Point(185, 250);
             this.btnSend.Name = "btnSend";
             this.btnSend.Size = new System.Drawing.Size(52, 29);
             this.btnSend.TabIndex = 63;
@@ -251,9 +251,9 @@
             this.txtOrder1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.txtOrder1.Location = new System.Drawing.Point(23, 255);
             this.txtOrder1.Name = "txtOrder1";
-            this.txtOrder1.Size = new System.Drawing.Size(202, 21);
+            this.txtOrder1.Size = new System.Drawing.Size(147, 21);
             this.txtOrder1.TabIndex = 62;
-            this.txtOrder1.Text = "S100T150F200T250FC#";
+            this.txtOrder1.Text = "S100T150T200T250TC#";
             // 
             // btnCom1
             // 
@@ -301,7 +301,7 @@
             // tbxToolName
             // 
             this.tbxToolName.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.tbxToolName.Location = new System.Drawing.Point(68, 11);
+            this.tbxToolName.Location = new System.Drawing.Point(71, 12);
             this.tbxToolName.Name = "tbxToolName";
             this.tbxToolName.Size = new System.Drawing.Size(109, 26);
             this.tbxToolName.TabIndex = 63;
@@ -319,7 +319,7 @@
             // btn_cancel
             // 
             this.btn_cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btn_cancel.Location = new System.Drawing.Point(431, 346);
+            this.btn_cancel.Location = new System.Drawing.Point(669, 346);
             this.btn_cancel.Name = "btn_cancel";
             this.btn_cancel.Size = new System.Drawing.Size(75, 29);
             this.btn_cancel.TabIndex = 65;
@@ -332,7 +332,7 @@
             // 
             this.btn_sure.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btn_sure.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btn_sure.Location = new System.Drawing.Point(347, 346);
+            this.btn_sure.Location = new System.Drawing.Point(585, 346);
             this.btn_sure.Name = "btn_sure";
             this.btn_sure.Size = new System.Drawing.Size(75, 29);
             this.btn_sure.TabIndex = 64;
@@ -360,7 +360,7 @@
             this.groupBox2.Controls.Add(this.lblStatus);
             this.groupBox2.Location = new System.Drawing.Point(14, 57);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(488, 186);
+            this.groupBox2.Size = new System.Drawing.Size(353, 186);
             this.groupBox2.TabIndex = 66;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "光源通道";
@@ -372,6 +372,7 @@
             this.txtIntensity4.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity4.TabIndex = 1;
             this.txtIntensity4.Text = "255";
+            this.txtIntensity4.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity4.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity_KeyPress);
             // 
             // txtIntensity3
@@ -381,6 +382,7 @@
             this.txtIntensity3.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity3.TabIndex = 1;
             this.txtIntensity3.Text = "255";
+            this.txtIntensity3.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity3.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity_KeyPress);
             // 
             // txtIntensity2
@@ -390,6 +392,7 @@
             this.txtIntensity2.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2.TabIndex = 1;
             this.txtIntensity2.Text = "255";
+            this.txtIntensity2.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity2.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity_KeyPress);
             // 
             // txtIntensity1
@@ -399,6 +402,7 @@
             this.txtIntensity1.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity1.TabIndex = 1;
             this.txtIntensity1.Text = "255";
+            this.txtIntensity1.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity_KeyPress);
             this.txtIntensity1.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.txtIntensity_MouseDoubleClick);
             // 
@@ -496,7 +500,7 @@
             this.lblOrderStatus.AutoSize = true;
             this.lblOrderStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblOrderStatus.ForeColor = System.Drawing.Color.Red;
-            this.lblOrderStatus.Location = new System.Drawing.Point(325, 257);
+            this.lblOrderStatus.Location = new System.Drawing.Point(243, 251);
             this.lblOrderStatus.Name = "lblOrderStatus";
             this.lblOrderStatus.Size = new System.Drawing.Size(124, 24);
             this.lblOrderStatus.TabIndex = 62;
@@ -637,12 +641,13 @@
             this.groupBox3.Controls.Add(this.label18);
             this.groupBox3.Controls.Add(this.label15);
             this.groupBox3.Controls.Add(this.label6);
-            this.groupBox3.Location = new System.Drawing.Point(541, 46);
+            this.groupBox3.Location = new System.Drawing.Point(23, 368);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(421, 263);
+            this.groupBox3.Size = new System.Drawing.Size(421, 233);
             this.groupBox3.TabIndex = 67;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "主光源光度立体流程编辑";
+            this.groupBox3.Visible = false;
             // 
             // numInd_Anc
             // 
@@ -1862,24 +1867,22 @@
             // 
             // btSubPort
             // 
-            this.btSubPort.Location = new System.Drawing.Point(247, 122);
+            this.btSubPort.Location = new System.Drawing.Point(554, 252);
             this.btSubPort.Name = "btSubPort";
             this.btSubPort.Size = new System.Drawing.Size(52, 29);
             this.btSubPort.TabIndex = 63;
             this.btSubPort.Text = "发送";
             this.btSubPort.UseVisualStyleBackColor = true;
-            this.btSubPort.Visible = false;
             this.btSubPort.Click += new System.EventHandler(this.btSubPort_Click);
             // 
             // txtOrderSubPort
             // 
             this.txtOrderSubPort.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.txtOrderSubPort.Location = new System.Drawing.Point(7, 127);
+            this.txtOrderSubPort.Location = new System.Drawing.Point(405, 256);
             this.txtOrderSubPort.Name = "txtOrderSubPort";
-            this.txtOrderSubPort.Size = new System.Drawing.Size(211, 21);
+            this.txtOrderSubPort.Size = new System.Drawing.Size(143, 21);
             this.txtOrderSubPort.TabIndex = 62;
             this.txtOrderSubPort.Text = "S255T255T200T250TC#";
-            this.txtOrderSubPort.Visible = false;
             // 
             // groupBox6
             // 
@@ -1888,7 +1891,6 @@
             this.groupBox6.Controls.Add(this.txtIntensity2_3);
             this.groupBox6.Controls.Add(this.txtIntensity2_2);
             this.groupBox6.Controls.Add(this.txtIntensity2_1);
-            this.groupBox6.Controls.Add(this.btSubPort);
             this.groupBox6.Controls.Add(this.label57);
             this.groupBox6.Controls.Add(this.label61);
             this.groupBox6.Controls.Add(this.label62);
@@ -1899,48 +1901,51 @@
             this.groupBox6.Controls.Add(this.bt2_Ch2);
             this.groupBox6.Controls.Add(this.bt2_Ch3);
             this.groupBox6.Controls.Add(this.lblStatus2);
-            this.groupBox6.Controls.Add(this.txtOrderSubPort);
-            this.groupBox6.Location = new System.Drawing.Point(8, 385);
+            this.groupBox6.Location = new System.Drawing.Point(397, 57);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(494, 202);
+            this.groupBox6.Size = new System.Drawing.Size(344, 186);
             this.groupBox6.TabIndex = 66;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "光源通道";
             // 
             // txtIntensity2_4
             // 
-            this.txtIntensity2_4.Location = new System.Drawing.Point(210, 160);
+            this.txtIntensity2_4.Location = new System.Drawing.Point(210, 155);
             this.txtIntensity2_4.Name = "txtIntensity2_4";
             this.txtIntensity2_4.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_4.TabIndex = 1;
             this.txtIntensity2_4.Text = "255";
+            this.txtIntensity2_4.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity2_4.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             // 
             // txtIntensity2_3
             // 
-            this.txtIntensity2_3.Location = new System.Drawing.Point(145, 160);
+            this.txtIntensity2_3.Location = new System.Drawing.Point(145, 155);
             this.txtIntensity2_3.Name = "txtIntensity2_3";
             this.txtIntensity2_3.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_3.TabIndex = 1;
             this.txtIntensity2_3.Text = "255";
+            this.txtIntensity2_3.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity2_3.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             // 
             // txtIntensity2_2
             // 
-            this.txtIntensity2_2.Location = new System.Drawing.Point(80, 160);
+            this.txtIntensity2_2.Location = new System.Drawing.Point(80, 155);
             this.txtIntensity2_2.Name = "txtIntensity2_2";
             this.txtIntensity2_2.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_2.TabIndex = 1;
             this.txtIntensity2_2.Text = "255";
+            this.txtIntensity2_2.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
             this.txtIntensity2_2.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             // 
             // txtIntensity2_1
             // 
-            this.txtIntensity2_1.Location = new System.Drawing.Point(15, 160);
+            this.txtIntensity2_1.Location = new System.Drawing.Point(15, 155);
             this.txtIntensity2_1.Name = "txtIntensity2_1";
             this.txtIntensity2_1.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_1.TabIndex = 1;
             this.txtIntensity2_1.Text = "255";
+            this.txtIntensity2_1.TextChanged += new System.EventHandler(this.txtIntensityCh2_TextChanged);
             this.txtIntensity2_1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             this.txtIntensity2_1.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.txtIntensity2_MouseDoubleClick);
             // 
@@ -1956,7 +1961,7 @@
             // label62
             // 
             this.label62.AutoSize = true;
-            this.label62.Location = new System.Drawing.Point(12, 112);
+            this.label62.Location = new System.Drawing.Point(13, 130);
             this.label62.Name = "label62";
             this.label62.Size = new System.Drawing.Size(65, 12);
             this.label62.TabIndex = 62;
@@ -2038,12 +2043,11 @@
             this.lblOrderStatus2.AutoSize = true;
             this.lblOrderStatus2.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblOrderStatus2.ForeColor = System.Drawing.Color.Red;
-            this.lblOrderStatus2.Location = new System.Drawing.Point(315, 556);
+            this.lblOrderStatus2.Location = new System.Drawing.Point(617, 251);
             this.lblOrderStatus2.Name = "lblOrderStatus2";
             this.lblOrderStatus2.Size = new System.Drawing.Size(124, 24);
             this.lblOrderStatus2.TabIndex = 62;
             this.lblOrderStatus2.Text = "命令发送失败";
-            this.lblOrderStatus2.Visible = false;
             // 
             // btTest2
             // 
@@ -2216,12 +2220,13 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(514, 590);
+            this.ClientSize = new System.Drawing.Size(752, 296);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.rdbSinwave);
             this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.rdbSquarewave);
             this.Controls.Add(this.rdbSinglePulse);
+            this.Controls.Add(this.btSubPort);
             this.Controls.Add(this.btExe);
             this.Controls.Add(this.btnSend);
             this.Controls.Add(this.chkEditProcess);
@@ -2233,6 +2238,7 @@
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.txtOrder1);
+            this.Controls.Add(this.txtOrderSubPort);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox6);

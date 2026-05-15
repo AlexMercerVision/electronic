@@ -16,6 +16,7 @@ namespace BJJCZ_BaseDevelop
 
             // 获取当前进程名
             string currentProcessName = Process.GetCurrentProcess().ProcessName;
+           // string[] strProName= Process.GetProcessesByName(currentProcessName).Select(p => p.ProcessName).ToArray();
             if (Process.GetProcessesByName(currentProcessName).Length > 1)
             {
                 MessageBox.Show("程序已启动", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);

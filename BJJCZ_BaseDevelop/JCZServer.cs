@@ -58,6 +58,10 @@ namespace BJJCZ_BaseDevelop
         private IntPtr _containerHwnd = IntPtr.Zero;
         private System.Windows.Forms.Timer _parentCheckTimer;
 
+        // =============== 文件路径管理 ===============
+        private string[] currentFilePath = new string[2] { null, null };  // 当前加载的文件路径
+
+
         // =============== Windows API 声明 ===============
         [DllImport("user32.dll")]
         private static extern IntPtr GetParent(IntPtr hWnd);
@@ -147,14 +151,26 @@ namespace BJJCZ_BaseDevelop
             if (containerHwnd == IntPtr.Zero) return;
             _containerHwnd = containerHwnd;
             _isEmbedded = true;
-            PerformEmbed();
+
+            // 确保在 UI 线程上执行嵌入
+            if (this.InvokeRequired)
+                this.Invoke(new Action(PerformEmbed));
+            else
+                PerformEmbed();
         }
 
         /// <summary>
-        /// 执行嵌入操作
+        /// 执行嵌入操作（必须在 UI 线程调用）
         /// </summary>
         private void PerformEmbed()
         {
+            // 二次检查：确保在 UI 线程
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(PerformEmbed));
+                return;
+            }
+
             if (_containerHwnd == IntPtr.Zero) return;
 
             try
@@ -174,7 +190,7 @@ namespace BJJCZ_BaseDevelop
                 SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
 
                 // 禁用窗口（不可活动）
-                EnableWindow(this.Handle, false);
+             //   EnableWindow(this.Handle, false);
 
                 // 获取容器大小并调整
                 RECT containerRect;
@@ -190,14 +206,24 @@ namespace BJJCZ_BaseDevelop
                 // 应用嵌入布局
                 ApplyEmbeddedLayout();
 
-             //   AddMsg("已嵌入到容器窗口中");
+                // 强制再次折叠（防止被其他事件覆盖）
+                this.BeginInvoke(new Action(() =>
+                {
+                    if (_isEmbedded)
+                    {
+                        splitContainer1.Panel2Collapsed = true;
+                        splitContainer1.IsSplitterFixed = true;
+                    }
+                }));
             }
             catch (Exception ex)
             {
-              //  AddMsg($"嵌入失败: {ex.Message}");
+                // 可记录日志
             }
         }
-
+        /// <summary>
+        /// 分离嵌入，显示完整窗口
+        /// </summary>
         /// <summary>
         /// 分离嵌入，显示完整窗口
         /// </summary>
@@ -236,11 +262,14 @@ namespace BJJCZ_BaseDevelop
                 this.WindowState = FormWindowState.Normal;
                 ShowWindow(this.Handle, SW_SHOW);
 
-             //   AddMsg("已分离，显示完整窗口");
+                // *** 新增：调整分割线距离，使上下面板比例合适 ***
+                AdjustSplitterDistance();
+
+                //   AddMsg($"已分离，显示完整窗口");
             }
             catch (Exception ex)
             {
-              //  AddMsg($"分离失败: {ex.Message}");
+                //  AddMsg($"分离失败: {ex.Message}");
             }
         }
 
@@ -289,7 +318,27 @@ namespace BJJCZ_BaseDevelop
                 this.FormBorderStyle = FormBorderStyle.Sizable;
             }
         }
+        /// <summary>
+        /// 调整 splitContainer1 的分割距离，只在完整模式下生效
+        /// </summary>
+        private void AdjustSplitterDistance()
+        {
+            if (splitContainer1.InvokeRequired)
+            {
+                splitContainer1.Invoke(new Action(AdjustSplitterDistance));
+                return;
+            }
 
+            // 仅在非嵌入模式且 Panel2 未折叠时调整
+            if (!_isEmbedded && !splitContainer1.Panel2Collapsed && splitContainer1.Height > 0)
+            {
+                // 例如让 Panel1 占总高度的 1/2，可根据实际需要调整比例
+                int totalHeight = splitContainer1.Height;
+                int desiredDistance = totalHeight / 2;
+                desiredDistance = Math.Max(100, Math.Min(desiredDistance, totalHeight - 100));
+                splitContainer1.SplitterDistance = desiredDistance;
+            }
+        }
         /// <summary>
         /// 初始化父窗口检测定时器
         /// </summary>
@@ -580,6 +629,9 @@ namespace BJJCZ_BaseDevelop
                             nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
                             if (nErr == 0)
                             {
+                                // 保存当前文件路径
+                                currentFilePath[card] = param.strFileName;
+
                                 nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
                                 strEntNames[card] = new string[nEntNums[card]];
                                 iPenNos[card] = new int[nEntNums[card]];
@@ -624,6 +676,9 @@ namespace BJJCZ_BaseDevelop
                         nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
                         if (nErr == 0)
                         {
+                            // 保存当前文件路径
+                            currentFilePath[card] = param.strFileName;
+
                             nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
@@ -638,8 +693,28 @@ namespace BJJCZ_BaseDevelop
                         AddMsg($"卡{card} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
-                    case 5:
-                        nErr = JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                    case 5:  // 保存文件 - 修改为自动使用原路径
+                        string savePath = param.strFileName;
+
+                        // 如果命令中没有指定文件名，但有暂存的文件路径，则使用原路径
+                        if (string.IsNullOrEmpty(savePath) && !string.IsNullOrEmpty(currentFilePath[card]))
+                        {
+                            savePath = currentFilePath[card];
+                            AddMsg($"卡{card} 自动保存到原路径: {savePath}");
+                        }
+
+                        // 如果仍然没有路径，使用默认路径
+                        if (string.IsNullOrEmpty(savePath))
+                        {
+                            savePath = Path.Combine(Application.StartupPath, "route.ezd");
+                        }
+
+                        nErr = JczLmc.lmc1_SaveEntLibToFile(card, savePath);
+                        if (nErr == 0)
+                        {
+                            // 保存成功后更新暂存路径（如果是新路径）
+                            currentFilePath[card] = savePath;
+                        }
                         AddMsg($"卡{card} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
@@ -1046,6 +1121,45 @@ namespace BJJCZ_BaseDevelop
                 SendResponse(param);
             }
         }
+
+        /// <summary>
+        /// 保存当前板卡的对象库到原文件路径
+        /// </summary>
+        private void SaveToOriginalPath(int card)
+        {
+            if (!string.IsNullOrEmpty(currentFilePath[card]))
+            {
+                LCZControlParam param = new LCZControlParam
+                {
+                    cardSN = card,
+                    cmdType = 5,
+                    strFileName = currentFilePath[card],  // 使用原路径
+                    ind3 = 0
+                };
+                CMDAna(param);
+            }
+            else
+            {
+                AddMsg($"卡{card + 1} 没有可保存的原文件路径，请先加载文件或指定保存路径");
+            }
+        }
+
+        /// <summary>
+        /// 获取当前板卡的文件路径
+        /// </summary>
+        public string GetCurrentFilePath(int card)
+        {
+            return currentFilePath[card];
+        }
+
+        /// <summary>
+        /// 设置当前板卡的文件路径（用于新建文件后设置）
+        /// </summary>
+        public void SetCurrentFilePath(int card, string filePath)
+        {
+            currentFilePath[card] = filePath;
+        }
+
         /// <summary>
         /// 获取对象的填充参数
         /// </summary>
@@ -1328,23 +1442,24 @@ namespace BJJCZ_BaseDevelop
             {
                 e.Cancel = true;
 
-                // 如果当前是分离状态，先分离再最小化
+                // 如果当前是分离状态，先分离再隐藏
                 if (!_isEmbedded)
                 {
                     DetachAndShowFull();
                 }
 
-                // 折叠并最小化到托盘
-                splitContainer1.Panel1Collapsed = true;
-                splitContainer1.SplitterDistance = 0;
-                this.WindowState = FormWindowState.Minimized;
+                // 完全隐藏窗口，任务栏不会出现任何图标
+                this.Hide();
                 this.ShowInTaskbar = false;
                 JCZServerIcon.Visible = true;
 
-                // 向客户端发送请求嵌入的消息
-            //    RequestClientToEmbed();
+                // 可选：仍然折叠界面，以便下次显示时保持布局
+                splitContainer1.Panel1Collapsed = true;
+                splitContainer1.SplitterDistance = 0;
 
-            //    AddMsg("已最小化到系统托盘，已请求客户端重新嵌入");
+                // 向客户端发送请求嵌入的消息（如果需要）
+                // RequestClientToEmbed();
+                // AddMsg("已最小化到系统托盘");
             }
         }
 
@@ -1377,13 +1492,11 @@ namespace BJJCZ_BaseDevelop
             }
         }
 
-        private void JCZServer_SizeChanged(object sender, EventArgs e)
+        private void Win_Reset_Click(object sender, EventArgs e)
         {
-            if (this.WindowState == FormWindowState.Minimized)
-            {
-                JCZServerIcon.Visible = true;
-                this.ShowInTaskbar = false;
-            }
+            ResetLayoutToDefault();
+
+            //    AddMsg("窗口布局已重置");
         }
 
         private void notifyIcon1_DoubleClick(object sender, EventArgs e)
@@ -1392,16 +1505,56 @@ namespace BJJCZ_BaseDevelop
             {
                 // 嵌入模式：双击分离并显示完整窗口
                 DetachAndShowFull();
-             //   AddMsg("双击托盘图标，已分离并显示完整窗口");
+                ResetLayoutToDefault();
             }
             else
             {
-                // 完整模式：双击显示窗口
-                this.Show();
-                this.WindowState = FormWindowState.Normal;
+                // 完整模式：如果窗口隐藏则显示，如果最小化则恢复
+                if (!this.Visible)
+                {
+                    this.Show();
+                }
+                if (this.WindowState == FormWindowState.Minimized)
+                {
+                    this.WindowState = FormWindowState.Normal;
+                }
                 this.ShowInTaskbar = true;
-             //   AddMsg("显示完整窗口");
+                this.BringToFront();
+                ResetLayoutToDefault();
             }
+        }
+
+        /// <summary>
+        /// 重置窗口布局到默认状态（所有面板可见，分割线居中）
+        /// </summary>
+        private void ResetLayoutToDefault()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(ResetLayoutToDefault));
+                return;
+            }
+
+            splitContainer1.Panel1Collapsed = false;
+            splitContainer1.Panel2Collapsed = false;
+            splitContainer2.Panel1Collapsed = false;
+            splitContainer2.Panel2Collapsed = false;
+            splitContainer3.Panel1Collapsed = false;
+            splitContainer3.Panel2Collapsed = false;
+
+            Win_Log.Checked = true;
+            Win_Entity.Checked = true;
+            Win_Route.Checked = true;
+            Win_Oper.Checked = true;
+
+            // 设置分割线居中
+            this.BeginInvoke(new Action(() =>
+            {
+                if (splitContainer1.Height > 0)
+                {
+                    splitContainer1.SplitterDistance = splitContainer1.Height / 2;
+                }
+            }));
         }
 
         private void dgvEnt_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -1429,8 +1582,8 @@ namespace BJJCZ_BaseDevelop
             strEntNames[card][iEntIndices[card]] = newName;
             dgvEnt.Rows[iEntIndices[card]].Cells[1].Value = newName;
 
-            cmd = new LCZControlParam { cardSN = card, cmdType = 5, strFileName = Path.Combine(Application.StartupPath, "route.ezd") };
-            CMDAna(cmd);
+            // 保存到原文件路径（不弹出对话框）
+            SaveToOriginalPath(card);
         }
 
         private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
@@ -1470,8 +1623,9 @@ namespace BJJCZ_BaseDevelop
                 case "picScaleY": cmd.cmdType = 25; cmd.dParam1 = cenX; cmd.dParam2 = cenY; cmd.dParam3 = 1; cmd.dParam4 = scaleVal; break;
             }
             CMDAna(cmd);
-            cmd = new LCZControlParam { cardSN = card, cmdType = 5 };
-            CMDAna(cmd);
+
+            // 保存到原文件路径
+            SaveToOriginalPath(card);
         }
 
         #region 后台工作线程
@@ -1500,21 +1654,44 @@ namespace BJJCZ_BaseDevelop
                 }
             }
         }
+        private void File_QuickSaveEZD_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            SaveToOriginalPath(card);
+            AddMsg($"卡{card + 1} 快速保存到: {currentFilePath[card]}");
+        }
 
         private void File_SaveEZD_Click(object sender, EventArgs e)
         {
+            int card = currentCard;
+
+            // 如果有原文件路径，可以直接保存，但使用另存为对话框让用户选择
             using (SaveFileDialog sfd = new SaveFileDialog())
             {
                 sfd.Filter = "EZD Files|*.ezd|All Files|*.*";
                 sfd.Title = "保存EZD文件";
-                sfd.FileName = "route.ezd";
+
+                // 如果有原路径，设置为默认文件名
+                if (!string.IsNullOrEmpty(currentFilePath[card]))
+                {
+                    sfd.FileName = Path.GetFileName(currentFilePath[card]);
+                    sfd.InitialDirectory = Path.GetDirectoryName(currentFilePath[card]);
+                }
+                else
+                {
+                    sfd.FileName = "route.ezd";
+                    sfd.InitialDirectory = Application.StartupPath;
+                }
 
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
+                    // 更新原文件路径
+                    currentFilePath[card] = sfd.FileName;
+
                     LCZControlParam param = new LCZControlParam
                     {
-                        cardSN = currentCard,
-                        cmdType = 5,  // 保存文件
+                        cardSN = card,
+                        cmdType = 5,
                         strFileName = sfd.FileName,
                         ind3 = 0
                     };
@@ -1633,28 +1810,532 @@ namespace BJJCZ_BaseDevelop
 
         }
 
-        // 可选：添加一个窗口布局重置菜单项
-        private void Win_Reset_Click(object sender, EventArgs e)
+        /// <summary>
+        /// 设置填充参数（对应选中对象）
+        /// </summary>
+        private void btHatchParam_Click(object sender, EventArgs e)
         {
-            // 重置所有窗口布局
-            /* splitContainer1.SplitterDistance = 287;
-             splitContainer2.SplitterDistance = 610;
-             splitContainer3.SplitterDistance = 610;*/
+            int card = currentCard;
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 未选中任何对象");
+                return;
+            }
 
-            splitContainer1.Panel1Collapsed = false;
-            splitContainer1.Panel2Collapsed = false;
-            splitContainer2.Panel1Collapsed = false;
-            splitContainer2.Panel2Collapsed = false;
-            splitContainer3.Panel1Collapsed = false;
-            splitContainer3.Panel2Collapsed = false;
+            string entName = strEntNames[card][iEntIndices[card]];
+            // 构造一个临时的参数对象，复用 CMDAna 中的填充处理逻辑（case 37）
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 37,
+                bOpen = true,                // 打开对话框
+                strEntyName = entName,
+                ind1 = 1,                    // 默认参数序号
+                ind3 = 0
+            };
+            CMDAna(param);
 
-            // 更新菜单项选中状态
-            Win_Log.Checked = true;
-            Win_Entity.Checked = true;
-            Win_Route.Checked = true;
-            Win_Oper.Checked = true;
-
-        //    AddMsg("窗口布局已重置");
+            // 填充设置完成后保存到原文件
+            SaveToOriginalPath(card);
         }
+
+        /// <summary>
+        /// 设置激光笔参数（对应当前选中对象的笔号）
+        /// </summary>
+        private void btLaserPenParam_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            int penNo = 1;
+            if (iEntIndices[card] >= 0 && iEntIndices[card] < (iPenNos[card]?.Length ?? 0))
+            {
+                penNo = iPenNos[card][iEntIndices[card]];
+            }
+
+            LaserpenParam currentParam = new LaserpenParam(1);
+            currentParam.nPenNo = penNo;
+
+            FrmLaserPen frm = new FrmLaserPen(currentParam);
+            frm.CardNumber = card;
+            if (frm.ShowDialog() == DialogResult.OK)
+            {
+                AddMsg($"卡{card + 1} 笔号{penNo} 参数已更新");
+
+                // 保存到原文件
+                SaveToOriginalPath(card);
+            }
+        }
+
+        /// <summary>
+        /// 振镜位置搜索（移动到指定点，例如原点）
+        /// </summary>
+        private void btZJPosSearch_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            // 移动到原点 (0,0)，可自定义坐标
+            double targetX = 0, targetY = 0;
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 15,
+                dParam1 = targetX,
+                dParam2 = targetY,
+                ind3 = 0
+            };
+            CMDAna(param);
+            AddMsg($"卡{card + 1} 振镜移动到 ({targetX}, {targetY})");
+        }
+
+        /// <summary>
+        /// 红光预览整体边界（开始/停止）
+        /// </summary>
+        private void btRedPreview_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            // 如果按钮文本为“开始”，则开始；否则停止。简单实现：按一次开始，再按停止。
+            // 通常使用一个全局标志，这里复用 bInRed[card]
+            if (bInRed[card])
+            {
+                // 停止红光
+                JczLmc.lmc1_StopMark(card);
+                bInRed[card] = false;
+                btRedPreview.Text = "红光预览边界";
+                AddMsg($"卡{card + 1} 停止红光预览");
+            }
+            else
+            {
+                // 开始红光预览（边界）
+                LCZControlParam param = new LCZControlParam
+                {
+                    cardSN = card,
+                    cmdType = 12,
+                    bOpen = true,
+                    ind3 = 0
+                };
+                CMDAna(param);
+                btRedPreview.Text = "停止预览";
+                AddMsg($"卡{card + 1} 开始红光预览边界");
+            }
+        }
+
+        /// <summary>
+        /// 红光预览轮廓（整体轮廓，非填充）
+        /// </summary>
+        private void btRedPreviewCou_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (bInRed[card])
+            {
+                JczLmc.lmc1_StopMark(card);
+                bInRed[card] = false;
+                btRedPreviewCou.Text = "红光预览轮廓";
+                AddMsg($"卡{card + 1} 停止红光预览轮廓");
+            }
+            else
+            {
+                LCZControlParam param = new LCZControlParam
+                {
+                    cardSN = card,
+                    cmdType = 13,
+                    bOpen = true,
+                    ind3 = 0
+                };
+                CMDAna(param);
+                btRedPreviewCou.Text = "停止预览";
+                AddMsg($"卡{card + 1} 开始红光预览轮廓");
+            }
+        }
+
+        /// <summary>
+        /// 红光预览当前选中对象
+        /// </summary>
+        private void btRedPreviewEnt_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 未选中任何对象");
+                return;
+            }
+
+            if (bInRed[card])
+            {
+                JczLmc.lmc1_StopMark(card);
+                bInRed[card] = false;
+                btRedPreviewEnt.Text = "红光预览对象";
+                AddMsg($"卡{card + 1} 停止红光预览对象");
+            }
+            else
+            {
+                LCZControlParam param = new LCZControlParam
+                {
+                    cardSN = card,
+                    cmdType = 22,
+                    bOpen = true,
+                    ind3 = 0
+                };
+                CMDAna(param);
+                btRedPreviewEnt.Text = "停止预览";
+                AddMsg($"卡{card + 1} 开始红光预览对象: {strEntNames[card][iEntIndices[card]]}");
+            }
+        }
+
+        /// <summary>
+        /// 加工当前选中对象
+        /// </summary>
+        private void btMarkEnt_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 未选中任何对象");
+                return;
+            }
+
+            if (bInMark[card])
+            {
+                AddMsg($"卡{card + 1} 正在加工中，请稍后再试");
+                return;
+            }
+
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 21,
+                ind3 = 0
+            };
+            CMDAna(param);
+            AddMsg($"卡{card + 1} 开始加工对象: {strEntNames[card][iEntIndices[card]]}");
+        }
+
+        /// <summary>
+        /// 连续模式开关（影响红光预览的循环方式）
+        /// </summary>
+        private void chkContinue_CheckedChanged(object sender, EventArgs e)
+        {
+            // 该标志可用于控制红光预览时的连续/单次模式
+            // 目前红光预览内部使用 while(bInRed[card]) 循环，不受此标志直接影响
+            // 但可以设置一个全局变量，在 RedLightMark 调用前判断
+            bool isContinuous = chkContinue.Checked;
+            AddMsg($"连续模式{(isContinuous ? "开启" : "关闭")}");
+            // 如果需要，可以修改红光预览函数中的循环条件，例如增加判断 !isContinuous 时只执行一次
+            // 但由于现有代码是独立的后台线程，此处仅做记录，具体行为可在 RedLightMark 调用处扩展
+        }
+
+        private void btnInitial_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 初始化板卡
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 1,  // 初始化板卡
+                ind3 = 0
+            };
+            CMDAna(param);
+
+            // 初始化完成后，刷新对象列表
+            if (JczInitErrs[card] == 0)
+            {
+                nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                if (nEntNums[card] > 0)
+                {
+                    strEntNames[card] = new string[nEntNums[card]];
+                    iPenNos[card] = new int[nEntNums[card]];
+                    for (int i = 0; i < nEntNums[card]; i++)
+                    {
+                        strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
+                        iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                    }
+                    UpdateEntTable(card);
+                    RefreshPreview(card);
+                }
+            }
+        }
+
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 停止当前所有操作
+            if (bInMark[card])
+            {
+                JczLmc.lmc1_StopMark(card);
+                bInMark[card] = false;
+            }
+            if (bInRed[card])
+            {
+                JczLmc.lmc1_StopMark(card);
+                bInRed[card] = false;
+            }
+
+            // 关闭板卡
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 2,  // 关闭板卡
+                ind3 = 0
+            };
+            CMDAna(param);
+
+            // 清空对象列表
+            nEntNums[card] = 0;
+            strEntNames[card] = null;
+            iPenNos[card] = null;
+            UpdateEntTable(card);
+        }
+
+        private void btMark_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 检查是否正在加工中
+            if (bInMark[card])
+            {
+                AddMsg($"卡{card + 1} 正在加工中，请勿重复操作");
+                return;
+            }
+
+            // 检查是否有对象可加工
+            if (nEntNums[card] == 0)
+            {
+                AddMsg($"卡{card + 1} 没有可加工的对象，请先加载EZD文件或添加对象");
+                return;
+            }
+
+            // 检查板卡是否已初始化
+            if (JczInitErrs[card] != 0 && !bSimulateMode[card])
+            {
+                AddMsg($"卡{card + 1} 板卡未初始化，请先点击\"初始化板卡\"");
+                return;
+            }
+
+            // 激光加工（全部对象）
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 10,  // 激光加工
+                ind3 = 0
+            };
+            CMDAna(param);
+            AddMsg($"卡{card + 1} 开始激光加工，共 {nEntNums[card]} 个对象");
+        }
+
+        private void btnStopMark_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 停止加工
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 11,  // 停止加工
+                ind3 = 0
+            };
+            CMDAna(param);
+
+            // 停止红光预览
+            if (bInRed[card])
+            {
+                bInRed[card] = false;
+                JczLmc.lmc1_StopMark(card);
+
+                // 重置红光按钮文本（在UI线程中执行）
+                this.BeginInvoke(new Action(() =>
+                {
+                    if (btRedPreview.Text == "停止预览")
+                        btRedPreview.Text = "红光预览边界";
+                    if (btRedPreviewCou.Text == "停止预览")
+                        btRedPreviewCou.Text = "红光预览轮廓";
+                    if (btRedPreviewEnt.Text == "停止预览")
+                        btRedPreviewEnt.Text = "红光预览对象";
+                }));
+            }
+
+            AddMsg($"卡{card + 1} 已停止加工/预览");
+        }
+
+        private void btOpenLaser_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 检查板卡是否已初始化
+            if (JczInitErrs[card] != 0 && !bSimulateMode[card])
+            {
+                AddMsg($"卡{card + 1} 板卡未初始化，请先点击\"初始化板卡\"");
+                return;
+            }
+
+            // 打开激光器
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 3,   // 开关激光器
+                bOpen = true,  // 打开
+                ind3 = 0
+            };
+            CMDAna(param);
+
+            // 更新按钮状态
+            btOpenLaser.Enabled = false;
+            btCloseLaser.Enabled = true;
+        }
+
+        private void btCloseLaser_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 关闭激光器
+            LCZControlParam param = new LCZControlParam
+            {
+                cardSN = card,
+                cmdType = 3,   // 开关激光器
+                bOpen = false, // 关闭
+                ind3 = 0
+            };
+            CMDAna(param);
+
+            // 更新按钮状态
+            btOpenLaser.Enabled = true;
+            btCloseLaser.Enabled = false;
+        }
+
+        private void btMoveEntBefore_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 检查是否有选中对象
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 未选中任何对象，请先在对象清单中选择一个对象");
+                return;
+            }
+
+            // 将当前选中对象向上移动顺序
+            int currentIndex = iEntIndices[card];
+            if (currentIndex > 0)
+            {
+                // 交换两个对象的顺序
+                string tempName = strEntNames[card][currentIndex];
+                int tempPen = iPenNos[card][currentIndex];
+
+                strEntNames[card][currentIndex] = strEntNames[card][currentIndex - 1];
+                iPenNos[card][currentIndex] = iPenNos[card][currentIndex - 1];
+
+                strEntNames[card][currentIndex - 1] = tempName;
+                iPenNos[card][currentIndex - 1] = tempPen;
+
+                // 更新表格显示
+                UpdateEntTable(card);
+
+                // 更新选中索引
+                iEntIndices[card] = currentIndex - 1;
+
+                // 在表格中高亮显示新选中的行
+                dgvEnt.ClearSelection();
+                dgvEnt.Rows[iEntIndices[card]].Selected = true;
+                dgvEnt.FirstDisplayedScrollingRowIndex = iEntIndices[card];
+
+                AddMsg($"卡{card + 1} 将对象 \"{tempName}\" 上调顺序（从第{currentIndex + 1}位移至第{currentIndex}位）");
+
+                // 保存顺序变化到文件（如果有原文件路径）
+                SaveToOriginalPath(card);
+            }
+            else
+            {
+                AddMsg($"卡{card + 1} 当前对象已是第一个，无法继续上调");
+            }
+        }
+
+        private void btMoveEntAfter_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+
+            // 检查是否有选中对象
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 未选中任何对象，请先在对象清单中选择一个对象");
+                return;
+            }
+
+            // 将当前选中对象向下移动顺序
+            int currentIndex = iEntIndices[card];
+            if (currentIndex < nEntNums[card] - 1)
+            {
+                // 交换两个对象的顺序
+                string tempName = strEntNames[card][currentIndex];
+                int tempPen = iPenNos[card][currentIndex];
+
+                strEntNames[card][currentIndex] = strEntNames[card][currentIndex + 1];
+                iPenNos[card][currentIndex] = iPenNos[card][currentIndex + 1];
+
+                strEntNames[card][currentIndex + 1] = tempName;
+                iPenNos[card][currentIndex + 1] = tempPen;
+
+                // 更新表格显示
+                UpdateEntTable(card);
+
+                // 更新选中索引
+                iEntIndices[card] = currentIndex + 1;
+
+                // 在表格中高亮显示新选中的行
+                dgvEnt.ClearSelection();
+                dgvEnt.Rows[iEntIndices[card]].Selected = true;
+                dgvEnt.FirstDisplayedScrollingRowIndex = iEntIndices[card];
+
+                AddMsg($"卡{card + 1} 将对象 \"{tempName}\" 下调顺序（从第{currentIndex + 1}位移至第{currentIndex + 2}位）");
+
+                // 保存顺序变化到文件（如果有原文件路径）
+                SaveToOriginalPath(card);
+            }
+            else
+            {
+                AddMsg($"卡{card + 1} 当前对象已是最后一个，无法继续下调");
+            }
+        }
+
+        private void btParam_Click(object sender, EventArgs e)
+        {
+           /* int card = currentCard;
+
+            // 检查板卡是否已初始化
+            if (JczInitErrs[card] != 0 && !bSimulateMode[card])
+            {
+                AddMsg($"卡{card + 1} 板卡未初始化，请先点击\"初始化板卡\"");
+                MessageBox.Show($"卡{card + 1} 板卡未初始化，请先初始化板卡", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // 调用SDK显示配置对话框（具体函数名需查阅SDK文档）
+                // 常见写法类似：JczLmc.lmc1_ShowConfigDialog(card, this.Handle);
+                int nErr = JczLmc.lmc1_ShowConfigDialog(card, this.Handle);
+
+                if (nErr == 0)
+                {
+                    AddMsg($"卡{card + 1} 配置界面已关闭");
+
+                    // 配置修改后，可能需要重新加载配置
+                    // 可选：重新刷新预览
+                    RefreshPreview(card);
+                }
+                else
+                {
+                    AddMsg($"卡{card + 1} 打开配置界面失败: {JczLmc.GetErrorText(nErr)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 打开配置界面异常: {ex.Message}");
+                MessageBox.Show($"打开配置界面失败: {ex.Message}", "错误",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }*/
+        }
+
+
+        // 可选：添加一个窗口布局重置菜单项
+
     }
 }

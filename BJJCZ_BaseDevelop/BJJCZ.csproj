@@ -120,6 +120,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserPictureBox.cs" />
     <EmbeddedResource Include="FrmHatch.resx">
       <DependentUpon>FrmHatch.cs</DependentUpon>
     </EmbeddedResource>

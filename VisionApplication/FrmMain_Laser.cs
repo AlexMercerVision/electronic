@@ -1,18 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Drawing;
-using System.Threading;
-using System.Windows.Forms;
-using PipeChanel;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using Cognex.VisionPro.Blob;
 using Cognex.VisionPro.PMAlign;
-using Cognex.VisionPro.Blob;
-using System.Threading.Tasks;
+using PipeChanel;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.IO.Pipes;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace VisionApplication
 {
@@ -424,6 +426,183 @@ namespace VisionApplication
         // ============================================================
 
         #region // 管道初始化与通信
+        private const uint WM_MOUSEMOVE = 0x0200;
+        /// <summary>
+        /// 刷新任务栏托盘图标区域，清除残留的失效图标
+        /// </summary>
+        /// 
+        private void RefreshTrayArea()
+        {
+            try
+            {
+                IntPtr hWndTray = FindWindow("Shell_TrayWnd", null);
+                if (hWndTray == IntPtr.Zero) return;
+                IntPtr hWndNotify = FindWindowEx(hWndTray, IntPtr.Zero, "TrayNotifyWnd", null);
+                if (hWndNotify == IntPtr.Zero) return;
+                SendMessage(hWndNotify, (int)WM_MOUSEMOVE, IntPtr.Zero, IntPtr.Zero);
+                Thread.Sleep(30);
+                SendMessage(hWndNotify, (int)WM_MOUSEMOVE, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 获取 BJJCZ_Server 进程（通过文件名匹配，鲁棒性更强）
+        /// </summary> 
+        private Process GetJCZServerProcess()
+        {
+            Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
+            if (processes.Length > 0) return processes[0];
+
+            foreach (Process p in Process.GetProcesses())
+            {
+                try
+                {
+                    if (p.MainModule.FileName.EndsWith("BJJCZ_Server.exe", StringComparison.OrdinalIgnoreCase))
+                        return p;
+                }
+                catch { }
+            }
+
+            processes = Process.GetProcessesByName("BJJCZ_Server.exe");
+            return processes.Length > 0 ? processes[0] : null;
+        }
+        /// <summary>
+        /// 确保 JCZServer 进程正常启动并响应
+        /// </summary>
+        private void EnsureJCZServerRunning()
+        {
+            string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            string exePath = Path.Combine(basePath, "JCZ", "BJJCZ_Server.exe");
+
+        //    string exePath = Path.Combine(Application.StartupPath, "JCZServer.exe");
+            if (!File.Exists(exePath))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "检查激光服务进程";
+                operLog.strFailReason = $"未找到 BJJCZ_Server.exe，路径：{exePath}";
+                AddLog();
+                rts.initStatus.bJCZ = -2;
+                return;
+            }
+
+            Process proc = GetJCZServerProcess();
+            bool needRestart = false;
+
+            if (proc == null)
+            {
+                needRestart = true;
+                operLog.strOperEvent = "激光服务进程未运行，准备启动";
+                operLog.iEventStatus = 0;
+                AddLog();
+            }
+            else if (!CheckJCZServerHealth())
+            {
+                needRestart = true;
+                operLog.strOperEvent = "激光服务进程存在但管道不通，准备重启";
+                operLog.iEventStatus = -1;
+                AddLog();
+                try { proc.Kill(); proc.WaitForExit(1000); } catch { }
+                RefreshTrayArea();
+            }
+            else
+            {
+                rts.initStatus.bJCZ = 0;
+                return;
+            }
+
+            if (needRestart)
+            {
+                // 清理所有残留实例
+                foreach (var p in Process.GetProcessesByName("BJJCZ_Server"))
+                {
+                    try { p.Kill(); } catch { }
+                }
+                RefreshTrayArea();
+
+                try
+                {
+                    Process.Start(new ProcessStartInfo(exePath)
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        UseShellExecute = false
+                    });
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "启动激光服务进程";
+                    AddLog();
+
+                    // 等待管道就绪
+                    bool healthy = false;
+                    for (int i = 0; i < 10; i++)
+                    {
+                        Thread.Sleep(500);
+                        if (CheckJCZServerHealth())
+                        {
+                            healthy = true;
+                            break;
+                        }
+                    }
+                    rts.initStatus.bJCZ = healthy ? 0 : -2;
+                    if (!healthy)
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "激光服务进程启动后管道仍未就绪";
+                        AddLog();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "启动激光服务进程失败";
+                    operLog.strFailReason = ex.Message;
+                    AddLog();
+                    rts.initStatus.bJCZ = -2;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 通过管道快速检测 JCZServer 是否正常响应
+        /// </summary>
+        private bool CheckJCZServerHealth()
+        {
+            const string pipeName = "PipeClient0";
+            try
+            {
+                using (var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                {
+                    pipe.Connect(500);
+                    return pipe.IsConnected;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static byte[] Object2Bytes(object obj)
+        {
+            int size = Marshal.SizeOf(obj);
+            byte[] bytes = new byte[size];
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+            Marshal.StructureToPtr(obj, ptr, false);
+            Marshal.Copy(ptr, bytes, 0, size);
+            Marshal.FreeHGlobal(ptr);
+            return bytes;
+        }
+
+        private static T Deserialize<T>(byte[] buffer) where T : struct
+        {
+            int size = Marshal.SizeOf<T>();
+            if (buffer.Length != size)
+                throw new ArgumentException("Buffer size mismatch");
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+            Marshal.Copy(buffer, 0, ptr, size);
+            T data = Marshal.PtrToStructure<T>(ptr);
+            Marshal.FreeHGlobal(ptr);
+            return data;
+        }
 
         /// <summary>
         /// 初始化 JCZ 服务与双管道连接（不含板卡初始化）。
