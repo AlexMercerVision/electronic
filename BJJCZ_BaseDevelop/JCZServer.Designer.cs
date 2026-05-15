@@ -36,6 +36,7 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.MenuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.File_LoadEZD = new System.Windows.Forms.ToolStripMenuItem();
+            this.File_QuickSaveEZD = new System.Windows.Forms.ToolStripMenuItem();
             this.File_SaveEZD = new System.Windows.Forms.ToolStripMenuItem();
             this.File_ExportFigure = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuCard = new System.Windows.Forms.ToolStripMenuItem();
@@ -51,19 +52,41 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
+            this.btMoveEntAfter = new System.Windows.Forms.Button();
+            this.btMoveEntBefore = new System.Windows.Forms.Button();
             this.dgvEnt = new System.Windows.Forms.DataGridView();
             this.Column1 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.txtEntName = new System.Windows.Forms.TextBox();
+            this.btRenameEnt = new System.Windows.Forms.Button();
+            this.chkEntGroup = new System.Windows.Forms.CheckBox();
+            this.btHatchParam = new System.Windows.Forms.Button();
+            this.btLaserPenParam = new System.Windows.Forms.Button();
+            this.label11 = new System.Windows.Forms.Label();
+            this.label10 = new System.Windows.Forms.Label();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.btLaserPenParam = new System.Windows.Forms.Button();
-            this.btHatchParam = new System.Windows.Forms.Button();
+            this.btParam = new System.Windows.Forms.Button();
+            this.btnInitial = new System.Windows.Forms.Button();
+            this.btMark = new System.Windows.Forms.Button();
+            this.btnClose = new System.Windows.Forms.Button();
+            this.btnStopMark = new System.Windows.Forms.Button();
+            this.btOpenLaser = new System.Windows.Forms.Button();
+            this.btCloseLaser = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
             this.chkContinue = new System.Windows.Forms.CheckBox();
             this.txtZJPosY = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
+            this.label9 = new System.Windows.Forms.Label();
+            this.label8 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.btRedPreviewCou = new System.Windows.Forms.Button();
             this.txtZJPosX = new System.Windows.Forms.TextBox();
@@ -73,7 +96,6 @@
             this.btMarkEnt = new System.Windows.Forms.Button();
             this.picRoCrossClock = new System.Windows.Forms.PictureBox();
             this.label16 = new System.Windows.Forms.Label();
-            this.btRenameEnt = new System.Windows.Forms.Button();
             this.picMvLeft = new System.Windows.Forms.PictureBox();
             this.picMvRight = new System.Windows.Forms.PictureBox();
             this.picMvDown = new System.Windows.Forms.PictureBox();
@@ -84,31 +106,9 @@
             this.label15 = new System.Windows.Forms.Label();
             this.picRoClock = new System.Windows.Forms.PictureBox();
             this.txtScale_Value = new System.Windows.Forms.TextBox();
-            this.chkEntGroup = new System.Windows.Forms.CheckBox();
-            this.txtEntName = new System.Windows.Forms.TextBox();
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.btOpenLaser = new System.Windows.Forms.Button();
-            this.btCloseLaser = new System.Windows.Forms.Button();
-            this.btnInitial = new System.Windows.Forms.Button();
-            this.btMark = new System.Windows.Forms.Button();
-            this.btnClose = new System.Windows.Forms.Button();
-            this.btnStopMark = new System.Windows.Forms.Button();
-            this.btMoveEntAfter = new System.Windows.Forms.Button();
-            this.btMoveEntBefore = new System.Windows.Forms.Button();
-            this.label10 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.btParam = new System.Windows.Forms.Button();
-            this.File_QuickSaveEZD = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -184,21 +184,28 @@
             // File_LoadEZD
             // 
             this.File_LoadEZD.Name = "File_LoadEZD";
-            this.File_LoadEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_LoadEZD.Size = new System.Drawing.Size(159, 22);
             this.File_LoadEZD.Text = "加载EZD文件";
             this.File_LoadEZD.Click += new System.EventHandler(this.File_LoadEZD_Click);
+            // 
+            // File_QuickSaveEZD
+            // 
+            this.File_QuickSaveEZD.Name = "File_QuickSaveEZD";
+            this.File_QuickSaveEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_QuickSaveEZD.Text = "保存EZD文件";
+            this.File_QuickSaveEZD.Click += new System.EventHandler(this.File_QuickSaveEZD_Click);
             // 
             // File_SaveEZD
             // 
             this.File_SaveEZD.Name = "File_SaveEZD";
-            this.File_SaveEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_SaveEZD.Size = new System.Drawing.Size(159, 22);
             this.File_SaveEZD.Text = "另存为EZD文件";
             this.File_SaveEZD.Click += new System.EventHandler(this.File_SaveEZD_Click);
             // 
             // File_ExportFigure
             // 
             this.File_ExportFigure.Name = "File_ExportFigure";
-            this.File_ExportFigure.Size = new System.Drawing.Size(180, 22);
+            this.File_ExportFigure.Size = new System.Drawing.Size(159, 22);
             this.File_ExportFigure.Text = "导出图像";
             this.File_ExportFigure.Click += new System.EventHandler(this.File_ExportFigure_Click);
             // 
@@ -214,14 +221,14 @@
             // Card_NO1
             // 
             this.Card_NO1.Name = "Card_NO1";
-            this.Card_NO1.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO1.Size = new System.Drawing.Size(180, 22);
             this.Card_NO1.Text = "卡1";
             this.Card_NO1.Click += new System.EventHandler(this.Card_NO1_Click);
             // 
             // Card_NO2
             // 
             this.Card_NO2.Name = "Card_NO2";
-            this.Card_NO2.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO2.Size = new System.Drawing.Size(180, 22);
             this.Card_NO2.Text = "卡2";
             this.Card_NO2.Click += new System.EventHandler(this.Card_NO2_Click);
             // 
@@ -337,6 +344,28 @@
             this.mainMsgBox.TabIndex = 118;
             this.mainMsgBox.Text = "";
             // 
+            // btMoveEntAfter
+            // 
+            this.btMoveEntAfter.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntAfter.BackgroundImage")));
+            this.btMoveEntAfter.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMoveEntAfter.Location = new System.Drawing.Point(426, 123);
+            this.btMoveEntAfter.Name = "btMoveEntAfter";
+            this.btMoveEntAfter.Size = new System.Drawing.Size(35, 34);
+            this.btMoveEntAfter.TabIndex = 167;
+            this.btMoveEntAfter.UseVisualStyleBackColor = true;
+            this.btMoveEntAfter.Click += new System.EventHandler(this.btMoveEntAfter_Click);
+            // 
+            // btMoveEntBefore
+            // 
+            this.btMoveEntBefore.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntBefore.BackgroundImage")));
+            this.btMoveEntBefore.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMoveEntBefore.Location = new System.Drawing.Point(426, 83);
+            this.btMoveEntBefore.Name = "btMoveEntBefore";
+            this.btMoveEntBefore.Size = new System.Drawing.Size(35, 34);
+            this.btMoveEntBefore.TabIndex = 168;
+            this.btMoveEntBefore.UseVisualStyleBackColor = true;
+            this.btMoveEntBefore.Click += new System.EventHandler(this.btMoveEntBefore_Click);
+            // 
             // dgvEnt
             // 
             this.dgvEnt.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -348,7 +377,7 @@
             this.dgvEnt.Location = new System.Drawing.Point(0, 0);
             this.dgvEnt.Name = "dgvEnt";
             this.dgvEnt.RowTemplate.Height = 23;
-            this.dgvEnt.Size = new System.Drawing.Size(457, 287);
+            this.dgvEnt.Size = new System.Drawing.Size(410, 287);
             this.dgvEnt.TabIndex = 92;
             this.dgvEnt.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvEnt_CellClick);
             this.dgvEnt.RowHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dgvEnt_RowHeaderMouseClick);
@@ -374,6 +403,82 @@
             this.Column4.HeaderText = "笔号";
             this.Column4.Name = "Column4";
             this.Column4.Width = 40;
+            // 
+            // txtEntName
+            // 
+            this.txtEntName.Location = new System.Drawing.Point(416, 7);
+            this.txtEntName.Name = "txtEntName";
+            this.txtEntName.Size = new System.Drawing.Size(131, 21);
+            this.txtEntName.TabIndex = 138;
+            // 
+            // btRenameEnt
+            // 
+            this.btRenameEnt.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btRenameEnt.Location = new System.Drawing.Point(417, 30);
+            this.btRenameEnt.Margin = new System.Windows.Forms.Padding(4);
+            this.btRenameEnt.Name = "btRenameEnt";
+            this.btRenameEnt.Size = new System.Drawing.Size(71, 28);
+            this.btRenameEnt.TabIndex = 137;
+            this.btRenameEnt.Text = "重命名";
+            this.btRenameEnt.UseVisualStyleBackColor = true;
+            this.btRenameEnt.Click += new System.EventHandler(this.btRenameEnt_Click);
+            // 
+            // chkEntGroup
+            // 
+            this.chkEntGroup.AutoSize = true;
+            this.chkEntGroup.Location = new System.Drawing.Point(499, 39);
+            this.chkEntGroup.Name = "chkEntGroup";
+            this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
+            this.chkEntGroup.TabIndex = 139;
+            this.chkEntGroup.Text = "组群";
+            this.chkEntGroup.UseVisualStyleBackColor = true;
+            this.chkEntGroup.CheckedChanged += new System.EventHandler(this.chkEntGroup_CheckedChanged);
+            // 
+            // btHatchParam
+            // 
+            this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btHatchParam.ForeColor = System.Drawing.Color.Red;
+            this.btHatchParam.Location = new System.Drawing.Point(485, 249);
+            this.btHatchParam.Name = "btHatchParam";
+            this.btHatchParam.Size = new System.Drawing.Size(71, 34);
+            this.btHatchParam.TabIndex = 166;
+            this.btHatchParam.Text = "填充设置";
+            this.btHatchParam.UseVisualStyleBackColor = true;
+            this.btHatchParam.Click += new System.EventHandler(this.btHatchParam_Click);
+            // 
+            // btLaserPenParam
+            // 
+            this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
+            this.btLaserPenParam.Location = new System.Drawing.Point(411, 250);
+            this.btLaserPenParam.Name = "btLaserPenParam";
+            this.btLaserPenParam.Size = new System.Drawing.Size(71, 34);
+            this.btLaserPenParam.TabIndex = 165;
+            this.btLaserPenParam.Text = "笔号设置";
+            this.btLaserPenParam.UseVisualStyleBackColor = true;
+            this.btLaserPenParam.Click += new System.EventHandler(this.btLaserPenParam_Click);
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label11.ForeColor = System.Drawing.Color.Blue;
+            this.label11.Location = new System.Drawing.Point(474, 132);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(63, 14);
+            this.label11.TabIndex = 161;
+            this.label11.Text = "下调顺序";
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label10.ForeColor = System.Drawing.Color.Blue;
+            this.label10.Location = new System.Drawing.Point(474, 92);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(63, 14);
+            this.label10.TabIndex = 161;
+            this.label10.Text = "上调顺序";
             // 
             // splitContainer3
             // 
@@ -453,29 +558,89 @@
             this.panel1.Size = new System.Drawing.Size(606, 284);
             this.panel1.TabIndex = 120;
             // 
-            // btLaserPenParam
+            // btParam
             // 
-            this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
-            this.btLaserPenParam.Location = new System.Drawing.Point(458, 251);
-            this.btLaserPenParam.Name = "btLaserPenParam";
-            this.btLaserPenParam.Size = new System.Drawing.Size(71, 34);
-            this.btLaserPenParam.TabIndex = 165;
-            this.btLaserPenParam.Text = "笔号设置";
-            this.btLaserPenParam.UseVisualStyleBackColor = true;
-            this.btLaserPenParam.Click += new System.EventHandler(this.btLaserPenParam_Click);
+            this.btParam.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btParam.ForeColor = System.Drawing.Color.Red;
+            this.btParam.Location = new System.Drawing.Point(310, 241);
+            this.btParam.Name = "btParam";
+            this.btParam.Size = new System.Drawing.Size(121, 36);
+            this.btParam.TabIndex = 173;
+            this.btParam.Text = "参数设置";
+            this.btParam.UseVisualStyleBackColor = true;
+            this.btParam.Click += new System.EventHandler(this.btParam_Click);
             // 
-            // btHatchParam
+            // btnInitial
             // 
-            this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btHatchParam.ForeColor = System.Drawing.Color.Red;
-            this.btHatchParam.Location = new System.Drawing.Point(532, 250);
-            this.btHatchParam.Name = "btHatchParam";
-            this.btHatchParam.Size = new System.Drawing.Size(71, 34);
-            this.btHatchParam.TabIndex = 166;
-            this.btHatchParam.Text = "填充设置";
-            this.btHatchParam.UseVisualStyleBackColor = true;
-            this.btHatchParam.Click += new System.EventHandler(this.btHatchParam_Click);
+            this.btnInitial.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btnInitial.ForeColor = System.Drawing.Color.Blue;
+            this.btnInitial.Location = new System.Drawing.Point(310, 2);
+            this.btnInitial.Name = "btnInitial";
+            this.btnInitial.Size = new System.Drawing.Size(119, 36);
+            this.btnInitial.TabIndex = 169;
+            this.btnInitial.Text = "初始化板卡";
+            this.btnInitial.UseVisualStyleBackColor = true;
+            this.btnInitial.Click += new System.EventHandler(this.btnInitial_Click);
+            // 
+            // btMark
+            // 
+            this.btMark.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btMark.ForeColor = System.Drawing.Color.Blue;
+            this.btMark.Location = new System.Drawing.Point(310, 80);
+            this.btMark.Name = "btMark";
+            this.btMark.Size = new System.Drawing.Size(119, 36);
+            this.btMark.TabIndex = 172;
+            this.btMark.Text = "激光加工";
+            this.btMark.UseVisualStyleBackColor = true;
+            this.btMark.Click += new System.EventHandler(this.btMark_Click);
+            // 
+            // btnClose
+            // 
+            this.btnClose.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btnClose.ForeColor = System.Drawing.Color.Blue;
+            this.btnClose.Location = new System.Drawing.Point(439, 3);
+            this.btnClose.Name = "btnClose";
+            this.btnClose.Size = new System.Drawing.Size(117, 36);
+            this.btnClose.TabIndex = 170;
+            this.btnClose.Text = "关闭板卡";
+            this.btnClose.UseVisualStyleBackColor = true;
+            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            // 
+            // btnStopMark
+            // 
+            this.btnStopMark.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btnStopMark.ForeColor = System.Drawing.Color.Blue;
+            this.btnStopMark.Location = new System.Drawing.Point(438, 81);
+            this.btnStopMark.Name = "btnStopMark";
+            this.btnStopMark.Size = new System.Drawing.Size(117, 36);
+            this.btnStopMark.TabIndex = 171;
+            this.btnStopMark.Text = "停止加工";
+            this.btnStopMark.UseVisualStyleBackColor = true;
+            this.btnStopMark.Click += new System.EventHandler(this.btnStopMark_Click);
+            // 
+            // btOpenLaser
+            // 
+            this.btOpenLaser.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btOpenLaser.ForeColor = System.Drawing.Color.Blue;
+            this.btOpenLaser.Location = new System.Drawing.Point(310, 41);
+            this.btOpenLaser.Name = "btOpenLaser";
+            this.btOpenLaser.Size = new System.Drawing.Size(119, 36);
+            this.btOpenLaser.TabIndex = 167;
+            this.btOpenLaser.Text = "打开激光器";
+            this.btOpenLaser.UseVisualStyleBackColor = true;
+            this.btOpenLaser.Click += new System.EventHandler(this.btOpenLaser_Click);
+            // 
+            // btCloseLaser
+            // 
+            this.btCloseLaser.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btCloseLaser.ForeColor = System.Drawing.Color.Blue;
+            this.btCloseLaser.Location = new System.Drawing.Point(439, 42);
+            this.btCloseLaser.Name = "btCloseLaser";
+            this.btCloseLaser.Size = new System.Drawing.Size(117, 36);
+            this.btCloseLaser.TabIndex = 168;
+            this.btCloseLaser.Text = "关闭激光器";
+            this.btCloseLaser.UseVisualStyleBackColor = true;
+            this.btCloseLaser.Click += new System.EventHandler(this.btCloseLaser_Click);
             // 
             // label5
             // 
@@ -508,6 +673,94 @@
             this.txtZJPosY.Size = new System.Drawing.Size(58, 23);
             this.txtZJPosY.TabIndex = 162;
             this.txtZJPosY.Text = "0";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label3.ForeColor = System.Drawing.Color.Blue;
+            this.label3.Location = new System.Drawing.Point(97, 121);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(35, 14);
+            this.label3.TabIndex = 161;
+            this.label3.Text = "右移";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label2.ForeColor = System.Drawing.Color.Blue;
+            this.label2.Location = new System.Drawing.Point(5, 125);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(35, 14);
+            this.label2.TabIndex = 161;
+            this.label2.Text = "左移";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label4.ForeColor = System.Drawing.Color.Blue;
+            this.label4.Location = new System.Drawing.Point(47, 233);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(35, 14);
+            this.label4.TabIndex = 161;
+            this.label4.Text = "下移";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label7.ForeColor = System.Drawing.Color.Blue;
+            this.label7.Location = new System.Drawing.Point(237, 82);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(35, 14);
+            this.label7.TabIndex = 161;
+            this.label7.Text = "反转";
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label9.ForeColor = System.Drawing.Color.Blue;
+            this.label9.Location = new System.Drawing.Point(236, 250);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(42, 14);
+            this.label9.TabIndex = 161;
+            this.label9.Text = "Y缩放";
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label8.ForeColor = System.Drawing.Color.Blue;
+            this.label8.Location = new System.Drawing.Point(148, 250);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(42, 14);
+            this.label8.TabIndex = 161;
+            this.label8.Text = "X缩放";
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label6.ForeColor = System.Drawing.Color.Blue;
+            this.label6.Location = new System.Drawing.Point(153, 82);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(35, 14);
+            this.label6.TabIndex = 161;
+            this.label6.Text = "顺转";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label1.ForeColor = System.Drawing.Color.Blue;
+            this.label1.Location = new System.Drawing.Point(49, 82);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(35, 14);
+            this.label1.TabIndex = 161;
+            this.label1.Text = "上移";
             // 
             // label12
             // 
@@ -610,18 +863,6 @@
             this.label16.TabIndex = 144;
             this.label16.Text = "中心Y";
             // 
-            // btRenameEnt
-            // 
-            this.btRenameEnt.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btRenameEnt.Location = new System.Drawing.Point(464, 31);
-            this.btRenameEnt.Margin = new System.Windows.Forms.Padding(4);
-            this.btRenameEnt.Name = "btRenameEnt";
-            this.btRenameEnt.Size = new System.Drawing.Size(71, 28);
-            this.btRenameEnt.TabIndex = 137;
-            this.btRenameEnt.Text = "重命名";
-            this.btRenameEnt.UseVisualStyleBackColor = true;
-            this.btRenameEnt.Click += new System.EventHandler(this.btRenameEnt_Click);
-            // 
             // picMvLeft
             // 
             this.picMvLeft.Image = ((System.Drawing.Image)(resources.GetObject("picMvLeft.Image")));
@@ -721,24 +962,6 @@
             this.txtScale_Value.TabIndex = 145;
             this.txtScale_Value.Text = "1";
             // 
-            // chkEntGroup
-            // 
-            this.chkEntGroup.AutoSize = true;
-            this.chkEntGroup.Location = new System.Drawing.Point(546, 40);
-            this.chkEntGroup.Name = "chkEntGroup";
-            this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
-            this.chkEntGroup.TabIndex = 139;
-            this.chkEntGroup.Text = "组群";
-            this.chkEntGroup.UseVisualStyleBackColor = true;
-            this.chkEntGroup.CheckedChanged += new System.EventHandler(this.chkEntGroup_CheckedChanged);
-            // 
-            // txtEntName
-            // 
-            this.txtEntName.Location = new System.Drawing.Point(463, 3);
-            this.txtEntName.Name = "txtEntName";
-            this.txtEntName.Size = new System.Drawing.Size(131, 21);
-            this.txtEntName.TabIndex = 138;
-            // 
             // txtRo_Value
             // 
             this.txtRo_Value.Location = new System.Drawing.Point(202, 107);
@@ -765,229 +988,6 @@
             this.txtMv_Value.Size = new System.Drawing.Size(30, 21);
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label1.ForeColor = System.Drawing.Color.Blue;
-            this.label1.Location = new System.Drawing.Point(49, 82);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(35, 14);
-            this.label1.TabIndex = 161;
-            this.label1.Text = "上移";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label2.ForeColor = System.Drawing.Color.Blue;
-            this.label2.Location = new System.Drawing.Point(5, 125);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(35, 14);
-            this.label2.TabIndex = 161;
-            this.label2.Text = "左移";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label3.ForeColor = System.Drawing.Color.Blue;
-            this.label3.Location = new System.Drawing.Point(97, 121);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(35, 14);
-            this.label3.TabIndex = 161;
-            this.label3.Text = "右移";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label4.ForeColor = System.Drawing.Color.Blue;
-            this.label4.Location = new System.Drawing.Point(47, 233);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(35, 14);
-            this.label4.TabIndex = 161;
-            this.label4.Text = "下移";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label6.ForeColor = System.Drawing.Color.Blue;
-            this.label6.Location = new System.Drawing.Point(153, 82);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(35, 14);
-            this.label6.TabIndex = 161;
-            this.label6.Text = "顺转";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label7.ForeColor = System.Drawing.Color.Blue;
-            this.label7.Location = new System.Drawing.Point(237, 82);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(35, 14);
-            this.label7.TabIndex = 161;
-            this.label7.Text = "反转";
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label8.ForeColor = System.Drawing.Color.Blue;
-            this.label8.Location = new System.Drawing.Point(148, 250);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(42, 14);
-            this.label8.TabIndex = 161;
-            this.label8.Text = "X缩放";
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label9.ForeColor = System.Drawing.Color.Blue;
-            this.label9.Location = new System.Drawing.Point(236, 250);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(42, 14);
-            this.label9.TabIndex = 161;
-            this.label9.Text = "Y缩放";
-            // 
-            // btOpenLaser
-            // 
-            this.btOpenLaser.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btOpenLaser.ForeColor = System.Drawing.Color.Blue;
-            this.btOpenLaser.Location = new System.Drawing.Point(310, 41);
-            this.btOpenLaser.Name = "btOpenLaser";
-            this.btOpenLaser.Size = new System.Drawing.Size(119, 36);
-            this.btOpenLaser.TabIndex = 167;
-            this.btOpenLaser.Text = "打开激光器";
-            this.btOpenLaser.UseVisualStyleBackColor = true;
-            this.btOpenLaser.Click += new System.EventHandler(this.btOpenLaser_Click);
-            // 
-            // btCloseLaser
-            // 
-            this.btCloseLaser.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btCloseLaser.ForeColor = System.Drawing.Color.Blue;
-            this.btCloseLaser.Location = new System.Drawing.Point(439, 42);
-            this.btCloseLaser.Name = "btCloseLaser";
-            this.btCloseLaser.Size = new System.Drawing.Size(117, 36);
-            this.btCloseLaser.TabIndex = 168;
-            this.btCloseLaser.Text = "关闭激光器";
-            this.btCloseLaser.UseVisualStyleBackColor = true;
-            this.btCloseLaser.Click += new System.EventHandler(this.btCloseLaser_Click);
-            // 
-            // btnInitial
-            // 
-            this.btnInitial.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnInitial.ForeColor = System.Drawing.Color.Blue;
-            this.btnInitial.Location = new System.Drawing.Point(310, 2);
-            this.btnInitial.Name = "btnInitial";
-            this.btnInitial.Size = new System.Drawing.Size(119, 36);
-            this.btnInitial.TabIndex = 169;
-            this.btnInitial.Text = "初始化板卡";
-            this.btnInitial.UseVisualStyleBackColor = true;
-            this.btnInitial.Click += new System.EventHandler(this.btnInitial_Click);
-            // 
-            // btMark
-            // 
-            this.btMark.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btMark.ForeColor = System.Drawing.Color.Blue;
-            this.btMark.Location = new System.Drawing.Point(310, 80);
-            this.btMark.Name = "btMark";
-            this.btMark.Size = new System.Drawing.Size(119, 36);
-            this.btMark.TabIndex = 172;
-            this.btMark.Text = "激光加工";
-            this.btMark.UseVisualStyleBackColor = true;
-            this.btMark.Click += new System.EventHandler(this.btMark_Click);
-            // 
-            // btnClose
-            // 
-            this.btnClose.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnClose.ForeColor = System.Drawing.Color.Blue;
-            this.btnClose.Location = new System.Drawing.Point(439, 3);
-            this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(117, 36);
-            this.btnClose.TabIndex = 170;
-            this.btnClose.Text = "关闭板卡";
-            this.btnClose.UseVisualStyleBackColor = true;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
-            // 
-            // btnStopMark
-            // 
-            this.btnStopMark.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btnStopMark.ForeColor = System.Drawing.Color.Blue;
-            this.btnStopMark.Location = new System.Drawing.Point(438, 81);
-            this.btnStopMark.Name = "btnStopMark";
-            this.btnStopMark.Size = new System.Drawing.Size(117, 36);
-            this.btnStopMark.TabIndex = 171;
-            this.btnStopMark.Text = "停止加工";
-            this.btnStopMark.UseVisualStyleBackColor = true;
-            this.btnStopMark.Click += new System.EventHandler(this.btnStopMark_Click);
-            // 
-            // btMoveEntAfter
-            // 
-            this.btMoveEntAfter.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntAfter.BackgroundImage")));
-            this.btMoveEntAfter.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntAfter.Location = new System.Drawing.Point(473, 124);
-            this.btMoveEntAfter.Name = "btMoveEntAfter";
-            this.btMoveEntAfter.Size = new System.Drawing.Size(35, 34);
-            this.btMoveEntAfter.TabIndex = 167;
-            this.btMoveEntAfter.UseVisualStyleBackColor = true;
-            this.btMoveEntAfter.Click += new System.EventHandler(this.btMoveEntAfter_Click);
-            // 
-            // btMoveEntBefore
-            // 
-            this.btMoveEntBefore.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntBefore.BackgroundImage")));
-            this.btMoveEntBefore.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntBefore.Location = new System.Drawing.Point(473, 84);
-            this.btMoveEntBefore.Name = "btMoveEntBefore";
-            this.btMoveEntBefore.Size = new System.Drawing.Size(35, 34);
-            this.btMoveEntBefore.TabIndex = 168;
-            this.btMoveEntBefore.UseVisualStyleBackColor = true;
-            this.btMoveEntBefore.Click += new System.EventHandler(this.btMoveEntBefore_Click);
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label10.ForeColor = System.Drawing.Color.Blue;
-            this.label10.Location = new System.Drawing.Point(521, 93);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(63, 14);
-            this.label10.TabIndex = 161;
-            this.label10.Text = "上调顺序";
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label11.ForeColor = System.Drawing.Color.Blue;
-            this.label11.Location = new System.Drawing.Point(521, 133);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(63, 14);
-            this.label11.TabIndex = 161;
-            this.label11.Text = "下调顺序";
-            // 
-            // btParam
-            // 
-            this.btParam.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btParam.ForeColor = System.Drawing.Color.Red;
-            this.btParam.Location = new System.Drawing.Point(310, 241);
-            this.btParam.Name = "btParam";
-            this.btParam.Size = new System.Drawing.Size(121, 36);
-            this.btParam.TabIndex = 173;
-            this.btParam.Text = "参数设置";
-            this.btParam.UseVisualStyleBackColor = true;
-            this.btParam.Click += new System.EventHandler(this.btParam_Click);
-            // 
-            // File_QuickSaveEZD
-            // 
-            this.File_QuickSaveEZD.Name = "File_QuickSaveEZD";
-            this.File_QuickSaveEZD.Size = new System.Drawing.Size(180, 22);
-            this.File_QuickSaveEZD.Text = "保存EZD文件";
-            this.File_QuickSaveEZD.Click += new System.EventHandler(this.File_QuickSaveEZD_Click);
             // 
             // JCZServer
             // 

@@ -32,7 +32,7 @@ namespace BJJCZ_BaseDevelop
     }
     public partial class JCZServer : Form
     {
-        int[] phyCardSN = new int[2] { 5, 7 };
+        int[] phyCardSN = new int[2] {4, 6 };
         // =============== 双管道服务端 ===============
         private Pipechanel pipeServer0;
         private Pipechanel pipeServer1;
@@ -388,6 +388,28 @@ namespace BJJCZ_BaseDevelop
                 JczInitErrs[0] = 0;
                 JczInitErrs[1] = 0;
                 AddMsg("板卡初始化成功，正常模式运行");
+
+                // ========== 新增：查询并显示所有卡的映射关系 ==========
+                int[] snArray = new int[8];
+                int ret = JczLmc.lmc1_GetAllCardSN(snArray);
+                if (ret == 0)
+                {
+                    AddMsg("----- 卡号映射信息 -----");
+                    for (int i = 0; i < snArray.Length; i++)
+                    {
+                        if (snArray[i] != -1)
+                        {
+                            AddMsg($"逻辑索引 {i}  -> 物理卡号 {snArray[i]}");
+                        }
+                    }
+                    AddMsg("------------------------");
+                }
+                else
+                {
+                    AddMsg($"获取卡号映射失败，错误码: {ret}");
+                }
+                // =================================================
+
             }
             else
             {
@@ -521,7 +543,7 @@ namespace BJJCZ_BaseDevelop
             double[,] points = new double[2, 2];
             points[0, 0] = x1; points[0, 1] = y1;
             points[1, 0] = x2; points[1, 1] = y2;
-            return JczLmc.lmc1_AddCurveToLib(cardSN, points, 2, entName, penNo, hatch ? 1 : 0);
+            return JczLmc.lmc1_AddCurveToLib(phyCardSN[cardSN], points, 2, entName, penNo, hatch ? 1 : 0);
         }
 
         /// <summary>
@@ -536,7 +558,7 @@ namespace BJJCZ_BaseDevelop
             points[2, 0] = x + width; points[2, 1] = y + height; // 右上
             points[3, 0] = x + width; points[3, 1] = y;        // 右下
             points[4, 0] = x; points[4, 1] = y;           // 回到起点（闭合）
-            return JczLmc.lmc1_AddCurveToLib(cardSN, points, 5, entName, penNo, hatch ? 1 : 0);
+            return JczLmc.lmc1_AddCurveToLib(phyCardSN[cardSN], points, 5, entName, penNo, hatch ? 1 : 0);
         }
 
         /// <summary>
@@ -546,7 +568,7 @@ namespace BJJCZ_BaseDevelop
                                          int penNo, double delayMs = 100)
         {
             // 使用打点函数，不是添加对象到数据库
-            return JczLmc.lmc1_MarkPoint(cardSN, x, y, delayMs, penNo);
+            return JczLmc.lmc1_MarkPoint(phyCardSN[cardSN], x, y, delayMs, penNo);
         }
 
         /// <summary>
@@ -555,7 +577,7 @@ namespace BJJCZ_BaseDevelop
         public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
         {
             // 开始标刻
-            int nErr = JczLmc.lmc1_Mark(cardSN, bFlyMark);
+            int nErr = JczLmc.lmc1_Mark(phyCardSN[cardSN], bFlyMark);
             if (nErr != 0)
             {
                 return nErr;
@@ -567,7 +589,7 @@ namespace BJJCZ_BaseDevelop
 
             while (elapsedMs < timeoutMs)
             {
-                int finishStatus = JczLmc.lmc1_IsMarkFinish(cardSN);
+                int finishStatus = JczLmc.lmc1_IsMarkFinish(phyCardSN[cardSN]);
                 // IsMarkFinish 返回值：1=待机（完成），0=加工中
                 if (finishStatus == 1)
                 {
@@ -579,7 +601,7 @@ namespace BJJCZ_BaseDevelop
             }
 
             // 超时，尝试停止
-            JczLmc.lmc1_StopMark(cardSN);
+            JczLmc.lmc1_StopMark(phyCardSN[cardSN]);
             return 10;  // 返回超时错误码
         }
         // =============== 核心命令解析（简化版，保留原有逻辑）===============
@@ -627,19 +649,19 @@ namespace BJJCZ_BaseDevelop
                         nErr = JczInitErrs[card];
                         if (nErr == 0)
                         {
-                            nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
+                            nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                             if (nErr == 0)
                             {
                                 // 保存当前文件路径
                                 currentFilePath[card] = param.strFileName;
 
-                                nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                                nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                                 strEntNames[card] = new string[nEntNums[card]];
                                 iPenNos[card] = new int[nEntNums[card]];
                                 for (int i = 0; i < nEntNums[card]; i++)
                                 {
-                                    strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
-                                    iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                                    strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                    iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
                                 }
                                 UpdateEntTable(card);
                                 RefreshPreview(card);
@@ -669,24 +691,24 @@ namespace BJJCZ_BaseDevelop
                         break;
 
                     case 3:
-                        nErr = JczLmc.lmc1_LaserOn(card, param.bOpen);
+                        nErr = JczLmc.lmc1_LaserOn(phyCardSN[card], param.bOpen);
                         AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 4:
-                        nErr = JczLmc.lmc1_LoadEzdFile(card, param.strFileName);
+                        nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                         if (nErr == 0)
                         {
                             // 保存当前文件路径
                             currentFilePath[card] = param.strFileName;
 
-                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
                             for (int i = 0; i < nEntNums[card]; i++)
                             {
-                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
-                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
                             }
                             UpdateEntTable(card);
                             RefreshPreview(card);
@@ -710,7 +732,7 @@ namespace BJJCZ_BaseDevelop
                             savePath = Path.Combine(Application.StartupPath, "route.ezd");
                         }
 
-                        nErr = JczLmc.lmc1_SaveEntLibToFile(card, savePath);
+                        nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], savePath);
                         if (nErr == 0)
                         {
                             // 保存成功后更新暂存路径（如果是新路径）
@@ -723,7 +745,7 @@ namespace BJJCZ_BaseDevelop
                     case 110:
                         if (!bInMark[card])
                         {
-                            if (param.cmdType == 110) JczLmc.lmc1_SetRotateMoveParam(card, 0, 0, 0, 0, 0);
+                            if (param.cmdType == 110) JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
                             int markSeq = param.ind3;
                             var worker = new BackgroundWorker();
                             worker.DoWork += (s, ev) =>
@@ -743,7 +765,7 @@ namespace BJJCZ_BaseDevelop
                         break;
 
                     case 11:
-                        nErr = JczLmc.lmc1_StopMark(card);
+                        nErr = JczLmc.lmc1_StopMark(phyCardSN[card]);
                         bInRed[card] = false;
                         break;
 
@@ -751,7 +773,7 @@ namespace BJJCZ_BaseDevelop
                     case 13:
                         if (!bInMark[card])
                         {
-                            if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; Thread.Sleep(50); }
+                            if (bInRed[card]) { JczLmc.lmc1_StopMark(phyCardSN[card]); bInRed[card] = false; Thread.Sleep(50); }
                             if (param.bOpen)
                             {
                                 bInRed[card] = true;
@@ -760,8 +782,8 @@ namespace BJJCZ_BaseDevelop
                                 {
                                     while (param.bOpen && bInRed[card])
                                     {
-                                        if (param.cmdType == 12) JczLmc.lmc1_RedLightMark(card);
-                                        else JczLmc.lmc1_RedLightMarkContourByEnt(card, null);
+                                        if (param.cmdType == 12) JczLmc.lmc1_RedLightMark(phyCardSN[card]);
+                                        else JczLmc.lmc1_RedLightMarkContourByEnt(phyCardSN[card], null);
                                         Thread.Sleep(10);
                                     }
                                     bInRed[card] = false;
@@ -772,12 +794,12 @@ namespace BJJCZ_BaseDevelop
                         break;
 
                     case 15:
-                        nErr = JczLmc.lmc1_GotoPos(card, param.dParam1, param.dParam2);
+                        nErr = JczLmc.lmc1_GotoPos(phyCardSN[card], param.dParam1, param.dParam2);
                         break;
 
                     case 21:
                         if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
-                            nErr = JczLmc.lmc1_MarkEntity(card, strEntNames[card][iEntIndices[card]]);
+                            nErr = JczLmc.lmc1_MarkEntity(phyCardSN[card], strEntNames[card][iEntIndices[card]]);
                         else nErr = 18;
                         break;
 
@@ -786,7 +808,7 @@ namespace BJJCZ_BaseDevelop
                         {
                             if (!bInMark[card])
                             {
-                                if (bInRed[card]) { JczLmc.lmc1_StopMark(card); bInRed[card] = false; }
+                                if (bInRed[card]) { JczLmc.lmc1_StopMark(phyCardSN[card]); bInRed[card] = false; }
                                 if (param.bOpen)
                                 {
                                     bInRed[card] = true;
@@ -796,7 +818,7 @@ namespace BJJCZ_BaseDevelop
                                     {
                                         while (param.bOpen && bInRed[card])
                                         {
-                                            JczLmc.lmc1_RedLightMarkContourByEnt(card, entName);
+                                            JczLmc.lmc1_RedLightMarkContourByEnt(phyCardSN[card], entName);
                                             Thread.Sleep(10);
                                         }
                                         bInRed[card] = false;
@@ -809,41 +831,41 @@ namespace BJJCZ_BaseDevelop
 
                     case 23:
                         if (param.ind1 < strEntNames[card]?.Length)
-                            nErr = JczLmc.lmc1_RotateEnt(card, strEntNames[card][param.ind1],
+                            nErr = JczLmc.lmc1_RotateEnt(phyCardSN[card], strEntNames[card][param.ind1],
                                                          param.dParam3, param.dParam4, param.dParam5);
                         RefreshPreview(card);
                         break;
 
                     case 24:
                         if (param.ind1 < strEntNames[card]?.Length)
-                            nErr = JczLmc.lmc1_MoveEnt(card, strEntNames[card][param.ind1],
+                            nErr = JczLmc.lmc1_MoveEnt(phyCardSN[card], strEntNames[card][param.ind1],
                                                       ref param.dParam1,ref param.dParam2);
                         RefreshPreview(card);
                         break;
 
                     case 25:
                         if (param.ind1 < strEntNames[card]?.Length)
-                            nErr = JczLmc.lmc1_ScaleEnt(card, strEntNames[card][param.ind1],
+                            nErr = JczLmc.lmc1_ScaleEnt(phyCardSN[card], strEntNames[card][param.ind1],
                                                         param.dParam1, param.dParam2,
                                                         param.dParam3, param.dParam4);
                         RefreshPreview(card);
                         break;
 
                     case 27:
-                        nErr = JczLmc.lmc1_SetRotateMoveParam(card, param.dParam1, param.dParam2,
+                        nErr = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], param.dParam1, param.dParam2,
                                                               param.dParam3, param.dParam4, param.dParam5);
                         break;
 
                     case 28:
                         if (param.bOpen)
-                            nErr = JczLmc.lmc1_GroupEnt2(card, strEntNames[card],
+                            nErr = JczLmc.lmc1_GroupEnt2(phyCardSN[card], strEntNames[card],
                                                          strEntNames[card].Length, "grpEnt", 2);
                         else
-                            nErr = JczLmc.lmc1_UnGroupEnt(card, "grpEnt");
+                            nErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
                         break;
                     case 31:
                         if (param.ind1 < strEntNames[card]?.Length)
-                            nErr = JczLmc.lmc1_ChangeEntName(card, strEntNames[card][param.ind1], param.strEntyName);
+                            nErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], strEntNames[card][param.ind1], param.strEntyName);
                         RefreshPreview(card);
                         break;
                     case 34:  // 添加圆
@@ -863,7 +885,7 @@ namespace BJJCZ_BaseDevelop
                         int penNo = param.ind1 > 0 ? param.ind1 : 1;  // 默认笔号1
 
                         // 调用添加圆的函数
-                        nErr = JczLmc.lmc1_AddCircleToLib(card, centerX, centerY, radius, entNameCir, penNo);
+                        nErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], centerX, centerY, radius, entNameCir, penNo);
                        // nErr = JczLmc.AddCircleToLib(card, centerX, centerY, radius, entName, penNo);
 
                         if (nErr == 0)
@@ -873,7 +895,7 @@ namespace BJJCZ_BaseDevelop
                             {
                                 // 创建填充对象名称
                                 string hatchEntName = entNameCir + "_Hatch";
-                                nErr = JczLmc.lmc1_HatchEnt(card, entNameCir, hatchEntName);
+                                nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
                                 if (nErr == 0)
                                 {
                                     AddMsg($"卡{card} 添加圆并填充成功 -> {entNameCir}");
@@ -914,14 +936,14 @@ namespace BJJCZ_BaseDevelop
                         if (nErr == 0)
                         {
                             // 刷新对象列表
-                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
 
                             for (int i = 0; i < nEntNums[card]; i++)
                             {
-                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
-                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
                             }
 
                             UpdateEntTable(card);
@@ -952,14 +974,14 @@ namespace BJJCZ_BaseDevelop
                         if (nErr == 0)
                         {
                             // 刷新对象列表
-                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
 
                             for (int i = 0; i < nEntNums[card]; i++)
                             {
-                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
-                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
                             }
 
                             UpdateEntTable(card);
@@ -988,12 +1010,12 @@ namespace BJJCZ_BaseDevelop
                                 {
                                     hp = fh.hp;
                                     // 先移除原有填充（如果存在）
-                                    JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
+                                    JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
                                     // 设置新的填充参数
                                     SetHatchParamForEntity(card, hp);
                                     // 为对象添加填充
                                     string hatchEntName = param.strEntyName + "_Hatch";
-                                    nErr = JczLmc.lmc1_HatchEnt(card, param.strEntyName, hatchEntName);
+                                    nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
 
                                     if (nErr == 0)
                                     {
@@ -1001,7 +1023,7 @@ namespace BJJCZ_BaseDevelop
                                         // 保存文件
                                         if (!string.IsNullOrEmpty(param.strFileName))
                                         {
-                                            JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                                            JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
                                         }
                                         RefreshPreview(card);
                                         UpdateEntTable(card);
@@ -1013,13 +1035,13 @@ namespace BJJCZ_BaseDevelop
                                 }
                                 else if (dr == DialogResult.Abort)  // 删除填充
                                 {
-                                    nErr = JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
+                                    nErr = JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
                                     if (nErr == 0)
                                     {
                                         AddMsg($"卡{card} 删除对象 {param.strEntyName} 填充成功");
                                         if (!string.IsNullOrEmpty(param.strFileName))
                                         {
-                                            JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                                            JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
                                         }
                                         RefreshPreview(card);
                                         UpdateEntTable(card);
@@ -1057,7 +1079,7 @@ namespace BJJCZ_BaseDevelop
                        //     JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
 
                             // 添加填充
-                            nErr = JczLmc.lmc1_HatchEnt(card, param.strEntyName, hatchEntName);
+                            nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
 
                             if (nErr == 0)
                             {
@@ -1068,7 +1090,7 @@ namespace BJJCZ_BaseDevelop
                                 // 如果需要保存文件
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
-                                    nErr = JczLmc.lmc1_SaveEntLibToFile(card, param.strFileName);
+                                    nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
                                     AddMsg($"卡{card} 保存文件: {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
@@ -1084,7 +1106,7 @@ namespace BJJCZ_BaseDevelop
                         }
                         break;
                     case 40:
-                        nErr = JczLmc.lmc1_SetDevCfg(card);
+                        nErr = JczLmc.lmc1_SetDevCfg(phyCardSN[card]);
                         break;
 
                     case 42:
@@ -1176,7 +1198,7 @@ namespace BJJCZ_BaseDevelop
                 }
 
                 // 调用JczLmc的获取填充参数函数
-                nErr = JczLmc.lmc1_GetHatchEntParam2(card, entName,
+                nErr = JczLmc.lmc1_GetHatchEntParam2(phyCardSN[card], entName,
                     ref hp.bEnableContour,
                     hp.nParamIndex,
                     ref hp.bEnableHatch,
@@ -1219,7 +1241,7 @@ namespace BJJCZ_BaseDevelop
             int nErr = 0;
             try
             {
-                nErr = JczLmc.lmc1_SetHatchEntParam2(card, null,
+                nErr = JczLmc.lmc1_SetHatchEntParam2(phyCardSN[card], null,
                     hp.bEnableContour,
                     hp.nParamIndex,
                     hp.bEnableHatch,
@@ -1309,10 +1331,10 @@ namespace BJJCZ_BaseDevelop
                 alImParam.height = 100;
                 alImParam.dWidth = 100;
                 alImParam.width = 100;
-                /*imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(card, pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height *//*alImParam.width, alImParam.height*//*));*/
                 imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(card, "特征圆9Fill"));
+                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(phyCardSN[card], pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height /*alImParam.width, alImParam.height*/));
+                /*imLaserRoute[card] = MakeWhiteTransparent(
+                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(phyCardSN[card], "特征圆9Fill"));*/
                 if (imLaserRoute[card] == null)
                     imLaserRoute[card] = MakeWhiteTransparent(
                         (Bitmap)Image.FromFile(@".\data\route.png"), 50);
@@ -1897,7 +1919,7 @@ namespace BJJCZ_BaseDevelop
             if (bInRed[card])
             {
                 // 停止红光
-                JczLmc.lmc1_StopMark(card);
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
                 btRedPreview.Text = "红光预览边界";
                 AddMsg($"卡{card + 1} 停止红光预览");
@@ -1926,7 +1948,7 @@ namespace BJJCZ_BaseDevelop
             int card = currentCard;
             if (bInRed[card])
             {
-                JczLmc.lmc1_StopMark(card);
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
                 btRedPreviewCou.Text = "红光预览轮廓";
                 AddMsg($"卡{card + 1} 停止红光预览轮廓");
@@ -1960,7 +1982,7 @@ namespace BJJCZ_BaseDevelop
 
             if (bInRed[card])
             {
-                JczLmc.lmc1_StopMark(card);
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
                 btRedPreviewEnt.Text = "红光预览对象";
                 AddMsg($"卡{card + 1} 停止红光预览对象");
@@ -2030,7 +2052,7 @@ namespace BJJCZ_BaseDevelop
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
-                cmdType = 1,  // 初始化板卡
+                cmdType = 1,
                 ind3 = 0
             };
             CMDAna(param);
@@ -2038,6 +2060,23 @@ namespace BJJCZ_BaseDevelop
             // 初始化完成后，刷新对象列表
             if (JczInitErrs[card] == 0)
             {
+                // ========== 新增：显示卡号映射 ==========
+                int[] snArray = new int[8];
+                int ret = JczLmc.lmc1_GetAllCardSN(snArray);
+                if (ret == 0)
+                {
+                    AddMsg($"----- 卡{card} 卡号映射 -----");
+                    for (int i = 0; i < snArray.Length; i++)
+                    {
+                        if (snArray[i] != -1)
+                        {
+                            AddMsg($"逻辑索引 {i}  -> 物理卡号 {snArray[i]}");
+                        }
+                    }
+                    AddMsg("------------------------------");
+                }
+                // =====================================
+
                 nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
                 if (nEntNums[card] > 0)
                 {
@@ -2061,12 +2100,12 @@ namespace BJJCZ_BaseDevelop
             // 停止当前所有操作
             if (bInMark[card])
             {
-                JczLmc.lmc1_StopMark(card);
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInMark[card] = false;
             }
             if (bInRed[card])
             {
-                JczLmc.lmc1_StopMark(card);
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
             }
 
@@ -2139,7 +2178,7 @@ namespace BJJCZ_BaseDevelop
             if (bInRed[card])
             {
                 bInRed[card] = false;
-                JczLmc.lmc1_StopMark(card);
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
 
                 // 重置红光按钮文本（在UI线程中执行）
                 this.BeginInvoke(new Action(() =>
@@ -2297,7 +2336,7 @@ namespace BJJCZ_BaseDevelop
 
         private void btParam_Click(object sender, EventArgs e)
         {
-           /* int card = currentCard;
+            int card = currentCard;
 
             // 检查板卡是否已初始化
             if (JczInitErrs[card] != 0 && !bSimulateMode[card])
@@ -2312,8 +2351,8 @@ namespace BJJCZ_BaseDevelop
             {
                 // 调用SDK显示配置对话框（具体函数名需查阅SDK文档）
                 // 常见写法类似：JczLmc.lmc1_ShowConfigDialog(card, this.Handle);
-                int nErr = JczLmc.lmc1_ShowConfigDialog(card, this.Handle);
-
+               // int nErr = JczLmc.lmc1_ShowConfigDialog(card, this.Handle);
+                int nErr = JczLmc.lmc1_SetDevCfg(phyCardSN[card]);
                 if (nErr == 0)
                 {
                     AddMsg($"卡{card + 1} 配置界面已关闭");
@@ -2332,7 +2371,7 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 打开配置界面异常: {ex.Message}");
                 MessageBox.Show($"打开配置界面失败: {ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }*/
+            }
         }
 
 
