@@ -881,13 +881,7 @@ namespace VisionApplication
                 ((CheckBox)this.Controls.Find("ckb2_" + (i + 1).ToString(), true)[0]).Checked = p_LS2[iLastFXLightSourceIndex].bExe[i];
             }
         }
-        private void cmbFXLightSource_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            GetFXLightSourceParam();
-            iLastFXLightSourceIndex = 0;
-            SetFXLightSourceParam();
-        }
-
+         
         private void txtIntensity2_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == 13)

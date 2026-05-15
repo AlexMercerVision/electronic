@@ -414,7 +414,7 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>初始化指定卡（建议先调用 GetAllCardSN 获取有效卡号）</summary>
-        public static int InitializeCard(int cardSN, string ezcadPath, bool bTestMode, IntPtr hWnd)
+        public static int InitializeCard(string ezcadPath, bool bTestMode, IntPtr hWnd)
         {
             return lmc1_Initial(ezcadPath, bTestMode, hWnd);
         }
@@ -571,7 +571,7 @@ namespace BJJCZ_BaseDevelop
 
         #region 旧版兼容方法（Obsolete，内部使用 cardSN=0）
         [Obsolete("请使用带卡序号的重载")]
-        public static int Initialize(string path, bool bTest) => InitializeCard(0, path, bTest, IntPtr.Zero);
+        public static int Initialize(string path, bool bTest) => InitializeCard(path, bTest, IntPtr.Zero);
         [Obsolete("请使用带卡序号的重载")]
         public static int Mark(bool Fly) => lmc1_Mark(0, Fly);
         [Obsolete("请使用带卡序号的重载")]

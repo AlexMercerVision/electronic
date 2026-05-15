@@ -32,6 +32,7 @@ namespace BJJCZ_BaseDevelop
     }
     public partial class JCZServer : Form
     {
+        int[] phyCardSN = new int[2] { 5, 7 };
         // =============== 双管道服务端 ===============
         private Pipechanel pipeServer0;
         private Pipechanel pipeServer1;
@@ -381,7 +382,7 @@ namespace BJJCZ_BaseDevelop
         /// </summary>
         private void TryInitializeCards()
         {
-            int initResult = JczLmc.InitializeCard(0, Application.StartupPath + "\\", false, this.Handle);
+            int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
             if (initResult == 0)
             {
                 JczInitErrs[0] = 0;
@@ -651,7 +652,7 @@ namespace BJJCZ_BaseDevelop
                         break;
 
                     case 1:
-                        nErr = JczLmc.InitializeCard(card, Application.StartupPath, false, this.Handle);
+                        nErr = JczLmc.InitializeCard(Application.StartupPath, false, this.Handle);
                         JczInitErrs[card] = nErr;
                         AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
                         if (nErr != 0)
