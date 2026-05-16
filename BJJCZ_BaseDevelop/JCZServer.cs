@@ -1407,7 +1407,6 @@ namespace BJJCZ_BaseDevelop
         {
             if (bSimulateMode[card]) return;
 
-            // 检查是否需要跨线程调用
             if (dgvEnt.InvokeRequired)
             {
                 dgvEnt.Invoke(new Action<int>(UpdateEntTable), card);
@@ -1417,15 +1416,73 @@ namespace BJJCZ_BaseDevelop
             dgvEnt.Rows.Clear();
             for (int i = 0; i < nEntNums[card]; i++)
             {
+                string entName = strEntNames[card][i];
+                string entType = GetEntityType(card, entName);  // 动态获取类型
+
                 dgvEnt.Rows.Add();
                 dgvEnt.Rows[i].Cells[0].Value = true;
-                dgvEnt.Rows[i].Cells[1].Value = strEntNames[card][i];
-                dgvEnt.Rows[i].Cells[2].Value = "轮廓";
+                dgvEnt.Rows[i].Cells[1].Value = entName;
+                dgvEnt.Rows[i].Cells[2].Value = entType;       // 填充类型列
                 dgvEnt.Rows[i].Cells[3].Value = iPenNos[card][i].ToString();
                 dgvEnt.Rows[i].HeaderCell.Value = (i + 1).ToString();
             }
         }
+        /// <summary>
+        /// 获取指定对象的类型（填充/轮廓）
+        /// </summary>
+        private string GetEntityType(int card, string entName)
+        {
+            if (bSimulateMode[card] || string.IsNullOrEmpty(entName))
+                return "轮廓";
 
+            try
+            {
+                // 调用获取填充参数函数
+                bool bEnableContour = false;
+                int nParamIndex = 1;
+                int bEnableHatch = 1;
+                bool bContourFirst = false;
+                int nPenNo = 0;
+                int nHatchType = 0;
+                bool bHatchAllCalc = false;
+                bool bHatchEdge = false;
+                bool bHatchAverageLine = false;
+                double dHatchAngle = 0;
+                double dHatchLineDist = 0;
+                double dHatchEdgeDist = 0;
+                double dHatchStartOffset = 0;
+                double dHatchEndOffset = 0;
+                double dHatchLineReduction = 0;
+                double dHatchLoopDist = 0;
+                int nEdgeLoop = 0;
+                bool bHatchLoopRev = false;
+                bool bHatchAutoRotate = false;
+                double dHatchRotateAngle = 0;
+                bool bHatchCross = false;
+                int dCycCount = 0;
+
+                int nErr = JczLmc.lmc1_GetHatchEntParam2(
+                    phyCardSN[card], entName,
+                    ref bEnableContour, nParamIndex, ref bEnableHatch,
+                    ref bContourFirst, ref nPenNo, ref nHatchType,
+                    ref bHatchAllCalc, ref bHatchEdge, ref bHatchAverageLine,
+                    ref dHatchAngle, ref dHatchLineDist, ref dHatchEdgeDist,
+                    ref dHatchStartOffset, ref dHatchEndOffset, ref dHatchLineReduction,
+                    ref dHatchLoopDist, ref nEdgeLoop, ref bHatchLoopRev,
+                    ref bHatchAutoRotate, ref dHatchRotateAngle, ref bHatchCross,
+                    ref dCycCount);
+
+                // 如果获取成功且填充使能，则为填充对象
+                if (nErr == 0 && bEnableHatch!=0)
+                    return "填充";
+                else
+                    return "轮廓";
+            }
+            catch
+            {
+                return "轮廓";
+            }
+        }
         // =============== 界面事件 ===============
         private void menuSplit_Click(object sender, EventArgs e)
         {

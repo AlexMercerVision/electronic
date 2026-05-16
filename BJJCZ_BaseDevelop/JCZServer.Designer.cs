@@ -221,14 +221,14 @@
             // Card_NO1
             // 
             this.Card_NO1.Name = "Card_NO1";
-            this.Card_NO1.Size = new System.Drawing.Size(180, 22);
+            this.Card_NO1.Size = new System.Drawing.Size(95, 22);
             this.Card_NO1.Text = "卡1";
             this.Card_NO1.Click += new System.EventHandler(this.Card_NO1_Click);
             // 
             // Card_NO2
             // 
             this.Card_NO2.Name = "Card_NO2";
-            this.Card_NO2.Size = new System.Drawing.Size(180, 22);
+            this.Card_NO2.Size = new System.Drawing.Size(95, 22);
             this.Card_NO2.Text = "卡2";
             this.Card_NO2.Click += new System.EventHandler(this.Card_NO2_Click);
             // 
@@ -321,16 +321,7 @@
             // 
             // splitContainer2.Panel2
             // 
-            this.splitContainer2.Panel2.Controls.Add(this.btMoveEntAfter);
-            this.splitContainer2.Panel2.Controls.Add(this.btMoveEntBefore);
-            this.splitContainer2.Panel2.Controls.Add(this.dgvEnt);
-            this.splitContainer2.Panel2.Controls.Add(this.txtEntName);
-            this.splitContainer2.Panel2.Controls.Add(this.btRenameEnt);
-            this.splitContainer2.Panel2.Controls.Add(this.chkEntGroup);
-            this.splitContainer2.Panel2.Controls.Add(this.btHatchParam);
-            this.splitContainer2.Panel2.Controls.Add(this.btLaserPenParam);
-            this.splitContainer2.Panel2.Controls.Add(this.label11);
-            this.splitContainer2.Panel2.Controls.Add(this.label10);
+            this.splitContainer2.Panel2.Controls.Add(this.pictureBox1);
             this.splitContainer2.Size = new System.Drawing.Size(1220, 287);
             this.splitContainer2.SplitterDistance = 610;
             this.splitContainer2.TabIndex = 0;
@@ -348,7 +339,7 @@
             // 
             this.btMoveEntAfter.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntAfter.BackgroundImage")));
             this.btMoveEntAfter.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntAfter.Location = new System.Drawing.Point(426, 123);
+            this.btMoveEntAfter.Location = new System.Drawing.Point(454, 125);
             this.btMoveEntAfter.Name = "btMoveEntAfter";
             this.btMoveEntAfter.Size = new System.Drawing.Size(35, 34);
             this.btMoveEntAfter.TabIndex = 167;
@@ -359,7 +350,7 @@
             // 
             this.btMoveEntBefore.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntBefore.BackgroundImage")));
             this.btMoveEntBefore.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntBefore.Location = new System.Drawing.Point(426, 83);
+            this.btMoveEntBefore.Location = new System.Drawing.Point(454, 85);
             this.btMoveEntBefore.Name = "btMoveEntBefore";
             this.btMoveEntBefore.Size = new System.Drawing.Size(35, 34);
             this.btMoveEntBefore.TabIndex = 168;
@@ -374,10 +365,10 @@
             this.Column2,
             this.Column3,
             this.Column4});
-            this.dgvEnt.Location = new System.Drawing.Point(0, 0);
+            this.dgvEnt.Location = new System.Drawing.Point(3, 3);
             this.dgvEnt.Name = "dgvEnt";
             this.dgvEnt.RowTemplate.Height = 23;
-            this.dgvEnt.Size = new System.Drawing.Size(410, 287);
+            this.dgvEnt.Size = new System.Drawing.Size(444, 277);
             this.dgvEnt.TabIndex = 92;
             this.dgvEnt.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvEnt_CellClick);
             this.dgvEnt.RowHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dgvEnt_RowHeaderMouseClick);
@@ -406,15 +397,15 @@
             // 
             // txtEntName
             // 
-            this.txtEntName.Location = new System.Drawing.Point(416, 7);
+            this.txtEntName.Location = new System.Drawing.Point(453, 14);
             this.txtEntName.Name = "txtEntName";
-            this.txtEntName.Size = new System.Drawing.Size(131, 21);
+            this.txtEntName.Size = new System.Drawing.Size(154, 21);
             this.txtEntName.TabIndex = 138;
             // 
             // btRenameEnt
             // 
             this.btRenameEnt.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btRenameEnt.Location = new System.Drawing.Point(417, 30);
+            this.btRenameEnt.Location = new System.Drawing.Point(454, 42);
             this.btRenameEnt.Margin = new System.Windows.Forms.Padding(4);
             this.btRenameEnt.Name = "btRenameEnt";
             this.btRenameEnt.Size = new System.Drawing.Size(71, 28);
@@ -426,7 +417,7 @@
             // chkEntGroup
             // 
             this.chkEntGroup.AutoSize = true;
-            this.chkEntGroup.Location = new System.Drawing.Point(499, 39);
+            this.chkEntGroup.Location = new System.Drawing.Point(537, 51);
             this.chkEntGroup.Name = "chkEntGroup";
             this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
             this.chkEntGroup.TabIndex = 139;
@@ -438,7 +429,7 @@
             // 
             this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btHatchParam.ForeColor = System.Drawing.Color.Red;
-            this.btHatchParam.Location = new System.Drawing.Point(485, 249);
+            this.btHatchParam.Location = new System.Drawing.Point(527, 243);
             this.btHatchParam.Name = "btHatchParam";
             this.btHatchParam.Size = new System.Drawing.Size(71, 34);
             this.btHatchParam.TabIndex = 166;
@@ -450,7 +441,7 @@
             // 
             this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
-            this.btLaserPenParam.Location = new System.Drawing.Point(411, 250);
+            this.btLaserPenParam.Location = new System.Drawing.Point(453, 244);
             this.btLaserPenParam.Name = "btLaserPenParam";
             this.btLaserPenParam.Size = new System.Drawing.Size(71, 34);
             this.btLaserPenParam.TabIndex = 165;
@@ -463,7 +454,7 @@
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label11.ForeColor = System.Drawing.Color.Blue;
-            this.label11.Location = new System.Drawing.Point(474, 132);
+            this.label11.Location = new System.Drawing.Point(502, 134);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(63, 14);
             this.label11.TabIndex = 161;
@@ -474,7 +465,7 @@
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label10.ForeColor = System.Drawing.Color.Blue;
-            this.label10.Location = new System.Drawing.Point(474, 92);
+            this.label10.Location = new System.Drawing.Point(502, 94);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(63, 14);
             this.label10.TabIndex = 161;
@@ -488,7 +479,16 @@
             // 
             // splitContainer3.Panel1
             // 
-            this.splitContainer3.Panel1.Controls.Add(this.pictureBox1);
+            this.splitContainer3.Panel1.Controls.Add(this.btHatchParam);
+            this.splitContainer3.Panel1.Controls.Add(this.btMoveEntAfter);
+            this.splitContainer3.Panel1.Controls.Add(this.btLaserPenParam);
+            this.splitContainer3.Panel1.Controls.Add(this.dgvEnt);
+            this.splitContainer3.Panel1.Controls.Add(this.btMoveEntBefore);
+            this.splitContainer3.Panel1.Controls.Add(this.txtEntName);
+            this.splitContainer3.Panel1.Controls.Add(this.label10);
+            this.splitContainer3.Panel1.Controls.Add(this.btRenameEnt);
+            this.splitContainer3.Panel1.Controls.Add(this.label11);
+            this.splitContainer3.Panel1.Controls.Add(this.chkEntGroup);
             // 
             // splitContainer3.Panel2
             // 
@@ -504,7 +504,7 @@
             this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBox1.Location = new System.Drawing.Point(0, 0);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(610, 284);
+            this.pictureBox1.Size = new System.Drawing.Size(606, 287);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.pictureBox1.TabIndex = 7;
             this.pictureBox1.TabStop = false;
@@ -1013,11 +1013,11 @@
             this.splitContainer1.ResumeLayout(false);
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel2.ResumeLayout(false);
-            this.splitContainer2.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).EndInit();
             this.splitContainer3.Panel1.ResumeLayout(false);
+            this.splitContainer3.Panel1.PerformLayout();
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
