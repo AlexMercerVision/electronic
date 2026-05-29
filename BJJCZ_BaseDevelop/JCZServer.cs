@@ -53,6 +53,16 @@ namespace BJJCZ_BaseDevelop
         private AlignImParam alImParam = new AlignImParam();
         private int currentCard = 0;
         private int lastCmdCard = 0;
+        // 在 JCZServer 类中添加字段
+        private RectangleF _overlayWorldBounds;   // 叠加图物理范围（mm）
+        private Bitmap[] cachedRouteImg = new Bitmap[2];   // 缓存透明处理后的叠加图
+        private int[] lastRouteHash = new int[2];          // 可选：通过哈希判断内容是否变化
+                                                           // 叠加图缓存（用于避免重复透明处理）
+        private Bitmap[] cachedTransparentRoute = new Bitmap[2];
+        private int[] cachedRouteWidth = new int[2];
+        private int[] cachedRouteHeight = new int[2];
+        // 如果 SDK 每次返回新对象且内容可能变，还需要记录内容哈希或直接用引用比较
+        private Bitmap[] lastRawRouteImg = new Bitmap[2];
 
         // =============== 嵌入模式相关 ===============
         private bool _isEmbedded = true;           // 默认嵌入模式
@@ -123,7 +133,7 @@ namespace BJJCZ_BaseDevelop
         public JCZServer()
         {
             InitializeComponent();
-
+            this.DoubleBuffered = true;   // 添加这一行
             pipeServer0 = new Pipechanel(1, "PipeServer0", "PipeClient0");
             pipeServer1 = new Pipechanel(1, "PipeServer1", "PipeClient1");
 
@@ -133,6 +143,22 @@ namespace BJJCZ_BaseDevelop
             InitParentCheckTimer();
         }
 
+        // 在 JCZServer 类中添加
+        private RectangleF GetCurrentWorldBounds()
+        {
+            if (alImParam.dWidth > 0 && alImParam.dHeight > 0)
+            {
+                float left = (float)(alImParam.dCenX - alImParam.dWidth / 2);
+                float right = (float)(alImParam.dCenX + alImParam.dWidth / 2);
+                float bottom = (float)(alImParam.dCenY - alImParam.dHeight / 2);
+                float top = (float)(alImParam.dCenY + alImParam.dHeight / 2);
+                return new RectangleF(left, bottom, right - left, top - bottom);
+            }
+            // 默认范围（mm）
+            return new RectangleF(-50f, -50f, 100f, 100f);
+        }
+
+
         // =============== 窗体加载 ===============
         private void JCZServer_Load(object sender, EventArgs e)
         {
@@ -140,7 +166,18 @@ namespace BJJCZ_BaseDevelop
             AddMsg("双管道服务端启动完成，等待板卡0/1连接");
             TryInitializeCards();
 
-            // 默认进入嵌入模式布局
+            alImParam.dCenX = 0;
+            alImParam.dCenY = 0;
+            alImParam.dHeight = 200;
+            alImParam.dWidth = 100;
+
+            pictureBox1.SetWorldViewBounds(new RectangleF(-100f, -100f, 400f, 200f));
+            pictureBox2.SetWorldViewBounds(new RectangleF(-100f, -100f, 400f, 200f));
+
+            // 立即设置布局为完整模式（分割线居中）
+            SetupDefaultLayoutImmediately();
+
+            // 默认进入嵌入模式布局（如果 _isEmbedded 为 true，再调整）
             ApplyEmbeddedLayout();
         }
 
@@ -275,6 +312,56 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
+        /// 立即设置默认布局（不触发额外重绘）
+        /// </summary>
+        private void SetupDefaultLayoutImmediately()
+        {
+            // 暂停布局更新
+            this.SuspendLayout();
+            splitContainer1.SuspendLayout();
+            splitContainer2.SuspendLayout();
+            splitContainer3.SuspendLayout();
+
+            try
+            {
+                // 先展开所有面板
+                splitContainer1.Panel1Collapsed = false;
+                splitContainer1.Panel2Collapsed = false;
+                splitContainer2.Panel1Collapsed = false;
+                splitContainer2.Panel2Collapsed = false;
+                splitContainer3.Panel1Collapsed = false;
+                splitContainer3.Panel2Collapsed = false;
+
+                // 更新菜单项勾选状态
+                Win_Log.Checked = true;
+                Win_Entity.Checked = true;
+                Win_Route.Checked = true;
+                Win_Oper.Checked = true;
+
+                // 设置分割线居中（需要确保容器高度有效）
+                if (splitContainer1.Height > 0)
+                {
+                    splitContainer1.SplitterDistance = splitContainer1.Height / 2;
+                }
+                else
+                {
+                    // 如果高度还未确定，延迟到 Shown 事件中设置
+                    // 这里可以注册一次 Shown 事件，或者信任后续 OnResize 会修正
+                }
+            }
+            finally
+            {
+                // 恢复布局更新
+                splitContainer3.ResumeLayout(false);
+                splitContainer2.ResumeLayout(false);
+                splitContainer1.ResumeLayout(false);
+                this.ResumeLayout(false);
+                // 强制立即重绘一次
+                this.PerformLayout();
+            }
+        }
+
+        /// <summary>
         /// 根据嵌入模式调整界面布局
         /// </summary>
         private void ApplyEmbeddedLayout()
@@ -285,39 +372,27 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
+            this.SuspendLayout();
+            splitContainer1.SuspendLayout();
+
             if (_isEmbedded)
             {
-                // 嵌入模式：折叠 splitContainer1.Panel1（对象列表和日志区域）
-                // 注意：根据您的 Designer，splitContainer1 是水平分割（上下）
-                // Panel1 是上半部分（包含 dgvEnt 和 mainMsgBox）
-                // Panel2 是下半部分（包含 pictureBox1 和 panel1）
                 splitContainer1.Panel1Collapsed = false;
-              //  splitContainer1.SplitterDistance = 0;
                 splitContainer1.Panel2Collapsed = true;
-
-                // 隐藏菜单栏
-                if (menuStrip1 != null)
-                {
-                    menuStrip1.Visible = false;
-                }
-
+                if (menuStrip1 != null) menuStrip1.Visible = false;
                 this.FormBorderStyle = FormBorderStyle.None;
             }
             else
             {
-                // 完整模式：显示所有面板
                 splitContainer1.Panel1Collapsed = false;
                 splitContainer1.Panel2Collapsed = false;
-            //    splitContainer1.SplitterDistance = 300;
-
-                // 显示菜单栏
-                if (menuStrip1 != null)
-                {
-                    menuStrip1.Visible = true;
-                }
-
+                if (menuStrip1 != null) menuStrip1.Visible = true;
                 this.FormBorderStyle = FormBorderStyle.Sizable;
             }
+
+            splitContainer1.ResumeLayout(false);
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
         /// <summary>
         /// 调整 splitContainer1 的分割距离，只在完整模式下生效
@@ -605,14 +680,14 @@ namespace BJJCZ_BaseDevelop
             return 10;  // 返回超时错误码
         }
         // =============== 核心命令解析（简化版，保留原有逻辑）===============
-        private void CMDAna(LCZControlParam param)
+        /*private void CMDAna(LCZControlParam param)
         {
             int clientSeq = param.ind3;
             int card = param.cardSN;
 
             string cmdDesc = GetCmdDescription(param.cmdType);
             string cmdTarget = GetCmdTarget(param);
-            string logMsg = $"收到命令 [卡{card}] {cmdDesc}";
+            string logMsg = $"收到命令 [卡{card+1}] {cmdDesc}";
             if (!string.IsNullOrEmpty(cmdTarget))
             {
                 logMsg += $" - {cmdTarget}";
@@ -622,7 +697,7 @@ namespace BJJCZ_BaseDevelop
             if (bSimulateMode[card])
             {
                 SimulateCommand(param);
-                return;
+            //    return;
             }
 
             if (JczInitErrs[card] != 0 &&
@@ -633,8 +708,8 @@ namespace BJJCZ_BaseDevelop
             {
                 param.nErr = 11;
                 SendResponse(param);
-                AddMsg($"卡{card} 未初始化，拒绝执行命令");
-                return;
+                AddMsg($"卡{card+1} 未初始化，拒绝执行命令");
+            //    return;
             }
 
             int nErr = 0;
@@ -668,7 +743,7 @@ namespace BJJCZ_BaseDevelop
                             }
                             else
                             {
-                                AddMsg($"卡{card} 加载文件失败 -> {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"卡{card+1} 加载文件失败 -> {JczLmc.GetErrorText(nErr)}");
                             }
                         }
                         break;
@@ -676,23 +751,23 @@ namespace BJJCZ_BaseDevelop
                     case 1:
                         nErr = JczLmc.InitializeCard(Application.StartupPath, false, this.Handle);
                         JczInitErrs[card] = nErr;
-                        AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"卡{card+1} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
                         if (nErr != 0)
                         {
                             bSimulateMode[card] = true;
-                            AddMsg($"卡{card} 已切换至模拟模式");
+                            AddMsg($"卡{card+1} 已切换至模拟模式");
                         }
                         break;
 
                     case 2:
                         nErr = JczLmc.lmc1_Close();
                         JczInitErrs[card] = nErr;
-                        AddMsg($"卡{card} 关闭 -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"卡{card+1} 关闭 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 3:
                         nErr = JczLmc.lmc1_LaserOn(phyCardSN[card], param.bOpen);
-                        AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"卡{card+1} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 4:
@@ -711,9 +786,10 @@ namespace BJJCZ_BaseDevelop
                                 iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
                             }
                             UpdateEntTable(card);
-                            RefreshPreview(card);
+                           
                         }
-                        AddMsg($"卡{card} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
+                        RefreshPreview(card);
+                        AddMsg($"卡{card+1} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 5:  // 保存文件 - 修改为自动使用原路径
@@ -723,7 +799,7 @@ namespace BJJCZ_BaseDevelop
                         if (string.IsNullOrEmpty(savePath) && !string.IsNullOrEmpty(currentFilePath[card]))
                         {
                             savePath = currentFilePath[card];
-                            AddMsg($"卡{card} 自动保存到原路径: {savePath}");
+                            AddMsg($"卡{card+1} 自动保存到原路径: {savePath}");
                         }
 
                         // 如果仍然没有路径，使用默认路径
@@ -738,7 +814,7 @@ namespace BJJCZ_BaseDevelop
                             // 保存成功后更新暂存路径（如果是新路径）
                             currentFilePath[card] = savePath;
                         }
-                        AddMsg($"卡{card} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"卡{card+1} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 10:
@@ -754,7 +830,7 @@ namespace BJJCZ_BaseDevelop
                                 //nErr = JczLmc.lmc1_Mark(card, false);
                                   nErr =  lmc1_MarkBlocking(card, false);
                                 bInMark[card] = false;
-                                AddMsg($"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"卡{card+1} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
                                 var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
                                 SendResponse(result);
                             };
@@ -898,16 +974,16 @@ namespace BJJCZ_BaseDevelop
                                 nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
                                 if (nErr == 0)
                                 {
-                                    AddMsg($"卡{card} 添加圆并填充成功 -> {entNameCir}");
+                                    AddMsg($"卡{card+1} 添加圆并填充成功 -> {entNameCir}");
                                 }
                                 else
                                 {
-                                    AddMsg($"卡{card} 添加圆成功，但填充失败 -> {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"卡{card+1} 添加圆成功，但填充失败 -> {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"卡{card} 添加圆成功 -> {entNameCir} (圆心:{centerX},{centerY} 半径:{radius})");
+                                AddMsg($"卡{card+1} 添加圆成功 -> {entNameCir} (圆心:{centerX},{centerY} 半径:{radius})");
                             }
 
                             // 刷新对象列表
@@ -915,7 +991,7 @@ namespace BJJCZ_BaseDevelop
                         }
                         else
                         {
-                            AddMsg($"卡{card} 添加圆失败 -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card+1} 添加圆失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
                     case 35:  // 添加线段
@@ -948,11 +1024,11 @@ namespace BJJCZ_BaseDevelop
 
                             UpdateEntTable(card);
                             RefreshPreview(card);
-                            AddMsg($"卡{card} 添加线段成功 -> {param.strEntyName}");
+                            AddMsg($"卡{card+1} 添加线段成功 -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"卡{card} 添加线段失败 -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card+1} 添加线段失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
                     case 36:  // 添加矩形
@@ -986,11 +1062,11 @@ namespace BJJCZ_BaseDevelop
 
                             UpdateEntTable(card);
                             RefreshPreview(card);
-                            AddMsg($"卡{card} 添加矩形成功 -> {param.strEntyName}");
+                            AddMsg($"卡{card+1} 添加矩形成功 -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"卡{card} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card+1} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
                     case 37:    // 获取/设置填充参数
@@ -1019,7 +1095,7 @@ namespace BJJCZ_BaseDevelop
 
                                     if (nErr == 0)
                                     {
-                                        AddMsg($"卡{card} 为对象 {param.strEntyName} 设置填充成功");
+                                        AddMsg($"卡{card+1} 为对象 {param.strEntyName} 设置填充成功");
                                         // 保存文件
                                         if (!string.IsNullOrEmpty(param.strFileName))
                                         {
@@ -1030,7 +1106,7 @@ namespace BJJCZ_BaseDevelop
                                     }
                                     else
                                     {
-                                        AddMsg($"卡{card} 设置填充失败: {JczLmc.GetErrorText(nErr)}");
+                                        AddMsg($"卡{card+1} 设置填充失败: {JczLmc.GetErrorText(nErr)}");
                                     }
                                 }
                                 else if (dr == DialogResult.Abort)  // 删除填充
@@ -1038,7 +1114,7 @@ namespace BJJCZ_BaseDevelop
                                     nErr = JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
                                     if (nErr == 0)
                                     {
-                                        AddMsg($"卡{card} 删除对象 {param.strEntyName} 填充成功");
+                                        AddMsg($"卡{card+1} 删除对象 {param.strEntyName} 填充成功");
                                         if (!string.IsNullOrEmpty(param.strFileName))
                                         {
                                             JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
@@ -1050,7 +1126,7 @@ namespace BJJCZ_BaseDevelop
                             }
                             catch (Exception ex)
                             {
-                                AddMsg($"卡{card} 设置填充参数异常: {ex.Message}");
+                                AddMsg($"卡{card+1} 设置填充参数异常: {ex.Message}");
                                 nErr = -1;
                             }
                         }
@@ -1068,7 +1144,7 @@ namespace BJJCZ_BaseDevelop
                             // 检查对象是否存在
                             if (string.IsNullOrEmpty(param.strEntyName))
                             {
-                                AddMsg($"卡{card} 填充对象失败: 对象名称为空");
+                                AddMsg($"卡{card+1} 填充对象失败: 对象名称为空");
                                 nErr = 20;
                                 break;
                             }
@@ -1083,7 +1159,7 @@ namespace BJJCZ_BaseDevelop
 
                             if (nErr == 0)
                             {
-                                AddMsg($"卡{card} 为对象 {param.strEntyName} 添加填充成功");
+                                AddMsg($"卡{card+1} 为对象 {param.strEntyName} 添加填充成功");
                               //  RefreshPreview(card);
                              //   UpdateEntTable(card);
 
@@ -1091,17 +1167,17 @@ namespace BJJCZ_BaseDevelop
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
                                     nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
-                                    AddMsg($"卡{card} 保存文件: {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"卡{card+1} 保存文件: {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"卡{card} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"卡{card+1} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            AddMsg($"卡{card} 填充对象异常: {ex.Message}");
+                            AddMsg($"卡{card+1} 填充对象异常: {ex.Message}");
                             nErr = -1;
                         }
                         break;
@@ -1116,8 +1192,24 @@ namespace BJJCZ_BaseDevelop
                         alImParam.dCenY = param.dParam2;
                         alImParam.dWidth = param.dParam3;
                         alImParam.dHeight = param.dParam4;
+                        // 立即根据新参数重新设置背景图与叠加图的世界范围
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            RefreshPreview(card);
+                        }));
                         break;
-
+                    // 在 CMDAna 的 switch 中添加新的 case
+                    case 43:  // 设置叠加图的世界范围
+                              // 参数：dParam1 = Xmin, dParam2 = Ymin, dParam3 = Width, dParam4 = Height
+                        float xmin = (float)param.dParam1;
+                        float ymin = (float)param.dParam2;
+                        float width = (float)param.dParam3;
+                        float height = (float)param.dParam4;
+                        _overlayWorldBounds = new RectangleF(xmin, ymin, width, height);
+                        AddMsg($"卡{card+1} 设置叠加图范围: X=[{xmin},{xmin + width}] Y=[{ymin},{ymin + height}]");
+                        // 立即刷新预览以应用新范围
+                        RefreshPreview(card);
+                        break;
                     case 90:
                         splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
                         splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
@@ -1143,8 +1235,524 @@ namespace BJJCZ_BaseDevelop
                 param.ind3 = clientSeq;
                 SendResponse(param);
             }
-        }
+        }*/
 
+        private void CMDAna(LCZControlParam param)
+        {
+            int clientSeq = param.ind3;
+            int card = param.cardSN;
+
+            string cmdDesc = GetCmdDescription(param.cmdType);
+            string cmdTarget = GetCmdTarget(param);
+            string logMsg = $"收到命令 [卡{card + 1}] {cmdDesc}";
+            if (!string.IsNullOrEmpty(cmdTarget))
+            {
+                logMsg += $" - {cmdTarget}";
+            }
+            AddMsg(logMsg);
+
+            if (bSimulateMode[card])
+            {
+                SimulateCommand(param);
+                //    return;
+            }
+
+            if (JczInitErrs[card] != 0 &&
+                param.cmdType != 0 && param.cmdType != 1 &&
+                param.cmdType != 2 && param.cmdType != 37 &&
+                param.cmdType != 90 && param.cmdType != 42 &&
+                param.cmdType != 100 && param.cmdType != 200 && param.cmdType != 201)
+            {
+                param.nErr = 11;
+                SendResponse(param);
+                AddMsg($"卡{card + 1} 未初始化，拒绝执行命令");
+                //    return;
+            }
+
+            int nErr = 0;
+            bool needResponse = true;
+
+            try
+            {
+                switch (param.cmdType)
+                {
+                    case 0:
+                    case 100:
+                        nErr = JczInitErrs[card];
+                        if (nErr == 0)
+                        {
+                            nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
+                            if (nErr == 0)
+                            {
+                                // 保存当前文件路径
+                                currentFilePath[card] = param.strFileName;
+
+                                nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                                strEntNames[card] = new string[nEntNums[card]];
+                                iPenNos[card] = new int[nEntNums[card]];
+                                for (int i = 0; i < nEntNums[card]; i++)
+                                {
+                                    strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                    iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
+                                }
+                                UpdateEntTable(card);
+                                RefreshPreview(card);
+                            }
+                            else
+                            {
+                                AddMsg($"卡{card + 1} 加载文件失败 -> {JczLmc.GetErrorText(nErr)}");
+                            }
+                        }
+                        // 清除缓存（加载新文件后图形已变）
+                        cachedTransparentRoute[card] = null;
+                        break;
+
+                    case 1:
+                        nErr = JczLmc.InitializeCard(Application.StartupPath, false, this.Handle);
+                        JczInitErrs[card] = nErr;
+                        AddMsg($"卡{card + 1} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
+                        if (nErr != 0)
+                        {
+                            bSimulateMode[card] = true;
+                            AddMsg($"卡{card + 1} 已切换至模拟模式");
+                        }
+                        break;
+
+                    case 2:
+                        nErr = JczLmc.lmc1_Close();
+                        JczInitErrs[card] = nErr;
+                        AddMsg($"卡{card + 1} 关闭 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
+
+                    case 3:
+                        nErr = JczLmc.lmc1_LaserOn(phyCardSN[card], param.bOpen);
+                        AddMsg($"卡{card + 1} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
+
+                    case 4:
+                        nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
+                        if (nErr == 0)
+                        {
+                            // 保存当前文件路径
+                            currentFilePath[card] = param.strFileName;
+
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
+                            }
+                            UpdateEntTable(card);
+                        }
+                        RefreshPreview(card);
+                        AddMsg($"卡{card + 1} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
+                        // 清除缓存（新文件内容不同）
+                        cachedTransparentRoute[card] = null;
+                        break;
+
+                    case 5:  // 保存文件 - 修改为自动使用原路径
+                        string savePath = param.strFileName;
+
+                        // 如果命令中没有指定文件名，但有暂存的文件路径，则使用原路径
+                        if (string.IsNullOrEmpty(savePath) && !string.IsNullOrEmpty(currentFilePath[card]))
+                        {
+                            savePath = currentFilePath[card];
+                            AddMsg($"卡{card + 1} 自动保存到原路径: {savePath}");
+                        }
+
+                        // 如果仍然没有路径，使用默认路径
+                        if (string.IsNullOrEmpty(savePath))
+                        {
+                            savePath = Path.Combine(Application.StartupPath, "route.ezd");
+                        }
+
+                        nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], savePath);
+                        if (nErr == 0)
+                        {
+                            // 保存成功后更新暂存路径（如果是新路径）
+                            currentFilePath[card] = savePath;
+                        }
+                        AddMsg($"卡{card + 1} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
+                        break;
+
+                    case 10:
+                    case 110:
+                        if (!bInMark[card])
+                        {
+                            if (param.cmdType == 110) JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
+                            int markSeq = param.ind3;
+                            var worker = new BackgroundWorker();
+                            worker.DoWork += (s, ev) =>
+                            {
+                                bInMark[card] = true;
+                                nErr = lmc1_MarkBlocking(card, false);
+                                bInMark[card] = false;
+                                AddMsg($"卡{card + 1} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
+                                var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
+                                SendResponse(result);
+                            };
+                            worker.RunWorkerAsync();
+                            needResponse = false;
+                        }
+                        else param.nErr = 19;
+                        break;
+
+                    case 11:
+                        nErr = JczLmc.lmc1_StopMark(phyCardSN[card]);
+                        bInRed[card] = false;
+                        break;
+
+                    case 12:
+                    case 13:
+                        if (!bInMark[card])
+                        {
+                            if (bInRed[card]) { JczLmc.lmc1_StopMark(phyCardSN[card]); bInRed[card] = false; Thread.Sleep(50); }
+                            if (param.bOpen)
+                            {
+                                bInRed[card] = true;
+                                var workerRed = new BackgroundWorker();
+                                workerRed.DoWork += (s, ev) =>
+                                {
+                                    while (param.bOpen && bInRed[card])
+                                    {
+                                        if (param.cmdType == 12) JczLmc.lmc1_RedLightMark(phyCardSN[card]);
+                                        else JczLmc.lmc1_RedLightMarkContourByEnt(phyCardSN[card], null);
+                                        Thread.Sleep(10);
+                                    }
+                                    bInRed[card] = false;
+                                };
+                                workerRed.RunWorkerAsync();
+                            }
+                        }
+                        break;
+
+                    case 15:
+                        nErr = JczLmc.lmc1_GotoPos(phyCardSN[card], param.dParam1, param.dParam2);
+                        break;
+
+                    case 21:
+                        if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
+                            nErr = JczLmc.lmc1_MarkEntity(phyCardSN[card], strEntNames[card][iEntIndices[card]]);
+                        else nErr = 18;
+                        break;
+
+                    case 22:
+                        if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
+                        {
+                            if (!bInMark[card])
+                            {
+                                if (bInRed[card]) { JczLmc.lmc1_StopMark(phyCardSN[card]); bInRed[card] = false; }
+                                if (param.bOpen)
+                                {
+                                    bInRed[card] = true;
+                                    string entName = strEntNames[card][iEntIndices[card]];
+                                    var workerEntRed = new BackgroundWorker();
+                                    workerEntRed.DoWork += (s, ev) =>
+                                    {
+                                        while (param.bOpen && bInRed[card])
+                                        {
+                                            JczLmc.lmc1_RedLightMarkContourByEnt(phyCardSN[card], entName);
+                                            Thread.Sleep(10);
+                                        }
+                                        bInRed[card] = false;
+                                    };
+                                    workerEntRed.RunWorkerAsync();
+                                }
+                            }
+                        }
+                        break;
+
+                    case 23:  // 旋转对象
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_RotateEnt(phyCardSN[card], strEntNames[card][param.ind1],
+                                                         param.dParam3, param.dParam4, param.dParam5);
+                        RefreshPreview(card);
+                        cachedTransparentRoute[card] = null; // 内容改变，清除缓存
+                        break;
+
+                    case 24:  // 移动对象
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_MoveEnt(phyCardSN[card], strEntNames[card][param.ind1],
+                                                      ref param.dParam1, ref param.dParam2);
+                        RefreshPreview(card);
+                        cachedTransparentRoute[card] = null;
+                        break;
+
+                    case 25:  // 缩放对象
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_ScaleEnt(phyCardSN[card], strEntNames[card][param.ind1],
+                                                        param.dParam1, param.dParam2,
+                                                        param.dParam3, param.dParam4);
+                        RefreshPreview(card);
+                        cachedTransparentRoute[card] = null;
+                        break;
+
+                    case 27:
+                        nErr = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], param.dParam1, param.dParam2,
+                                                              param.dParam3, param.dParam4, param.dParam5);
+                        break;
+
+                    case 28:
+                        if (param.bOpen)
+                            nErr = JczLmc.lmc1_GroupEnt2(phyCardSN[card], strEntNames[card],
+                                                         strEntNames[card].Length, "grpEnt", 2);
+                        else
+                            nErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
+                        // 群组/解组会改变对象结构，刷新预览并清除缓存
+                        RefreshPreview(card);
+                        cachedTransparentRoute[card] = null;
+                        break;
+
+                    case 31:  // 重命名对象
+                        if (param.ind1 < strEntNames[card]?.Length)
+                            nErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], strEntNames[card][param.ind1], param.strEntyName);
+                        RefreshPreview(card);
+                        cachedTransparentRoute[card] = null;
+                        break;
+
+                    case 34:  // 添加圆
+                        double centerX = param.dParam1;
+                        double centerY = param.dParam2;
+                        double radius = param.dParam3;
+                        string entNameCir = string.IsNullOrEmpty(param.strEntyName) ? "Circle" : param.strEntyName;
+                        int penNo = param.ind1 > 0 ? param.ind1 : 1;
+
+                        nErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], centerX, centerY, radius, entNameCir, penNo);
+                        if (nErr == 0)
+                        {
+                            if (param.bOpen && radius > 0)
+                            {
+                                string hatchEntName = entNameCir + "_Hatch";
+                                nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
+                                if (nErr == 0)
+                                    AddMsg($"卡{card + 1} 添加圆并填充成功 -> {entNameCir}");
+                                else
+                                    AddMsg($"卡{card + 1} 添加圆成功，但填充失败 -> {JczLmc.GetErrorText(nErr)}");
+                            }
+                            else
+                            {
+                                AddMsg($"卡{card + 1} 添加圆成功 -> {entNameCir} (圆心:{centerX},{centerY} 半径:{radius})");
+                            }
+                            // 刷新对象列表与预览
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
+                            }
+                            UpdateEntTable(card);
+                            RefreshPreview(card);
+                            cachedTransparentRoute[card] = null;
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card + 1} 添加圆失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                        break;
+
+                    case 35:  // 添加线段
+                        int penNo2 = param.ind1 > 0 ? param.ind1 : 2;
+                        nErr = AddLineToLib(card, param.dParam1, param.dParam2,
+                                            param.dParam3, param.dParam4,
+                                            param.strEntyName, penNo2, param.bOpen);
+                        if (nErr == 0)
+                        {
+                            // 刷新对象列表
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
+                            }
+                            UpdateEntTable(card);
+                            RefreshPreview(card);
+                            cachedTransparentRoute[card] = null;
+                            AddMsg($"卡{card + 1} 添加线段成功 -> {param.strEntyName}");
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card + 1} 添加线段失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                        break;
+
+                    case 36:  // 添加矩形
+                        int rectPenNo = param.ind1 > 0 ? param.ind1 : 2;
+                        nErr = AddRectangleToLib(card, param.dParam1, param.dParam2,
+                                                  param.dParam3, param.dParam4,
+                                                  param.strEntyName, rectPenNo, param.bOpen);
+                        if (nErr == 0)
+                        {
+                            // 刷新对象列表
+                            nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                            strEntNames[card] = new string[nEntNums[card]];
+                            iPenNos[card] = new int[nEntNums[card]];
+                            for (int i = 0; i < nEntNums[card]; i++)
+                            {
+                                strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                                iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
+                            }
+                            UpdateEntTable(card);
+                            RefreshPreview(card);
+                            cachedTransparentRoute[card] = null;
+                            AddMsg($"卡{card + 1} 添加矩形成功 -> {param.strEntyName}");
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card + 1} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
+                        }
+                        break;
+
+                    case 37:  // 获取/设置填充参数
+                        if (param.bOpen)
+                        {
+                            try
+                            {
+                                HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
+                                GetHatchParamForEntity(card, param.strEntyName, ref hp);
+                                FrmHatch fh = new FrmHatch(hp);
+                                DialogResult dr = fh.ShowDialog();
+                                if (dr == DialogResult.OK)
+                                {
+                                    hp = fh.hp;
+                                    JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
+                                    SetHatchParamForEntity(card, hp);
+                                    string hatchEntName = param.strEntyName + "_Hatch";
+                                    nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
+                                    if (nErr == 0)
+                                    {
+                                        AddMsg($"卡{card + 1} 为对象 {param.strEntyName} 设置填充成功");
+                                        if (!string.IsNullOrEmpty(param.strFileName))
+                                            JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
+                                        RefreshPreview(card);
+                                        UpdateEntTable(card);
+                                        cachedTransparentRoute[card] = null;
+                                    }
+                                    else
+                                        AddMsg($"卡{card + 1} 设置填充失败: {JczLmc.GetErrorText(nErr)}");
+                                }
+                                else if (dr == DialogResult.Abort)
+                                {
+                                    nErr = JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
+                                    if (nErr == 0)
+                                    {
+                                        AddMsg($"卡{card + 1} 删除对象 {param.strEntyName} 填充成功");
+                                        if (!string.IsNullOrEmpty(param.strFileName))
+                                            JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
+                                        RefreshPreview(card);
+                                        UpdateEntTable(card);
+                                        cachedTransparentRoute[card] = null;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AddMsg($"卡{card + 1} 设置填充参数异常: {ex.Message}");
+                                nErr = -1;
+                            }
+                        }
+                        else
+                        {
+                            HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
+                            GetHatchParamForEntity(card, param.strEntyName, ref hp);
+                            nErr = 0;
+                        }
+                        break;
+
+                    case 38:  // 填充对象
+                        try
+                        {
+                            if (string.IsNullOrEmpty(param.strEntyName))
+                            {
+                                AddMsg($"卡{card + 1} 填充对象失败: 对象名称为空");
+                                nErr = 20;
+                                break;
+                            }
+                            string hatchEntName = param.strEntyName + "_Hatch";
+                            nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
+                            if (nErr == 0)
+                            {
+                                AddMsg($"卡{card + 1} 为对象 {param.strEntyName} 添加填充成功");
+                                if (!string.IsNullOrEmpty(param.strFileName))
+                                {
+                                    nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
+                                    AddMsg($"卡{card + 1} 保存文件: {JczLmc.GetErrorText(nErr)}");
+                                }
+                                RefreshPreview(card);
+                                cachedTransparentRoute[card] = null;
+                            }
+                            else
+                                AddMsg($"卡{card + 1} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
+                        }
+                        catch (Exception ex)
+                        {
+                            AddMsg($"卡{card + 1} 填充对象异常: {ex.Message}");
+                            nErr = -1;
+                        }
+                        break;
+
+                    case 40:
+                        nErr = JczLmc.lmc1_SetDevCfg(phyCardSN[card]);
+                        break;
+
+                    case 42:
+                        alImParam.width = param.ind1;
+                        alImParam.height = param.ind2;
+                        alImParam.dCenX = param.dParam1;
+                        alImParam.dCenY = param.dParam2;
+                        alImParam.dWidth = param.dParam3;
+                        alImParam.dHeight = param.dParam4;
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            RefreshPreview(card);
+                            // 对齐参数改变，图形映射范围变化，需要重新生成叠加图（强制清除缓存）
+                            cachedTransparentRoute[card] = null;
+                            RefreshPreview(card);
+                        }));
+                        break;
+
+                    case 43:  // 设置叠加图的世界范围
+                        float xmin = (float)param.dParam1;
+                        float ymin = (float)param.dParam2;
+                        float width = (float)param.dParam3;
+                        float height = (float)param.dParam4;
+                        _overlayWorldBounds = new RectangleF(xmin, ymin, width, height);
+                        AddMsg($"卡{card + 1} 设置叠加图范围: X=[{xmin},{xmin + width}] Y=[{ymin},{ymin + height}]");
+                        RefreshPreview(card);
+                        // 范围改变不需清除透明缓存，因为图像内容没变，但重绘即可
+                        break;
+
+                    case 90:
+                        splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
+                        splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
+                        splitContainer1.Panel1Collapsed = (param.dParam1 == 0 && param.dParam2 == 0);
+                        splitContainer3.Panel1Collapsed = (param.dParam3 == 0);
+                        splitContainer3.Panel2Collapsed = (param.dParam4 == 0);
+                        splitContainer1.Panel2Collapsed = (param.dParam3 == 0 && param.dParam4 == 0);
+                        break;
+
+                    default:
+                        nErr = 20;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"执行命令异常: {ex.Message}");
+            }
+
+            if (needResponse)
+            {
+                param.nErr = nErr;
+                param.ind3 = clientSeq;
+                SendResponse(param);
+            }
+        }
         /// <summary>
         /// 保存当前板卡的对象库到原文件路径
         /// </summary>
@@ -1193,7 +1801,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (string.IsNullOrEmpty(entName))
                 {
-                    AddMsg($"卡{card} 获取填充参数失败: 对象名称为空");
+                    AddMsg($"卡{card+1} 获取填充参数失败: 对象名称为空");
                     return;
                 }
 
@@ -1224,12 +1832,12 @@ namespace BJJCZ_BaseDevelop
 
                 if (nErr != 0)
                 {
-                    AddMsg($"卡{card} 对象 {entName} 无填充参数，使用默认值");
+                    AddMsg($"卡{card+1} 对象 {entName} 无填充参数，使用默认值");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 获取填充参数异常: {ex.Message}");
+                AddMsg($"卡{card+1} 获取填充参数异常: {ex.Message}");
             }
         }
 
@@ -1265,7 +1873,7 @@ namespace BJJCZ_BaseDevelop
                     hp.bHatchCross,
                     hp.nParamIndex);
 
-                AddMsg($"卡{card} 设置填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"卡{card+1} 设置填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
             }
             catch (Exception ex)
             {
@@ -1280,7 +1888,7 @@ namespace BJJCZ_BaseDevelop
             bool needResponse = true;
 
             string cmdDesc = GetCmdDescription(param.cmdType);
-            AddMsg($"卡{card} [模拟] {cmdDesc}");
+            AddMsg($"卡{card+1} [模拟] {cmdDesc}");
 
             switch (param.cmdType)
             {
@@ -1310,7 +1918,7 @@ namespace BJJCZ_BaseDevelop
         {
             string cmdDesc = GetCmdDescription(param.cmdType);
             string result = param.nErr == 0 ? "成功" : $"失败({JczLmc.GetErrorText(param.nErr)})";
-            AddMsg($"发送响应 [卡{param.cardSN}] {cmdDesc} - {result}");
+            AddMsg($"发送响应 [卡{param.cardSN+1}] {cmdDesc} - {result}");
 
             Pipechanel server = (param.cardSN == 0) ? pipeServer0 : pipeServer1;
             server.SendParam(param);
@@ -1324,11 +1932,12 @@ namespace BJJCZ_BaseDevelop
         private static extern IntPtr CreateBitmap(int nWidth, int nHeight, uint cPlanes, uint cBitsPerPel, byte[] lpvBits);
         private void RefreshPreview(int card)
         {
-            if (bSimulateMode[card]) return;
-
+            // 如果正在模拟模式，可以跳过（按需保留）
+            // if (bSimulateMode[card]) return;
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
             try
             {
-                // 1. 获取背景图像（如果尚未加载）
+                // 1. 加载背景图像（如果尚未加载）
                 if (originalImage[card] == null)
                 {
                     string bgFile = (card == 0) ? @"..\data\sourceBGImgA.bmp" : @"..\data\sourceBGImgB.bmp";
@@ -1336,38 +1945,81 @@ namespace BJJCZ_BaseDevelop
                         originalImage[card] = new Bitmap(bgFile);
                 }
 
-                // 2. 获取激光路径预览图（带透明背景）
-                Bitmap routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
-                    phyCardSN[card],
-                    pictureBox1.Handle,
-                    pictureBox1.Width,
-                    pictureBox1.Height);
-                if (routeImg == null) return;
-
-                // 3. 将路径图处理为透明背景（保留线条颜色）
-                routeImg = MakeTransparentBackground(routeImg);
-
-                // 4. 设置背景到 CoordPictureBox
-                if (originalImage[card] != null)
+                // 2. 获取激光路径原始图（从 SDK 或临时文件）
+                //    此处示例：从 SDK 获取，若不可用则从文件加载
+                Bitmap rawRouteImg = null;
+                if (!bSimulateMode[card])
                 {
-                    // 定义背景在世界坐标系中的范围（mm）
-                    // 可以根据您的实际视野范围设置，例如 0~100mm
-                    float worldMinX = 0f, worldMaxX = 100f;
-                    float worldMinY = 0f, worldMaxY = 100f;
-                    pictureBox1.SetWorldImage(originalImage[card], worldMinX, worldMaxX, worldMinY, worldMaxY, true);
+                    rawRouteImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
+                        phyCardSN[card],
+                        targetBox.Handle,
+                        targetBox.Width,
+                        targetBox.Height);
+                }
+                else
+                {
+                    // 模拟模式：从默认路径加载测试图片
+                    string routeFile = "..\\EzdModel\\route.png";
+                    if (File.Exists(routeFile))
+                        rawRouteImg = new Bitmap(routeFile);
                 }
 
-                // 5. 设置叠加图像
-                pictureBox1.SetOverlayImage(routeImg);
+                if (rawRouteImg == null) return;
+
+                // 3. 决定是否需要重新生成透明图（尺寸变化或缓存不存在）
+                // bool needUpdate = true;
+                bool needUpdate = (cachedTransparentRoute[card] == null) ||
+                                 (cachedRouteWidth[card] != rawRouteImg.Width) ||
+                                 (cachedRouteHeight[card] != rawRouteImg.Height);
+
+                if (needUpdate)
+                {
+                    // 释放旧缓存
+                    if (cachedTransparentRoute[card] != null)
+                        cachedTransparentRoute[card].Dispose();
+
+                    // 生成透明背景图
+                    cachedTransparentRoute[card] = MakeTransparentBackground(rawRouteImg);
+                    cachedRouteWidth[card] = rawRouteImg.Width;
+                    cachedRouteHeight[card] = rawRouteImg.Height;
+                }
+
+                // 原始临时图像不再需要，释放（如果 SDK 返回的新对象）
+                if (rawRouteImg != cachedTransparentRoute[card])  // 避免重复释放
+                    rawRouteImg.Dispose();
+
+                // 4. 计算背景图的世界矩形（使用 alImParam）
+                float bgLeft = (float)(alImParam.dCenX - alImParam.dWidth / 2);
+                float bgRight = (float)(alImParam.dCenX + alImParam.dWidth / 2);
+                float bgBottom = (float)(alImParam.dCenY - alImParam.dHeight / 2); // 世界 Y 最小
+                float bgTop = (float)(alImParam.dCenY + alImParam.dHeight / 2); // 世界 Y 最大
+                RectangleF bgBounds = new RectangleF(bgLeft, bgBottom, bgRight - bgLeft, bgTop - bgBottom);
+
+                // 5. 设置背景图（注意 Y 参数顺序：minY, maxY）
+                if (originalImage[card] != null)
+                {
+                    targetBox.SetWorldImage(originalImage[card],
+                        bgBounds.Left, bgBounds.Right,
+                        bgBounds.Top, bgBounds.Bottom,   // 注意：SetWorldImage 的参数顺序是 minY, maxY？
+                        autoFit: false);
+                }
+
+                // 6. 设置叠加图及其独立世界范围
+                //    如果 _overlayWorldBounds 有效则使用，否则使用背景图范围
+                RectangleF overlayBounds = (_overlayWorldBounds.Width > 0 && _overlayWorldBounds.Height > 0)
+                    ? _overlayWorldBounds
+                    : bgBounds;
+
+                // 使用缓存的透明图
+                targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
             }
             catch (Exception ex)
             {
                 AddMsg($"刷新预览失败: {ex.Message}");
             }
         }
-
         // 辅助方法：将白色背景变为透明
-        private Bitmap MakeTransparentBackground(Bitmap img)
+        /*private Bitmap MakeTransparentBackground(Bitmap img)
         {
             if (img == null) return null;
             Bitmap transparent = new Bitmap(img.Width, img.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -1388,6 +2040,60 @@ namespace BJJCZ_BaseDevelop
                         transparent.SetPixel(x, y, c);
                 }
             }
+            return transparent;
+        }*/
+
+        private Bitmap MakeTransparentBackground(Bitmap img)
+        {
+            if (img == null) return null;
+
+            // 如果已经是透明格式，直接克隆（避免处理）
+           /* if (img.PixelFormat == PixelFormat.Format32bppArgb)
+                return new Bitmap(img);*/
+
+            Bitmap transparent = new Bitmap(img.Width, img.Height, PixelFormat.Format32bppArgb);
+            Rectangle rect = new Rectangle(0, 0, img.Width, img.Height);
+            BitmapData srcData = img.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            BitmapData dstData = transparent.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+            unsafe
+            {
+                byte* src = (byte*)srcData.Scan0;
+                byte* dst = (byte*)dstData.Scan0;
+                int srcStride = srcData.Stride;
+                int dstStride = dstData.Stride;
+
+                for (int y = 0; y < img.Height; y++)
+                {
+                    byte* srcRow = src + y * srcStride;
+                    byte* dstRow = dst + y * dstStride;
+                    for (int x = 0; x < img.Width; x++)
+                    {
+                        byte b = srcRow[x * 3];
+                        byte g = srcRow[x * 3 + 1];
+                        byte r = srcRow[x * 3 + 2];
+
+                        // 白色阈值（可根据需要调整）
+                        if (r > 200 && g > 200 && b > 200)
+                        {
+                            dstRow[x * 4] = 0;     // B
+                            dstRow[x * 4 + 1] = 0; // G
+                            dstRow[x * 4 + 2] = 0; // R
+                            dstRow[x * 4 + 3] = 0; // Alpha = 0
+                        }
+                        else
+                        {
+                            dstRow[x * 4] = b;
+                            dstRow[x * 4 + 1] = g;
+                            dstRow[x * 4 + 2] = r;
+                            dstRow[x * 4 + 3] = 255;
+                        }
+                    }
+                }
+            }
+
+            img.UnlockBits(srcData);
+            transparent.UnlockBits(dstData);
             return transparent;
         }
         private Bitmap MakeWhiteTransparent(Bitmap original, float tolerance = 10f)
@@ -1540,7 +2246,7 @@ namespace BJJCZ_BaseDevelop
             int card = currentCard;
             if (imLaserRoute[card] != null)
             {
-                string name = $"routeExport{card}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                string name = $"routeExport{card+1}_{DateTime.Now:yyyyMMddHHmmss}.png";
                 imLaserRoute[card].Save(name, ImageFormat.Png);
                 AddMsg($"导出预览图 -> {name}");
             }
@@ -1627,30 +2333,28 @@ namespace BJJCZ_BaseDevelop
         {
             if (_isEmbedded)
             {
-                // 嵌入模式：双击分离并显示完整窗口
                 DetachAndShowFull();
-                ResetLayoutToDefault();
             }
             else
             {
-                // 完整模式：如果窗口隐藏则显示，如果最小化则恢复
+                // 显示窗口
                 if (!this.Visible)
-                {
                     this.Show();
-                }
                 if (this.WindowState == FormWindowState.Minimized)
-                {
                     this.WindowState = FormWindowState.Normal;
-                }
                 this.ShowInTaskbar = true;
                 this.BringToFront();
-                ResetLayoutToDefault();
+
+                // 使用 BeginInvoke 确保在窗口完全显示后重置布局
+                this.BeginInvoke(new Action(() => ResetLayoutToDefault()));
             }
         }
 
         /// <summary>
         /// 重置窗口布局到默认状态（所有面板可见，分割线居中）
         /// </summary>
+        private bool _needResetLayout = false;
+
         private void ResetLayoutToDefault()
         {
             if (this.InvokeRequired)
@@ -1659,6 +2363,7 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
+            // 展开所有面板
             splitContainer1.Panel1Collapsed = false;
             splitContainer1.Panel2Collapsed = false;
             splitContainer2.Panel1Collapsed = false;
@@ -1671,6 +2376,10 @@ namespace BJJCZ_BaseDevelop
             Win_Route.Checked = true;
             Win_Oper.Checked = true;
 
+            // 标记需要重置分割线位置，延迟到 Layout 事件中执行
+            _needResetLayout = true;
+            // 主动触发一次布局
+           // this.PerformLayout();
             // 设置分割线居中
             this.BeginInvoke(new Action(() =>
             {
@@ -1679,6 +2388,17 @@ namespace BJJCZ_BaseDevelop
                     splitContainer1.SplitterDistance = splitContainer1.Height / 2;
                 }
             }));
+        }
+        // 在 JCZServer 构造函数中添加
+          
+
+        private void JCZServer_Layout(object sender, LayoutEventArgs e)
+        {
+            if (_needResetLayout && splitContainer1.Height > 100)
+            {
+                _needResetLayout = false;
+                splitContainer1.SplitterDistance = splitContainer1.Height / 2;
+            }
         }
 
         private void dgvEnt_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -1833,7 +2553,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     sfd.Filter = "PNG Image|*.png|JPEG Image|*.jpg|BMP Image|*.bmp";
                     sfd.Title = "导出预览图像";
-                    sfd.FileName = $"routeExport_{card}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                    sfd.FileName = $"routeExport_{card+1}_{DateTime.Now:yyyyMMddHHmmss}.png";
 
                     if (sfd.ShowDialog() == DialogResult.OK)
                     {
@@ -2166,7 +2886,7 @@ namespace BJJCZ_BaseDevelop
                 int ret = JczLmc.lmc1_GetAllCardSN(snArray);
                 if (ret == 0)
                 {
-                    AddMsg($"----- 卡{card} 卡号映射 -----");
+                    AddMsg($"----- 卡{card+1} 卡号映射 -----");
                     for (int i = 0; i < snArray.Length; i++)
                     {
                         if (snArray[i] != -1)

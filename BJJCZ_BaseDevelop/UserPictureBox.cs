@@ -57,10 +57,16 @@ namespace BJJCZ_BaseDevelop
     {
         private Image _worldImage;          // 背景图像
         private RectangleF _worldImageBounds; // 背景图像在世界坐标系中的范围
+     
+     
+        private Image _overlayImage;        // 叠加图像（激光路径图，建议透明背景）
+        private RectangleF? _overlayImageBounds;   // 叠加图独立的世界坐标范围（null则使用背景图范围）
+
+        private RectangleF _worldViewBounds;       // 画图框的世界视口范围
+
         private WorldTransform _transform = new WorldTransform();
         private bool _autoFitEnabled = true;
 
-        private Image _overlayImage;        // 叠加图像（激光路径图，建议透明背景）
 
         public CoordPictureBox()
         {
@@ -69,8 +75,31 @@ namespace BJJCZ_BaseDevelop
             this.ResizeRedraw = true;
         }
 
+       
+
         public WorldTransform Transform => _transform;
 
+        /// <summary>
+        /// 设置画图框的世界视口范围（整个控件显示的区域）
+        /// </summary>
+        public void SetWorldViewBounds(RectangleF viewBounds)
+        {
+            _worldViewBounds = viewBounds;
+            _autoFitEnabled = false;
+            RecalcTransformFromViewBounds();
+            Invalidate();
+        }
+        /// <summary>
+        /// 清除手动视口，恢复自动适配（基于背景图范围）
+        /// </summary>
+        public void ClearWorldViewBounds()
+        {
+            _worldViewBounds = RectangleF.Empty;
+            _autoFitEnabled = true;
+            if (_worldImage != null && this.ClientSize.Width > 0)
+                FitTransformToWorldBounds();
+            Invalidate();
+        }
         /// <summary>
         /// 设置背景图像及其在世界坐标系中的边界范围
         /// </summary>
@@ -80,6 +109,9 @@ namespace BJJCZ_BaseDevelop
         /// <param name="worldMinY">世界坐标 Y 最小值（mm）</param>
         /// <param name="worldMaxY">世界坐标 Y 最大值（mm）</param>
         /// <param name="autoFit">是否自动适配控件大小</param>
+        /// <summary>
+        /// 设置背景图像及其世界坐标范围
+        /// </summary>
         public void SetWorldImage(Image img, float worldMinX, float worldMaxX, float worldMinY, float worldMaxY, bool autoFit = true)
         {
             _worldImage = img;
@@ -88,7 +120,13 @@ namespace BJJCZ_BaseDevelop
 
             if (autoFit && this.ClientSize.Width > 0 && this.ClientSize.Height > 0)
             {
+                // 自动适配模式：用背景图范围作为视口范围
                 FitTransformToWorldBounds();
+            }
+            else if (!autoFit && _worldViewBounds.Width == 0)
+            {
+                // 非自动适配但尚未设置视口：用背景图范围初始化视口
+                SetWorldViewBounds(_worldImageBounds);
             }
 
             Invalidate();
@@ -98,12 +136,19 @@ namespace BJJCZ_BaseDevelop
         /// 设置叠加图像（激光路径图）
         /// </summary>
         /// <param name="img">叠加图像，建议使用透明背景的 Bitmap</param>
-        public void SetOverlayImage(Image img)
+        public void SetOverlayImage(Image img, RectangleF? worldBounds = null)
         {
             _overlayImage = img;
+            _overlayImageBounds = worldBounds;
             Invalidate();
         }
-
+        /// <summary>
+        /// 设置叠加图像（使用背景图的世界范围）
+        /// </summary>
+        public void SetOverlayImage(Image img)
+        {
+            SetOverlayImage(img, _worldImageBounds);
+        }
         /// <summary>
         /// 清除背景图像
         /// </summary>
@@ -119,9 +164,39 @@ namespace BJJCZ_BaseDevelop
         public void ClearOverlayImage()
         {
             _overlayImage = null;
+            _overlayImageBounds = null;
             Invalidate();
         }
+        /// <summary>
+        /// 从视口范围重新计算变换矩阵（世界 -> 像素）
+        /// </summary>
+        private void RecalcTransformFromViewBounds()
+        {
+            if (_worldViewBounds.Width <= 0 || _worldViewBounds.Height <= 0)
+                return;
 
+            Rectangle clientRect = this.ClientRectangle;
+            if (clientRect.Width <= 0 || clientRect.Height <= 0)
+                return;
+
+            float scaleX = clientRect.Width / _worldViewBounds.Width;
+            float scaleY = clientRect.Height / _worldViewBounds.Height;
+            float scale = Math.Min(scaleX, scaleY);   // 保持宽高比，居中显示
+
+            float displayWidth = _worldViewBounds.Width * scale;
+            float displayHeight = _worldViewBounds.Height * scale;
+            float offsetX = (clientRect.Width - displayWidth) / 2f;
+            float offsetY = (clientRect.Height - displayHeight) / 2f;
+
+            _transform = new WorldTransform();
+            _transform.XAxis = new Vector2(1, 0);
+            _transform.YAxis = new Vector2(0, -1);   // 世界Y向上 → 屏幕Y向下
+            _transform.Scale = scale;
+
+            // 世界坐标 (Left, Top) 应映射到像素 (offsetX, offsetY + displayHeight)
+            Vector2 v = (_transform.XAxis * _worldViewBounds.Left + _transform.YAxis * _worldViewBounds.Top) * _transform.Scale;
+            _transform.OriginPixel = new PointF(offsetX - v.X, (offsetY + displayHeight) - v.Y);
+        }
         /// <summary>
         /// 手动设置变换矩阵（将禁用自动适配）
         /// </summary>
@@ -135,37 +210,151 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 自动适配变换：背景图像居中并保持宽高比，世界Y轴向上映射到屏幕Y向下
         /// </summary>
+        /* private void FitTransformToWorldBounds()
+         {
+             if (_worldImage == null || _worldImageBounds.Width <= 0 || _worldImageBounds.Height <= 0)
+                 return;
+
+             Rectangle clientRect = this.ClientRectangle;
+             if (clientRect.Width <= 0 || clientRect.Height <= 0) return;
+
+             float worldWidth = _worldImageBounds.Width;
+             float worldHeight = _worldImageBounds.Height;
+
+             float scaleX = clientRect.Width / worldWidth;
+             float scaleY = clientRect.Height / worldHeight;
+             float scale = Math.Min(scaleX, scaleY);
+
+             float displayWidth = worldWidth * scale;
+             float displayHeight = worldHeight * scale;
+
+             float offsetX = (clientRect.Width - displayWidth) / 2f;
+             float offsetY = (clientRect.Height - displayHeight) / 2f;
+
+             _transform = new WorldTransform();
+             _transform.XAxis = new Vector2(1, 0);
+             _transform.YAxis = new Vector2(0, -1);   // 世界Y向上 → 屏幕Y向下
+             _transform.Scale = scale;
+
+             // 解算 OriginPixel：世界坐标 (Left, Top) 应映射到像素点 (offsetX, offsetY + displayHeight)
+             Vector2 v = (_transform.XAxis * _worldImageBounds.Left + _transform.YAxis * _worldImageBounds.Top) * _transform.Scale;
+             _transform.OriginPixel = new PointF(offsetX - v.X, (offsetY + displayHeight) - v.Y);
+         }*/
+        /// <summary>
+        /// 自动适配变换：用背景图范围作为视口，居中显示
+        /// </summary>
         private void FitTransformToWorldBounds()
         {
             if (_worldImage == null || _worldImageBounds.Width <= 0 || _worldImageBounds.Height <= 0)
                 return;
 
-            Rectangle clientRect = this.ClientRectangle;
-            if (clientRect.Width <= 0 || clientRect.Height <= 0) return;
-
-            float worldWidth = _worldImageBounds.Width;
-            float worldHeight = _worldImageBounds.Height;
-
-            float scaleX = clientRect.Width / worldWidth;
-            float scaleY = clientRect.Height / worldHeight;
-            float scale = Math.Min(scaleX, scaleY);
-
-            float displayWidth = worldWidth * scale;
-            float displayHeight = worldHeight * scale;
-
-            float offsetX = (clientRect.Width - displayWidth) / 2f;
-            float offsetY = (clientRect.Height - displayHeight) / 2f;
-
-            _transform = new WorldTransform();
-            _transform.XAxis = new Vector2(1, 0);
-            _transform.YAxis = new Vector2(0, -1);   // 世界Y向上 → 屏幕Y向下
-            _transform.Scale = scale;
-
-            // 解算 OriginPixel：世界坐标 (Left, Top) 应映射到像素点 (offsetX, offsetY + displayHeight)
-            Vector2 v = (_transform.XAxis * _worldImageBounds.Left + _transform.YAxis * _worldImageBounds.Top) * _transform.Scale;
-            _transform.OriginPixel = new PointF(offsetX - v.X, (offsetY + displayHeight) - v.Y);
+            // 将视口设置为背景图范围
+            _worldViewBounds = _worldImageBounds;
+            RecalcTransformFromViewBounds();
         }
+        /// <summary>
+        /// 绘制图像（根据其世界矩形，通过变换绘制到控件上）
+        /// </summary>
+        private void DrawImageWithWorldBounds(Graphics g, Image img, RectangleF worldBounds)
+        {
+            if (img == null || worldBounds.Width <= 0 || worldBounds.Height <= 0)
+                return;
 
+            PointF[] worldCorners = new PointF[]
+            {
+            new PointF(worldBounds.Left, worldBounds.Top),
+            new PointF(worldBounds.Right, worldBounds.Top),
+            new PointF(worldBounds.Right, worldBounds.Bottom),
+            new PointF(worldBounds.Left, worldBounds.Bottom)
+            };
+            PointF[] pixelCorners = new PointF[4];
+            for (int i = 0; i < 4; i++)
+                pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
+
+            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+            foreach (var p in pixelCorners)
+            {
+                if (p.X < minX) minX = p.X;
+                if (p.Y < minY) minY = p.Y;
+                if (p.X > maxX) maxX = p.X;
+                if (p.Y > maxY) maxY = p.Y;
+            }
+            RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
+            if (destRect.Width > 0 && destRect.Height > 0)
+                g.DrawImage(img, destRect);
+        }
+        /* protected override void OnPaint(PaintEventArgs e)
+         {
+             base.OnPaint(e);
+             Graphics g = e.Graphics;
+             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+             g.SmoothingMode = SmoothingMode.AntiAlias;
+
+             // 绘制背景图像
+             if (_worldImage != null)
+             {
+                 PointF[] worldCorners = new PointF[]
+                 {
+                     new PointF(_worldImageBounds.Left, _worldImageBounds.Top),
+                     new PointF(_worldImageBounds.Right, _worldImageBounds.Top),
+                     new PointF(_worldImageBounds.Right, _worldImageBounds.Bottom),
+                     new PointF(_worldImageBounds.Left, _worldImageBounds.Bottom)
+                 };
+                 PointF[] pixelCorners = new PointF[4];
+                 for (int i = 0; i < 4; i++)
+                     pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
+
+                 float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+                 foreach (var p in pixelCorners)
+                 {
+                     if (p.X < minX) minX = p.X;
+                     if (p.Y < minY) minY = p.Y;
+                     if (p.X > maxX) maxX = p.X;
+                     if (p.Y > maxY) maxY = p.Y;
+                 }
+                 RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
+                 if (destRect.Width > 0 && destRect.Height > 0)
+                     g.DrawImage(_worldImage, destRect);
+             }
+
+
+             // 绘制叠加图像（使用独立范围或背景范围）
+             // ========== 绘制叠加图（修正后的代码） ==========
+             if (_overlayImage != null && _worldImageBounds.Width > 0 && _worldImageBounds.Height > 0)
+             {
+                 // 确定使用的世界矩形：优先使用独立范围，否则回退到背景图范围
+                 RectangleF boundsToUse;
+                 if (_overlayImageBounds.HasValue && _overlayImageBounds.Value.Width > 0 && _overlayImageBounds.Value.Height > 0)
+                     boundsToUse = _overlayImageBounds.Value;
+                 else
+                     boundsToUse = _worldImageBounds;
+
+                 // 计算世界坐标角点对应的像素坐标
+                 PointF[] worldCorners = new PointF[]
+                 {
+                 new PointF(boundsToUse.Left, boundsToUse.Top),
+                 new PointF(boundsToUse.Right, boundsToUse.Top),
+                 new PointF(boundsToUse.Right, boundsToUse.Bottom),
+                 new PointF(boundsToUse.Left, boundsToUse.Bottom)
+                 };
+                 PointF[] pixelCorners = new PointF[4];
+                 for (int i = 0; i < 4; i++)
+                     pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
+
+                 float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+                 foreach (var p in pixelCorners)
+                 {
+                     if (p.X < minX) minX = p.X;
+                     if (p.Y < minY) minY = p.Y;
+                     if (p.X > maxX) maxX = p.X;
+                     if (p.Y > maxY) maxY = p.Y;
+                 }
+                 RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
+                 if (destRect.Width > 0 && destRect.Height > 0)
+                     g.DrawImage(_overlayImage, destRect);
+             }
+
+         }*/
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -175,65 +364,38 @@ namespace BJJCZ_BaseDevelop
 
             // 绘制背景图像
             if (_worldImage != null)
+                DrawImageWithWorldBounds(g, _worldImage, _worldImageBounds);
+
+            // 绘制叠加图像
+            if (_overlayImage != null)
             {
-                PointF[] worldCorners = new PointF[]
-                {
-                    new PointF(_worldImageBounds.Left, _worldImageBounds.Top),
-                    new PointF(_worldImageBounds.Right, _worldImageBounds.Top),
-                    new PointF(_worldImageBounds.Right, _worldImageBounds.Bottom),
-                    new PointF(_worldImageBounds.Left, _worldImageBounds.Bottom)
-                };
-                PointF[] pixelCorners = new PointF[4];
-                for (int i = 0; i < 4; i++)
-                    pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
+                RectangleF overlayBounds;
+                // 检查是否设置了独立范围且有效
+                if (_overlayImageBounds.HasValue && _overlayImageBounds.Value.Width > 0 && _overlayImageBounds.Value.Height > 0)
+                    overlayBounds = _overlayImageBounds.Value;
+                else
+                    overlayBounds = _worldImageBounds;   // 回退到背景图范围
 
-                float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
-                foreach (var p in pixelCorners)
-                {
-                    if (p.X < minX) minX = p.X;
-                    if (p.Y < minY) minY = p.Y;
-                    if (p.X > maxX) maxX = p.X;
-                    if (p.Y > maxY) maxY = p.Y;
-                }
-                RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
-                if (destRect.Width > 0 && destRect.Height > 0)
-                    g.DrawImage(_worldImage, destRect);
-            }
-
-            // 绘制叠加图像（使用同样的世界坐标范围，覆盖整个背景区域）
-            if (_overlayImage != null && _worldImageBounds.Width > 0 && _worldImageBounds.Height > 0)
-            {
-                PointF[] worldCorners = new PointF[]
-                {
-                    new PointF(_worldImageBounds.Left, _worldImageBounds.Top),
-                    new PointF(_worldImageBounds.Right, _worldImageBounds.Top),
-                    new PointF(_worldImageBounds.Right, _worldImageBounds.Bottom),
-                    new PointF(_worldImageBounds.Left, _worldImageBounds.Bottom)
-                };
-                PointF[] pixelCorners = new PointF[4];
-                for (int i = 0; i < 4; i++)
-                    pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
-
-                float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
-                foreach (var p in pixelCorners)
-                {
-                    if (p.X < minX) minX = p.X;
-                    if (p.Y < minY) minY = p.Y;
-                    if (p.X > maxX) maxX = p.X;
-                    if (p.Y > maxY) maxY = p.Y;
-                }
-                RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
-                if (destRect.Width > 0 && destRect.Height > 0)
-                    g.DrawImage(_overlayImage, destRect);
+                DrawImageWithWorldBounds(g, _overlayImage, overlayBounds);
             }
         }
-
+        private Size _lastClientSize = Size.Empty;
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            // 如果尺寸未变，跳过计算（例如从最小化恢复时尺寸通常相同）
+            if (_lastClientSize == this.ClientSize)
+                return;
+            _lastClientSize = this.ClientSize;
+
             if (_autoFitEnabled && _worldImage != null && this.ClientSize.Width > 0 && this.ClientSize.Height > 0)
             {
                 FitTransformToWorldBounds();
+                Invalidate();
+            }
+            else if (!_autoFitEnabled && _worldViewBounds.Width > 0)
+            {
+                RecalcTransformFromViewBounds();
                 Invalidate();
             }
         }

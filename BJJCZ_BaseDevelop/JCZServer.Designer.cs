@@ -52,7 +52,6 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
-            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.btHatchParam = new System.Windows.Forms.Button();
             this.btMoveEntAfter = new System.Windows.Forms.Button();
@@ -109,6 +108,8 @@
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
+            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
+            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -119,7 +120,6 @@
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
@@ -134,6 +134,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
             // 
             // JCZServerIcon
@@ -220,8 +222,10 @@
             // 
             // Card_NO1
             // 
+            this.Card_NO1.Checked = true;
+            this.Card_NO1.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Card_NO1.Name = "Card_NO1";
-            this.Card_NO1.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO1.Size = new System.Drawing.Size(180, 22);
             this.Card_NO1.Text = "卡1";
             this.Card_NO1.Click += new System.EventHandler(this.Card_NO1_Click);
             // 
@@ -321,6 +325,7 @@
             // 
             // splitContainer2.Panel2
             // 
+            this.splitContainer2.Panel2.Controls.Add(this.pictureBox2);
             this.splitContainer2.Panel2.Controls.Add(this.pictureBox1);
             this.splitContainer2.Size = new System.Drawing.Size(1220, 287);
             this.splitContainer2.SplitterDistance = 610;
@@ -334,18 +339,6 @@
             this.mainMsgBox.Size = new System.Drawing.Size(610, 287);
             this.mainMsgBox.TabIndex = 118;
             this.mainMsgBox.Text = "";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(606, 287);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
             // 
             // splitContainer3
             // 
@@ -377,7 +370,7 @@
             // 
             this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btHatchParam.ForeColor = System.Drawing.Color.Red;
-            this.btHatchParam.Location = new System.Drawing.Point(527, 227);
+            this.btHatchParam.Location = new System.Drawing.Point(502, 228);
             this.btHatchParam.Name = "btHatchParam";
             this.btHatchParam.Size = new System.Drawing.Size(71, 34);
             this.btHatchParam.TabIndex = 166;
@@ -389,7 +382,7 @@
             // 
             this.btMoveEntAfter.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntAfter.BackgroundImage")));
             this.btMoveEntAfter.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntAfter.Location = new System.Drawing.Point(454, 125);
+            this.btMoveEntAfter.Location = new System.Drawing.Point(429, 126);
             this.btMoveEntAfter.Name = "btMoveEntAfter";
             this.btMoveEntAfter.Size = new System.Drawing.Size(35, 34);
             this.btMoveEntAfter.TabIndex = 167;
@@ -400,7 +393,7 @@
             // 
             this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
-            this.btLaserPenParam.Location = new System.Drawing.Point(453, 228);
+            this.btLaserPenParam.Location = new System.Drawing.Point(428, 229);
             this.btLaserPenParam.Name = "btLaserPenParam";
             this.btLaserPenParam.Size = new System.Drawing.Size(71, 34);
             this.btLaserPenParam.TabIndex = 165;
@@ -419,7 +412,7 @@
             this.dgvEnt.Location = new System.Drawing.Point(3, 3);
             this.dgvEnt.Name = "dgvEnt";
             this.dgvEnt.RowTemplate.Height = 23;
-            this.dgvEnt.Size = new System.Drawing.Size(444, 277);
+            this.dgvEnt.Size = new System.Drawing.Size(419, 277);
             this.dgvEnt.TabIndex = 92;
             this.dgvEnt.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvEnt_CellClick);
             this.dgvEnt.RowHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dgvEnt_RowHeaderMouseClick);
@@ -450,7 +443,7 @@
             // 
             this.btMoveEntBefore.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntBefore.BackgroundImage")));
             this.btMoveEntBefore.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntBefore.Location = new System.Drawing.Point(454, 85);
+            this.btMoveEntBefore.Location = new System.Drawing.Point(429, 86);
             this.btMoveEntBefore.Name = "btMoveEntBefore";
             this.btMoveEntBefore.Size = new System.Drawing.Size(35, 34);
             this.btMoveEntBefore.TabIndex = 168;
@@ -459,7 +452,7 @@
             // 
             // txtEntName
             // 
-            this.txtEntName.Location = new System.Drawing.Point(453, 14);
+            this.txtEntName.Location = new System.Drawing.Point(428, 15);
             this.txtEntName.Name = "txtEntName";
             this.txtEntName.Size = new System.Drawing.Size(154, 21);
             this.txtEntName.TabIndex = 138;
@@ -469,7 +462,7 @@
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label10.ForeColor = System.Drawing.Color.Blue;
-            this.label10.Location = new System.Drawing.Point(502, 94);
+            this.label10.Location = new System.Drawing.Point(477, 95);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(63, 14);
             this.label10.TabIndex = 161;
@@ -478,7 +471,7 @@
             // btRenameEnt
             // 
             this.btRenameEnt.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btRenameEnt.Location = new System.Drawing.Point(454, 42);
+            this.btRenameEnt.Location = new System.Drawing.Point(429, 43);
             this.btRenameEnt.Margin = new System.Windows.Forms.Padding(4);
             this.btRenameEnt.Name = "btRenameEnt";
             this.btRenameEnt.Size = new System.Drawing.Size(71, 28);
@@ -492,7 +485,7 @@
             this.label11.AutoSize = true;
             this.label11.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label11.ForeColor = System.Drawing.Color.Blue;
-            this.label11.Location = new System.Drawing.Point(502, 134);
+            this.label11.Location = new System.Drawing.Point(477, 135);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(63, 14);
             this.label11.TabIndex = 161;
@@ -501,7 +494,7 @@
             // chkEntGroup
             // 
             this.chkEntGroup.AutoSize = true;
-            this.chkEntGroup.Location = new System.Drawing.Point(537, 51);
+            this.chkEntGroup.Location = new System.Drawing.Point(512, 52);
             this.chkEntGroup.Name = "chkEntGroup";
             this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
             this.chkEntGroup.TabIndex = 139;
@@ -989,6 +982,30 @@
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
             // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(303, 287);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox1.TabIndex = 7;
+            this.pictureBox1.TabStop = false;
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox2.Dock = System.Windows.Forms.DockStyle.Right;
+            this.pictureBox2.Location = new System.Drawing.Point(301, 0);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(305, 287);
+            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox2.TabIndex = 8;
+            this.pictureBox2.TabStop = false;
+            // 
             // JCZServer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -1015,7 +1032,6 @@
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.splitContainer3.Panel1.ResumeLayout(false);
             this.splitContainer3.Panel1.PerformLayout();
             this.splitContainer3.Panel2.ResumeLayout(false);
@@ -1032,6 +1048,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1117,5 +1135,6 @@
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Button btParam;
         private System.Windows.Forms.ToolStripMenuItem File_QuickSaveEZD;
+        private CoordPictureBox pictureBox2;
     }
 }
