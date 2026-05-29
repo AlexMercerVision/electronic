@@ -14,7 +14,8 @@ using System.Drawing.Imaging;
 
 using OpenCvSharp;
 using Cognex.VisionPro;
- using HalconDotNet;
+using Cognex.VisionPro.ImageFile;
+using HalconDotNet;
 using System.Xml;
 using CommonCls;
 using MvCamCtrl.NET;  // 海康相机
@@ -260,10 +261,149 @@ namespace xbDefectDect
             }
             return cogImage; //.Copy(CogImageCopyModeConstants.CopyPixels)
         }
- 
 
-         
+        // 创建图像文件工具
+        CogImageFileTool imageFileTool = new CogImageFileTool();
+        private ICogImage ReadCogImage(string strImageFile)
+        {
+            // 以只读模式打开文件
+            imageFileTool.Operator.Open(strImageFile, CogImageFileModeConstants.Read);
+
+            // 执行工具，读取图像
+            imageFileTool.Run();
+
+            // 获取输出图像（单帧）
+            ICogImage image = imageFileTool.OutputImage;
+
+            // 关闭文件，释放资源
+            imageFileTool.Operator.Close();
+            return image;
+        }
+        byte[] bgrData = null;
         private void inferSetImage(string img_file)
+        {
+            // 使用 ReadCogImage 读取图像（兼容灰度/彩色）
+            ICogImage ci = ReadCogImage(img_file);
+
+            int imgWidth = 0, imgHeight = 0;
+            
+
+            if (ci is CogImage8Grey grayImg)
+            {
+                // 灰度图像
+                cogRDSource.Image = grayImg;
+                cogRDTarget.Image = grayImg;
+                imgWidth = grayImg.Width;
+                imgHeight = grayImg.Height;
+
+                // 转换为 BGR 三通道字节数据
+                using (Bitmap bmp = grayImg.ToBitmap())
+                {
+                    // Bitmap 格式为 Format8bppIndexed，需要转为 24bppRgb
+                    using (Bitmap bgrBmp = new Bitmap(imgWidth, imgHeight, PixelFormat.Format24bppRgb))
+                    using (Graphics g = Graphics.FromImage(bgrBmp))
+                    {
+                        g.DrawImage(bmp, 0, 0, imgWidth, imgHeight);
+                        BitmapData bmpData = bgrBmp.LockBits(new Rectangle(0, 0, imgWidth, imgHeight), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                        bgrData = new byte[bmpData.Stride * imgHeight];
+                        Marshal.Copy(bmpData.Scan0, bgrData, 0, bgrData.Length);
+                        bgrBmp.UnlockBits(bmpData);
+                    }
+                }
+            }
+            else if (ci is CogImage24PlanarColor colorImg)
+            {
+                // 彩色图像
+                cogRDSource.Image = colorImg;
+                cogRDTarget.Image = colorImg;
+                imgWidth = colorImg.Width;
+                imgHeight = colorImg.Height;
+
+                // 直接获取 BGR 数据（ToBitmap 返回的是 24bppRgb，即 BGR 顺序）
+                using (Bitmap bmp = colorImg.ToBitmap())
+                {
+                    BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, imgWidth, imgHeight), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                    bgrData = new byte[bmpData.Stride * imgHeight];
+                    Marshal.Copy(bmpData.Scan0, bgrData, 0, bgrData.Length);
+                    bmp.UnlockBits(bmpData);
+                }
+            }
+            else
+            {
+                MessageBox.Show("不支持的图像格式");
+                return;
+            }
+
+            // ---------- 推理部分（与原来相同）----------
+            float[] resultlist = new float[600];
+            IntPtr results = FloatToIntptr(resultlist);
+            int[] boxesInfo = new int[1];
+            byte[] labellist = new byte[1000];
+
+            TimeSpan infer_start_time = new TimeSpan(DateTime.Now.Ticks);
+
+            try
+            {
+                int ret = Det_ModelPredict(bgrData, imgWidth, imgHeight, 3, results, boxesInfo, ref labellist[0]);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            TimeSpan infer_end_time = new TimeSpan(DateTime.Now.Ticks);
+
+            string strGet = System.Text.Encoding.Default.GetString(labellist, 0, labellist.Length);
+            string[] predict_Label_List = strGet.Split(' ');
+
+            dlRes = new DLResult();
+            dlRes.AL_Rect = new List<CogRectangleAffine>();
+            dlRes.AL_score = new List<float>();
+            dlRes.AL_Type = new List<int>();
+
+            for (int i = 0; i < boxesInfo[0]; i++)
+            {
+                int labelindex = Convert.ToInt32(resultlist[i * 6 + 0]);
+                float score = resultlist[i * 6 + 1];
+                float left = resultlist[i * 6 + 2];
+                float top = resultlist[i * 6 + 3];
+                float right = resultlist[i * 6 + 4];
+                float down = resultlist[i * 6 + 5];
+
+                if (score > det_threshold)
+                {
+                    CogRectangleAffine cogRect = new CogRectangleAffine();
+                    cogRect.CenterX = left + right / 2;
+                    cogRect.CenterY = top + down / 2;
+                    cogRect.SideXLength = right;
+                    cogRect.SideYLength = down;
+                    dlRes.AL_Rect.Add(cogRect);
+                    dlRes.AL_score.Add(score);
+
+                    string labelName = predict_Label_List[i];
+                    if (labelName == "liewen") dlRes.AL_Type.Add(1);
+                    else if (labelName == "posz") dlRes.AL_Type.Add(2);
+                    else if (labelName == "liewenWP") dlRes.AL_Type.Add(3);
+                    else if (labelName == "poszWP") dlRes.AL_Type.Add(4);
+                    else if (labelName == "flaking") dlRes.AL_Type.Add(5);
+                }
+            }
+
+            AddGrap(cogRDTarget, dlRes);
+
+            TimeSpan start2end_time = infer_end_time.Subtract(infer_start_time).Duration();
+            double cost_milliseconds = start2end_time.TotalMilliseconds;
+
+            StripStatus_CurFile.Text = Path.GetFileName(imgfiles[iInferIndex]) + "；  " + (iInferIndex + 1).ToString() + "/" + imgfiles.Count.ToString();
+            StripStatus_InferSpeed.Text = ((int)cost_milliseconds).ToString();
+
+            if (bSaveXml && dlRes.AL_Rect.Count > 0 || bSavePosiXml && dlRes.AL_Rect.Count == 0)
+            {
+                string strFileName = Path.GetFileNameWithoutExtension(img_file);
+                string strDestPath = strSavePath + "\\" + strFileName + ".xml";
+                cdl.CreateRemarkXML_En("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlRes);
+            }
+        }
+        /*private void inferSetImage(string img_file)
         {
             HTuple hpoint, type, width = Width, height = Height;
             HOperatorSet.ReadImage(out objTmp, img_file);
@@ -362,7 +502,7 @@ namespace xbDefectDect
                 string strDestPath = strSavePath + "\\" + strFileName + ".xml";
                 cdl.CreateRemarkXML_En("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlRes);
             }
-        }
+        }*/
 
         int iLastIndex = 0;
         private void det_infer_many_img()
@@ -785,6 +925,7 @@ namespace xbDefectDect
             {
                 List<string> lst = new List<string>();
                 lst = getFile(img_dir_path, "*.jpg", lst);
+                lst = getFile(img_dir_path, "*.bmp", lst);
                 lst = getFile(img_dir_path, "*.png", lst);
                 lst = getFile(img_dir_path, "*.JPEG", lst);
                 imgfiles.Clear();

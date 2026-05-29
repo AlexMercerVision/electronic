@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.IO;
 using System.Windows.Forms;
 using Cognex.VisionPro;
 
@@ -322,25 +322,37 @@ namespace VisionControl
         }
         #endregion
 
-        // 获取合金电阻图像区域
-        public void GetAlignRegion(ref AlignImParam alImParam)
+        // 获取合金电阻图像区域      
+        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
         {
             try
             {
-                CogAffineTransformTool cogTrans = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                CogToolBlock ctb = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock;
+                //启用该工具
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);
+                ctb.Run();
+                CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
                 alImParam.dCenX = cogTrans.Region.CenterX;
                 alImParam.dCenY = cogTrans.Region.CenterY;
                 alImParam.dWidth = cogTrans.Region.SideXLength;
                 alImParam.dHeight = cogTrans.Region.SideYLength;
-
-                cogTrans.Run();
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                CogIPOneImageTool cogIPOneImage = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogIPOneImageTool1"] as CogIPOneImageTool;
+                CogImage8Grey cogIm = cogIPOneImage.OutputImage as CogImage8Grey;
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                string dataDir = @".\data";
+                if (!Directory.Exists(dataDir))
+                    Directory.CreateDirectory(dataDir);
+                // 根据工位索引决定文件名
+                string fileName = (jobIndex == 0) ? "srcBGImgA.bmp" : "srcBGImgB.bmp";
+                string strImageFile = Path.Combine(dataDir, fileName);
+                // 保存为 BMP 格式（通过扩展名自动识别）
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
                 mImageFile.Append(cogIm);
                 mImageFile.Close();
+                //禁用该工具
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);
+
             }
             catch (Exception ex)
             {
@@ -349,24 +361,37 @@ namespace VisionControl
 
         }
 
-        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
+
+        public void GetAlignRegionPro(ref AlignImParam alImParam, int jobIndex)
         {
             try
             {
+                CogToolBlock ctb = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock;
+                //启用该工具
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);                 
+                ctb.Run();
                 CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
                 alImParam.dCenX = cogTrans.Region.CenterX;
                 alImParam.dCenY = cogTrans.Region.CenterY;
                 alImParam.dWidth = cogTrans.Region.SideXLength;
                 alImParam.dHeight = cogTrans.Region.SideYLength;
-
-                cogTrans.Run();
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                CogIPOneImageTool cogIPOneImage = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogIPOneImageTool1"] as CogIPOneImageTool;
+                CogImage8Grey cogIm = cogIPOneImage.OutputImage as CogImage8Grey;
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                string dataDir = @".\data";
+                if (!Directory.Exists(dataDir))
+                    Directory.CreateDirectory(dataDir);
+                // 根据工位索引决定文件名
+                string fileName = (jobIndex == 0) ? "srcBGImgA.bmp" : "srcBGImgB.bmp";
+                string strImageFile = Path.Combine(dataDir, fileName);
+                // 保存为 BMP 格式（通过扩展名自动识别）
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
                 mImageFile.Append(cogIm);
                 mImageFile.Close();
+                //禁用该工具
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);
+
             }
             catch (Exception ex)
             {

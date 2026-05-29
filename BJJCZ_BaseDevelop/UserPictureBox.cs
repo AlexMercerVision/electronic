@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace BJJCZ_BaseDevelop
 {
-    /// <summary>
-    /// 世界坐标系到控件像素坐标的变换
-    /// </summary>
     /// <summary>
     /// 世界坐标系到控件像素坐标的变换
     /// </summary>
@@ -57,12 +50,17 @@ namespace BJJCZ_BaseDevelop
         public static Vector2 operator +(Vector2 a, Vector2 b) => new Vector2(a.X + b.X, a.Y + b.Y);
     }
 
+    /// <summary>
+    /// 支持世界坐标变换的 PictureBox，可叠加背景图像和前景图像（如激光路径）
+    /// </summary>
     public class CoordPictureBox : PictureBox
     {
-        private Image _worldImage;
-        private RectangleF _worldImageBounds;
+        private Image _worldImage;          // 背景图像
+        private RectangleF _worldImageBounds; // 背景图像在世界坐标系中的范围
         private WorldTransform _transform = new WorldTransform();
         private bool _autoFitEnabled = true;
+
+        private Image _overlayImage;        // 叠加图像（激光路径图，建议透明背景）
 
         public CoordPictureBox()
         {
@@ -74,8 +72,14 @@ namespace BJJCZ_BaseDevelop
         public WorldTransform Transform => _transform;
 
         /// <summary>
-        /// 加载图片并指定世界坐标系中的范围
+        /// 设置背景图像及其在世界坐标系中的边界范围
         /// </summary>
+        /// <param name="img">背景图像</param>
+        /// <param name="worldMinX">世界坐标 X 最小值（mm）</param>
+        /// <param name="worldMaxX">世界坐标 X 最大值（mm）</param>
+        /// <param name="worldMinY">世界坐标 Y 最小值（mm）</param>
+        /// <param name="worldMaxY">世界坐标 Y 最大值（mm）</param>
+        /// <param name="autoFit">是否自动适配控件大小</param>
         public void SetWorldImage(Image img, float worldMinX, float worldMaxX, float worldMinY, float worldMaxY, bool autoFit = true)
         {
             _worldImage = img;
@@ -90,12 +94,37 @@ namespace BJJCZ_BaseDevelop
             Invalidate();
         }
 
-        public void ClearImage()
+        /// <summary>
+        /// 设置叠加图像（激光路径图）
+        /// </summary>
+        /// <param name="img">叠加图像，建议使用透明背景的 Bitmap</param>
+        public void SetOverlayImage(Image img)
+        {
+            _overlayImage = img;
+            Invalidate();
+        }
+
+        /// <summary>
+        /// 清除背景图像
+        /// </summary>
+        public void ClearWorldImage()
         {
             _worldImage = null;
             Invalidate();
         }
 
+        /// <summary>
+        /// 清除叠加图像
+        /// </summary>
+        public void ClearOverlayImage()
+        {
+            _overlayImage = null;
+            Invalidate();
+        }
+
+        /// <summary>
+        /// 手动设置变换矩阵（将禁用自动适配）
+        /// </summary>
         public void SetTransform(WorldTransform transform)
         {
             _transform = transform;
@@ -104,7 +133,7 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// 自动适配变换（图片居中并保持宽高比，世界Y轴向上映射到屏幕Y向下）
+        /// 自动适配变换：背景图像居中并保持宽高比，世界Y轴向上映射到屏幕Y向下
         /// </summary>
         private void FitTransformToWorldBounds()
         {
@@ -132,8 +161,7 @@ namespace BJJCZ_BaseDevelop
             _transform.YAxis = new Vector2(0, -1);   // 世界Y向上 → 屏幕Y向下
             _transform.Scale = scale;
 
-            // 世界坐标 (Left, Top) 应映射到像素点 (offsetX, offsetY + displayHeight)
-            // 解算 OriginPixel
+            // 解算 OriginPixel：世界坐标 (Left, Top) 应映射到像素点 (offsetX, offsetY + displayHeight)
             Vector2 v = (_transform.XAxis * _worldImageBounds.Left + _transform.YAxis * _worldImageBounds.Top) * _transform.Scale;
             _transform.OriginPixel = new PointF(offsetX - v.X, (offsetY + displayHeight) - v.Y);
         }
@@ -141,35 +169,63 @@ namespace BJJCZ_BaseDevelop
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            if (_worldImage == null) return;
-
             Graphics g = e.Graphics;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            PointF[] worldCorners = new PointF[]
+            // 绘制背景图像
+            if (_worldImage != null)
             {
-                new PointF(_worldImageBounds.Left, _worldImageBounds.Top),
-                new PointF(_worldImageBounds.Right, _worldImageBounds.Top),
-                new PointF(_worldImageBounds.Right, _worldImageBounds.Bottom),
-                new PointF(_worldImageBounds.Left, _worldImageBounds.Bottom)
-            };
-            PointF[] pixelCorners = new PointF[4];
-            for (int i = 0; i < 4; i++)
-                pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
+                PointF[] worldCorners = new PointF[]
+                {
+                    new PointF(_worldImageBounds.Left, _worldImageBounds.Top),
+                    new PointF(_worldImageBounds.Right, _worldImageBounds.Top),
+                    new PointF(_worldImageBounds.Right, _worldImageBounds.Bottom),
+                    new PointF(_worldImageBounds.Left, _worldImageBounds.Bottom)
+                };
+                PointF[] pixelCorners = new PointF[4];
+                for (int i = 0; i < 4; i++)
+                    pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
 
-            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
-            foreach (var p in pixelCorners)
-            {
-                if (p.X < minX) minX = p.X;
-                if (p.Y < minY) minY = p.Y;
-                if (p.X > maxX) maxX = p.X;
-                if (p.Y > maxY) maxY = p.Y;
+                float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+                foreach (var p in pixelCorners)
+                {
+                    if (p.X < minX) minX = p.X;
+                    if (p.Y < minY) minY = p.Y;
+                    if (p.X > maxX) maxX = p.X;
+                    if (p.Y > maxY) maxY = p.Y;
+                }
+                RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
+                if (destRect.Width > 0 && destRect.Height > 0)
+                    g.DrawImage(_worldImage, destRect);
             }
-            RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
-            if (destRect.Width <= 0 || destRect.Height <= 0) return;
 
-            g.DrawImage(_worldImage, destRect);
+            // 绘制叠加图像（使用同样的世界坐标范围，覆盖整个背景区域）
+            if (_overlayImage != null && _worldImageBounds.Width > 0 && _worldImageBounds.Height > 0)
+            {
+                PointF[] worldCorners = new PointF[]
+                {
+                    new PointF(_worldImageBounds.Left, _worldImageBounds.Top),
+                    new PointF(_worldImageBounds.Right, _worldImageBounds.Top),
+                    new PointF(_worldImageBounds.Right, _worldImageBounds.Bottom),
+                    new PointF(_worldImageBounds.Left, _worldImageBounds.Bottom)
+                };
+                PointF[] pixelCorners = new PointF[4];
+                for (int i = 0; i < 4; i++)
+                    pixelCorners[i] = _transform.WorldToPixel(worldCorners[i]);
+
+                float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+                foreach (var p in pixelCorners)
+                {
+                    if (p.X < minX) minX = p.X;
+                    if (p.Y < minY) minY = p.Y;
+                    if (p.X > maxX) maxX = p.X;
+                    if (p.Y > maxY) maxY = p.Y;
+                }
+                RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
+                if (destRect.Width > 0 && destRect.Height > 0)
+                    g.DrawImage(_overlayImage, destRect);
+            }
         }
 
         protected override void OnResize(EventArgs e)
@@ -182,11 +238,14 @@ namespace BJJCZ_BaseDevelop
             }
         }
 
+        /// <summary>
+        /// 世界坐标转像素坐标
+        /// </summary>
         public PointF WorldToPixel(float wx, float wy) => _transform.WorldToPixel(wx, wy);
+
+        /// <summary>
+        /// 像素坐标转世界坐标
+        /// </summary>
         public PointF PixelToWorld(float px, float py) => _transform.PixelToWorld(px, py);
     }
-    /// <summary>
-    /// 二维向量结构体
-    /// </summary>
-   
 }

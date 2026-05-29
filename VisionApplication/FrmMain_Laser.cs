@@ -2588,7 +2588,7 @@ namespace VisionApplication
                     vpWin._iTaskType = iTmpType;
                     ((Button)sender).FlatStyle = FlatStyle.Popup;
                     vpWin.bMainTaskFinished = true;
-
+                    vpWin.GetAlignRegion(ref alImParam[iJobIndex],iJobIndex);
                     vpWin.Visible = true;
                 }
             }

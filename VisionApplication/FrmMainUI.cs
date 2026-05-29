@@ -2425,7 +2425,7 @@ namespace VisionApplication
             string strEnableMAC = mPasswordFile.GetCID();
 
             int iModelRole = -1;
-            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "00E269A99B04")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
+            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "6C1FF7685FEB")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
             {
                 rts.initStatus.bModelRoleCert = true;
 

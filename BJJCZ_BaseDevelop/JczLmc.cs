@@ -192,7 +192,7 @@ namespace BJJCZ_BaseDevelop
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SaveEntLibToFile", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_SaveEntLibToFile(int cardSN, string strFileName);
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap2", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
        // [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CallingConvention = CallingConvention.StdCall)]
         public static extern IntPtr lmc1_GetPrevBitmap(int cardSN, IntPtr hwnd, int nBmpWidth, int nBmpHeight);
 
@@ -493,7 +493,30 @@ namespace BJJCZ_BaseDevelop
                 DeleteObject(hBmp);
             }
         }
+        public static Image lmc1_GetCurPreviewBitmap1(int cardSN, IntPtr hwnd, int bmpwidth, int bmpheight)
+        {
+            IntPtr hBmp = lmc1_GetPrevBitmap(cardSN, hwnd, bmpwidth, bmpheight);
+            if (hBmp == IntPtr.Zero) return null;
 
+            try
+            {
+                // 先创建 Bitmap，如果成功则复制一份
+                using (Bitmap tempBmp = Bitmap.FromHbitmap(hBmp))
+                {
+                    return new Bitmap(tempBmp);
+                }
+            }
+            catch (Exception ex)
+            {
+                // WriteLine($"FromHbitmap 失败: {ex.Message}");
+                return null;
+            }
+            finally
+            {
+                // 删除原始 HBITMAP
+                DeleteObject(hBmp);
+            }
+        }
         /// <summary>
         /// 获取指定卡指定对象的预览图像
         /// </summary>

@@ -1324,28 +1324,72 @@ namespace BJJCZ_BaseDevelop
         private static extern IntPtr CreateBitmap(int nWidth, int nHeight, uint cPlanes, uint cBitsPerPel, byte[] lpvBits);
         private void RefreshPreview(int card)
         {
+            if (bSimulateMode[card]) return;
+
             try
             {
-                if (bSimulateMode[card]) return;
-                alImParam.width = 200;
-                alImParam.height = 100;
-                alImParam.dWidth = 100;
-                alImParam.width = 100;
-                imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(phyCardSN[card], pictureBox1.Handle, pictureBox1.Width, pictureBox1.Height /*alImParam.width, alImParam.height*/));
-                /*imLaserRoute[card] = MakeWhiteTransparent(
-                    (Bitmap)JczLmc.lmc1_GetEzdFileEntityPrevBitmap(phyCardSN[card], "特征圆9Fill"));*/
-                if (imLaserRoute[card] == null)
-                    imLaserRoute[card] = MakeWhiteTransparent(
-                        (Bitmap)Image.FromFile(@".\data\route.png"), 50);
-                mergeImg(card);
-            }
-            catch(Exception ex)
-            {
+                // 1. 获取背景图像（如果尚未加载）
+                if (originalImage[card] == null)
+                {
+                    string bgFile = (card == 0) ? @"..\data\sourceBGImgA.bmp" : @"..\data\sourceBGImgB.bmp";
+                    if (File.Exists(bgFile))
+                        originalImage[card] = new Bitmap(bgFile);
+                }
 
+                // 2. 获取激光路径预览图（带透明背景）
+                Bitmap routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
+                    phyCardSN[card],
+                    pictureBox1.Handle,
+                    pictureBox1.Width,
+                    pictureBox1.Height);
+                if (routeImg == null) return;
+
+                // 3. 将路径图处理为透明背景（保留线条颜色）
+                routeImg = MakeTransparentBackground(routeImg);
+
+                // 4. 设置背景到 CoordPictureBox
+                if (originalImage[card] != null)
+                {
+                    // 定义背景在世界坐标系中的范围（mm）
+                    // 可以根据您的实际视野范围设置，例如 0~100mm
+                    float worldMinX = 0f, worldMaxX = 100f;
+                    float worldMinY = 0f, worldMaxY = 100f;
+                    pictureBox1.SetWorldImage(originalImage[card], worldMinX, worldMaxX, worldMinY, worldMaxY, true);
+                }
+
+                // 5. 设置叠加图像
+                pictureBox1.SetOverlayImage(routeImg);
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"刷新预览失败: {ex.Message}");
             }
         }
 
+        // 辅助方法：将白色背景变为透明
+        private Bitmap MakeTransparentBackground(Bitmap img)
+        {
+            if (img == null) return null;
+            Bitmap transparent = new Bitmap(img.Width, img.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(transparent))
+            {
+                g.Clear(Color.Transparent);
+                g.DrawImage(img, 0, 0);
+            }
+            // 简单将白色像素设为透明（更严格的算法可参考 MakeWhiteTransparent）
+            for (int x = 0; x < img.Width; x++)
+            {
+                for (int y = 0; y < img.Height; y++)
+                {
+                    Color c = img.GetPixel(x, y);
+                    if (c.R > 200 && c.G > 200 && c.B > 200)
+                        transparent.SetPixel(x, y, Color.Transparent);
+                    else
+                        transparent.SetPixel(x, y, c);
+                }
+            }
+            return transparent;
+        }
         private Bitmap MakeWhiteTransparent(Bitmap original, float tolerance = 10f)
         {
             if (original == null) return null;
@@ -1379,7 +1423,7 @@ namespace BJJCZ_BaseDevelop
 
             if (originalImage[card] == null)
             {
-                string bgFile = (card == 0) ? @".\data\sourceBGImgA.bmp" : @".\data\sourceBGImgB.bmp";
+                string bgFile = (card == 0) ? @"..\data\sourceBGImgA.bmp" : @"..\data\sourceBGImgB.bmp";
                 if (File.Exists(bgFile))
                     originalImage[card] = new Bitmap(bgFile);
                 else

@@ -52,22 +52,22 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
+            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
+            this.splitContainer3 = new System.Windows.Forms.SplitContainer();
+            this.btHatchParam = new System.Windows.Forms.Button();
             this.btMoveEntAfter = new System.Windows.Forms.Button();
-            this.btMoveEntBefore = new System.Windows.Forms.Button();
+            this.btLaserPenParam = new System.Windows.Forms.Button();
             this.dgvEnt = new System.Windows.Forms.DataGridView();
             this.Column1 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.btMoveEntBefore = new System.Windows.Forms.Button();
             this.txtEntName = new System.Windows.Forms.TextBox();
-            this.btRenameEnt = new System.Windows.Forms.Button();
-            this.chkEntGroup = new System.Windows.Forms.CheckBox();
-            this.btHatchParam = new System.Windows.Forms.Button();
-            this.btLaserPenParam = new System.Windows.Forms.Button();
-            this.label11 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
-            this.splitContainer3 = new System.Windows.Forms.SplitContainer();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.btRenameEnt = new System.Windows.Forms.Button();
+            this.label11 = new System.Windows.Forms.Label();
+            this.chkEntGroup = new System.Windows.Forms.CheckBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btParam = new System.Windows.Forms.Button();
             this.btnInitial = new System.Windows.Forms.Button();
@@ -119,12 +119,12 @@
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).BeginInit();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picRoCrossClock)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picMvLeft)).BeginInit();
@@ -335,6 +335,56 @@
             this.mainMsgBox.TabIndex = 118;
             this.mainMsgBox.Text = "";
             // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(606, 287);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox1.TabIndex = 7;
+            this.pictureBox1.TabStop = false;
+            // 
+            // splitContainer3
+            // 
+            this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer3.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer3.Name = "splitContainer3";
+            // 
+            // splitContainer3.Panel1
+            // 
+            this.splitContainer3.Panel1.Controls.Add(this.btHatchParam);
+            this.splitContainer3.Panel1.Controls.Add(this.btMoveEntAfter);
+            this.splitContainer3.Panel1.Controls.Add(this.btLaserPenParam);
+            this.splitContainer3.Panel1.Controls.Add(this.dgvEnt);
+            this.splitContainer3.Panel1.Controls.Add(this.btMoveEntBefore);
+            this.splitContainer3.Panel1.Controls.Add(this.txtEntName);
+            this.splitContainer3.Panel1.Controls.Add(this.label10);
+            this.splitContainer3.Panel1.Controls.Add(this.btRenameEnt);
+            this.splitContainer3.Panel1.Controls.Add(this.label11);
+            this.splitContainer3.Panel1.Controls.Add(this.chkEntGroup);
+            // 
+            // splitContainer3.Panel2
+            // 
+            this.splitContainer3.Panel2.Controls.Add(this.panel1);
+            this.splitContainer3.Size = new System.Drawing.Size(1220, 284);
+            this.splitContainer3.SplitterDistance = 610;
+            this.splitContainer3.TabIndex = 0;
+            // 
+            // btHatchParam
+            // 
+            this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btHatchParam.ForeColor = System.Drawing.Color.Red;
+            this.btHatchParam.Location = new System.Drawing.Point(527, 227);
+            this.btHatchParam.Name = "btHatchParam";
+            this.btHatchParam.Size = new System.Drawing.Size(71, 34);
+            this.btHatchParam.TabIndex = 166;
+            this.btHatchParam.Text = "填充设置";
+            this.btHatchParam.UseVisualStyleBackColor = true;
+            this.btHatchParam.Click += new System.EventHandler(this.btHatchParam_Click);
+            // 
             // btMoveEntAfter
             // 
             this.btMoveEntAfter.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntAfter.BackgroundImage")));
@@ -346,16 +396,17 @@
             this.btMoveEntAfter.UseVisualStyleBackColor = true;
             this.btMoveEntAfter.Click += new System.EventHandler(this.btMoveEntAfter_Click);
             // 
-            // btMoveEntBefore
+            // btLaserPenParam
             // 
-            this.btMoveEntBefore.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntBefore.BackgroundImage")));
-            this.btMoveEntBefore.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveEntBefore.Location = new System.Drawing.Point(454, 85);
-            this.btMoveEntBefore.Name = "btMoveEntBefore";
-            this.btMoveEntBefore.Size = new System.Drawing.Size(35, 34);
-            this.btMoveEntBefore.TabIndex = 168;
-            this.btMoveEntBefore.UseVisualStyleBackColor = true;
-            this.btMoveEntBefore.Click += new System.EventHandler(this.btMoveEntBefore_Click);
+            this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
+            this.btLaserPenParam.Location = new System.Drawing.Point(453, 228);
+            this.btLaserPenParam.Name = "btLaserPenParam";
+            this.btLaserPenParam.Size = new System.Drawing.Size(71, 34);
+            this.btLaserPenParam.TabIndex = 165;
+            this.btLaserPenParam.Text = "笔号设置";
+            this.btLaserPenParam.UseVisualStyleBackColor = true;
+            this.btLaserPenParam.Click += new System.EventHandler(this.btLaserPenParam_Click);
             // 
             // dgvEnt
             // 
@@ -395,12 +446,34 @@
             this.Column4.Name = "Column4";
             this.Column4.Width = 40;
             // 
+            // btMoveEntBefore
+            // 
+            this.btMoveEntBefore.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveEntBefore.BackgroundImage")));
+            this.btMoveEntBefore.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMoveEntBefore.Location = new System.Drawing.Point(454, 85);
+            this.btMoveEntBefore.Name = "btMoveEntBefore";
+            this.btMoveEntBefore.Size = new System.Drawing.Size(35, 34);
+            this.btMoveEntBefore.TabIndex = 168;
+            this.btMoveEntBefore.UseVisualStyleBackColor = true;
+            this.btMoveEntBefore.Click += new System.EventHandler(this.btMoveEntBefore_Click);
+            // 
             // txtEntName
             // 
             this.txtEntName.Location = new System.Drawing.Point(453, 14);
             this.txtEntName.Name = "txtEntName";
             this.txtEntName.Size = new System.Drawing.Size(154, 21);
             this.txtEntName.TabIndex = 138;
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label10.ForeColor = System.Drawing.Color.Blue;
+            this.label10.Location = new System.Drawing.Point(502, 94);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(63, 14);
+            this.label10.TabIndex = 161;
+            this.label10.Text = "上调顺序";
             // 
             // btRenameEnt
             // 
@@ -414,41 +487,6 @@
             this.btRenameEnt.UseVisualStyleBackColor = true;
             this.btRenameEnt.Click += new System.EventHandler(this.btRenameEnt_Click);
             // 
-            // chkEntGroup
-            // 
-            this.chkEntGroup.AutoSize = true;
-            this.chkEntGroup.Location = new System.Drawing.Point(537, 51);
-            this.chkEntGroup.Name = "chkEntGroup";
-            this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
-            this.chkEntGroup.TabIndex = 139;
-            this.chkEntGroup.Text = "组群";
-            this.chkEntGroup.UseVisualStyleBackColor = true;
-            this.chkEntGroup.CheckedChanged += new System.EventHandler(this.chkEntGroup_CheckedChanged);
-            // 
-            // btHatchParam
-            // 
-            this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btHatchParam.ForeColor = System.Drawing.Color.Red;
-            this.btHatchParam.Location = new System.Drawing.Point(527, 243);
-            this.btHatchParam.Name = "btHatchParam";
-            this.btHatchParam.Size = new System.Drawing.Size(71, 34);
-            this.btHatchParam.TabIndex = 166;
-            this.btHatchParam.Text = "填充设置";
-            this.btHatchParam.UseVisualStyleBackColor = true;
-            this.btHatchParam.Click += new System.EventHandler(this.btHatchParam_Click);
-            // 
-            // btLaserPenParam
-            // 
-            this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
-            this.btLaserPenParam.Location = new System.Drawing.Point(453, 244);
-            this.btLaserPenParam.Name = "btLaserPenParam";
-            this.btLaserPenParam.Size = new System.Drawing.Size(71, 34);
-            this.btLaserPenParam.TabIndex = 165;
-            this.btLaserPenParam.Text = "笔号设置";
-            this.btLaserPenParam.UseVisualStyleBackColor = true;
-            this.btLaserPenParam.Click += new System.EventHandler(this.btLaserPenParam_Click);
-            // 
             // label11
             // 
             this.label11.AutoSize = true;
@@ -460,54 +498,16 @@
             this.label11.TabIndex = 161;
             this.label11.Text = "下调顺序";
             // 
-            // label10
+            // chkEntGroup
             // 
-            this.label10.AutoSize = true;
-            this.label10.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label10.ForeColor = System.Drawing.Color.Blue;
-            this.label10.Location = new System.Drawing.Point(502, 94);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(63, 14);
-            this.label10.TabIndex = 161;
-            this.label10.Text = "上调顺序";
-            // 
-            // splitContainer3
-            // 
-            this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer3.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer3.Name = "splitContainer3";
-            // 
-            // splitContainer3.Panel1
-            // 
-            this.splitContainer3.Panel1.Controls.Add(this.btHatchParam);
-            this.splitContainer3.Panel1.Controls.Add(this.btMoveEntAfter);
-            this.splitContainer3.Panel1.Controls.Add(this.btLaserPenParam);
-            this.splitContainer3.Panel1.Controls.Add(this.dgvEnt);
-            this.splitContainer3.Panel1.Controls.Add(this.btMoveEntBefore);
-            this.splitContainer3.Panel1.Controls.Add(this.txtEntName);
-            this.splitContainer3.Panel1.Controls.Add(this.label10);
-            this.splitContainer3.Panel1.Controls.Add(this.btRenameEnt);
-            this.splitContainer3.Panel1.Controls.Add(this.label11);
-            this.splitContainer3.Panel1.Controls.Add(this.chkEntGroup);
-            // 
-            // splitContainer3.Panel2
-            // 
-            this.splitContainer3.Panel2.Controls.Add(this.panel1);
-            this.splitContainer3.Size = new System.Drawing.Size(1220, 284);
-            this.splitContainer3.SplitterDistance = 610;
-            this.splitContainer3.TabIndex = 0;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(606, 287);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
+            this.chkEntGroup.AutoSize = true;
+            this.chkEntGroup.Location = new System.Drawing.Point(537, 51);
+            this.chkEntGroup.Name = "chkEntGroup";
+            this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
+            this.chkEntGroup.TabIndex = 139;
+            this.chkEntGroup.Text = "组群";
+            this.chkEntGroup.UseVisualStyleBackColor = true;
+            this.chkEntGroup.CheckedChanged += new System.EventHandler(this.chkEntGroup_CheckedChanged);
             // 
             // panel1
             // 
@@ -562,7 +562,7 @@
             // 
             this.btParam.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btParam.ForeColor = System.Drawing.Color.Red;
-            this.btParam.Location = new System.Drawing.Point(310, 241);
+            this.btParam.Location = new System.Drawing.Point(310, 224);
             this.btParam.Name = "btParam";
             this.btParam.Size = new System.Drawing.Size(121, 36);
             this.btParam.TabIndex = 173;
@@ -576,7 +576,7 @@
             this.btnInitial.ForeColor = System.Drawing.Color.Blue;
             this.btnInitial.Location = new System.Drawing.Point(310, 2);
             this.btnInitial.Name = "btnInitial";
-            this.btnInitial.Size = new System.Drawing.Size(119, 36);
+            this.btnInitial.Size = new System.Drawing.Size(121, 36);
             this.btnInitial.TabIndex = 169;
             this.btnInitial.Text = "初始化板卡";
             this.btnInitial.UseVisualStyleBackColor = true;
@@ -586,9 +586,9 @@
             // 
             this.btMark.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btMark.ForeColor = System.Drawing.Color.Blue;
-            this.btMark.Location = new System.Drawing.Point(310, 80);
+            this.btMark.Location = new System.Drawing.Point(310, 76);
             this.btMark.Name = "btMark";
-            this.btMark.Size = new System.Drawing.Size(119, 36);
+            this.btMark.Size = new System.Drawing.Size(121, 36);
             this.btMark.TabIndex = 172;
             this.btMark.Text = "激光加工";
             this.btMark.UseVisualStyleBackColor = true;
@@ -610,7 +610,7 @@
             // 
             this.btnStopMark.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btnStopMark.ForeColor = System.Drawing.Color.Blue;
-            this.btnStopMark.Location = new System.Drawing.Point(438, 81);
+            this.btnStopMark.Location = new System.Drawing.Point(438, 76);
             this.btnStopMark.Name = "btnStopMark";
             this.btnStopMark.Size = new System.Drawing.Size(117, 36);
             this.btnStopMark.TabIndex = 171;
@@ -622,9 +622,9 @@
             // 
             this.btOpenLaser.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btOpenLaser.ForeColor = System.Drawing.Color.Blue;
-            this.btOpenLaser.Location = new System.Drawing.Point(310, 41);
+            this.btOpenLaser.Location = new System.Drawing.Point(310, 39);
             this.btOpenLaser.Name = "btOpenLaser";
-            this.btOpenLaser.Size = new System.Drawing.Size(119, 36);
+            this.btOpenLaser.Size = new System.Drawing.Size(121, 36);
             this.btOpenLaser.TabIndex = 167;
             this.btOpenLaser.Text = "打开激光器";
             this.btOpenLaser.UseVisualStyleBackColor = true;
@@ -634,7 +634,7 @@
             // 
             this.btCloseLaser.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btCloseLaser.ForeColor = System.Drawing.Color.Blue;
-            this.btCloseLaser.Location = new System.Drawing.Point(439, 42);
+            this.btCloseLaser.Location = new System.Drawing.Point(439, 39);
             this.btCloseLaser.Name = "btCloseLaser";
             this.btCloseLaser.Size = new System.Drawing.Size(117, 36);
             this.btCloseLaser.TabIndex = 168;
@@ -647,7 +647,7 @@
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label5.ForeColor = System.Drawing.Color.Blue;
-            this.label5.Location = new System.Drawing.Point(509, 202);
+            this.label5.Location = new System.Drawing.Point(509, 186);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(70, 14);
             this.label5.TabIndex = 163;
@@ -656,7 +656,7 @@
             // chkContinue
             // 
             this.chkContinue.AutoSize = true;
-            this.chkContinue.Location = new System.Drawing.Point(472, 261);
+            this.chkContinue.Location = new System.Drawing.Point(472, 245);
             this.chkContinue.Name = "chkContinue";
             this.chkContinue.Size = new System.Drawing.Size(48, 16);
             this.chkContinue.TabIndex = 164;
@@ -668,7 +668,7 @@
             // 
             this.txtZJPosY.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.txtZJPosY.ForeColor = System.Drawing.Color.Blue;
-            this.txtZJPosY.Location = new System.Drawing.Point(513, 218);
+            this.txtZJPosY.Location = new System.Drawing.Point(513, 202);
             this.txtZJPosY.Name = "txtZJPosY";
             this.txtZJPosY.Size = new System.Drawing.Size(58, 23);
             this.txtZJPosY.TabIndex = 162;
@@ -679,7 +679,7 @@
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label3.ForeColor = System.Drawing.Color.Blue;
-            this.label3.Location = new System.Drawing.Point(97, 121);
+            this.label3.Location = new System.Drawing.Point(99, 89);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(35, 14);
             this.label3.TabIndex = 161;
@@ -690,7 +690,7 @@
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label2.ForeColor = System.Drawing.Color.Blue;
-            this.label2.Location = new System.Drawing.Point(5, 125);
+            this.label2.Location = new System.Drawing.Point(7, 93);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(35, 14);
             this.label2.TabIndex = 161;
@@ -701,7 +701,7 @@
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label4.ForeColor = System.Drawing.Color.Blue;
-            this.label4.Location = new System.Drawing.Point(47, 233);
+            this.label4.Location = new System.Drawing.Point(49, 201);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(35, 14);
             this.label4.TabIndex = 161;
@@ -712,7 +712,7 @@
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label7.ForeColor = System.Drawing.Color.Blue;
-            this.label7.Location = new System.Drawing.Point(237, 82);
+            this.label7.Location = new System.Drawing.Point(239, 50);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(35, 14);
             this.label7.TabIndex = 161;
@@ -723,7 +723,7 @@
             this.label9.AutoSize = true;
             this.label9.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label9.ForeColor = System.Drawing.Color.Blue;
-            this.label9.Location = new System.Drawing.Point(236, 250);
+            this.label9.Location = new System.Drawing.Point(238, 218);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(42, 14);
             this.label9.TabIndex = 161;
@@ -734,7 +734,7 @@
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label8.ForeColor = System.Drawing.Color.Blue;
-            this.label8.Location = new System.Drawing.Point(148, 250);
+            this.label8.Location = new System.Drawing.Point(150, 218);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(42, 14);
             this.label8.TabIndex = 161;
@@ -745,7 +745,7 @@
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label6.ForeColor = System.Drawing.Color.Blue;
-            this.label6.Location = new System.Drawing.Point(153, 82);
+            this.label6.Location = new System.Drawing.Point(155, 50);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(35, 14);
             this.label6.TabIndex = 161;
@@ -756,7 +756,7 @@
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label1.ForeColor = System.Drawing.Color.Blue;
-            this.label1.Location = new System.Drawing.Point(49, 82);
+            this.label1.Location = new System.Drawing.Point(51, 50);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(35, 14);
             this.label1.TabIndex = 161;
@@ -767,7 +767,7 @@
             this.label12.AutoSize = true;
             this.label12.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label12.ForeColor = System.Drawing.Color.Blue;
-            this.label12.Location = new System.Drawing.Point(435, 202);
+            this.label12.Location = new System.Drawing.Point(435, 186);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(70, 14);
             this.label12.TabIndex = 161;
@@ -777,7 +777,7 @@
             // 
             this.btRedPreviewCou.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedPreviewCou.ForeColor = System.Drawing.Color.Blue;
-            this.btRedPreviewCou.Location = new System.Drawing.Point(439, 121);
+            this.btRedPreviewCou.Location = new System.Drawing.Point(439, 112);
             this.btRedPreviewCou.Name = "btRedPreviewCou";
             this.btRedPreviewCou.Size = new System.Drawing.Size(116, 36);
             this.btRedPreviewCou.TabIndex = 155;
@@ -789,7 +789,7 @@
             // 
             this.txtZJPosX.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.txtZJPosX.ForeColor = System.Drawing.Color.Blue;
-            this.txtZJPosX.Location = new System.Drawing.Point(440, 218);
+            this.txtZJPosX.Location = new System.Drawing.Point(440, 202);
             this.txtZJPosX.Name = "txtZJPosX";
             this.txtZJPosX.Size = new System.Drawing.Size(58, 23);
             this.txtZJPosX.TabIndex = 160;
@@ -799,7 +799,7 @@
             // 
             this.btRedPreview.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedPreview.ForeColor = System.Drawing.Color.Blue;
-            this.btRedPreview.Location = new System.Drawing.Point(310, 121);
+            this.btRedPreview.Location = new System.Drawing.Point(310, 113);
             this.btRedPreview.Name = "btRedPreview";
             this.btRedPreview.Size = new System.Drawing.Size(121, 36);
             this.btRedPreview.TabIndex = 156;
@@ -811,7 +811,7 @@
             // 
             this.btZJPosSearch.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btZJPosSearch.ForeColor = System.Drawing.Color.Blue;
-            this.btZJPosSearch.Location = new System.Drawing.Point(308, 204);
+            this.btZJPosSearch.Location = new System.Drawing.Point(310, 187);
             this.btZJPosSearch.Name = "btZJPosSearch";
             this.btZJPosSearch.Size = new System.Drawing.Size(121, 36);
             this.btZJPosSearch.TabIndex = 157;
@@ -823,7 +823,7 @@
             // 
             this.btRedPreviewEnt.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedPreviewEnt.ForeColor = System.Drawing.Color.Blue;
-            this.btRedPreviewEnt.Location = new System.Drawing.Point(310, 160);
+            this.btRedPreviewEnt.Location = new System.Drawing.Point(310, 150);
             this.btRedPreviewEnt.Name = "btRedPreviewEnt";
             this.btRedPreviewEnt.Size = new System.Drawing.Size(121, 36);
             this.btRedPreviewEnt.TabIndex = 158;
@@ -835,7 +835,7 @@
             // 
             this.btMarkEnt.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btMarkEnt.ForeColor = System.Drawing.Color.Blue;
-            this.btMarkEnt.Location = new System.Drawing.Point(438, 160);
+            this.btMarkEnt.Location = new System.Drawing.Point(438, 149);
             this.btMarkEnt.Name = "btMarkEnt";
             this.btMarkEnt.Size = new System.Drawing.Size(117, 36);
             this.btMarkEnt.TabIndex = 159;
@@ -846,7 +846,7 @@
             // picRoCrossClock
             // 
             this.picRoCrossClock.Image = ((System.Drawing.Image)(resources.GetObject("picRoCrossClock.Image")));
-            this.picRoCrossClock.Location = new System.Drawing.Point(233, 99);
+            this.picRoCrossClock.Location = new System.Drawing.Point(235, 67);
             this.picRoCrossClock.Name = "picRoCrossClock";
             this.picRoCrossClock.Size = new System.Drawing.Size(40, 40);
             this.picRoCrossClock.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -857,7 +857,7 @@
             // label16
             // 
             this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(212, 148);
+            this.label16.Location = new System.Drawing.Point(214, 116);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(35, 12);
             this.label16.TabIndex = 144;
@@ -866,7 +866,7 @@
             // picMvLeft
             // 
             this.picMvLeft.Image = ((System.Drawing.Image)(resources.GetObject("picMvLeft.Image")));
-            this.picMvLeft.Location = new System.Drawing.Point(4, 142);
+            this.picMvLeft.Location = new System.Drawing.Point(6, 110);
             this.picMvLeft.Name = "picMvLeft";
             this.picMvLeft.Size = new System.Drawing.Size(40, 40);
             this.picMvLeft.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -877,7 +877,7 @@
             // picMvRight
             // 
             this.picMvRight.Image = ((System.Drawing.Image)(resources.GetObject("picMvRight.Image")));
-            this.picMvRight.Location = new System.Drawing.Point(92, 142);
+            this.picMvRight.Location = new System.Drawing.Point(94, 110);
             this.picMvRight.Name = "picMvRight";
             this.picMvRight.Size = new System.Drawing.Size(40, 40);
             this.picMvRight.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -888,7 +888,7 @@
             // picMvDown
             // 
             this.picMvDown.Image = ((System.Drawing.Image)(resources.GetObject("picMvDown.Image")));
-            this.picMvDown.Location = new System.Drawing.Point(46, 184);
+            this.picMvDown.Location = new System.Drawing.Point(48, 152);
             this.picMvDown.Name = "picMvDown";
             this.picMvDown.Size = new System.Drawing.Size(40, 40);
             this.picMvDown.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -898,7 +898,7 @@
             // 
             // txtRo_cenX
             // 
-            this.txtRo_cenX.Location = new System.Drawing.Point(148, 164);
+            this.txtRo_cenX.Location = new System.Drawing.Point(150, 132);
             this.txtRo_cenX.Name = "txtRo_cenX";
             this.txtRo_cenX.Size = new System.Drawing.Size(58, 21);
             this.txtRo_cenX.TabIndex = 141;
@@ -907,7 +907,7 @@
             // picMvUp
             // 
             this.picMvUp.Image = ((System.Drawing.Image)(resources.GetObject("picMvUp.Image")));
-            this.picMvUp.Location = new System.Drawing.Point(46, 99);
+            this.picMvUp.Location = new System.Drawing.Point(48, 67);
             this.picMvUp.Name = "picMvUp";
             this.picMvUp.Size = new System.Drawing.Size(40, 40);
             this.picMvUp.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -918,7 +918,7 @@
             // picScaleX
             // 
             this.picScaleX.Image = ((System.Drawing.Image)(resources.GetObject("picScaleX.Image")));
-            this.picScaleX.Location = new System.Drawing.Point(147, 207);
+            this.picScaleX.Location = new System.Drawing.Point(149, 175);
             this.picScaleX.Name = "picScaleX";
             this.picScaleX.Size = new System.Drawing.Size(40, 40);
             this.picScaleX.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -928,7 +928,7 @@
             // 
             // txtRo_cenY
             // 
-            this.txtRo_cenY.Location = new System.Drawing.Point(213, 164);
+            this.txtRo_cenY.Location = new System.Drawing.Point(215, 132);
             this.txtRo_cenY.Name = "txtRo_cenY";
             this.txtRo_cenY.Size = new System.Drawing.Size(58, 21);
             this.txtRo_cenY.TabIndex = 143;
@@ -937,7 +937,7 @@
             // label15
             // 
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(147, 148);
+            this.label15.Location = new System.Drawing.Point(149, 116);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(35, 12);
             this.label15.TabIndex = 142;
@@ -946,7 +946,7 @@
             // picRoClock
             // 
             this.picRoClock.Image = ((System.Drawing.Image)(resources.GetObject("picRoClock.Image")));
-            this.picRoClock.Location = new System.Drawing.Point(149, 99);
+            this.picRoClock.Location = new System.Drawing.Point(151, 67);
             this.picRoClock.Name = "picRoClock";
             this.picRoClock.Size = new System.Drawing.Size(40, 40);
             this.picRoClock.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -956,7 +956,7 @@
             // 
             // txtScale_Value
             // 
-            this.txtScale_Value.Location = new System.Drawing.Point(200, 215);
+            this.txtScale_Value.Location = new System.Drawing.Point(202, 183);
             this.txtScale_Value.Name = "txtScale_Value";
             this.txtScale_Value.Size = new System.Drawing.Size(25, 21);
             this.txtScale_Value.TabIndex = 145;
@@ -964,7 +964,7 @@
             // 
             // txtRo_Value
             // 
-            this.txtRo_Value.Location = new System.Drawing.Point(202, 107);
+            this.txtRo_Value.Location = new System.Drawing.Point(204, 75);
             this.txtRo_Value.Name = "txtRo_Value";
             this.txtRo_Value.Size = new System.Drawing.Size(25, 21);
             this.txtRo_Value.TabIndex = 146;
@@ -973,7 +973,7 @@
             // picScaleY
             // 
             this.picScaleY.Image = ((System.Drawing.Image)(resources.GetObject("picScaleY.Image")));
-            this.picScaleY.Location = new System.Drawing.Point(231, 207);
+            this.picScaleY.Location = new System.Drawing.Point(233, 175);
             this.picScaleY.Name = "picScaleY";
             this.picScaleY.Size = new System.Drawing.Size(40, 40);
             this.picScaleY.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -983,7 +983,7 @@
             // 
             // txtMv_Value
             // 
-            this.txtMv_Value.Location = new System.Drawing.Point(52, 150);
+            this.txtMv_Value.Location = new System.Drawing.Point(54, 118);
             this.txtMv_Value.Name = "txtMv_Value";
             this.txtMv_Value.Size = new System.Drawing.Size(30, 21);
             this.txtMv_Value.TabIndex = 140;
@@ -1015,13 +1015,13 @@
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.splitContainer3.Panel1.ResumeLayout(false);
             this.splitContainer3.Panel1.PerformLayout();
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picRoCrossClock)).EndInit();
@@ -1052,7 +1052,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
         private System.Windows.Forms.RichTextBox mainMsgBox;
-        private System.Windows.Forms.PictureBox pictureBox1;
+        private BJJCZ_BaseDevelop.CoordPictureBox pictureBox1;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.PictureBox picRoCrossClock;
         private System.Windows.Forms.Label label16;
