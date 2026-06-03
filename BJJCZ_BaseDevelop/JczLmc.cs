@@ -198,6 +198,16 @@ namespace BJJCZ_BaseDevelop
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetEzdFilePrevBitmap", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr lmc1_GetEzdFilePrevBitmap(int cardSN, string strEntName);
+      
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetEntAllChildPen", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void lmc1_SetEntAllChildPen(int cardSN, string strEntName, int nPenNo);
+      
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPenNumberFromEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern int lmc1_GetPenNumberFromEnt(int cardSN, string strEntName);
+
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_ChangeEntPenNo", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern int lmc1_ChangeEntPenNo(int cardSN, string strEntName, int nPenNo);
+
 
         #endregion
 
@@ -242,8 +252,23 @@ namespace BJJCZ_BaseDevelop
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_UnGroupEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_UnGroupEnt(int cardSN, string strGroupEntName);
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPenNumberFromEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int lmc1_GetPenNumberFromEnt(int cardSN, string strEntName);
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchParam2", CallingConvention = CallingConvention.StdCall)]
+        public static extern int lmc1_SetHatchParam2(int nCard, bool bEnableContour,
+     int nParamIndex, int bEnableHatch, int nPenNo, int nHatchType,
+     bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
+     double dHatchAngle, double dHatchLineDist, double dHatchEdgeDist,
+     double dHatchStartOffset, double dHatchEndOffset, double dHatchLineReduction,
+     double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev,
+     bool bHatchAutoRotate, double dHatchRotateAngle);
+
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchParam3", CallingConvention = CallingConvention.StdCall)]
+        public static extern int lmc1_SetHatchParam3(int nCard, bool bEnableContour,
+            int nParamIndex, int bEnableHatch, int nPenNo, int nHatchType,
+            bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
+            double dHatchAngle, double dHatchLineDist, double dHatchEdgeDist,
+            double dHatchStartOffset, double dHatchEndOffset, double dHatchLineReduction,
+            double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev,
+            bool bHatchAutoRotate, double dHatchRotateAngle, bool bHatchCross);
 
         #endregion
 

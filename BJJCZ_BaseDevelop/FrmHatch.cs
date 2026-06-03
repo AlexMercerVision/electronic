@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.IO;
+using System.Globalization;
 namespace BJJCZ_BaseDevelop
 {
     /// <summary>
@@ -19,7 +21,7 @@ namespace BJJCZ_BaseDevelop
         public bool bHatchCross;            // 交叉填充
 
         public int nPenNo;                  // 笔号
-        public int nHatchType;              // 填充类型 0单向 1双向 2回形 3弓形 4弓形不反向
+        public int nHatchType;              // 填充类型 0单向 1双向 2回形 3连续弓形 4带边段弓形
         public int nEdgeLoop;               // 边缘环线数目
         public int nParamIndex;             // 填充参数序号 1,2,3
         public int nCycCount;               // 填充数目（20200813新增）
@@ -38,12 +40,12 @@ namespace BJJCZ_BaseDevelop
             bEnableContour = true;
             bEnableHatch = 1;
             bContourFirst = false;
-            bHatchAllCalc = false;
-            bHatchEdge = true;
-            bHatchAverageLine = true;
+            bHatchAllCalc = true;
+            bHatchEdge = false;
+            bHatchAverageLine = false;
             bHatchLoopRev = false;
-            bHatchAutoRotate = true;
-            bHatchCross = true;
+            bHatchAutoRotate = false;
+            bHatchCross = false;
 
             nPenNo = 2;
             nHatchType = 0;
@@ -75,35 +77,199 @@ namespace BJJCZ_BaseDevelop
         private Image[] imagesLoopRev;
         private Image[] imagesHatchType;
         private int indLoopRev = 0;
-        private int indHatchType = 3;
+        private int indHatchType = 0;
 
         private void LoadImage()
         {
-            try
+            imagesLoopRev = new Image[]
             {
-                imagesLoopRev = new Image[]
-                {
-                    Image.FromFile("ICON\\HatchFo.png"),
-                    Image.FromFile("ICON\\HatchRev.png"),
-                };
-                imagesHatchType = new Image[]
-                {
-                    Image.FromFile("ICON\\HatchSi.png"),
-                    Image.FromFile("ICON\\HatchBi.png"),
-                    Image.FromFile("ICON\\HatchLoop.png"),
-                    Image.FromFile("ICON\\HatchArched.png"),
-                    Image.FromFile("ICON\\HatchArchedNoCross.png"),
-                };
-            }
-            catch
+                LoadIconOrFallback("HatchFo.png", "Fo"),
+                LoadIconOrFallback("HatchRev.png", "Rev"),
+            };
+
+            imagesHatchType = new Image[]
             {
-                // 图标文件不存在时忽略，不显示图片
+                LoadIconOrFallback("HatchSi.png", "Si"),
+                LoadIconOrFallback("HatchArched.png", "Arch"),
+                LoadIconOrFallback("HatchLoop.png", "Loop"),
+                LoadIconOrFallback("HatchBi.png", "Bi"),
+                LoadIconOrFallback("HatchArchedNoCross.png", "NoRev"),
+            };
+        }
+
+        private Image LoadIconOrFallback(string fileName, string label)
+        {
+            string[] dirs = new[]
+            {
+                Path.Combine(Application.StartupPath, "ICON"),
+                Path.Combine(Application.StartupPath, "..", "ICON"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ICON"),
+                Path.Combine(Environment.CurrentDirectory, "ICON")
+            };
+
+            foreach (string dir in dirs)
+            {
+                string path = Path.GetFullPath(Path.Combine(dir, fileName));
+                if (!File.Exists(path))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    return Image.FromFile(path);
+                }
+                catch
+                {
+                }
             }
+
+            return CreateFallbackIcon(label);
+        }
+
+        private Image CreateFallbackIcon(string label)
+        {
+            Bitmap bitmap = new Bitmap(64, 48);
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(Color.White);
+                using (Pen border = new Pen(Color.Gray))
+                using (Pen line = new Pen(Color.Red, 2))
+                {
+                    g.DrawRectangle(border, 0, 0, bitmap.Width - 1, bitmap.Height - 1);
+                    g.DrawLine(line, 8, bitmap.Height / 2, bitmap.Width - 8, bitmap.Height / 2);
+                }
+                g.DrawString(label, SystemFonts.DefaultFont, Brushes.Black, 6, 6);
+            }
+            return bitmap;
+        }
+
+        private int NormalizeIndex(int index, int count)
+        {
+            if (count <= 0)
+            {
+                return 0;
+            }
+
+            int normalized = index % count;
+            return normalized < 0 ? normalized + count : normalized;
+        }
+
+        private decimal ClampToRange(decimal value, NumericUpDown control)
+        {
+            if (value < control.Minimum)
+            {
+                return control.Minimum;
+            }
+
+            if (value > control.Maximum)
+            {
+                return control.Maximum;
+            }
+
+            return value;
+        }
+
+        private string FormatNumber(double value)
+        {
+            return value.ToString("0.########", CultureInfo.InvariantCulture);
+        }
+
+        private bool TryReadDouble(TextBox textBox, string fieldName, out double value)
+        {
+            string text = textBox.Text.Trim();
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value) ||
+                double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            {
+                return true;
+            }
+
+            MessageBox.Show(fieldName + "数字有误，请检查");
+            textBox.Focus();
+            textBox.SelectAll();
+            return false;
+        }
+
+        private int GetSelectedParamIndex()
+        {
+            if (rbHatch2.Checked)
+            {
+                return 2;
+            }
+
+            if (rbHatch3.Checked)
+            {
+                return 3;
+            }
+
+            return 1;
+        }
+
+        private bool IsLoopHatchType()
+        {
+            return NormalizeIndex(indHatchType, imagesHatchType.Length) == 2;
+        }
+
+        private void ApplyHatchTypeRules(bool resetForSelectedType)
+        {
+            bool loopType = IsLoopHatchType();
+            chkAllCalc.Text = loopType ? "反转" : "对象整体计算";
+
+            if (loopType)
+            {
+                if (resetForSelectedType)
+                {
+                    chkAllCalc.Checked = false;
+                    chkCrossHatch.Checked = false;
+                    chkFollowEdgeON.Checked = false;
+                    chkAveDistr.Checked = true;
+                    chkAutoRorateAngle.Checked = false;
+                    indLoopRev = 0;
+                    picHatchLoopRev.Image = imagesLoopRev[indLoopRev];
+
+                    if (txtLoopDist.Text.Trim() == "0")
+                    {
+                        txtLoopDist.Text = "0.5";
+                    }
+                }
+
+                chkCrossHatch.Checked = false;
+                chkAutoRorateAngle.Checked = false;
+            }
+        }
+
+        private void UpdateControlState()
+        {
+            bool hatchEnabled = chkEnableHatch.Checked;
+            bool loopType = IsLoopHatchType();
+
+            groupBox1.Enabled = hatchEnabled;
+            picHatchModel.Enabled = hatchEnabled;
+            picHatchLoopRev.Enabled = hatchEnabled;
+            chkAllCalc.Enabled = hatchEnabled;
+            chkCrossHatch.Enabled = hatchEnabled && !loopType;
+            chkFollowEdgeON.Enabled = hatchEnabled;
+            chkAveDistr.Enabled = hatchEnabled && !loopType;
+            ccbPenNum.Enabled = hatchEnabled;
+            nudAngle.Enabled = hatchEnabled;
+            txtLineDis.Enabled = hatchEnabled;
+            txtEdgeOffset.Enabled = hatchEnabled;
+            txtLinereduction.Enabled = hatchEnabled;
+            txtLoopDist.Enabled = hatchEnabled;
+            nudLoopNum.Enabled = hatchEnabled;
+            chkAutoRorateAngle.Enabled = hatchEnabled && !loopType;
+
+            bool manualOffsetEnabled = hatchEnabled && (loopType || !chkAveDistr.Checked);
+            txtStartOffset.Enabled = manualOffsetEnabled;
+            txtEndOffset.Enabled = manualOffsetEnabled;
+
+            nudRotateAngel.Enabled = hatchEnabled && !loopType && !chkAutoRorateAngle.Checked;
         }
 
         public FrmHatch()
         {
             InitializeComponent();
+            ccbPenNum.ResetPenColors();
             LoadImage();
             SetParam(hp);
         }
@@ -111,6 +277,7 @@ namespace BJJCZ_BaseDevelop
         public FrmHatch(HatchParam hp)
         {
             InitializeComponent();
+            ccbPenNum.ResetPenColors();
             this.hp = hp;
             LoadImage();
             SetParam(hp);
@@ -133,29 +300,39 @@ namespace BJJCZ_BaseDevelop
                 chkAveDistr.Checked = hp.bHatchAverageLine;
                 chkAutoRorateAngle.Checked = hp.bHatchAutoRotate;
 
-                ccbPenNum.SelectedIndex = hp.nPenNo;
-                indHatchType = hp.nHatchType;
-                picHatchModel.Image = imagesHatchType[indHatchType % imagesHatchType.Length];
-                nParamIndex = hp.nParamIndex;
-                nudLoopNum.Value = hp.nEdgeLoop;
+                if (ccbPenNum.Items.Count > 0)
+                {
+                    ccbPenNum.SelectedIndex = Math.Max(0, Math.Min(hp.nPenNo, ccbPenNum.Items.Count - 1));
+                }
+                indHatchType = NormalizeIndex(hp.nHatchType, imagesHatchType.Length);
+                picHatchModel.Image = imagesHatchType[indHatchType];
+                if (IsLoopHatchType())
+                {
+                    chkAllCalc.Checked = hp.bHatchLoopRev;
+                }
+                nParamIndex = Math.Max(1, Math.Min(3, hp.nParamIndex));
+                nudLoopNum.Value = ClampToRange(hp.nEdgeLoop, nudLoopNum);
 
-                txtLineDis.Text = hp.dHatchLineDist.ToString();
-                txtEdgeOffset.Text = hp.dHatchEdgeDist.ToString();
-                txtStartOffset.Text = hp.dHatchStartOffset.ToString();
-                txtEndOffset.Text = hp.dHatchEndOffset.ToString();
-                txtLinereduction.Text = hp.dHatchLineReduction.ToString();
-                txtLoopDist.Text = hp.dHatchLoopDist.ToString();
+                txtLineDis.Text = FormatNumber(hp.dHatchLineDist);
+                txtEdgeOffset.Text = FormatNumber(hp.dHatchEdgeDist);
+                txtStartOffset.Text = FormatNumber(hp.dHatchStartOffset);
+                txtEndOffset.Text = FormatNumber(hp.dHatchEndOffset);
+                txtLinereduction.Text = FormatNumber(hp.dHatchLineReduction);
+                txtLoopDist.Text = FormatNumber(hp.dHatchLoopDist);
 
-                nudAngle.Value = (decimal)hp.dHatchAngle;
-                nudRotateAngel.Value = (decimal)hp.dHatchRotateAngle;
+                nudAngle.Value = ClampToRange((decimal)hp.dHatchAngle, nudAngle);
+                nudRotateAngel.Value = ClampToRange((decimal)hp.dHatchRotateAngle, nudRotateAngel);
 
                 // 设置填充参数序号单选按钮
-                switch (hp.nParamIndex)
+                switch (nParamIndex)
                 {
                     case 1: rbHatch1.Checked = true; break;
                     case 2: rbHatch2.Checked = true; break;
                     case 3: rbHatch3.Checked = true; break;
                 }
+
+                ApplyHatchTypeRules(false);
+                UpdateControlState();
             }
             catch (Exception ex)
             {
@@ -163,75 +340,87 @@ namespace BJJCZ_BaseDevelop
             }
         }
 
-        private void GetParam()
+        private bool GetParam()
         {
             hp.bEnableContour = chkEnableContour.Checked;
             hp.bEnableHatch = chkEnableHatch.Checked ? 1 : 0;
 
-            hp.bHatchAllCalc = chkAllCalc.Checked;
+            bool loopType = IsLoopHatchType();
+            hp.bHatchAllCalc = loopType ? false : chkAllCalc.Checked;
             hp.bHatchCross = chkCrossHatch.Checked;
             hp.bHatchEdge = chkFollowEdgeON.Checked;
 
-            hp.bHatchLoopRev = indLoopRev == 1;
+            indLoopRev = NormalizeIndex(indLoopRev, imagesLoopRev.Length);
+            hp.bHatchLoopRev = loopType ? chkAllCalc.Checked : indLoopRev == 1;
             hp.bHatchAverageLine = chkAveDistr.Checked;
             hp.bHatchAutoRotate = chkAutoRorateAngle.Checked;
 
             hp.nPenNo = ccbPenNum.SelectedIndex;
+            if (hp.nPenNo < 0)
+            {
+                hp.nPenNo = 0;
+            }
+
+            indHatchType = NormalizeIndex(indHatchType, imagesHatchType.Length);
             hp.nHatchType = indHatchType;
-            if (rbHatch1.Checked) hp.nParamIndex = 1;
-            else if (rbHatch2.Checked) hp.nParamIndex = 2;
-            else if (rbHatch3.Checked) hp.nParamIndex = 3;
+            hp.nParamIndex = GetSelectedParamIndex();
             hp.nEdgeLoop = (int)nudLoopNum.Value;
             hp.nCycCount = 1;  // 默认值，可调整
 
-            bool bNormal = true;
-            bNormal &= double.TryParse(txtLineDis.Text, out hp.dHatchLineDist);
-            bNormal &= double.TryParse(txtEdgeOffset.Text, out hp.dHatchEdgeDist);
-            bNormal &= double.TryParse(txtStartOffset.Text, out hp.dHatchStartOffset);
-            bNormal &= double.TryParse(txtEndOffset.Text, out hp.dHatchEndOffset);
-            bNormal &= double.TryParse(txtLinereduction.Text, out hp.dHatchLineReduction);
-            bNormal &= double.TryParse(txtLoopDist.Text, out hp.dHatchLoopDist);
+            if (hp.nHatchType == 2)
+            {
+                hp.bHatchCross = false;
+                hp.bHatchAutoRotate = false;
+                hp.bHatchAverageLine = true;
+            }
+
+            if (!TryReadDouble(txtLineDis, "填充线间距", out hp.dHatchLineDist) ||
+                !TryReadDouble(txtEdgeOffset, "填充线边距", out hp.dHatchEdgeDist) ||
+                !TryReadDouble(txtStartOffset, "起点偏移", out hp.dHatchStartOffset) ||
+                !TryReadDouble(txtEndOffset, "终点偏移", out hp.dHatchEndOffset) ||
+                !TryReadDouble(txtLinereduction, "线缩进", out hp.dHatchLineReduction) ||
+                !TryReadDouble(txtLoopDist, "环间距", out hp.dHatchLoopDist))
+            {
+                return false;
+            }
 
             hp.dHatchAngle = (double)nudAngle.Value;
             hp.dHatchRotateAngle = (double)nudRotateAngel.Value;
-
-            if (!bNormal)
-            {
-                MessageBox.Show("数字有误，请检查");
-            }
+            return true;
         }
 
         private void picHatchModel_Click(object sender, EventArgs e)
         {
-            indHatchType++;
-            picHatchModel.Image = imagesHatchType[indHatchType % imagesHatchType.Length];
+            indHatchType = NormalizeIndex(indHatchType + 1, imagesHatchType.Length);
+            picHatchModel.Image = imagesHatchType[indHatchType];
+            ApplyHatchTypeRules(true);
+            UpdateControlState();
         }
 
         private void picHatchLoopRev_Click(object sender, EventArgs e)
         {
-            indLoopRev++;
-            picHatchLoopRev.Image = imagesLoopRev[indLoopRev % 2];
+            indLoopRev = NormalizeIndex(indLoopRev + 1, imagesLoopRev.Length);
+            picHatchLoopRev.Image = imagesLoopRev[indLoopRev];
         }
 
         private void chkEnableHatch_CheckedChanged(object sender, EventArgs e)
         {
-            bool enable = chkEnableHatch.Checked;
-            picHatchModel.Enabled = enable;
-            chkAllCalc.Enabled = enable;
-            chkCrossHatch.Enabled = enable;
-            chkFollowEdgeON.Enabled = enable;
+            UpdateControlState();
         }
 
         private void chkAveDistr_CheckedChanged(object sender, EventArgs e)
         {
-            bool enable = !chkAveDistr.Checked;
-            txtStartOffset.Enabled = enable;
-            txtEndOffset.Enabled = enable;
+            UpdateControlState();
         }
 
         private void btOk_Click(object sender, EventArgs e)
         {
-            GetParam();
+            if (!GetParam())
+            {
+                DialogResult = DialogResult.None;
+                return;
+            }
+
             // 将填充参数应用到当前对象（使用当前卡号）
             // 注意：需要外部传入当前操作的对象名称，此处未提供，故仅保存参数到结构体，
             // 实际设置填充参数应在外部调用 SetHatchParam 并调用 HatchEnt
@@ -251,7 +440,7 @@ namespace BJJCZ_BaseDevelop
 
         private void chkAutoRorateAngle_CheckedChanged(object sender, EventArgs e)
         {
-            nudRotateAngel.Enabled = !chkAutoRorateAngle.Checked;
+            UpdateControlState();
         }
     }
 }
