@@ -1,5 +1,5 @@
-﻿ 
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,11 +13,13 @@ using System.Threading;
 using PipeChanel;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
- 
+
 using System.Runtime.InteropServices;
 using System.Diagnostics;      // Process 类
 using System.Threading.Tasks;  // Task.Run
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Xml.Serialization;
 namespace BJJCZ_BaseDevelop
 {
     /// <summary>
@@ -34,7 +36,8 @@ namespace BJJCZ_BaseDevelop
     }
     public partial class JCZServer : Form
     {
-        int[] phyCardSN = new int[2] {0, 1 };
+        #region 字段、常量与Win32声明
+        int[] phyCardSN = new int[2] { 0, 1 };
         // =============== 双管道服务端 ===============
         private Pipechanel pipeServer0;
         private Pipechanel pipeServer1;
@@ -57,17 +60,17 @@ namespace BJJCZ_BaseDevelop
         private int lastCmdCard = 0;
         // 在 JCZServer 类中添加字段
         private RectangleF[] _overlayWorldBounds = new RectangleF[2];    // 叠加图物理范围（mm）
-        private Bitmap[] cachedRouteImg = new Bitmap[2];   // 缓存透明处理后的叠加图
-        private int[] lastRouteHash = new int[2];          // 可选：通过哈希判断内容是否变化
-                                                           // 叠加图缓存（用于避免重复透明处理）
         private Bitmap[] cachedTransparentRoute = new Bitmap[2];
         private int[] cachedRouteWidth = new int[2];
         private int[] cachedRouteHeight = new int[2];
-        // 如果 SDK 每次返回新对象且内容可能变，还需要记录内容哈希或直接用引用比较
-        private Bitmap[] lastRawRouteImg = new Bitmap[2];
+
+        private static readonly RectangleF PreviewViewBounds = new RectangleF(-100f, -100f, 200f, 200f);
+        private static readonly RectangleF EzcadCanvasBounds = new RectangleF(-75f, -75f, 150f, 150f);
+        private static readonly RectangleF DefaultBackgroundBounds = new RectangleF(-45f, -45f, 90f, 90f);
+        private const int PreviewRouteBitmapScale = 3;
 
         // =============== 嵌入模式相关 ===============
-        private bool _isEmbedded = true;           // 默认嵌入模式
+        private bool _isEmbedded = false;          // 独立启动默认显示完整界面，收到主程序嵌入命令后再切换
         private IntPtr _containerHwnd = IntPtr.Zero;
         private System.Windows.Forms.Timer _parentCheckTimer;
 
@@ -82,6 +85,7 @@ namespace BJJCZ_BaseDevelop
         private bool[] markStopRequested = new bool[2];        // 请求停止加工标志
         private bool[] laserMarkEnabled = new bool[2] { true, true };  // 激光器使能状态
         private bool[] pendingDeferredSave = new bool[2];      // 延迟保存标志
+        private bool _isSavingEzd = false;                     // 防止自动保存重入
         private System.Windows.Forms.Timer _deferredSaveTimer; // 延迟保存定时器
 
         // ===== 填充参数缓存（持久化 + 内存）=====
@@ -158,12 +162,16 @@ namespace BJJCZ_BaseDevelop
             public int Right;
             public int Bottom;
         }
+        #endregion
 
+        #region 构造函数与延迟保存定时器
         // =============== 构造函数 ===============
         public JCZServer()
         {
             InitializeComponent();
             this.DoubleBuffered = true;   // 添加这一行
+            ConfigureMainPanelLayout();
+            ConfigurePreviewBoxLayout();
             pipeServer0 = new Pipechanel(1, "PipeServer0", "PipeClient0");
             pipeServer1 = new Pipechanel(1, "PipeServer1", "PipeClient1");
 
@@ -191,6 +199,12 @@ namespace BJJCZ_BaseDevelop
         {
             _deferredSaveTimer.Stop();
 
+            if (_isSavingEzd)
+            {
+                _deferredSaveTimer.Start();
+                return;
+            }
+
             for (int card = 0; card < pendingDeferredSave.Length; card++)
             {
                 if (!pendingDeferredSave[card])
@@ -202,22 +216,9 @@ namespace BJJCZ_BaseDevelop
                 SaveToOriginalPath(card);
             }
         }
-        // 在 JCZServer 类中添加
-        private RectangleF GetCurrentWorldBounds()
-        {
-            if (alImParam.dWidth > 0 && alImParam.dHeight > 0)
-            {
-                float left = (float)(alImParam.dCenX - alImParam.dWidth / 2);
-                float right = (float)(alImParam.dCenX + alImParam.dWidth / 2);
-                float bottom = (float)(alImParam.dCenY - alImParam.dHeight / 2);
-                float top = (float)(alImParam.dCenY + alImParam.dHeight / 2);
-                return new RectangleF(left, bottom, right - left, top - bottom);
-            }
-            // 默认范围（mm）
-            return new RectangleF(-50f, -50f, 100f, 100f);
-        }
+        #endregion
 
-
+        #region 窗体加载与激光按钮状态
         // =============== 窗体加载 ===============
         private void JCZServer_Load(object sender, EventArgs e)
         {
@@ -225,22 +226,27 @@ namespace BJJCZ_BaseDevelop
             AddMsg("双管道服务端启动完成，等待板卡0/1连接");
             TryInitializeCards();
 
-            alImParam.dCenX = 0;
-            alImParam.dCenY = 0;
-            alImParam.dHeight = 200;
-            alImParam.dWidth = 100;
+            // 主程序暂未发送对位参数时，临时背景图固定放在激光坐标 X/Y = -45~45。
+            alImParam.dCenX = DefaultBackgroundBounds.Left + DefaultBackgroundBounds.Width / 2f;
+            alImParam.dCenY = DefaultBackgroundBounds.Top + DefaultBackgroundBounds.Height / 2f;
+            alImParam.dWidth = DefaultBackgroundBounds.Width;
+            alImParam.dHeight = DefaultBackgroundBounds.Height;
 
-            _overlayWorldBounds[0] = new RectangleF(-150f, -150f, 300f, 300f);
-            _overlayWorldBounds[1] = new RectangleF(-150f, -150f, 300f, 300f);
+            // 标刻路径图对应EZCAD画布范围。SDK预览取图和叠加贴图必须使用同一范围。
+            _overlayWorldBounds[0] = EzcadCanvasBounds;
+            _overlayWorldBounds[1] = EzcadCanvasBounds;
 
-            pictureBox1.SetWorldViewBounds(new RectangleF(-200f, -200f, 400f, 400f));
-            pictureBox2.SetWorldViewBounds(new RectangleF(-200f, -200f, 400f, 400f));
+            // 图像显示框坐标范围：大预览窗口 X/Y = -100~100，内部显示 EZCAD 画布 -75~75。
+            pictureBox1.SetWorldViewBounds(PreviewViewBounds);
+            pictureBox2.SetWorldViewBounds(PreviewViewBounds);
+            pictureBox1.SetCanvasBounds(EzcadCanvasBounds);
+            pictureBox2.SetCanvasBounds(EzcadCanvasBounds);
 
-            
+
             // 立即设置布局为完整模式（分割线居中）
             SetupDefaultLayoutImmediately();
 
-            // 默认进入嵌入模式布局（如果 _isEmbedded 为 true，再调整）
+            // 独立启动时保持完整界面；收到主程序嵌入命令后才切换嵌入布局。
             ApplyEmbeddedLayout();
 
             UpdateLaserOperationButtonsEnabled();   // 根据初始激光器使能状态更新 UI 按钮
@@ -271,9 +277,11 @@ namespace BJJCZ_BaseDevelop
                 updateAction();
             }
         }
+        #endregion
         /// <summary>
         /// 设置容器窗口句柄并执行嵌入
         /// </summary>
+        #region 嵌入模式与界面布局
         public void SetContainerAndEmbed(IntPtr containerHwnd)
         {
             if (containerHwnd == IntPtr.Zero) return;
@@ -317,8 +325,8 @@ namespace BJJCZ_BaseDevelop
                 exStyle |= WS_EX_TOOLWINDOW;
                 SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
 
-                // 禁用窗口（不可活动）
-             //   EnableWindow(this.Handle, false);
+                // 可选：禁用窗口交互（原注释掉的 EnableWindow 可根据需要开启）
+                // EnableWindow(this.Handle, false);
 
                 // 获取容器大小并调整
                 RECT containerRect;
@@ -331,27 +339,77 @@ namespace BJJCZ_BaseDevelop
                 this.WindowState = FormWindowState.Normal;
                 ShowWindow(this.Handle, SW_SHOW);
 
-                // 应用嵌入布局
+                // 应用嵌入布局（隐藏对象清单和操作面板，只显示日志和图像区）
                 ApplyEmbeddedLayout();
 
-                // 强制再次折叠（防止被其他事件覆盖）
-                this.BeginInvoke(new Action(() =>
-                {
-                    if (_isEmbedded)
-                    {
-                        splitContainer1.Panel2Collapsed = true;
-                        splitContainer1.IsSplitterFixed = true;
-                    }
-                }));
+                // 强制调整子控件布局，确保嵌入后控件位置正确
+                this.PerformLayout();
             }
             catch (Exception ex)
             {
                 // 可记录日志
             }
         }
-        /// <summary>
-        /// 分离嵌入，显示完整窗口
-        /// </summary>
+        /* private void PerformEmbed()
+         {
+             // 二次检查：确保在 UI 线程
+             if (this.InvokeRequired)
+             {
+                 this.Invoke(new Action(PerformEmbed));
+                 return;
+             }
+
+             if (_containerHwnd == IntPtr.Zero) return;
+
+             try
+             {
+                 // 设置父窗口
+                 SetParent(this.Handle, _containerHwnd);
+
+                 // 移除边框、标题栏、系统菜单等
+                 int style = GetWindowLong(this.Handle, GWL_STYLE);
+                 style &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                 SetWindowLong(this.Handle, GWL_STYLE, style);
+
+                 // 设置为工具窗口（不在任务栏显示）
+                 int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                 exStyle &= ~(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE);
+                 exStyle |= WS_EX_TOOLWINDOW;
+                 SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
+
+                 // 禁用窗口（不可活动）
+              //   EnableWindow(this.Handle, false);
+
+                 // 获取容器大小并调整
+                 RECT containerRect;
+                 GetClientRect(_containerHwnd, out containerRect);
+                 int width = containerRect.Right - containerRect.Left;
+                 int height = containerRect.Bottom - containerRect.Top;
+                 MoveWindow(this.Handle, 0, 0, width, height, true);
+
+                 this.Show();
+                 this.WindowState = FormWindowState.Normal;
+                 ShowWindow(this.Handle, SW_SHOW);
+
+                 // 应用嵌入布局
+                 ApplyEmbeddedLayout();
+
+                 // 强制再次折叠（防止被其他事件覆盖）
+                 this.BeginInvoke(new Action(() =>
+                 {
+                     if (_isEmbedded)
+                     {
+                         splitContainer1.Panel2Collapsed = true;
+                         splitContainer1.IsSplitterFixed = true;
+                     }
+                 }));
+             }
+             catch (Exception ex)
+             {
+                 // 可记录日志
+             }
+         }*/
+
         /// <summary>
         /// 分离嵌入，显示完整窗口
         /// </summary>
@@ -376,9 +434,8 @@ namespace BJJCZ_BaseDevelop
                 // 启用窗口
                 EnableWindow(this.Handle, true);
 
-                // 设置窗口大小并居中
-                this.Size = new Size(1200, 600);
-                this.CenterToScreen();
+                // 设置窗口大小并居中，避免完整界面打开后被屏幕底部遮住
+                FitWindowToWorkingArea();
 
                 _isEmbedded = false;
 
@@ -391,7 +448,7 @@ namespace BJJCZ_BaseDevelop
                 ShowWindow(this.Handle, SW_SHOW);
 
                 // *** 新增：调整分割线距离，使上下面板比例合适 ***
-                AdjustSplitterDistance();
+                //    AdjustSplitterDistance();
 
                 //   AddMsg($"已分离，显示完整窗口");
             }
@@ -407,48 +464,18 @@ namespace BJJCZ_BaseDevelop
         private void SetupDefaultLayoutImmediately()
         {
             // 暂停布局更新
-            this.SuspendLayout();
-            splitContainer1.SuspendLayout();
-            splitContainer2.SuspendLayout();
-            splitContainer3.SuspendLayout();
+            // 展开所有区域
+            mainMsgBox.Visible = true;
+            panelImage.Visible = true;
+            panel3.Visible = true;
+            panel1.Visible = true;
 
-            try
-            {
-                // 先展开所有面板
-                splitContainer1.Panel1Collapsed = false;
-                splitContainer1.Panel2Collapsed = false;
-                splitContainer2.Panel1Collapsed = false;
-                splitContainer2.Panel2Collapsed = false;
-                splitContainer3.Panel1Collapsed = false;
-                splitContainer3.Panel2Collapsed = false;
-
-                // 更新菜单项勾选状态
-                Win_Log.Checked = true;
-                Win_Entity.Checked = true;
-                Win_Route.Checked = true;
-                Win_Oper.Checked = true;
-
-                // 设置分割线居中（需要确保容器高度有效）
-                if (splitContainer1.Height > 0)
-                {
-                    splitContainer1.SplitterDistance = splitContainer1.Height / 2;
-                }
-                else
-                {
-                    // 如果高度还未确定，延迟到 Shown 事件中设置
-                    // 这里可以注册一次 Shown 事件，或者信任后续 OnResize 会修正
-                }
-            }
-            finally
-            {
-                // 恢复布局更新
-                splitContainer3.ResumeLayout(false);
-                splitContainer2.ResumeLayout(false);
-                splitContainer1.ResumeLayout(false);
-                this.ResumeLayout(false);
-                // 强制立即重绘一次
-                this.PerformLayout();
-            }
+            // 更新菜单项勾选状态（如果菜单项控制显示）
+            Win_Log.Checked = true;
+            Win_Entity.Checked = true;
+            Win_Route.Checked = true;
+            Win_Oper.Checked = true;
+            LayoutMainPanels();
         }
 
         /// <summary>
@@ -462,49 +489,175 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            this.SuspendLayout();
-            splitContainer1.SuspendLayout();
-
             if (_isEmbedded)
             {
-                splitContainer1.Panel1Collapsed = false;
-                splitContainer1.Panel2Collapsed = true;
-                if (menuStrip1 != null) menuStrip1.Visible = false;
+                // 嵌入模式：只显示日志和图像区，隐藏对象清单和操作面板
+                panel3.Visible = false;
+                panel1.Visible = false;
+                menuStrip1.Visible = false;
                 this.FormBorderStyle = FormBorderStyle.None;
             }
             else
             {
-                splitContainer1.Panel1Collapsed = false;
-                splitContainer1.Panel2Collapsed = false;
-                if (menuStrip1 != null) menuStrip1.Visible = true;
+                panel3.Visible = true;
+                panel1.Visible = true;
+                menuStrip1.Visible = true;
                 this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.MaximizeBox = true;
+            }
+            LayoutMainPanels();
+        }
+
+        private void ConfigurePreviewBoxLayout()
+        {
+            pictureBox1.Dock = DockStyle.None;
+            pictureBox2.Dock = DockStyle.None;
+            pictureBox1.SizeMode = PictureBoxSizeMode.Normal;
+            pictureBox2.SizeMode = PictureBoxSizeMode.Normal;
+            panelImage.Resize += (s, e) => LayoutPreviewBoxes();
+            LayoutPreviewBoxes();
+        }
+
+        private void ConfigureMainPanelLayout()
+        {
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MaximizeBox = true;
+            mainMsgBox.ScrollBars = RichTextBoxScrollBars.ForcedVertical;
+            mainMsgBox.WordWrap = false;
+            panel1.AutoScroll = false;
+            panel3.AutoScroll = false;
+            this.Resize += (s, e) => LayoutMainPanels();
+            FitWindowToWorkingArea();
+            LayoutMainPanels();
+        }
+
+        private void FitWindowToWorkingArea()
+        {
+            this.WindowState = FormWindowState.Normal;
+            Rectangle area = Screen.FromControl(this).WorkingArea;
+            int width = Math.Min(1210, Math.Max(1130, area.Width - 20));
+            int height = Math.Min(700, Math.Max(680, area.Height - 20));
+            Size clientSize = new Size(width, height);
+
+            this.MaximumSize = Size.Empty;
+            this.MinimumSize = this.SizeFromClientSize(new Size(1000, 620));
+            this.ClientSize = clientSize;
+            this.CenterToScreen();
+        }
+
+        private void LayoutMainPanels()
+        {
+            if (mainMsgBox == null || panelImage == null || panel3 == null || panel1 == null)
+            {
+                return;
             }
 
-            splitContainer1.ResumeLayout(false);
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            int margin = 14;
+            int columnGap = 42;
+            int rowGap = 14;
+            int top = (menuStrip1 != null && menuStrip1.Visible) ? menuStrip1.Bottom + 8 : margin;
+            int bottomMargin = 14;
+            int clientWidth = Math.Max(1, this.ClientSize.Width);
+            int clientHeight = Math.Max(1, this.ClientSize.Height);
+
+            int leftWidth = Math.Min(410, Math.Max(390, clientWidth - 740));
+            int rightX = margin + leftWidth + columnGap;
+            int rightWidth = Math.Max(420, clientWidth - rightX - margin);
+
+            bool showBottomPanels = panel3.Visible || panel1.Visible;
+            int desiredBottomHeight = 285;
+            int topHeight = showBottomPanels
+                ? clientHeight - top - rowGap - desiredBottomHeight - bottomMargin
+                : clientHeight - top - bottomMargin;
+            topHeight = showBottomPanels
+                ? Math.Max(300, Math.Min(320, topHeight))
+                : Math.Max(1, topHeight);
+
+            int bottomY = top + topHeight + rowGap;
+            int bottomHeight = showBottomPanels
+                ? Math.Max(285, clientHeight - bottomY - bottomMargin)
+                : 0;
+
+            mainMsgBox.Bounds = new Rectangle(margin, top, leftWidth, topHeight);
+            panelImage.Bounds = new Rectangle(rightX, top, rightWidth, topHeight);
+            if (showBottomPanels)
+            {
+                panel3.Bounds = new Rectangle(margin, bottomY, leftWidth, bottomHeight);
+                panel1.Bounds = new Rectangle(rightX, bottomY, rightWidth, bottomHeight);
+                LayoutEntityTable();
+            }
+
+            LayoutPreviewBoxes();
+        }
+
+        private void LayoutEntityTable()
+        {
+            if (dgvEnt == null)
+            {
+                return;
+            }
+
+            int panelWidth = Math.Max(1, panel3.ClientSize.Width);
+            int panelHeight = Math.Max(1, panel3.ClientSize.Height);
+            int actionX = Math.Max(270, panelWidth - 130);
+
+            dgvEnt.SetBounds(4, 4, Math.Max(255, actionX - 10), Math.Max(160, panelHeight - 32));
+            dgvEnt.RowHeadersWidth = 28;
+            dgvEnt.ScrollBars = ScrollBars.Vertical;
+            Column1.Width = 35;
+            Column2.Width = 82;
+            Column3.Width = 65;
+            Column4.Width = 55;
+
+            txtEntName.Left = actionX;
+            txtEntName.Top = 4;
+            btRenameEnt.Left = actionX;
+            btRenameEnt.Top = 38;
+            btMoveEntBefore.Left = actionX;
+            btMoveEntAfter.Left = actionX;
+            label10.Left = actionX;
+            chkEntGroup.Left = actionX + 58;
+            btLaserPenParam.Width = 58;
+            btHatchParam.Width = 56;
+            btLaserPenParam.Left = Math.Min(actionX, Math.Max(4, panelWidth - btLaserPenParam.Width - btHatchParam.Width - 18));
+            btHatchParam.Left = Math.Min(btLaserPenParam.Left + btLaserPenParam.Width + 10, Math.Max(4, panelWidth - btHatchParam.Width - 8));
+        }
+
+        private void LayoutPreviewBoxes()
+        {
+            if (panelImage == null || pictureBox1 == null || pictureBox2 == null)
+            {
+                return;
+            }
+
+            int gap = 48;
+            int padding = 4;
+            int availableWidth = Math.Max(1, panelImage.ClientSize.Width - padding * 2 - gap);
+            int availableHeight = Math.Max(1, panelImage.ClientSize.Height - padding * 2);
+            int side = Math.Max(1, Math.Min(availableHeight, availableWidth / 2));
+            int desiredRightPreviewLeft = btnInitial.Left;
+            int maxAlignedSide = panelImage.ClientSize.Width - padding - desiredRightPreviewLeft;
+            if (maxAlignedSide > 0)
+            {
+                side = Math.Min(side, Math.Max(180, maxAlignedSide));
+            }
+
+            int minRightPreviewLeft = padding + side + gap;
+            int maxRightPreviewLeft = panelImage.ClientSize.Width - padding - side;
+            int rightPreviewLeft = Math.Min(
+                Math.Max(minRightPreviewLeft, desiredRightPreviewLeft),
+                Math.Max(minRightPreviewLeft, maxRightPreviewLeft));
+            int left = 0;
+            int top = padding;
+
+            pictureBox1.Bounds = new Rectangle(left, top, side, side);
+            pictureBox2.Bounds = new Rectangle(rightPreviewLeft, top, side, side);
         }
         /// <summary>
         /// 调整 splitContainer1 的分割距离，只在完整模式下生效
         /// </summary>
-        private void AdjustSplitterDistance()
-        {
-            if (splitContainer1.InvokeRequired)
-            {
-                splitContainer1.Invoke(new Action(AdjustSplitterDistance));
-                return;
-            }
 
-            // 仅在非嵌入模式且 Panel2 未折叠时调整
-            if (!_isEmbedded && !splitContainer1.Panel2Collapsed && splitContainer1.Height > 0)
-            {
-                // 例如让 Panel1 占总高度的 1/2，可根据实际需要调整比例
-                int totalHeight = splitContainer1.Height;
-                int desiredDistance = totalHeight / 2;
-                desiredDistance = Math.Max(100, Math.Min(desiredDistance, totalHeight - 100));
-                splitContainer1.SplitterDistance = desiredDistance;
-            }
-        }
         /// <summary>
         /// 初始化父窗口检测定时器
         /// </summary>
@@ -533,7 +686,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     this.BeginInvoke(new Action(() =>
                     {
-                     //   AddMsg("父窗口已关闭，最小化到托盘");
+                        //   AddMsg("父窗口已关闭，最小化到托盘");
                         this.WindowState = FormWindowState.Minimized;
                         this.ShowInTaskbar = false;
                         JCZServerIcon.Visible = true;
@@ -541,10 +694,12 @@ namespace BJJCZ_BaseDevelop
                 }
             }
         }
+        #endregion
 
         /// <summary>
         /// 尝试初始化两个板卡
         /// </summary>
+        #region 板卡初始化、管道通信与日志
         private void TryInitializeCards()
         {
             int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
@@ -564,7 +719,7 @@ namespace BJJCZ_BaseDevelop
                     {
                         if (snArray[i] != -1)
                         {
-                            AddMsg($"逻辑索引 {i}  -> 物理卡号 {snArray[i]}");
+                            AddMsg($"逻辑索引 {i + 1}  -> 物理卡号 {snArray[i]}");
                         }
                     }
                     AddMsg("------------------------");
@@ -658,6 +813,7 @@ namespace BJJCZ_BaseDevelop
                 case 31: return "重命名对象";
                 case 40: return "设备配置";
                 case 42: return "更新对齐参数";
+                case 44: return "生成阵列填充圆模板";
                 case 90: return "界面布局";
                 case 100: return "查询状态并加载";
                 case 110: return "激光加工(清除偏移)";
@@ -692,11 +848,15 @@ namespace BJJCZ_BaseDevelop
                     return param.bOpen ? "开始" : "停止";
                 case 15:
                     return $"({param.dParam1:F2},{param.dParam2:F2})";
+                case 44:
+                    return $"{param.ind1}行 x {param.ind2}列";
                 default:
                     return "";
             }
         }
+        #endregion
 
+        #region 基础对象添加与阻塞加工
         // 在 JczLmc.cs 的 #region 添加删除对象 区域添加
 
         /// <summary>
@@ -714,7 +874,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 添加矩形到指定板卡
         /// </summary>
-        public  int AddRectangleToLib(int cardSN, double x, double y, double width, double height,
+        public int AddRectangleToLib(int cardSN, double x, double y, double width, double height,
                                              string entName, int penNo, bool hatch = false)
         {
             double[,] points = new double[5, 2];  // 5个点（闭合回到起点）
@@ -729,7 +889,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 添加点到指定板卡（可用于点阵标定）
         /// </summary>
-        public  int AddPointToLib(int cardSN, double x, double y, string entName,
+        public int AddPointToLib(int cardSN, double x, double y, string entName,
                                          int penNo, double delayMs = 100)
         {
             // 使用打点函数，不是添加对象到数据库
@@ -739,7 +899,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 阻塞等待标刻完成（同步版本，适合 BackgroundWorker）
         /// </summary>
-        public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
+        public int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
         {
             if (!CanStartLaserMark(cardSN))
             {
@@ -778,6 +938,9 @@ namespace BJJCZ_BaseDevelop
             JczLmc.lmc1_StopMark(phyCardSN[cardSN]);
             return 10;  // 返回超时错误码
         }
+        #endregion
+
+        #region 管道命令解析
         // =============== 核心命令解析（简化版，保留原有逻辑）===============
         /*private void CMDAna(LCZControlParam param)
         {
@@ -907,7 +1070,7 @@ namespace BJJCZ_BaseDevelop
                             savePath = Path.Combine(Application.StartupPath, "route.ezd");
                         }
 
-                        nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], savePath);
+                        nErr = SaveEntLibToFileWithoutPreviewAnchor(card, savePath);
                         if (nErr == 0)
                         {
                             // 保存成功后更新暂存路径（如果是新路径）
@@ -1291,6 +1454,7 @@ namespace BJJCZ_BaseDevelop
                         alImParam.dCenY = param.dParam2;
                         alImParam.dWidth = param.dParam3;
                         alImParam.dHeight = param.dParam4;
+                        AddMsg($"卡{card + 1} 收到主程序对齐参数: 像素({param.ind1} x {param.ind2}) 中心({param.dParam1:0.###},{param.dParam2:0.###}) 尺寸({param.dParam3:0.###} x {param.dParam4:0.###})");
                         // 立即根据新参数重新设置背景图与叠加图的世界范围
                         this.BeginInvoke(new Action(() =>
                         {
@@ -1335,22 +1499,16 @@ namespace BJJCZ_BaseDevelop
                 SendResponse(param);
             }
         }*/
-        private bool[] previewAnchorReady = new bool[2];
-        private Rectangle[] previewAnchorRects = new Rectangle[2];
-        private RectangleF[] previewAnchorWorldRects = new RectangleF[2];
-        private RectangleF[] previewGuardWorldRects = new RectangleF[2];
-        private void ResetPreviewAnchor(int card)
-        {
-            CleanupPreviewAnchorEntities(card);
-            previewAnchorReady[card] = false;
-            previewAnchorRects[card] = Rectangle.Empty;
-            previewAnchorWorldRects[card] = RectangleF.Empty;
-            previewGuardWorldRects[card] = RectangleF.Empty;
-        }
-
 
         private void CMDAna(LCZControlParam param)
         {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new Action<LCZControlParam>(CMDAna), param);
+                return;
+            }
+
+
             int clientSeq = param.ind3;
             int card = param.cardSN;
 
@@ -1427,18 +1585,18 @@ namespace BJJCZ_BaseDevelop
                         if (JczInitErrs[card] == 0)
                         {
                             nErr = 0;
-                            AddMsg($"卡{card} 已初始化，无需重复初始化");
+                            AddMsg($"卡{card + 1} 已初始化，无需重复初始化");
                         }
                         else
                         {
                             nErr = JczLmc.InitializeCard(Application.StartupPath, false, this.Handle);
                             JczInitErrs[card] = nErr;
-                            AddMsg($"卡{card} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card + 1} 初始化{(nErr == 0 ? "成功" : "失败")} -> {JczLmc.GetErrorText(nErr)}");
                         }
                         if (nErr != 0)
                         {
                             bSimulateMode[card] = true;
-                            AddMsg($"卡{card} 已切换至模拟模式");
+                            AddMsg($"卡{card + 1} 已切换至模拟模式");
                         }
                         break;
 
@@ -1468,16 +1626,16 @@ namespace BJJCZ_BaseDevelop
                             laserMarkEnabled[card] = false;
                             SendStopMark(card);
                             bInRed[card] = false;
-                           // ResetRedPreviewButtons();
+                            // ResetRedPreviewButtons();
                             UpdateLaserOperationButtonsEnabled();
                             AddMsg($"卡{card + 1} 已禁止后续激光加工/红光预览");
                         }
-                        AddMsg($"卡{card} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"卡{card + 1} {(param.bOpen ? "打开" : "关闭")}激光 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 4:
                         nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
-                        if (nErr == 0)
+                        if (nErr == 0 && !bSimulateMode[card])
                         {
                             currentFilePath[card] = param.strFileName;
                             // 保存当前文件路径
@@ -1487,24 +1645,14 @@ namespace BJJCZ_BaseDevelop
                             ApplyVisualRotateMoveParamIfReady(card, "加载文件后恢复视觉定位偏移");
 
                             ReloadEntityInfo(card);
-                        //    CapturePreviewAnchorBounds(card);
-                           
-                            /*  
+                            CapturePreviewAnchorBounds(card);
 
-                              nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
-                              strEntNames[card] = new string[nEntNums[card]];
-                              iPenNos[card] = new int[nEntNums[card]];
-                              for (int i = 0; i < nEntNums[card]; i++)
-                              {
-                                  strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
-                                  iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
-                              }
-                              UpdateEntTable(card);*/
+
                         }
+                        // 清除缓存（新文件内容不同）
+                        InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
                         AddMsg($"卡{card + 1} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
-                        // 清除缓存（新文件内容不同）
-                        cachedTransparentRoute[card] = null;
                         break;
 
                     case 5:  // 保存文件 - 修改为自动使用原路径
@@ -1523,11 +1671,12 @@ namespace BJJCZ_BaseDevelop
                             savePath = Path.Combine(Application.StartupPath, "route.ezd");
                         }
 
-                        nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], savePath);
+                        nErr = SaveEntLibToFileWithoutPreviewAnchor(card, savePath);
                         if (nErr == 0)
                         {
                             // 保存成功后更新暂存路径（如果是新路径）
                             currentFilePath[card] = savePath;
+                            SyncOtherCardsLoadedFromSameFile(card, savePath);
                         }
                         AddMsg($"卡{card + 1} 保存文件 -> {JczLmc.GetErrorText(nErr)}");
                         break;
@@ -1566,8 +1715,8 @@ namespace BJJCZ_BaseDevelop
                                     visualRotateMoveReady[card] = false;
                                 }
                                 AddMsg(markStopRequested[card]
-                                    ? $"卡{card} 加工已停止 -> {JczLmc.GetErrorText(nErr)}"
-                                    : $"卡{card} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
+                                    ? $"卡{card + 1} 加工已停止 -> {JczLmc.GetErrorText(nErr)}"
+                                    : $"卡{card + 1} 加工完成 -> {JczLmc.GetErrorText(nErr)}");
                                 var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
                                 SendResponse(result);
                             };
@@ -1599,7 +1748,7 @@ namespace BJJCZ_BaseDevelop
                     case 11:
                         nErr = SendStopMark(card);
                         bInRed[card] = false;
-                     //   ResetRedPreviewButtons();
+                        //   ResetRedPreviewButtons();
                         QueryGalvoPosition(card, "停止后");
                         AddMsg($"卡{card + 1} 已发送停止加工命令 -> {JczLmc.GetErrorText(nErr)}");
 
@@ -1632,7 +1781,7 @@ namespace BJJCZ_BaseDevelop
                                         {
                                             AddMsg($"卡{card + 1} 红光预览启动失败 -> {JczLmc.GetErrorText(redErr)}");
                                             bInRed[card] = false;
-                                          //  ResetRedPreviewButtons();
+                                            //  ResetRedPreviewButtons();
                                             return;
                                         }
 
@@ -1690,10 +1839,15 @@ namespace BJJCZ_BaseDevelop
                         if (iEntIndices[card] >= 0 && iEntIndices[card] < nEntNums[card])
                         {
                             string entName = GetSdkEntityNameForOperation(card, iEntIndices[card]);
+                            string markEntName = GetMarkEntityNameForOperation(card, entName);
                             if (!string.IsNullOrWhiteSpace(entName))
                             {
-                                ClearRotateMoveParamForManualOperation(card, $"加工对象 {entName}");
-                                nErr = JczLmc.lmc1_MarkEntity(phyCardSN[card], entName);
+                                if (!string.Equals(markEntName, entName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    AddMsg($"卡{card + 1} 对象 {entName} 存在填充，加工目标切换为 {markEntName}");
+                                }
+                                ClearRotateMoveParamForManualOperation(card, $"加工对象 {markEntName}");
+                                nErr = JczLmc.lmc1_MarkEntity(phyCardSN[card], markEntName);
                             }
                             else
                             {
@@ -1701,7 +1855,7 @@ namespace BJJCZ_BaseDevelop
                             }
                         }
                         else nErr = 18;
-                         
+
                         break;
 
                     case 22:
@@ -1720,6 +1874,7 @@ namespace BJJCZ_BaseDevelop
                                 {
                                     bInRed[card] = true;
                                     string entName = GetSdkEntityNameForOperation(card, iEntIndices[card]);
+                                    string previewEntName = GetMarkEntityNameForOperation(card, entName);
                                     if (string.IsNullOrWhiteSpace(entName))
                                     {
                                         nErr = 18;
@@ -1727,19 +1882,19 @@ namespace BJJCZ_BaseDevelop
                                         AddMsg($"卡{card + 1} 红光预览对象失败: 对象名称为空");
                                         break;
                                     }
-                                    ClearRotateMoveParamForManualOperation(card, $"红光预览对象 {entName}");
+                                    ClearRotateMoveParamForManualOperation(card, $"红光预览对象 {previewEntName}");
                                     bool continuousRed = IsRedPreviewContinuous();
                                     var workerEntRed = new BackgroundWorker();
                                     workerEntRed.DoWork += (s, ev) =>
                                     {
                                         do
                                         {
-                                            int redErr = RunRedLightPreviewOnce(card, 13, entName);
+                                            int redErr = RunRedLightPreviewOnce(card, 13, previewEntName);
                                             if (redErr != 0 && redErr != 19)
                                             {
                                                 AddMsg($"卡{card + 1} 红光预览对象启动失败 -> {JczLmc.GetErrorText(redErr)}");
                                                 bInRed[card] = false;
-                                              //  ResetRedPreviewButtons();
+                                                //  ResetRedPreviewButtons();
                                                 return;
                                             }
 
@@ -1793,9 +1948,9 @@ namespace BJJCZ_BaseDevelop
                                 nErr = RotateLogicalEntity(card, targetEntName, param.dParam3, param.dParam4, param.dParam5);
                             else
                                 nErr = 20;
-                        }                       
+                        }
+                        InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
-                        cachedTransparentRoute[card] = null;
                         break;
 
                     case 24:  // 移动对象
@@ -1805,9 +1960,9 @@ namespace BJJCZ_BaseDevelop
                                 nErr = MoveLogicalEntity(card, targetEntName, ref param.dParam1, ref param.dParam2);
                             else
                                 nErr = 20;
-                        } 
+                        }
+                        InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
-                        cachedTransparentRoute[card] = null;
                         break;
 
                     case 25:  // 缩放对象
@@ -1818,9 +1973,9 @@ namespace BJJCZ_BaseDevelop
                                                           param.dParam3, param.dParam4);
                             else
                                 nErr = 20;
-                        }                        
+                        }
+                        InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
-                        cachedTransparentRoute[card] = null;
                         break;
 
                     case 27:
@@ -1828,9 +1983,11 @@ namespace BJJCZ_BaseDevelop
                                                                param.dParam3, param.dParam4, param.dParam5);
                         */
                         SaveVisualRotateMoveParam(card, param);
+                        AddMsg($"卡{card + 1} 主程序旋转平移: X={param.dParam1:0.###} Y={param.dParam2:0.###}");
+                        AddMsg($"卡{card + 1} 主程序旋转平移: 中心({param.dParam3:0.###},{param.dParam4:0.###}) 角度={param.dParam5:0.###}");
                         nErr = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], param.dParam1, param.dParam2,
                                                               param.dParam3, param.dParam4, param.dParam5);
-                        RefreshPreview(card);
+                        //    RefreshPreview(card);
 
                         break;
 
@@ -1848,7 +2005,7 @@ namespace BJJCZ_BaseDevelop
                     case 31:  // 重命名对象
                         if (param.ind1 < strEntNames[card]?.Length)
                             nErr = RenameLogicalEntity(card, GetSdkEntityNameForOperation(card, param.ind1), param.strEntyName);
-                        RefreshPreview(card);
+                        //      RefreshPreview(card);
                         ReloadEntityInfo(card);
                         cachedTransparentRoute[card] = null;
                         break;
@@ -1924,25 +2081,25 @@ namespace BJJCZ_BaseDevelop
                                 nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
                                 if (nErr == 0)
                                 {
-                                    AddMsg($"卡{card} 添加圆并填充成功 -> {entNameCir}");
+                                    AddMsg($"卡{card + 1} 添加圆并填充成功 -> {entNameCir}");
                                 }
                                 else
                                 {
-                                    AddMsg($"卡{card} 添加圆成功，但填充失败 -> {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"卡{card + 1} 添加圆成功，但填充失败 -> {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"卡{card} 添加圆成功 -> {entNameCir} (圆心:{centerX},{centerY} 半径:{radius})");
+                                AddMsg($"卡{card + 1} 添加圆成功 -> {entNameCir} (圆心:{centerX},{centerY} 半径:{radius})");
                             }
 
                             ReloadEntityInfo(card);
-                            RefreshPreview(card);
+                            //      RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
                         }
                         else
                         {
-                            AddMsg($"卡{card} 添加圆失败 -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card + 1} 添加圆失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
                         // 添加线段
@@ -1965,11 +2122,11 @@ namespace BJJCZ_BaseDevelop
                             ReloadEntityInfo(card);
                             RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
-                            AddMsg($"卡{card} 添加线段成功 -> {param.strEntyName}");
+                            AddMsg($"卡{card + 1} 添加线段成功 -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"卡{card} 添加线段失败 -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card + 1} 添加线段失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
                     /* case 35:  // 添加线段
@@ -2044,13 +2201,13 @@ namespace BJJCZ_BaseDevelop
                         if (nErr == 0)
                         {
                             ReloadEntityInfo(card);
-                            RefreshPreview(card);
+                            //      RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
-                            AddMsg($"卡{card} 添加矩形成功 -> {param.strEntyName}");
+                            AddMsg($"卡{card + 1} 添加矩形成功 -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"卡{card} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"卡{card + 1} 添加矩形失败 -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
                     case 37:  // 获取/设置填充参数
@@ -2150,22 +2307,23 @@ namespace BJJCZ_BaseDevelop
                                     {
                                         nErr = 0;
                                         AddMsg(hp.bEnableHatch == 0
-                                            ? $"卡{card} 已清除对象 {sourceEntName} 的填充"
-                                            : $"卡{card} 为对象 {sourceEntName} 设置填充成功");
+                                            ? $"卡{card + 1} 已清除对象 {sourceEntName} 的填充"
+                                            : $"卡{card + 1} 为对象 {sourceEntName} 设置填充成功");
                                         // 保存文件
                                         string saveFileName = !string.IsNullOrEmpty(param.strFileName) ? param.strFileName : currentFilePath[card];
                                         if (!string.IsNullOrEmpty(saveFileName))
                                         {
                                             int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, saveFileName);
-                                            AddMsg($"卡{card} 保存填充参数到EZD: {JczLmc.GetErrorText(saveErr)}");
+                                            AddMsg($"卡{card + 1} 保存填充参数到EZD: {JczLmc.GetErrorText(saveErr)}");
                                         }
-                                        RefreshPreview(card);
                                         ReloadEntityInfo(card);
+                                        InvalidateRoutePreviewCache(card);
+                                        RefreshPreview(card);
                                     }
                                     else
                                     {
                                         nErr = -1;
-                                        AddMsg($"卡{card} 设置填充失败");
+                                        AddMsg($"卡{card + 1} 设置填充失败");
                                     }
                                 }
                                 else if (dr == DialogResult.Abort)  // 删除填充
@@ -2177,16 +2335,17 @@ namespace BJJCZ_BaseDevelop
                                         if (!string.IsNullOrEmpty(saveFileName))
                                         {
                                             int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, saveFileName);
-                                            AddMsg($"卡{card} 保存删除填充结果到EZD: {JczLmc.GetErrorText(saveErr)}");
+                                            AddMsg($"卡{card + 1} 保存删除填充结果到EZD: {JczLmc.GetErrorText(saveErr)}");
                                         }
-                                        RefreshPreview(card);
                                         ReloadEntityInfo(card);
+                                        InvalidateRoutePreviewCache(card);
+                                        RefreshPreview(card);
                                     }
                                 }
                             }
                             catch (Exception ex)
                             {
-                                AddMsg($"卡{card} 设置填充参数异常: {ex.Message}");
+                                AddMsg($"卡{card + 1} 设置填充参数异常: {ex.Message}");
                                 nErr = -1;
                             }
                         }
@@ -2211,7 +2370,7 @@ namespace BJJCZ_BaseDevelop
 
                             if (nErr == 0)
                             {
-                                AddMsg($"卡{card} 为对象 {param.strEntyName} 添加填充成功");
+                                AddMsg($"卡{card + 1} 为对象 {param.strEntyName} 添加填充成功");
                                 RefreshPreview(card);
                                 ReloadEntityInfo(card);
                                 cachedTransparentRoute[card] = null;
@@ -2219,7 +2378,7 @@ namespace BJJCZ_BaseDevelop
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
                                     nErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);
-                                    AddMsg($"卡{card} 保存文件: {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"卡{card + 1} 保存文件: {JczLmc.GetErrorText(nErr)}");
                                 }
  
                                
@@ -2238,7 +2397,7 @@ namespace BJJCZ_BaseDevelop
                             // 检查对象是否存在
                             if (string.IsNullOrEmpty(param.strEntyName))
                             {
-                                AddMsg($"卡{card} 填充对象失败: 对象名称为空");
+                                AddMsg($"卡{card + 1} 填充对象失败: 对象名称为空");
                                 nErr = 20;
                                 break;
                             }
@@ -2253,7 +2412,7 @@ namespace BJJCZ_BaseDevelop
 
                             if (nErr == 0)
                             {
-                                AddMsg($"卡{card} 为对象 {param.strEntyName} 添加填充成功");
+                                AddMsg($"卡{card + 1} 为对象 {param.strEntyName} 添加填充成功");
                                 RefreshPreview(card);
                                 ReloadEntityInfo(card);
 
@@ -2261,37 +2420,45 @@ namespace BJJCZ_BaseDevelop
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
                                     nErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);
-                                    AddMsg($"卡{card} 保存文件: {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"卡{card + 1} 保存文件: {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"卡{card} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"卡{card + 1} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            AddMsg($"卡{card} 填充对象异常: {ex.Message}");
+                            AddMsg($"卡{card + 1} 填充对象异常: {ex.Message}");
                             nErr = -1;
                         }
                         break;
                     case 40:
-                        nErr = OpenDeviceConfig(card);                        
+                        nErr = OpenDeviceConfig(card);
                         break;
 
                     case 42:
-                        alImParam.width = param.ind1;
-                        alImParam.height = param.ind2;
-                        alImParam.dCenX = param.dParam1;
-                        alImParam.dCenY = param.dParam2;
-                        alImParam.dWidth = param.dParam3;
-                        alImParam.dHeight = param.dParam4;
+                        AlignImParam align = new AlignImParam
+                        {
+                            width = param.ind1,
+                            height = param.ind2,
+                            dCenX = param.dParam1,
+                            dCenY = param.dParam2,
+                            dWidth = param.dParam3,
+                            dHeight = param.dParam4
+                        };
+                        alImParam = align;
+                        previewAlignParams[card] = align;
+                        previewAlignParamReady[card] = IsValidPreviewAlignParam(align);
+                        AddMsg($"卡{card + 1} 主程序对齐参数: 像素({align.width} x {align.height}) 有效={previewAlignParamReady[card]}");
+                        AddMsg($"卡{card + 1} 主程序对齐参数: 中心({align.dCenX:0.###},{align.dCenY:0.###}) 尺寸({align.dWidth:0.###} x {align.dHeight:0.###})");
                         this.BeginInvoke(new Action(() =>
                         {
-                            RefreshPreview(card);
                             // 对齐参数改变，图形映射范围变化，需要重新生成叠加图（强制清除缓存）
-                            cachedTransparentRoute[card] = null;
-                            
+                            InvalidateRoutePreviewCache(card);
+                            RefreshPreview(card);
+
                         }));
                         break;
 
@@ -2302,19 +2469,79 @@ namespace BJJCZ_BaseDevelop
                         float height = (float)param.dParam4;
                         _overlayWorldBounds[card] = new RectangleF(xmin, ymin, width, height);
                         AddMsg($"卡{card + 1} 设置叠加图范围: X=[{xmin},{xmin + width}] Y=[{ymin},{ymin + height}]");
-                        RefreshPreview(card); 
-                         
+                        RefreshPreview(card);
+
                         break;
+
+                    case 44:  // 生成阵列填充圆模板，并可直接标刻
+                        nErr = GenerateFilledCircleTemplate(card, param); //GenerateFilledCircleTemplate在填充生成里
+                        if (nErr != 0)
+                        {
+                            break;
+                        }
+
+                        if (param.bOpen)                      //判断主程序是否要求生成后直接加工
+                        {
+                            if (!CanStartLaserMark(card))     //检查激光器是否打开，没打开就不让打
+                            {
+                                nErr = 19;
+                                break;
+                            }
+
+                            if (bInMark[card])
+                            {
+                                nErr = 19;
+                                AddMsg($"卡{card + 1} 正在加工中，阵列填充圆模板暂不能开始加工");//如果程序本来就在加工，那么生成模版就不能加工
+                                break;
+                            }
+
+                            markStopRequested[card] = false;
+                            bInMark[card] = true;//进入加工状态
+                            CleanupPreviewAnchorEntities(card);//加工前清掉预览辅助对象，避免预览用的隐藏框混进实际加工
+
+                            var worker = new BackgroundWorker();//开一个后台线程对象。加工不能直接卡死界面，所以放后台执行
+                            worker.DoWork += (s, ev) =>
+                            {
+                                int markErr = lmc1_MarkBlocking(card, false); //调用 SDK 加工当前对象库,打的就是刚生成的填充圆
+                                bInMark[card] = false;//加工结束，“正在加工”状态已经取消
+                                AddMsg(markStopRequested[card]
+                                    ? $"卡{card + 1} 阵列填充圆模板加工已停止 -> {JczLmc.GetErrorText(markErr)}"
+                                    : $"卡{card + 1} 阵列填充圆模板加工完成 -> {JczLmc.GetErrorText(markErr)}");
+
+                                var result = new LCZControlParam  //中途如果点击了停止加工，那么就显示停止加工
+                                {
+                                    cardSN = card,
+                                    cmdType = param.cmdType,
+                                    nErr = markErr,
+                                    bOpen = true,
+                                    ind3 = clientSeq
+                                };
+                                SendResponse(result);//加工结果返回主程序
+                            };
+                            worker.RunWorkerAsync();
+                            needResponse = false;
+                        }
+                        break;
+
+
 
                     case 90:
-                        splitContainer2.Panel1Collapsed = (param.dParam1 == 0);
-                        splitContainer2.Panel2Collapsed = (param.dParam2 == 0);
-                        splitContainer1.Panel1Collapsed = (param.dParam1 == 0 && param.dParam2 == 0);
-                        splitContainer3.Panel1Collapsed = (param.dParam3 == 0);
-                        splitContainer3.Panel2Collapsed = (param.dParam4 == 0);
-                        splitContainer1.Panel2Collapsed = (param.dParam3 == 0 && param.dParam4 == 0);
-                        break;
+                        bool showLog = (param.dParam1 != 0);
+                        bool showImage = (param.dParam2 != 0);
+                        bool showEntity = (param.dParam3 != 0);
+                        bool showOper = (param.dParam4 != 0);
 
+                        mainMsgBox.Visible = showLog;
+                        panelImage.Visible = showImage;
+                        panel3.Visible = showEntity;
+                        panel1.Visible = showOper;
+
+                        // 同步菜单勾选（可选）
+                        Win_Log.Checked = showLog;
+                        Win_Entity.Checked = showEntity;
+                        Win_Route.Checked = showImage;
+                        Win_Oper.Checked = showOper;
+                        break;
                     default:
                         nErr = 20;
                         break;
@@ -2332,42 +2559,78 @@ namespace BJJCZ_BaseDevelop
                 SendResponse(param);
             }
         }
+        #endregion
 
+        #region 预览锚点状态、对象重命名与红光加工辅助
+        private bool[] previewAnchorReady = new bool[2];          // 标记当前卡片的预览锚点（固定世界视口边界）是否已成功初始化
+        private Rectangle[] previewAnchorRects = new Rectangle[2]; // SDK预览图中固定视野锚点对应的像素裁剪框
+        private Size[] previewAnchorSourceSizes = new Size[2];     // 记录裁剪框对应的SDK原图尺寸，尺寸变化时重新识别
+        private RectangleF[] previewAnchorWorldRects = new RectangleF[2];   // 当前卡片的世界坐标视口边界（用于居中显示预览内容）
+        private RectangleF[] previewGuardWorldRects = new RectangleF[2];     // 保护边界世界矩形，通常为视口边界的扩展（用于生成足够大的预览位图）
+        private void ResetPreviewAnchor(int card)
+        {
+            CleanupPreviewAnchorEntities(card);
+            previewAnchorReady[card] = false;
+            previewAnchorRects[card] = Rectangle.Empty;
+            previewAnchorSourceSizes[card] = Size.Empty;
+            previewAnchorWorldRects[card] = RectangleF.Empty;
+            previewGuardWorldRects[card] = RectangleF.Empty;
+        }
+
+        /// <summary>
+        /// 重命名一个逻辑对象（以及它可能关联的填充对象）
+        /// </summary>
+        /// <param name="card">板卡索引（0或1）</param>
+        /// <param name="entName">当前逻辑对象名称（可能是轮廓名或填充名）</param>
+        /// <param name="newName">新的逻辑对象名称</param>
+        /// <returns>0表示成功，非0表示错误码</returns>
         private int RenameLogicalEntity(int card, string entName, string newName)
         {
+            // 参数校验：名称不能为空或仅空白字符
             if (string.IsNullOrWhiteSpace(entName) || string.IsNullOrWhiteSpace(newName))
             {
-                return 20;
+                return 20;  // 参数输入错误
             }
 
+            // 获取“源名称”：如果传入的是填充对象名（如 "Rect_Hatch"），则截去 "_Hatch" 后缀得到轮廓名（如 "Rect"）
             string sourceName = GetHatchSourceName(entName);
+            // 根据轮廓名构造其对应的填充对象名（轮廓名 + "_Hatch"）
             string oldHatchName = GetHatchEntityName(sourceName);
+            // 根据新轮廓名构造新填充对象名
             string newHatchName = GetHatchEntityName(newName);
 
+            // 1. 重命名轮廓对象（从 sourceName 改为 newName）
             int err = JczLmc.lmc1_ChangeEntName(phyCardSN[card], sourceName, newName);
             if (err != 0)
             {
-                return err;
+                return err;  // 重命名失败，直接返回错误码
             }
 
+            // 2. 如果该轮廓对象存在对应的填充对象（旧填充名存在），则同步重命名填充对象
             if (EntityExists(card, oldHatchName))
             {
                 int hatchErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], oldHatchName, newHatchName);
                 if (hatchErr != 0)
                 {
+                    // 填充对象重命名失败时记录日志，但注意此时轮廓已经改名，可能需要回滚？
+                    // 当前设计仅记录错误并返回，可能导致轮廓与填充名称不一致。
                     AddMsg($"卡{card + 1} 重命名内部填充对象失败: {JczLmc.GetErrorText(hatchErr)}");
                     return hatchErr;
                 }
             }
 
-            RemoveEntityScaleState(card, sourceName);
-            RemoveEntityScaleState(card, oldHatchName);
-            return 0;
+            // 3. 移除这两个实体在“缩放状态记忆”中的缓存（避免旧的缩放比例影响后续操作）
+            RemoveEntityScaleState(card, sourceName);   // 旧轮廓名的缩放状态
+            RemoveEntityScaleState(card, oldHatchName); // 旧填充名的缩放状态（若不存在则无影响）
+
+            return 0;  // 全部成功
         }
+
         private void RemoveEntityScaleState(int card, string entName)
         {
             entityScaleStates.Remove(GetEntityScaleKey(card, entName));
         }
+
         private void SaveVisualRotateMoveParam(int card, LCZControlParam param)
         {
             if (card < 0 || card >= visualRotateMoveReady.Length)
@@ -2382,6 +2645,7 @@ namespace BJJCZ_BaseDevelop
             visualRotateAngle[card] = param.dParam5;
             visualRotateMoveReady[card] = true;
         }
+
         private int RunRedLightPreviewOnce(int card, int cmdType, string entName)
         {
             try
@@ -2425,6 +2689,7 @@ namespace BJJCZ_BaseDevelop
                 return 9;
             }
         }
+
         private string[] GetRedLightContourNames(int card)
         {
             string[] names = sdkEntNames[card] != null && sdkEntNames[card].Length > 0
@@ -2439,6 +2704,8 @@ namespace BJJCZ_BaseDevelop
                 .Where(name => !name.StartsWith(TransformPairEntityPrefix, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
         }
+
+
         private int RunRedLightPreviewEntity(int card, string entName)
         {
             if (string.IsNullOrWhiteSpace(entName))
@@ -2508,7 +2775,7 @@ namespace BJJCZ_BaseDevelop
         {
             JczLmc.lmc1_StopMark(phyCardSN[card]);
             bInRed[card] = false;
-           // ResetRedPreviewButtons();
+            // ResetRedPreviewButtons();
             if (!string.IsNullOrEmpty(reason))
             {
                 AddMsg($"卡{card + 1} {reason}");
@@ -2663,11 +2930,181 @@ namespace BJJCZ_BaseDevelop
             }
             return hasSuccess ? 0 : lastErr;
         }
+        #endregion
+
+        #region 填充生成、缓存与轮廓笔号处理
+        private string FindBlankTemplatePath()
+        {
+            //1. NoneTemplate.ezd 是生成标刻模板的底板，用来保留笔号、加工参数等 EZD 默认设置。
+            string[] candidates =
+            {
+                @"D:\激光除胶\EZDModel\EZDModel 填充设置演示ezd\NoneTemplate.ezd",
+                @"D:\激光除胶\EZDModel\EZDModel\NoneTemplate.ezd",
+                @"D:\激光除胶\EZDModel\EZDModel ezd调试备份1\NoneTemplate.ezd",
+
+                Path.Combine(Application.StartupPath, "NoneTemplate.ezd"),
+                Path.Combine(Application.StartupPath, "EzdModel", "NoneTemplate.ezd"),
+                Path.Combine(Application.StartupPath, "EZDModel", "NoneTemplate.ezd"),
+                Path.Combine(Application.StartupPath, "..", "EZDModel", "EZDModel", "NoneTemplate.ezd"),
+                Path.Combine(Application.StartupPath, "..", "..", "EZDModel", "EZDModel", "NoneTemplate.ezd")    //按照几个现场的保存路径找空白模板NoneTemplate.ezd（现场路径可以更改）
+            };
+
+            foreach (string path in candidates)
+            {
+                string fullPath = Path.GetFullPath(path);
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+
+            return null;
+        }
+
+        //2.创建标刻模版时，参数设置的一些限制，生成函数模版
+        private int GenerateFilledCircleTemplate(int card, LCZControlParam param)
+        {
+            int rows = param.ind1;
+            int cols = param.ind2;
+            int penNo = 2;//规定笔号颜色只能为2红色  ind3 ind4没有取
+            double centerX = param.dParam1;
+            double centerY = param.dParam2;
+            double radius = param.dParam3;
+            double spacingX = param.dParam4;
+            double spacingY = param.dParam5;
+
+            //设置参数时的逻辑
+            if (rows <= 0 || cols <= 0)
+            {
+                AddMsg($"卡{card + 1} 生成阵列填充圆失败: 行数/列数必须大于0");
+                return 20;
+            }
+
+            if (rows * cols > 200)
+            {
+                AddMsg($"卡{card + 1} 生成阵列填充圆失败: 对象数量过多({rows * cols})");//行列不能生成过多
+                return 20;
+            }
+
+            if (radius <= 0)
+            {
+                AddMsg($"卡{card + 1} 生成阵列填充圆失败: 圆半径必须大于0");
+                return 20;
+            }
+
+            if (cols > 1 && spacingX <= 0)
+            {
+                AddMsg($"卡{card + 1} 生成阵列填充圆失败: 多列时X间距必须大于0");
+                return 20;
+            }
+
+            if (rows > 1 && spacingY <= 0)
+            {
+                AddMsg($"卡{card + 1} 生成阵列填充圆失败: 多行时Y间距必须大于0");
+                return 20;
+            }
+
+            AddMsg($"卡{card + 1} 阵列填充圆参数: 行列({rows} x {cols}) 半径={radius:0.###} 默认笔号={penNo}");
+            AddMsg($"卡{card + 1} 阵列填充圆参数: 中心({centerX:0.###},{centerY:0.###}) 间距({spacingX:0.###},{spacingY:0.###})"); //日志会显示出填充圆的参数
+
+            CleanupPreviewAnchorEntities(card);
+            CleanupTransformPairEntities(card);  //生成新模板前，清掉预览辅助对象和变换临时对象
+
+            string blankTemplatePath = FindBlankTemplatePath(); //先找空白模板，找不到就无法填充
+            if (string.IsNullOrEmpty(blankTemplatePath))
+            {
+                AddMsg($"卡{card + 1} 生成阵列填充圆失败: 未找到空白模板 NoneTemplate.ezd");
+                return 20;
+            }
+
+            // 先加载空白模板，再清空对象；这样能继承空白模板里的笔号和加工参数。
+            int loadBlankErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], blankTemplatePath);
+            if (loadBlankErr != 0)
+            {
+                AddMsg($"卡{card + 1} 加载空白模板失败: {blankTemplatePath}");
+                AddMsg($"卡{card + 1} 加载空白模板失败: {JczLmc.GetErrorText(loadBlankErr)}");
+                return loadBlankErr;
+            }
+
+            AddMsg($"卡{card + 1} 已加载空白模板: {blankTemplatePath}");
+
+            int clearErr = JczLmc.lmc1_ClearEntLib(phyCardSN[card]);
+            if (clearErr != 0)
+            {
+                AddMsg($"卡{card + 1} 清空对象库失败: {JczLmc.GetErrorText(clearErr)}");
+                return clearErr;
+            }
+            //保存路径
+            currentFilePath[card] = string.IsNullOrWhiteSpace(param.strFileName) ? null : param.strFileName;//如果主程序传了保存路径，就记录当前文件路径；没传就设为空
+            ResetPreviewAnchor(card);
+            ResetEntityScaleStates(card);//重置预览锚点和缩放状态，因为对象库已经换成新模板了
+
+            HatchParam hp = new HatchParam(1);
+            hp.nPenNo = penNo;//填充笔号为2
+            hp.bEnableContour = false;//不额外打圆轮廓
+            hp.bEnableHatch = 1;//启用填充
+
+            string namePrefix = string.IsNullOrWhiteSpace(param.strEntyName) //生成对象名前缀,主程序没传名字的话就叫 MarkCircle
+                ? "MarkCircle"
+                : param.strEntyName.Trim();
+
+            double firstX = centerX - (cols - 1) * spacingX / 2.0; //根据阵列圆整体中心算左上角第一个圆的位置
+            double firstY = centerY + (rows - 1) * spacingY / 2.0;
+            int index = 1;
+
+            for (int row = 0; row < rows; row++)  //按照行列循环生成每一个圆
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    double x = firstX + col * spacingX;//算当前圆心的坐标
+                    double y = firstY - row * spacingY;
+                    string entName = $"{namePrefix}_{index:00}";//生成对象名字
+
+                    int addErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], x, y, radius, entName, penNo);//调用SDK添加圆对象
+                    if (addErr != 0)
+                    {
+                        AddMsg($"卡{card + 1} 添加阵列圆 {entName} 失败: {JczLmc.GetErrorText(addErr)}");
+                        return addErr;
+                    }
+
+                    if (!ApplyHatchPreservingSource(card, entName, hp))//给圆进行填充
+                    {
+                        AddMsg($"卡{card + 1} 填充阵列圆 {entName} 失败");
+                        return -1;
+                    }
+
+                    index++;//准备下一个圆
+                }
+            }
+
+            ReloadEntityInfo(card);
+            InvalidateRoutePreviewCache(card);
+            RefreshPreview(card);   //重新读取对象列表，清掉预览缓存，刷新预览图
+
+            if (!string.IsNullOrWhiteSpace(param.strFileName))
+            {
+                int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);//保存至主程序发送的路径
+                if (saveErr != 0)
+                {
+                    AddMsg($"卡{card + 1} 保存阵列填充圆模板失败: {JczLmc.GetErrorText(saveErr)}");
+                    return saveErr;
+                }
+            }
+
+            AddMsg($"卡{card + 1} 阵列填充圆模板生成完成，共{rows * cols}个圆");
+            return 0;
+        }
+
+
+
+
+
+        //JCZServer软件自己的填充设置逻辑
         private bool ApplyHatchPreservingSource(int card, string sourceEntName, HatchParam hp)
         {
             if (string.IsNullOrEmpty(sourceEntName))
             {
-                AddMsg($"卡{card} 设置填充失败: 对象名称为空");
+                AddMsg($"卡{card + 1} 设置填充失败: 对象名称为空");
                 return false;
             }
 
@@ -2678,7 +3115,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!RestoreContourBackup(card, sourceEntName, backupEntName))
                 {
-                    AddMsg($"卡{card} 设置填充失败: 找不到原轮廓 {sourceEntName}");
+                    AddMsg($"卡{card + 1} 设置填充失败: 找不到原轮廓 {sourceEntName}");
                     return false;
                 }
             }
@@ -2690,7 +3127,7 @@ namespace BJJCZ_BaseDevelop
             int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], sourceEntName, backupEntName);
             if (copyErr != 0)
             {
-                AddMsg($"卡{card} 备份原轮廓 {sourceEntName} 失败: {JczLmc.GetErrorText(copyErr)}");
+                AddMsg($"卡{card + 1} 备份原轮廓 {sourceEntName} 失败: {JczLmc.GetErrorText(copyErr)}");
                 return false;
             }
 
@@ -2700,7 +3137,7 @@ namespace BJJCZ_BaseDevelop
             if (paramErr != 0)
             {
                 RestoreContourBackup(card, sourceEntName, backupEntName);
-                AddMsg($"卡{card} 设置填充参数失败: {JczLmc.GetErrorText(paramErr)}");
+                AddMsg($"卡{card + 1} 设置填充参数失败: {JczLmc.GetErrorText(paramErr)}");
                 return false;
             }
 
@@ -2708,7 +3145,7 @@ namespace BJJCZ_BaseDevelop
             if (nErr != 0)
             {
                 RestoreContourBackup(card, sourceEntName, backupEntName);
-                AddMsg($"卡{card} 为对象 {sourceEntName} 生成填充失败: {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"卡{card + 1} 为对象 {sourceEntName} 生成填充失败: {JczLmc.GetErrorText(nErr)}");
                 return false;
             }
 
@@ -2722,7 +3159,7 @@ namespace BJJCZ_BaseDevelop
             int fullParamErr = SetHatchEntParam2ForEntity(card, hatchEntName, hatchEntityHp);
             if (fullParamErr != 0)
             {
-                AddMsg($"卡{card} 完整填充参数写入失败，已保留基础填充参数");
+                AddMsg($"卡{card + 1} 完整填充参数写入失败，已保留基础填充参数");
             }
 
             CacheHatchParamForPair(card, sourceEntName, hatchEntName, hp);
@@ -2731,12 +3168,12 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!HideSourceContourForHatchOnly(card, sourceEntName))
                 {
-                    AddMsg($"卡{card} 已关闭填充对象轮廓标刻，但隐藏原轮廓对象失败");
+                    AddMsg($"卡{card + 1} 已关闭填充对象轮廓标刻，但隐藏原轮廓对象失败");
                     return false;
                 }
 
                 DeleteEntityIfExists(card, backupEntName);
-                AddMsg($"卡{card} 已关闭填充对象轮廓标刻，原轮廓对象 {sourceEntName} 已保留并隐藏预览");
+                AddMsg($"卡{card + 1} 已关闭填充对象轮廓标刻，原轮廓对象 {sourceEntName} 已保留并隐藏预览");
             }
             else if (EntityExists(card, sourceEntName))
             {
@@ -2789,6 +3226,8 @@ namespace BJJCZ_BaseDevelop
             ApplyPenToEntity(card, sourceEntName, HiddenContourPenNo);
             return true;
         }
+
+
         private bool EnsureHiddenContourPen(int card)
         {
             try
@@ -2849,15 +3288,15 @@ namespace BJJCZ_BaseDevelop
                     return true;
                 }
 
-                AddMsg($"卡{card} 设置隐藏轮廓笔号失败: {JczLmc.GetErrorText(setErr)}");
+                AddMsg($"卡{card + 1} 设置隐藏轮廓笔号失败: {JczLmc.GetErrorText(setErr)}");
             }
             catch (EntryPointNotFoundException)
             {
-                AddMsg($"卡{card} 当前DLL不支持笔号高级参数接口，改用禁用笔号接口隐藏轮廓");
+                AddMsg($"卡{card + 1} 当前DLL不支持笔号高级参数接口，改用禁用笔号接口隐藏轮廓");
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 设置隐藏轮廓笔号异常: {ex.Message}");
+                AddMsg($"卡{card + 1} 设置隐藏轮廓笔号异常: {ex.Message}");
             }
 
             try
@@ -2867,7 +3306,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 禁用隐藏轮廓笔号异常: {ex.Message}");
+                AddMsg($"卡{card + 1} 禁用隐藏轮廓笔号异常: {ex.Message}");
                 return false;
             }
         }
@@ -2897,6 +3336,8 @@ namespace BJJCZ_BaseDevelop
 
             try
             {
+                SaveHatchParamXml(card, entName, hp);
+
                 string storePath = GetHatchParamStorePath();
                 string key = GetPersistentHatchParamKey(card, entName);
                 List<string> lines = File.Exists(storePath)
@@ -2924,7 +3365,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 保存本地填充参数缓存失败: {ex.Message}");
+                AddMsg($"卡{card + 1} 保存本地填充参数缓存失败: {ex.Message}");
             }
         }
         private string SerializeHatchParam(HatchParam hp)
@@ -2977,7 +3418,7 @@ namespace BJJCZ_BaseDevelop
             try
             {
                 int nErr = SetHatchEntParam2Raw(card, hatchEntName, hp);
-                AddMsg($"卡{card} 设置完整填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"卡{card + 1} 设置完整填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
                 if (nErr == 0)
                 {
                     return nErr;
@@ -2988,7 +3429,7 @@ namespace BJJCZ_BaseDevelop
                 compatibleHp.bHatchAutoRotate = false;
                 compatibleHp.bHatchAllCalc = false;
                 nErr = SetHatchEntParam2Raw(card, hatchEntName, compatibleHp);
-                AddMsg($"卡{card} 分阶段写入高级填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"卡{card + 1} 分阶段写入高级填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
                 return nErr;
             }
             catch (Exception ex)
@@ -3032,7 +3473,7 @@ namespace BJJCZ_BaseDevelop
 
             if (string.Equals(sourceEntName, hatchEntName, StringComparison.OrdinalIgnoreCase))
             {
-                AddMsg($"卡{card} 跳过删除：填充对象名与原轮廓对象相同 ({sourceEntName})");
+                AddMsg($"卡{card + 1} 跳过删除：填充对象名与原轮廓对象相同 ({sourceEntName})");
                 return false;
             }
 
@@ -3046,34 +3487,34 @@ namespace BJJCZ_BaseDevelop
             }
             catch (EntryPointNotFoundException)
             {
-                AddMsg($"卡{card} 当前DLL不支持 lmc1_UnHatchEnt，改用删除填充对象 {hatchEntName}");
+                AddMsg($"卡{card + 1} 当前DLL不支持 lmc1_UnHatchEnt，改用删除填充对象 {hatchEntName}");
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 取消填充异常，改用删除填充对象 {hatchEntName}: {ex.Message}");
+                AddMsg($"卡{card + 1} 取消填充异常，改用删除填充对象 {hatchEntName}: {ex.Message}");
             }
 
             try
             {
                 if (!EntityExists(card, hatchEntName))
                 {
-                    AddMsg($"卡{card} 未找到填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
+                    AddMsg($"卡{card + 1} 未找到填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
                     return true;
                 }
 
                 int nErr = JczLmc.lmc1_DeleteEnt(phyCardSN[card], hatchEntName);
                 if (nErr == 0 || nErr == 2)
                 {
-                    AddMsg($"卡{card} 已删除填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
+                    AddMsg($"卡{card + 1} 已删除填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
                     return true;
                 }
 
-                AddMsg($"卡{card} 删除填充对象 {hatchEntName} 失败: {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"卡{card + 1} 删除填充对象 {hatchEntName} 失败: {JczLmc.GetErrorText(nErr)}");
                 return false;
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 删除填充对象 {hatchEntName} 失败: {ex.Message}");
+                AddMsg($"卡{card + 1} 删除填充对象 {hatchEntName} 失败: {ex.Message}");
                 return false;
             }
         }
@@ -3098,7 +3539,7 @@ namespace BJJCZ_BaseDevelop
                 if (hatchRemoved)
                 {
                     RemoveCachedHatchParamForPair(card, sourceEntName, hatchEntName);
-                    AddMsg($"卡{card} 已删除无轮廓填充对象 {hatchEntName}");
+                    AddMsg($"卡{card + 1} 已删除无轮廓填充对象 {hatchEntName}");
                 }
 
                 return hatchRemoved;
@@ -3106,13 +3547,13 @@ namespace BJJCZ_BaseDevelop
 
             if (!sourceExists && hatchExists)
             {
-                AddMsg($"卡{card} 无法安全删除填充 {hatchEntName}: 找不到原轮廓 {sourceEntName}，请重新加载原始EZD后再操作");
+                AddMsg($"卡{card + 1} 无法安全删除填充 {hatchEntName}: 找不到原轮廓 {sourceEntName}，请重新加载原始EZD后再操作");
                 return false;
             }
 
             if (!hatchExists)
             {
-                AddMsg($"卡{card} 未找到填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
+                AddMsg($"卡{card + 1} 未找到填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
                 return true;
             }
 
@@ -3126,7 +3567,7 @@ namespace BJJCZ_BaseDevelop
             {
                 RestoreSourceContourPen(card, sourceEntName);
                 RemoveCachedHatchParamForPair(card, sourceEntName, hatchEntName);
-                AddMsg($"卡{card} 已删除 {sourceEntName} 的填充，原轮廓保留");
+                AddMsg($"卡{card + 1} 已删除 {sourceEntName} 的填充，原轮廓保留");
             }
 
             return removed;
@@ -3147,6 +3588,12 @@ namespace BJJCZ_BaseDevelop
 
             try
             {
+                string xmlPath = GetHatchParamXmlPath(card, entName);
+                if (!string.IsNullOrEmpty(xmlPath) && File.Exists(xmlPath))
+                {
+                    File.Delete(xmlPath);
+                }
+
                 string storePath = GetHatchParamStorePath();
                 if (!File.Exists(storePath))
                 {
@@ -3160,7 +3607,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 删除本地填充参数缓存失败: {ex.Message}");
+                AddMsg($"卡{card + 1} 删除本地填充参数缓存失败: {ex.Message}");
             }
         }
         private string GetPersistentHatchParamKey(int card, string entName)
@@ -3178,7 +3625,7 @@ namespace BJJCZ_BaseDevelop
             }
 
             string sourceEntName = GetHatchSourceName(entName ?? string.Empty);
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(filePath.ToLowerInvariant() + "|" + sourceEntName.ToLowerInvariant()));
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(card.ToString() + "|" + filePath.ToLowerInvariant() + "|" + sourceEntName.ToLowerInvariant()));
         }
         private string GetHatchParamCacheKey(int card, string entName)
         {
@@ -3191,6 +3638,81 @@ namespace BJJCZ_BaseDevelop
         private string GetHatchParamStorePath()
         {
             return Path.Combine(Application.StartupPath, "hatch_params.cache");
+        }
+        private string GetHatchParamXmlPath(int card, string entName)
+        {
+            if (string.IsNullOrEmpty(currentFilePath[card]) || string.IsNullOrEmpty(entName))
+            {
+                return null;
+            }
+
+            string filePath = currentFilePath[card];
+            try
+            {
+                filePath = Path.GetFullPath(filePath);
+            }
+            catch
+            {
+            }
+
+            string sourceEntName = GetHatchSourceName(entName);
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UserData", "HatchParams");
+            string fileKey = GetStableHash(filePath.ToUpperInvariant());
+            string entKey = GetStableHash(sourceEntName.ToLowerInvariant());
+            return Path.Combine(dir, $"{fileKey}_card_{card}_ent_{entKey}.xml");
+        }
+        private string GetStableHash(string text)
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                byte[] bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(text ?? string.Empty));
+                StringBuilder sb = new StringBuilder(bytes.Length * 2);
+                foreach (byte b in bytes)
+                {
+                    sb.Append(b.ToString("x2"));
+                }
+
+                return sb.ToString();
+            }
+        }
+        private void SaveHatchParamXml(int card, string entName, HatchParam hp)
+        {
+            string path = GetHatchParamXmlPath(card, entName);
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (FileStream stream = File.Create(path))
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(HatchParam));
+                serializer.Serialize(stream, hp);
+            }
+        }
+        private bool TryLoadHatchParamXml(int card, string entName, ref HatchParam hp)
+        {
+            string path = GetHatchParamXmlPath(card, entName);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(HatchParam));
+                    hp = (HatchParam)serializer.Deserialize(stream);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 读取本地填充参数XML失败: {ex.Message}");
+                return false;
+            }
         }
         private bool RestoreContourBackup(int card, string sourceEntName, string backupEntName)
         {
@@ -3208,11 +3730,11 @@ namespace BJJCZ_BaseDevelop
             int nErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], backupEntName, sourceEntName);
             if (nErr == 0)
             {
-                AddMsg($"卡{card} 已恢复原轮廓 {sourceEntName}");
+                AddMsg($"卡{card + 1} 已恢复原轮廓 {sourceEntName}");
                 return true;
             }
 
-            AddMsg($"卡{card} 恢复原轮廓 {sourceEntName} 失败: {JczLmc.GetErrorText(nErr)}");
+            AddMsg($"卡{card + 1} 恢复原轮廓 {sourceEntName} 失败: {JczLmc.GetErrorText(nErr)}");
             return false;
         }
         private void RestoreSourceContourPen(int card, string sourceEntName)
@@ -3255,27 +3777,27 @@ namespace BJJCZ_BaseDevelop
                 int nErr = JczLmc.lmc1_ChangeEntPenNo(phyCardSN[card], entName, penNo);
                 if (nErr != 0)
                 {
-                    AddMsg($"卡{card} 对象 {entName} 改笔号失败: {JczLmc.GetErrorText(nErr)}");
+                    AddMsg($"卡{card + 1} 对象 {entName} 改笔号失败: {JczLmc.GetErrorText(nErr)}");
                     return;
                 }
 
-                AddMsg($"卡{card} 对象 {entName} 已设置为笔号 {penNo}");
+                AddMsg($"卡{card + 1} 对象 {entName} 已设置为笔号 {penNo}");
             }
             catch (EntryPointNotFoundException)
             {
                 try
                 {
                     JczLmc.lmc1_SetEntAllChildPen(phyCardSN[card], entName, penNo);
-                    AddMsg($"卡{card} 对象 {entName} 已设置为笔号 {penNo}");
+                    AddMsg($"卡{card + 1} 对象 {entName} 已设置为笔号 {penNo}");
                 }
                 catch
                 {
-                    AddMsg($"卡{card} 当前DLL不支持对象改笔号接口，无法直接切换对象 {entName} 笔号");
+                    AddMsg($"卡{card + 1} 当前DLL不支持对象改笔号接口，无法直接切换对象 {entName} 笔号");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 设置对象 {entName} 笔号异常: {ex.Message}");
+                AddMsg($"卡{card + 1} 设置对象 {entName} 笔号异常: {ex.Message}");
             }
         }
 
@@ -3289,6 +3811,9 @@ namespace BJJCZ_BaseDevelop
             int nErr = JczLmc.lmc1_DeleteEnt(phyCardSN[card], entName);
             return nErr == 0 || nErr == 2;
         }
+        #endregion
+
+        #region 对象移动旋转缩放与EZD保存
         private int MoveLogicalEntity(int card, string entName, ref double moveX, ref double moveY)
         {
             double x = moveX;
@@ -3312,12 +3837,174 @@ namespace BJJCZ_BaseDevelop
         {
             CleanupPreviewAnchorEntities(card);
             CleanupTransformPairEntities(card);
-            return JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], fileName);
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                AddMsg($"卡{card + 1} 保存EZD失败: 文件路径为空");
+                return 20;
+            }
+
+            string tempPath = null;
+            try
+            {
+                string fullPath = Path.GetFullPath(fileName);
+                string dir = Path.GetDirectoryName(fullPath);
+                if (string.IsNullOrEmpty(dir))
+                {
+                    AddMsg($"卡{card + 1} 保存EZD失败: 无效路径 {fileName}");
+                    return 20;
+                }
+
+                Directory.CreateDirectory(dir);
+                tempPath = Path.Combine(
+                    dir,
+                    Path.GetFileNameWithoutExtension(fullPath) + ".saving_" +
+                    DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".ezd");
+
+                int saveErr = SaveEntLibToFileWithRetry(card, tempPath);
+                if (saveErr != 0)
+                {
+                    AddMsg($"卡{card + 1} 保存临时EZD失败: {JczLmc.GetErrorText(saveErr)}");
+                    AddMsg($"卡{card + 1} 尝试直接保存到原EZD路径: {fullPath}");
+                    return SaveEntLibDirectWithBackup(card, fullPath);
+                }
+
+                FileInfo tempInfo = new FileInfo(tempPath);
+                if (!tempInfo.Exists || tempInfo.Length == 0)
+                {
+                    AddMsg($"卡{card + 1} 保存临时EZD失败: 文件为空");
+                    return 12;
+                }
+
+                string backupPath = fullPath + ".bak";
+                if (File.Exists(fullPath))
+                {
+                    File.Copy(fullPath, backupPath, true);
+                    try
+                    {
+                        File.Replace(tempPath, fullPath, null, true);
+                        tempPath = null;
+                    }
+                    catch
+                    {
+                        File.Copy(tempPath, fullPath, true);
+                    }
+                }
+                else
+                {
+                    File.Move(tempPath, fullPath);
+                    tempPath = null;
+                }
+
+                TryDeleteFile(backupPath);
+                AddMsg($"卡{card + 1} 已保存EZD: {fullPath}");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 保存EZD异常: {ex.Message}");
+                return 12;
+            }
+            finally
+            {
+                TryDeleteFile(tempPath);
+            }
+        }
+
+        private int SaveEntLibToFileWithRetry(int card, string fileName)
+        {
+            const int maxTryCount = 3;
+            int lastErr = 12;
+
+            for (int i = 1; i <= maxTryCount; i++)
+            {
+                try
+                {
+                    lastErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], fileName);
+                    if (lastErr == 0)
+                    {
+                        return 0;
+                    }
+
+                    AddMsg($"卡{card + 1} 保存EZD第{i}次失败: {JczLmc.GetErrorText(lastErr)}");
+                }
+                catch (Exception ex)
+                {
+                    lastErr = 12;
+                    AddMsg($"卡{card + 1} 保存EZD第{i}次异常: {ex.Message}");
+                }
+
+                Thread.Sleep(120);
+                Application.DoEvents();
+            }
+
+            return lastErr;
+        }
+
+        private int SaveEntLibDirectWithBackup(int card, string fullPath)
+        {
+            string backupPath = fullPath + ".bak";
+            try
+            {
+                if (File.Exists(fullPath))
+                {
+                    File.Copy(fullPath, backupPath, true);
+                }
+
+                int saveErr = SaveEntLibToFileWithRetry(card, fullPath);
+                if (saveErr == 0)
+                {
+                    TryDeleteFile(backupPath);
+                    AddMsg($"卡{card + 1} 直接保存EZD成功: {fullPath}");
+                    return 0;
+                }
+
+                AddMsg($"卡{card + 1} 直接保存EZD失败: {JczLmc.GetErrorText(saveErr)}");
+                RestoreBackupFile(fullPath, backupPath, card);
+                return saveErr;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 直接保存EZD异常: {ex.Message}");
+                RestoreBackupFile(fullPath, backupPath, card);
+                return 12;
+            }
+        }
+
+        private void RestoreBackupFile(string fullPath, string backupPath, int card)
+        {
+            try
+            {
+                if (File.Exists(backupPath))
+                {
+                    File.Copy(backupPath, fullPath, true);
+                    AddMsg($"卡{card + 1} 已从备份恢复EZD: {backupPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 从备份恢复EZD失败: {ex.Message}");
+            }
+        }
+
+        private void TryDeleteFile(string fileName)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(fileName) && File.Exists(fileName))
+                {
+                    File.Delete(fileName);
+                }
+            }
+            catch
+            {
+            }
         }
         private int ScaleLogicalEntity(int card, string entName, double centerX, double centerY, double scaleX, double scaleY)
         {
-            return TransformLogicalEntity(card, entName, name =>
+            int err = TransformLogicalEntity(card, entName, name =>
                 JczLmc.lmc1_ScaleEnt(phyCardSN[card], name, centerX, centerY, scaleX, scaleY));
+            return err;
         }
 
         private int RotateLogicalEntity(int card, string entName, double centerX, double centerY, double angle)
@@ -3464,6 +4151,8 @@ namespace BJJCZ_BaseDevelop
 
             return null;
         }
+
+
         /// <summary>
         /// 保存当前板卡的对象库到原文件路径
         /// </summary>
@@ -3471,6 +4160,26 @@ namespace BJJCZ_BaseDevelop
         {
             if (!string.IsNullOrEmpty(currentFilePath[card]))
             {
+                if (_isSavingEzd)
+                {
+                    pendingDeferredSave[card] = true;
+                    EnsureDeferredSaveTimer();
+                    _deferredSaveTimer.Stop();
+                    _deferredSaveTimer.Start();
+                    AddMsg($"卡{card + 1} 保存正在进行，本次保存已延后");
+                    return;
+                }
+
+                if (bInMark[card] || bInRed[card])
+                {
+                    pendingDeferredSave[card] = true;
+                    EnsureDeferredSaveTimer();
+                    _deferredSaveTimer.Stop();
+                    _deferredSaveTimer.Start();
+                    AddMsg($"卡{card + 1} 加工/红光预览中，本次保存已延后");
+                    return;
+                }
+
                 LCZControlParam param = new LCZControlParam
                 {
                     cardSN = card,
@@ -3478,7 +4187,16 @@ namespace BJJCZ_BaseDevelop
                     strFileName = currentFilePath[card],  // 使用原路径
                     ind3 = 0
                 };
-                CMDAna(param);
+
+                try
+                {
+                    _isSavingEzd = true;
+                    CMDAna(param);
+                }
+                finally
+                {
+                    _isSavingEzd = false;
+                }
             }
             else
             {
@@ -3501,7 +4219,9 @@ namespace BJJCZ_BaseDevelop
         {
             currentFilePath[card] = filePath;
         }
+        #endregion
 
+        #region 填充参数读取与写入
         /// <summary>
         /// 获取对象的填充参数
         /// </summary>
@@ -3512,7 +4232,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (string.IsNullOrEmpty(entName))
                 {
-                    AddMsg($"卡{card} 获取填充参数失败: 对象名称为空");
+                    AddMsg($"卡{card + 1} 获取填充参数失败: 对象名称为空");
                     return;
                 }
 
@@ -3520,7 +4240,16 @@ namespace BJJCZ_BaseDevelop
                     TryGetCachedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
                     TryGetCachedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
                 {
-                    AddMsg($"卡{card} 对象 {entName} 使用上次保存的填充参数");
+                    AddMsg($"卡{card + 1} 对象 {entName} 使用上次保存的填充参数");
+                    return;
+                }
+
+                if (TryLoadHatchParamXml(card, entName, ref hp) ||
+                    TryLoadHatchParamXml(card, GetHatchSourceName(entName), ref hp) ||
+                    TryLoadHatchParamXml(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
+                {
+                    AddMsg($"卡{card + 1} 对象 {entName} 使用本地XML填充参数");
+                    CacheHatchParam(card, entName, hp);
                     return;
                 }
 
@@ -3528,7 +4257,7 @@ namespace BJJCZ_BaseDevelop
                     TryGetPersistedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
                     TryGetPersistedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
                 {
-                    AddMsg($"卡{card} 对象 {entName} 使用本地保存的填充参数");
+                    AddMsg($"卡{card + 1} 对象 {entName} 使用本地保存的填充参数");
                     CacheHatchParam(card, entName, hp);
                     return;
                 }
@@ -3591,7 +4320,7 @@ namespace BJJCZ_BaseDevelop
 
                 if (!foundAny)
                 {
-                    AddMsg($"卡{card} 对象 {entName} 无填充参数，使用默认值");
+                    AddMsg($"卡{card + 1} 对象 {entName} 无填充参数，使用默认值");
                 }
                 else if (hp.bEnableHatch == 0)
                 {
@@ -3600,12 +4329,12 @@ namespace BJJCZ_BaseDevelop
                     hp = new HatchParam(1);
                     hp.nPenNo = penNo;
                     hp.nParamIndex = paramIndex;
-                    AddMsg($"卡{card} 对象 {entName} 未启用填充，使用EZCAD默认填充参数");
+                    AddMsg($"卡{card + 1} 对象 {entName} 未启用填充，使用EZCAD默认填充参数");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 获取填充参数异常: {ex.Message}");
+                AddMsg($"卡{card + 1} 获取填充参数异常: {ex.Message}");
             }
         }
         private bool TryGetPersistedHatchParam(int card, string entName, ref HatchParam hp)
@@ -3640,7 +4369,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card} 读取本地填充参数缓存失败: {ex.Message}");
+                AddMsg($"卡{card + 1} 读取本地填充参数缓存失败: {ex.Message}");
             }
 
             return false;
@@ -3749,110 +4478,12 @@ namespace BJJCZ_BaseDevelop
             int nErr = 0;
             try
             {
-                bool requiresFullHatchParam =
-                    hp.bHatchAllCalc ||
-                    hp.bHatchEdge ||
-                    hp.bHatchAverageLine ||
-                    Math.Abs(hp.dHatchLineReduction) > 0.000001 ||
-                    Math.Abs(hp.dHatchLoopDist) > 0.000001 ||
-                    hp.nEdgeLoop != 0 ||
-                    hp.bHatchLoopRev ||
-                    hp.bHatchAutoRotate ||
-                    hp.nHatchType != 0;
-                bool requiresParam3ForCross =
-                    hp.bHatchCross &&
-                    requiresFullHatchParam;
-
-                try
-                {
-                    nErr = JczLmc.lmc1_SetHatchParam3(phyCardSN[card],
-                        hp.bEnableContour,
-                        Math.Max(1, Math.Min(3, hp.nParamIndex)),
-                        hp.bEnableHatch,
-                        hp.nPenNo,
-                        hp.nHatchType,
-                        hp.bHatchAllCalc,
-                        hp.bHatchEdge,
-                        hp.bHatchAverageLine,
-                        hp.dHatchAngle,
-                        hp.dHatchLineDist,
-                        hp.dHatchEdgeDist,
-                        hp.dHatchStartOffset,
-                        hp.dHatchEndOffset,
-                        hp.dHatchLineReduction,
-                        hp.dHatchLoopDist,
-                        hp.nEdgeLoop,
-                        hp.bHatchLoopRev,
-                        hp.bHatchAutoRotate,
-                        hp.dHatchRotateAngle,
-                        hp.bHatchCross);
-
-                    AddMsg($"卡{card} 设置完整当前填充参数3: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
-                    if (nErr == 0)
-                    {
-                        return nErr;
-                    }
-                }
-                catch (EntryPointNotFoundException)
-                {
-                    AddMsg($"卡{card} 当前DLL不支持 lmc1_SetHatchParam3，改用 lmc1_SetHatchParam2");
-                }
-
-                try
-                {
-                    nErr = JczLmc.lmc1_SetHatchParam2(phyCardSN[card],
-                        hp.bEnableContour,
-                        Math.Max(1, Math.Min(3, hp.nParamIndex)),
-                        hp.bEnableHatch,
-                        hp.nPenNo,
-                        hp.nHatchType,
-                        hp.bHatchAllCalc,
-                        hp.bHatchEdge,
-                        hp.bHatchAverageLine,
-                        hp.dHatchAngle,
-                        hp.dHatchLineDist,
-                        hp.dHatchEdgeDist,
-                        hp.dHatchStartOffset,
-                        hp.dHatchEndOffset,
-                        hp.dHatchLineReduction,
-                        hp.dHatchLoopDist,
-                        hp.nEdgeLoop,
-                        hp.bHatchLoopRev,
-                        hp.bHatchAutoRotate,
-                        hp.dHatchRotateAngle);
-
-                    AddMsg($"卡{card} 设置完整当前填充参数2: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
-                    if (nErr == 0)
-                    {
-                        if (hp.bHatchCross)
-                        {
-                            AddMsg($"卡{card} 当前填充参数2不支持交叉填充，继续改用基础双向填充接口");
-                        }
-                        else
-                        {
-                            return nErr;
-                        }
-                    }
-                }
-                catch (EntryPointNotFoundException)
-                {
-                    AddMsg($"卡{card} 当前DLL不支持 lmc1_SetHatchParam2，改用基础填充参数接口");
-                }
-
-                if (requiresFullHatchParam && !hp.bHatchCross)
-                {
-                    AddMsg($"卡{card} 当前DLL不能在生成前写入完整填充参数，将先生成填充对象再写入完整参数");
-                }
-                if (requiresParam3ForCross)
-                {
-                    AddMsg($"卡{card} 当前DLL不能在生成前同时写入交叉填充和高级参数，将先生成填充对象再写入完整参数");
-                }
-
+                int hatchAttrib = BuildBasicHatchAttrib(hp);
                 nErr = JczLmc.lmc1_SetHatchParam(phyCardSN[card],
                     hp.bEnableContour,
                     hp.bEnableHatch,
                     hp.nPenNo,
-                    hp.nHatchType,
+                    hatchAttrib,
                     hp.dHatchEdgeDist,
                     hp.dHatchLineDist,
                     hp.dHatchStartOffset,
@@ -3860,14 +4491,14 @@ namespace BJJCZ_BaseDevelop
                     hp.dHatchAngle,
                     hp.bHatchCross ? hp.bEnableHatch : 0,
                     hp.nPenNo,
-                    hp.nHatchType,
+                    hatchAttrib,
                     hp.dHatchEdgeDist,
                     hp.dHatchLineDist,
                     hp.dHatchStartOffset,
                     hp.dHatchEndOffset,
                     hp.dHatchAngle + 90);
 
-                AddMsg($"卡{card} 设置填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"卡{card + 1} 设置当前填充参数: {(nErr == 0 ? "成功" : "失败")} - {JczLmc.GetErrorText(nErr)}");
             }
             catch (Exception ex)
             {
@@ -3877,6 +4508,38 @@ namespace BJJCZ_BaseDevelop
 
             return nErr;
         }
+        private int BuildBasicHatchAttrib(HatchParam hp)
+        {
+            const int HATCHATTRIB_ALLCALC = 0x01;
+            const int HATCHATTRIB_EDGE = 0x02;
+            const int HATCHATTRIB_BIDIR = 0x08;
+            const int HATCHATTRIB_LOOP = 0x10;
+
+            int attrib = 0;
+            if (hp.bHatchAllCalc)
+            {
+                attrib |= HATCHATTRIB_ALLCALC;
+            }
+
+            if (hp.bHatchEdge)
+            {
+                attrib |= HATCHATTRIB_EDGE;
+            }
+
+            if (hp.nHatchType == 1)
+            {
+                attrib |= HATCHATTRIB_BIDIR;
+            }
+            else if (hp.nHatchType == 2)
+            {
+                attrib |= HATCHATTRIB_LOOP;
+            }
+
+            return attrib;
+        }
+        #endregion
+
+        #region 模拟模式与管道响应
         private void SimulateCommand(LCZControlParam param)
         {
             int clientSeq = param.ind3;
@@ -3884,7 +4547,7 @@ namespace BJJCZ_BaseDevelop
             bool needResponse = true;
 
             string cmdDesc = GetCmdDescription(param.cmdType);
-            AddMsg($"卡{card+1} [模拟] {cmdDesc}");
+            AddMsg($"卡{card + 1} [模拟] {cmdDesc}");
 
             switch (param.cmdType)
             {
@@ -3914,13 +4577,24 @@ namespace BJJCZ_BaseDevelop
         {
             string cmdDesc = GetCmdDescription(param.cmdType);
             string result = param.nErr == 0 ? "成功" : $"失败({JczLmc.GetErrorText(param.nErr)})";
-            AddMsg($"发送响应 [卡{param.cardSN+1}] {cmdDesc} - {result}");
+            AddMsg($"发送响应 [卡{param.cardSN + 1}] {cmdDesc} - {result}");
 
             Pipechanel server = (param.cardSN == 0) ? pipeServer0 : pipeServer1;
             server.SendParam(param);
         }
+        #endregion
 
+        #region 预览图、背景图与透明叠加
         // =============== 预览图刷新 ===============
+        /// <summary>
+        /// 确保预览锚点笔号（固定笔号 254）已正确配置。
+        /// 该笔号用于在获取预览图像时临时添加一个不可见的辅助矩形（固定视野边界），
+        /// 以确保预览图能够完整显示设定的世界坐标范围，同时避免该笔号在实际激光加工中产生标刻。
+        /// 配置内容：设置笔号名称为 "PreviewAnchor"，颜色为白色，并尝试将其禁用标刻。
+        /// 若通过 lmc1_SetPenParam4 配置失败，则回退调用 lmc1_SetPenDisableState 来禁用该笔号。
+        /// </summary>
+        /// <param name="card">板卡索引（0 或 1）</param>
+        /// <returns>配置成功返回 true，否则返回 false</returns>
         private bool EnsurePreviewAnchorPen(int card)
         {
             try
@@ -3967,8 +4641,8 @@ namespace BJJCZ_BaseDevelop
                     ref bEnableACCMode, ref dEndComp, ref dAccDist, ref dBreakAngle,
                     ref bWobbleMode, ref bWobbleDiameter, ref bWobbleDist);
 
-                int white = ColorTranslator.ToWin32(Color.White);
-                int setErr = JczLmc.lmc1_SetPenParam4(phyCardSN[card], PreviewAnchorPenNo, "PreviewAnchor", white,
+                int anchorColor = ColorTranslator.ToWin32(PreviewAnchorColor);
+                int setErr = JczLmc.lmc1_SetPenParam4(phyCardSN[card], PreviewAnchorPenNo, "PreviewAnchor", anchorColor,
                     false, bUseDefParam, nMarkLoop, dMarkSpeed, dPowerRatio,
                     dCurrent, nFreq, dQPulseWidth, nStartTC, nLaserOffTC, nEndTC,
                     nPolyTC, dJumpSpeed, nMinJumpDelayTCUs, nMaxJumpDelayTCUs,
@@ -3990,6 +4664,12 @@ namespace BJJCZ_BaseDevelop
                 }
             }
         }
+        /// <summary>
+        /// 确保在指定板卡的对象库中存在一个用于固定预览视野的辅助矩形实体。
+        /// 该矩形不会参与实际激光加工，仅用于在获取预览图像前临时添加到对象库中，
+        /// 以强制 SDK 生成包含完整世界坐标范围的预览图。获取完预览图像后，该实体会被及时删除。
+        /// </summary>
+        /// <param name="card">板卡索引（0 或 1）</param>
         private void EnsurePreviewAnchorEntity(int card)
         {
             if (!EnsurePreviewAnchorBounds(card))
@@ -4003,7 +4683,7 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            RectangleF bounds = previewGuardWorldRects[card];
+            RectangleF bounds = previewAnchorWorldRects[card];
             double[,] points = new double[5, 2];
             points[0, 0] = bounds.Left; points[0, 1] = bounds.Top;
             points[1, 0] = bounds.Right; points[1, 1] = bounds.Top;
@@ -4025,11 +4705,23 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 添加预览固定边界异常: {ex.Message}");
             }
         }
-
+        /// <summary>
+        /// 返回用于预览锚点实体的固定名称。
+        /// 格式为 "__PreviewAnchor_" + card，用于在不同板卡之间区分该辅助实体。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>预览锚点实体的名称</returns>
         private string GetPreviewAnchorEntityName(int card)
         {
             return PreviewAnchorEntityPrefix + card;
         }
+        /// <summary>
+        /// 根据给定的世界视口边界，计算出一个稍大的“保护边界”。
+        /// 该边界用于在获取预览图时扩大绘制范围，防止因边缘裁剪导致预览图像边缘出现空白。
+        /// 扩展量为视口宽度和高度的一半（至少 1mm）。
+        /// </summary>
+        /// <param name="viewBounds">当前视口的世界坐标矩形（用户期望显示的区域）</param>
+        /// <returns>扩展后的保护边界矩形，用于生成足够大的预览位图</returns>
         private RectangleF BuildPreviewGuardBounds(RectangleF viewBounds)
         {
             if (viewBounds.Width <= 0 || viewBounds.Height <= 0)
@@ -4046,6 +4738,14 @@ namespace BJJCZ_BaseDevelop
                 viewBounds.Bottom + padY);
         }
         private const float DefaultCenteredPreviewShortSide = 45f;
+        /// <summary>
+        /// 获取指定板卡预览背景图像的宽高比。
+        /// 如果板卡已加载原始背景图像，则使用该图像的宽高比；
+        /// 否则使用 pictureBox1 控件的宽高比作为后备；若仍无效则返回 1.0。
+        /// 该宽高比用于构建居中预览边界时保持背景图像的原始比例。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>宽高比（宽度/高度），始终大于 0.0001</returns>
         private float GetPreviewBackgroundAspect(int card)
         {
             if (card >= 0 && card < originalImage.Length && originalImage[card] != null &&
@@ -4061,6 +4761,12 @@ namespace BJJCZ_BaseDevelop
 
             return 1f;
         }
+        /// <summary>
+        /// 当无法通过实际图像对齐参数获取预览边界时，使用此函数构建一个居中的默认预览世界矩形。
+        /// 矩形的短边固定为 45mm，长边根据背景图像的宽高比自动调整，以确保预览区域不严重变形。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>以 (0,0) 为中心、宽度/高度基于背景图比例的矩形</returns>
         private RectangleF BuildCenteredPreviewBounds(int card)
         {
             float aspect = GetPreviewBackgroundAspect(card);
@@ -4078,7 +4784,18 @@ namespace BJJCZ_BaseDevelop
 
             return RectangleF.FromLTRB(-width / 2f, -height / 2f, width / 2f, height / 2f);
         }
+        /// <summary>
+        /// 标记当前板卡的图像对齐参数是否已就绪。
+        /// 当客户端通过命令 42 发送有效的对齐参数后，该标志位被设置为 true。
+        /// </summary>
         private bool[] previewAlignParamReady = new bool[2];
+        /// <summary>
+        /// 尝试获取当前板卡有效的图像对齐边界（世界坐标矩形）。
+        /// 对齐参数由客户端通过命令 42 发送，描述了背景图像在激光坐标系中的范围。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <param name="bounds">输出参数，若成功则返回对应的世界坐标矩形</param>
+        /// <returns>是否存在有效对齐参数且边界宽高为正</returns>
         private bool TryGetAlignPreviewBounds(int card, out RectangleF bounds)
         {
             bounds = RectangleF.Empty;
@@ -4104,23 +4821,28 @@ namespace BJJCZ_BaseDevelop
                 centerY + height / 2f);
             return bounds.Width > 0 && bounds.Height > 0;
         }
+        /// <summary>
+        /// 捕获当前板卡的预览锚点边界（世界坐标视口范围）。
+        /// 优先使用客户端提供的图像对齐参数；若不可用，则回退到居中的默认预览矩形。
+        /// 同时根据视口边界计算出保护边界（BuildPreviewGuardBounds），并标记 previewAnchorReady[card] = true。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>始终返回 true（至少会设置一个默认边界）</returns>
         private bool CapturePreviewAnchorBounds(int card)
         {
-            RectangleF alignBounds;
-            if (TryGetAlignPreviewBounds(card, out alignBounds))
-            {
-                previewAnchorWorldRects[card] = alignBounds;
-                previewGuardWorldRects[card] = BuildPreviewGuardBounds(previewAnchorWorldRects[card]);
-                previewAnchorReady[card] = true;
-                return true;
-            }
-
-            AddMsg($"卡{card + 1} 尚未收到主程序像素-激光对齐参数，临时使用激光坐标中心区域预览");
-            previewAnchorWorldRects[card] = BuildCenteredPreviewBounds(card);
+            // 红框预览固定在整个激光预览视图内生成，既保留EZCAD画布外露出的部分，
+            // 又避免SDK按对象包围盒自动缩放导致所有红框一起漂移。
+            previewAnchorWorldRects[card] = PreviewViewBounds;
             previewGuardWorldRects[card] = BuildPreviewGuardBounds(previewAnchorWorldRects[card]);
             previewAnchorReady[card] = true;
             return true;
         }
+        /// <summary>
+        /// 确保预览锚点边界（视口范围和保护边界）已经就绪。
+        /// 如果尚未就绪，则调用 CapturePreviewAnchorBounds 进行初始化。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>边界有效（宽高>0）时返回 true</returns>
         private bool EnsurePreviewAnchorBounds(int card)
         {
             if (previewAnchorReady[card] &&
@@ -4139,6 +4861,12 @@ namespace BJJCZ_BaseDevelop
 
             return true;
         }
+        /// <summary>
+        /// 根据板卡的保护边界和视口边界，计算生成预览位图所需的合理尺寸。
+        /// 若保护边界大于视口边界，则按比例放大位图尺寸，避免边缘裁剪，同时限制最大边长为 2048 像素。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>建议的预览位图尺寸（宽度、高度）</returns>
         private Size GetGuardPreviewBitmapSize(int card)
         {
             Size displaySize = GetPreviewDisplaySize(card);
@@ -4161,7 +4889,17 @@ namespace BJJCZ_BaseDevelop
                 Math.Min(previewWidth, 2048),
                 Math.Min(previewHeight, 2048));
         }
+        /// <summary>
+        /// 存储从客户端接收的图像对齐参数（像素尺寸及激光坐标系范围）。
+        /// 由命令 42 更新，用于确定背景图像在世界坐标中的显示区域。
+        /// </summary>
         private AlignImParam[] previewAlignParams = new AlignImParam[2];
+        /// <summary>
+        /// 判断给定的图像对齐参数是否有效。
+        /// 有效条件：宽度和高度像素值大于 0，且激光坐标系宽度和高度绝对值大于 1e-6。
+        /// </summary>
+        /// <param name="align">对齐参数结构</param>
+        /// <returns>有效返回 true</returns>
         private bool IsValidPreviewAlignParam(AlignImParam align)
         {
             return align.width > 0 &&
@@ -4169,55 +4907,56 @@ namespace BJJCZ_BaseDevelop
                    Math.Abs(align.dWidth) > 0.000001 &&
                    Math.Abs(align.dHeight) > 0.000001;
         }
+
+        private RectangleF GetBackgroundWorldBounds(int card)
+        {
+            AlignImParam align = (card >= 0 && card < previewAlignParams.Length &&
+                                  IsValidPreviewAlignParam(previewAlignParams[card]))
+                ? previewAlignParams[card]
+                : alImParam;
+
+            if (Math.Abs(align.dWidth) <= 0.000001 || Math.Abs(align.dHeight) <= 0.000001)
+            {
+                return DefaultBackgroundBounds;
+            }
+
+            float width = (float)Math.Abs(align.dWidth);
+            float height = (float)Math.Abs(align.dHeight);
+            float centerX = (float)align.dCenX;
+            float centerY = (float)align.dCenY;
+            return RectangleF.FromLTRB(
+                centerX - width / 2f,
+                centerY - height / 2f,
+                centerX + width / 2f,
+                centerY + height / 2f);
+        }
+        /// <summary>
+        /// 获取用于预览显示的位图尺寸（像素宽高）。
+        /// 优先使用客户端提供的对齐参数中的原始图像尺寸，否则回退到 pictureBox1 的控件尺寸。
+        /// </summary>
+        /// <param name="card">板卡索引</param>
+        /// <returns>预览显示区域尺寸</returns>
         private Size GetPreviewDisplaySize(int card)
         {
-            if (card >= 0 && card < previewAlignParams.Length &&
-                IsValidPreviewAlignParam(previewAlignParams[card]))
-            {
-                AlignImParam align = previewAlignParams[card];
-                return new Size(Math.Max(1, align.width), Math.Max(1, align.height));
-            }
-
-            return new Size(Math.Max(1, pictureBox1.Width), Math.Max(1, pictureBox1.Height));
-        }
-        private Bitmap CropGuardPreviewToView(int card, Bitmap routeImg)
-        {
-            if (routeImg == null)
-            {
-                return null;
-            }
+            CoordPictureBox targetBox = (card == 1) ? pictureBox2 : pictureBox1;
+            int controlWidth = Math.Max(1, targetBox.Width);
+            int controlHeight = Math.Max(1, targetBox.Height);
 
             RectangleF view = previewAnchorWorldRects[card];
-            RectangleF guard = previewGuardWorldRects[card];
-            if (view.Width <= 0 || view.Height <= 0 || guard.Width <= 0 || guard.Height <= 0)
+            float aspect = (view.Width > 0 && view.Height > 0)
+                ? Math.Max(0.0001f, view.Width / view.Height)
+                : Math.Max(0.0001f, EzcadCanvasBounds.Width / EzcadCanvasBounds.Height);
+
+            int width = controlWidth;
+            int height = Math.Max(1, (int)Math.Round(width / aspect));
+            if (height > controlHeight)
             {
-                return routeImg;
+                height = controlHeight;
+                width = Math.Max(1, (int)Math.Round(height * aspect));
             }
 
-            float left = (view.Left - guard.Left) / guard.Width * routeImg.Width;
-            float top = (guard.Bottom - view.Bottom) / guard.Height * routeImg.Height;
-            float width = view.Width / guard.Width * routeImg.Width;
-            float height = view.Height / guard.Height * routeImg.Height;
-            RectangleF sourceRect = new RectangleF(left, top, width, height);
+            return new Size(width, height);
 
-            Size displaySize = GetPreviewDisplaySize(card);
-            int outputWidth = displaySize.Width;
-            int outputHeight = displaySize.Height;
-            Bitmap cropped = new Bitmap(outputWidth, outputHeight, PixelFormat.Format32bppArgb);
-            using (Graphics g = Graphics.FromImage(cropped))
-            {
-                g.Clear(Color.Transparent);
-                g.InterpolationMode = InterpolationMode.NearestNeighbor;
-                g.SmoothingMode = SmoothingMode.None;
-                g.PixelOffsetMode = PixelOffsetMode.Half;
-                g.DrawImage(routeImg,
-                    new RectangleF(0, 0, cropped.Width, cropped.Height),
-                    sourceRect,
-                    GraphicsUnit.Pixel);
-            }
-
-            routeImg.Dispose();
-            return cropped;
         }
         private void RefreshPreview(int card)
         {
@@ -4234,100 +4973,108 @@ namespace BJJCZ_BaseDevelop
                         originalImage[card] = new Bitmap(bgFile);
                 }
 
-                // 2. 获取激光路径原始图（从 SDK 或临时文件）
-                //    此处示例：从 SDK 获取，若不可用则从文件加载
-                Bitmap rawRouteImg = null;
-
                 Bitmap routeImg = null;
-                try
-                {
-                    // 2. 只在取预览图的瞬间临时固定JCZ视野，取完立即删除，避免混入对象列表。
-                    EnsurePreviewAnchorEntity(card);
-                    Size previewSize = GetGuardPreviewBitmapSize(card);
 
-                    // 3. 获取激光路径预览图（带透明背景）
-                    routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
-                        phyCardSN[card],
-                        pictureBox1.Handle,
-                        previewSize.Width,
-                        previewSize.Height);
-                    routeImg = CropGuardPreviewToView(card, routeImg);
-                }
-                finally
-                {
-                    CleanupPreviewAnchorEntities(card);
-                }
 
-                if (routeImg == null) return;
-                /*if (!bSimulateMode[card])
+                //   if (routeImg == null) return;
+                if (!bSimulateMode[card])
                 {
-                    rawRouteImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
+                    try
+                    {
+                        // 2. 只在取预览图的瞬间临时固定JCZ视野，取完立即删除，避免混入对象列表。
+                        EnsurePreviewAnchorEntity(card);
+                        Size previewSize = GetScaledPreviewBitmapSize(GetPreviewDisplaySize(card));
+
+                        // 3. 获取激光路径预览图（带透明背景）
+                        routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
+                            phyCardSN[card],
+                            targetBox.Handle,
+                            previewSize.Width,
+                            previewSize.Height);
+                        routeImg.Save("tst1_src.png");
+                        routeImg = CropPreviewToAnchorBounds(card, routeImg);
+                        routeImg.Save("tst1_crop.png");
+                    }
+                    finally
+                    {
+                        CleanupPreviewAnchorEntities(card);
+                    }
+
+                    /*rawRouteImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
                         phyCardSN[card],
                         targetBox.Handle,
                         targetBox.Width,
-                        targetBox.Height);
+                        targetBox.Height);*/
                 }
                 else
                 {
                     // 模拟模式：从默认路径加载测试图片
                     string routeFile = "..\\EzdModel\\route.png";
                     if (File.Exists(routeFile))
-                        rawRouteImg = new Bitmap(routeFile);
+                        routeImg = new Bitmap(routeFile);
                 }
 
-                if (rawRouteImg == null) return;*/
+                if (routeImg == null) return;
 
-                // 3. 决定是否需要重新生成透明图（尺寸变化或缓存不存在）
-                // bool needUpdate = true;
-                bool needUpdate = (cachedTransparentRoute[card] == null) ||
-                                 (cachedRouteWidth[card] != rawRouteImg.Width) ||
-                                 (cachedRouteHeight[card] != rawRouteImg.Height);
+                // SDK每次返回的新图内容可能变化但尺寸相同，不能只按宽高复用缓存。
+                if (cachedTransparentRoute[card] != null)
+                    cachedTransparentRoute[card].Dispose();
 
-                if (needUpdate)
-                {
-                    // 释放旧缓存
-                    if (cachedTransparentRoute[card] != null)
-                        cachedTransparentRoute[card].Dispose();
-
-                    // 生成透明背景图
-                    cachedTransparentRoute[card] = MakeTransparentBackground(rawRouteImg);
-                    cachedRouteWidth[card] = rawRouteImg.Width;
-                    cachedRouteHeight[card] = rawRouteImg.Height;
-                }
+                cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);
+                cachedRouteWidth[card] = routeImg.Width;
+                cachedRouteHeight[card] = routeImg.Height;
 
                 // 原始临时图像不再需要，释放（如果 SDK 返回的新对象）
-                if (rawRouteImg != cachedTransparentRoute[card])  // 避免重复释放
-                    rawRouteImg.Dispose();
+                if (routeImg != cachedTransparentRoute[card])  // 避免重复释放
+                    routeImg.Dispose();
 
-                // 4. 计算背景图的世界矩形（使用 alImParam）
-                float bgLeft = (float)(alImParam.dCenX - alImParam.dWidth / 2);
-                float bgRight = (float)(alImParam.dCenX + alImParam.dWidth / 2);
-                float bgBottom = (float)(alImParam.dCenY - alImParam.dHeight / 2); // 世界 Y 最小
-                float bgTop = (float)(alImParam.dCenY + alImParam.dHeight / 2); // 世界 Y 最大
-                RectangleF bgBounds = new RectangleF(bgLeft, bgBottom, bgRight - bgLeft, bgTop - bgBottom);
+                if (cachedTransparentRoute[card] != null)
+                {
+                    cachedTransparentRoute[card].Save("tst1.png");
+                }
+
+                // 4. 背景图按主程序发送的激光坐标范围放置，和红框/画布共用同一世界坐标系。
+                RectangleF bgBounds = GetBackgroundWorldBounds(card);
 
                 // 5. 设置背景图（注意 Y 参数顺序：minY, maxY）
                 if (originalImage[card] != null)
                 {
                     targetBox.SetWorldImage(originalImage[card],
                         bgBounds.Left, bgBounds.Right,
-                        bgBounds.Top, bgBounds.Bottom,   // 注意：SetWorldImage 的参数顺序是 minY, maxY？
+                        bgBounds.Top, bgBounds.Bottom,
                         autoFit: false);
                 }
 
-                // 6. 设置叠加图及其独立世界范围
-                //    如果 _overlayWorldBounds 有效则使用，否则使用背景图范围
-                RectangleF overlayBounds = (_overlayWorldBounds[card].Width > 0 && _overlayWorldBounds[card].Height > 0)
-                            ? _overlayWorldBounds[card]
-                            : bgBounds;
+                // 6. 红框预览固定贴在EZCAD画布范围，避免背景范围变化导致红框整体漂移或缩放。
+                RectangleF overlayBounds = (previewAnchorWorldRects[card].Width > 0 && previewAnchorWorldRects[card].Height > 0)
+                            ? previewAnchorWorldRects[card]
+                            : EzcadCanvasBounds;
 
-                // 使用缓存的透明图
+                // 最终红框使用SDK预览图，保证轮廓/填充/旋转/缩放与EZCAD的显示一致。
+                targetBox.SetCanvasBounds(EzcadCanvasBounds);
+                targetBox.SetPreviewWorldEntities(null);
                 targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
             }
             catch (Exception ex)
             {
                 AddMsg($"刷新预览失败: {ex.Message}");
             }
+        }
+        private void InvalidateRoutePreviewCache(int card)
+        {
+            if (card < 0 || card >= cachedTransparentRoute.Length)
+            {
+                return;
+            }
+
+            if (cachedTransparentRoute[card] != null)
+            {
+                cachedTransparentRoute[card].Dispose();
+                cachedTransparentRoute[card] = null;
+            }
+
+            cachedRouteWidth[card] = 0;
+            cachedRouteHeight[card] = 0;
         }
         // 辅助方法：将白色背景变为透明
         /*private Bitmap MakeTransparentBackground(Bitmap img)
@@ -4354,115 +5101,318 @@ namespace BJJCZ_BaseDevelop
             return transparent;
         }*/
 
+        private Bitmap CropPreviewToAnchorBounds(int card, Bitmap img)
+        {
+            if (img == null)
+            {
+                return null;
+            }
+
+            Size sourceSize = new Size(img.Width, img.Height);
+            Rectangle cropRect = Rectangle.Empty;
+            if (card >= 0 && card < previewAnchorRects.Length &&
+                previewAnchorRects[card].Width > 0 && previewAnchorRects[card].Height > 0 &&
+                previewAnchorSourceSizes[card] == sourceSize)
+            {
+                cropRect = previewAnchorRects[card];
+            }
+            else
+            {
+                cropRect = FindPreviewAnchorCropRect(img);
+                if (card >= 0 && card < previewAnchorRects.Length && cropRect.Width > 0 && cropRect.Height > 0)
+                {
+                    previewAnchorRects[card] = cropRect;
+                    previewAnchorSourceSizes[card] = sourceSize;
+                }
+            }
+
+            if (cropRect.Width <= 0 || cropRect.Height <= 0)
+            {
+                return img;
+            }
+
+            Bitmap cropped = new Bitmap(cropRect.Width, cropRect.Height, PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(cropped))
+            {
+                g.Clear(Color.White);
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.SmoothingMode = SmoothingMode.None;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.DrawImage(img,
+                    new Rectangle(0, 0, cropped.Width, cropped.Height),
+                    cropRect,
+                    GraphicsUnit.Pixel);
+            }
+
+            img.Dispose();
+            return cropped;
+        }
+
+        private Rectangle FindPreviewAnchorCropRect(Bitmap img)
+        {
+            int minX = img.Width;
+            int minY = img.Height;
+            int maxX = -1;
+            int maxY = -1;
+
+            for (int y = 0; y < img.Height; y++)
+            {
+                for (int x = 0; x < img.Width; x++)
+                {
+                    if (!IsPreviewAnchorColor(img.GetPixel(x, y)))
+                    {
+                        continue;
+                    }
+
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            if (maxX <= minX || maxY <= minY)
+            {
+                return Rectangle.Empty;
+            }
+
+            return Rectangle.FromLTRB(
+                Math.Max(0, minX),
+                Math.Max(0, minY),
+                Math.Min(img.Width, maxX + 1),
+                Math.Min(img.Height, maxY + 1));
+        }
+
+        private bool IsPreviewAnchorColor(Color color)
+        {
+            return color.G > 180 && color.R < 120 && color.B < 120;
+        }
+
+        private Size GetScaledPreviewBitmapSize(Size displaySize)
+        {
+            int width = Math.Max(1, displaySize.Width * PreviewRouteBitmapScale);
+            int height = Math.Max(1, displaySize.Height * PreviewRouteBitmapScale);
+            const int maxSide = 2400;
+
+            if (width <= maxSide && height <= maxSide)
+            {
+                return new Size(width, height);
+            }
+
+            double ratio = Math.Min((double)maxSide / width, (double)maxSide / height);
+            return new Size(
+                Math.Max(1, (int)Math.Round(width * ratio)),
+                Math.Max(1, (int)Math.Round(height * ratio)));
+        }
+
         private Bitmap MakeTransparentBackground(Bitmap img)
         {
             if (img == null) return null;
 
-            // 如果已经是透明格式，直接克隆（避免处理）
-           /* if (img.PixelFormat == PixelFormat.Format32bppArgb)
-                return new Bitmap(img);*/
+            Bitmap source = new Bitmap(img.Width, img.Height, PixelFormat.Format24bppRgb);
+            using (Graphics g = Graphics.FromImage(source))
+            {
+                g.Clear(Color.White);
+                g.DrawImage(img, 0, 0, img.Width, img.Height);
+            }
 
             Bitmap transparent = new Bitmap(img.Width, img.Height, PixelFormat.Format32bppArgb);
             Rectangle rect = new Rectangle(0, 0, img.Width, img.Height);
-            BitmapData srcData = img.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            BitmapData srcData = source.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
             BitmapData dstData = transparent.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
 
-            unsafe
+            try
             {
-                byte* src = (byte*)srcData.Scan0;
-                byte* dst = (byte*)dstData.Scan0;
-                int srcStride = srcData.Stride;
-                int dstStride = dstData.Stride;
-
-                for (int y = 0; y < img.Height; y++)
+                unsafe
                 {
-                    byte* srcRow = src + y * srcStride;
-                    byte* dstRow = dst + y * dstStride;
-                    for (int x = 0; x < img.Width; x++)
-                    {
-                        byte b = srcRow[x * 3];
-                        byte g = srcRow[x * 3 + 1];
-                        byte r = srcRow[x * 3 + 2];
+                    byte* src = (byte*)srcData.Scan0;
+                    byte* dst = (byte*)dstData.Scan0;
+                    int srcStride = srcData.Stride;
+                    int dstStride = dstData.Stride;
 
-                        // 白色阈值（可根据需要调整）
-                        if (r > 200 && g > 200 && b > 200)
+                    for (int y = 0; y < img.Height; y++)
+                    {
+                        byte* srcRow = src + y * srcStride;
+                        byte* dstRow = dst + y * dstStride;
+                        for (int x = 0; x < img.Width; x++)
                         {
-                            dstRow[x * 4] = 0;     // B
-                            dstRow[x * 4 + 1] = 0; // G
-                            dstRow[x * 4 + 2] = 0; // R
-                            dstRow[x * 4 + 3] = 0; // Alpha = 0
-                        }
-                        else
-                        {
-                            dstRow[x * 4] = b;
-                            dstRow[x * 4 + 1] = g;
-                            dstRow[x * 4 + 2] = r;
-                            dstRow[x * 4 + 3] = 255;
+                            byte b = srcRow[x * 3];
+                            byte g = srcRow[x * 3 + 1];
+                            byte r = srcRow[x * 3 + 2];
+
+                            if (IsPreviewAnchorPixelOnCropBorder(x, y, img.Width, img.Height, r, g, b))
+                            {
+                                dstRow[x * 4] = 0;
+                                dstRow[x * 4 + 1] = 0;
+                                dstRow[x * 4 + 2] = 0;
+                                dstRow[x * 4 + 3] = 0;
+                            }
+                            else
+                            {
+                                byte redAlpha = ComputePreviewRedAlpha(r, g, b);
+                                if (redAlpha > 0)
+                                {
+                                    dstRow[x * 4] = 20;
+                                    dstRow[x * 4 + 1] = 25;
+                                    dstRow[x * 4 + 2] = 255;
+                                    dstRow[x * 4 + 3] = redAlpha;
+                                    continue;
+                                }
+
+                                byte alpha = ComputePreviewNonWhiteAlpha(r, g, b);
+                                dstRow[x * 4] = alpha == 0 ? (byte)0 : b;
+                                dstRow[x * 4 + 1] = alpha == 0 ? (byte)0 : g;
+                                dstRow[x * 4 + 2] = alpha == 0 ? (byte)0 : r;
+                                dstRow[x * 4 + 3] = alpha;
+                            }
                         }
                     }
                 }
             }
-
-            img.UnlockBits(srcData);
-            transparent.UnlockBits(dstData);
-            return transparent;
-        }
-        private Bitmap MakeWhiteTransparent(Bitmap original, float tolerance = 10f)
-        {
-            if (original == null) return null;
-            Bitmap transparentImage = new Bitmap(alImParam.width, alImParam.height, PixelFormat.Format32bppArgb);
-
-            BitmapData data = transparentImage.LockBits(
-                new Rectangle(0, 0, alImParam.width, alImParam.height),
-                ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-            unsafe
+            finally
             {
-                byte* ptr = (byte*)data.Scan0;
-                for (int y = 0; y < Math.Min(data.Height, original.Height); y++)
+                source.UnlockBits(srcData);
+                transparent.UnlockBits(dstData);
+                source.Dispose();
+            }
+
+            return ThickenPreviewOverlay(transparent);
+        }
+
+        private bool IsPreviewAnchorPixelOnCropBorder(int x, int y, int width, int height, byte r, byte g, byte b)
+        {
+            const int borderTolerance = 3;
+            bool onBorder =
+                x <= borderTolerance || y <= borderTolerance ||
+                x >= width - 1 - borderTolerance || y >= height - 1 - borderTolerance;
+            return onBorder && g > 180 && r < 120 && b < 120;
+        }
+
+        private byte ComputePreviewRedAlpha(byte r, byte g, byte b)
+        {
+            int dominant = r - Math.Max(g, b);
+            bool redLike = r >= 120 && dominant >= 6;
+            if (!redLike)
+            {
+                return 0;
+            }
+
+            int alpha = 230 + dominant * 2;
+            if (r > 180 && dominant > 25)
+            {
+                alpha += 15;
+            }
+
+            if (alpha < 0) return 0;
+            if (alpha > 255) return 255;
+            return (byte)alpha;
+        }
+        private byte ComputePreviewNonWhiteAlpha(byte r, byte g, byte b)
+        {
+            int distanceFromWhite = (255 - r) + (255 - g) + (255 - b);
+            if (distanceFromWhite <= 36)
+            {
+                return 0;
+            }
+
+            int alpha = distanceFromWhite * 2;
+            if (alpha < 80) alpha = 80;
+            if (alpha > 255) alpha = 255;
+            return (byte)alpha;
+        }
+        private Bitmap ThickenPreviewOverlay(Bitmap img)
+        {
+            if (img == null)
+            {
+                return null;
+            }
+
+            Bitmap thickened = new Bitmap(img.Width, img.Height, PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(thickened))
+            {
+                g.Clear(Color.Transparent);
+                g.DrawImageUnscaled(img, 0, 0);
+            }
+
+            Rectangle rect = new Rectangle(0, 0, img.Width, img.Height);
+            BitmapData srcData = img.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            BitmapData dstData = thickened.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+
+            try
+            {
+                unsafe
                 {
-                    for (int x = 0; x < Math.Min(data.Width, original.Width); x++)
+                    byte* src = (byte*)srcData.Scan0;
+                    byte* dst = (byte*)dstData.Scan0;
+                    int srcStride = srcData.Stride;
+                    int dstStride = dstData.Stride;
+
+                    for (int y = 0; y < img.Height; y++)
                     {
-                        int index = y * data.Stride + x * 4;
-                        Color pixel = original.GetPixel(x, y);
-                        float diff = Math.Abs(pixel.R - 255) + Math.Abs(pixel.G - 255) + Math.Abs(pixel.B - 255);
-                        ptr[index + 3] = (byte)(diff <= tolerance ? 0 : 255);
+                        byte* srcRow = src + y * srcStride;
+                        for (int x = 0; x < img.Width; x++)
+                        {
+                            byte b = srcRow[x * 4];
+                            byte g = srcRow[x * 4 + 1];
+                            byte r = srcRow[x * 4 + 2];
+                            byte a = srcRow[x * 4 + 3];
+
+                            if (a == 0)
+                            {
+                                continue;
+                            }
+
+                            bool redLike = r >= 200 && g <= 90 && b <= 90;
+                            byte drawB = redLike ? (byte)20 : b;
+                            byte drawG = redLike ? (byte)25 : g;
+                            byte drawR = redLike ? (byte)255 : r;
+                            byte drawA = redLike ? (byte)255 : (a < 220 ? (byte)220 : a);
+
+                            for (int dy = -1; dy <= 1; dy++)
+                            {
+                                int yy = y + dy;
+                                if (yy < 0 || yy >= img.Height)
+                                {
+                                    continue;
+                                }
+
+                                byte* dstRow = dst + yy * dstStride;
+                                for (int dx = -1; dx <= 1; dx++)
+                                {
+                                    int xx = x + dx;
+                                    if (xx < 0 || xx >= img.Width)
+                                    {
+                                        continue;
+                                    }
+
+                                    int offset = xx * 4;
+                                    if (!redLike && dstRow[offset + 3] > drawA)
+                                    {
+                                        continue;
+                                    }
+
+                                    dstRow[offset] = drawB;
+                                    dstRow[offset + 1] = drawG;
+                                    dstRow[offset + 2] = drawR;
+                                    dstRow[offset + 3] = drawA;
+                                }
+                            }
+                        }
                     }
                 }
             }
-            transparentImage.UnlockBits(data);
-            return transparentImage;
-        }
-
-        private void mergeImg(int card)
-        {
-            if (bSimulateMode[card]) return;
-
-            if (originalImage[card] == null)
+            finally
             {
-                string bgFile = (card == 0) ? @"..\data\sourceBGImgA.bmp" : @"..\data\sourceBGImgB.bmp";
-                if (File.Exists(bgFile))
-                    originalImage[card] = new Bitmap(bgFile);
-                else
-                    originalImage[card] = new Bitmap(alImParam.width, alImParam.height);
+                img.UnlockBits(srcData);
+                thickened.UnlockBits(dstData);
+                img.Dispose();
             }
 
-            if (originalImage[card] == null || imLaserRoute[card] == null) return;
-
-            Bitmap finalImage = new Bitmap(alImParam.width, alImParam.height);
-            using (Graphics g = Graphics.FromImage(finalImage))
-            {
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                g.DrawImage(originalImage[card], 0, 0, alImParam.width, alImParam.height);
-                g.DrawImage(imLaserRoute[card], 0, 0);
-            }
-            finalImage.RotateFlip(RotateFlipType.Rotate90FlipNone);
-            if (pictureBox1.IsDisposed) return;
-            pictureBox1.Image = finalImage;
-            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+            return thickened;
         }
+        #endregion
 
+        #region 实体表格与对象信息
         // =============== 实体表格更新 ===============
         private void UpdateEntTable(int card)
         {
@@ -4498,6 +5448,13 @@ namespace BJJCZ_BaseDevelop
 
             try
             {
+                string sourceEntName = GetHatchSourceName(entName);
+                string hatchEntName = GetHatchEntityName(sourceEntName);
+                if (!IsGeneratedHatchEntity(entName) && EntityExists(card, hatchEntName))
+                {
+                    return "填充";
+                }
+
                 // 调用获取填充参数函数
                 bool bEnableContour = false;
                 int nParamIndex = 1;
@@ -4534,7 +5491,7 @@ namespace BJJCZ_BaseDevelop
                     ref dCycCount);
 
                 // 如果获取成功且填充使能，则为填充对象
-                if (nErr == 0 && bEnableHatch!=0)
+                if (nErr == 0 && bEnableHatch != 0)
                     return "填充";
                 else
                     return "轮廓";
@@ -4544,6 +5501,9 @@ namespace BJJCZ_BaseDevelop
                 return "轮廓";
             }
         }
+        #endregion
+
+        #region 窗口菜单、托盘与布局事件
         // =============== 界面事件 ===============
         private void menuSplit_Click(object sender, EventArgs e)
         {
@@ -4557,7 +5517,7 @@ namespace BJJCZ_BaseDevelop
             int card = currentCard;
             if (imLaserRoute[card] != null)
             {
-                string name = $"routeExport{card+1}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                string name = $"routeExport{card + 1}_{DateTime.Now:yyyyMMddHHmmss}.png";
                 imLaserRoute[card].Save(name, ImageFormat.Png);
                 AddMsg($"导出预览图 -> {name}");
             }
@@ -4595,9 +5555,9 @@ namespace BJJCZ_BaseDevelop
                 JCZServerIcon.Visible = true;
 
                 // 可选：仍然折叠界面，以便下次显示时保持布局
-                splitContainer1.Panel1Collapsed = true;
-                splitContainer1.SplitterDistance = 0;
-
+                //     splitContainer1.Panel1Collapsed = true;
+                //     splitContainer1.SplitterDistance = 0;
+                //
                 // 向客户端发送请求嵌入的消息（如果需要）
                 // RequestClientToEmbed();
                 // AddMsg("已最小化到系统托盘");
@@ -4625,11 +5585,11 @@ namespace BJJCZ_BaseDevelop
                     Pipechanel server = (card == 0) ? pipeServer0 : pipeServer1;
                     server.SendParam(requestParam);
                 }
-              //  AddMsg("已发送嵌入请求到客户端");
+                //  AddMsg("已发送嵌入请求到客户端");
             }
             catch (Exception ex)
             {
-               // AddMsg($"发送嵌入请求失败: {ex.Message}");
+                // AddMsg($"发送嵌入请求失败: {ex.Message}");
             }
         }
 
@@ -4661,11 +5621,6 @@ namespace BJJCZ_BaseDevelop
             }
         }
 
-        /// <summary>
-        /// 重置窗口布局到默认状态（所有面板可见，分割线居中）
-        /// </summary>
-        private bool _needResetLayout = false;
-
         private void ResetLayoutToDefault()
         {
             if (this.InvokeRequired)
@@ -4674,43 +5629,23 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            // 展开所有面板
-            splitContainer1.Panel1Collapsed = false;
-            splitContainer1.Panel2Collapsed = false;
-            splitContainer2.Panel1Collapsed = false;
-            splitContainer2.Panel2Collapsed = false;
-            splitContainer3.Panel1Collapsed = false;
-            splitContainer3.Panel2Collapsed = false;
+            // 显示所有区域
+            mainMsgBox.Visible = true;
+            panelImage.Visible = true;
+            panel3.Visible = true;
+            panel1.Visible = true;
 
+            // 更新菜单勾选
             Win_Log.Checked = true;
             Win_Entity.Checked = true;
             Win_Route.Checked = true;
             Win_Oper.Checked = true;
-
-            // 标记需要重置分割线位置，延迟到 Layout 事件中执行
-            _needResetLayout = true;
-            // 主动触发一次布局
-           // this.PerformLayout();
-            // 设置分割线居中
-            this.BeginInvoke(new Action(() =>
-            {
-                if (splitContainer1.Height > 0)
-                {
-                    splitContainer1.SplitterDistance = splitContainer1.Height / 2;
-                }
-            }));
         }
+        #endregion
+
+        #region 对象选择、重命名、变换与自动保存
         // 在 JCZServer 构造函数中添加
-          
 
-        private void JCZServer_Layout(object sender, LayoutEventArgs e)
-        {
-            if (_needResetLayout && splitContainer1.Height > 100)
-            {
-                _needResetLayout = false;
-                splitContainer1.SplitterDistance = splitContainer1.Height / 2;
-            }
-        }
 
         private void dgvEnt_CellClick(object sender, DataGridViewCellEventArgs e)
         {
@@ -4743,8 +5678,12 @@ namespace BJJCZ_BaseDevelop
 
         private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
         {
-            LCZControlParam cmd = new LCZControlParam { cardSN = currentCard, cmdType = 28, bOpen = chkEntGroup.Checked };
+            int card = currentCard;
+            LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = chkEntGroup.Checked };
             CMDAna(cmd);
+            ReloadEntityInfo(card);
+            InvalidateRoutePreviewCache(card);
+            RefreshPreview(card);
         }
 
         private void EntMvRoSc_Click(object sender, EventArgs e)
@@ -4756,8 +5695,14 @@ namespace BJJCZ_BaseDevelop
             if (pic == null) return;
             string btnName = pic.Name;
 
+            bool isGroupOperation = chkEntGroup.Checked;
+            if (!isGroupOperation)
+            {
+                CleanupUserGroupEntity(card);
+            }
+
             LCZControlParam cmd = new LCZControlParam { cardSN = card, ind1 = iEntIndices[card] };
-            cmd.strEntyName = chkEntGroup.Checked ? "grpEnt" : GetSdkEntityNameForOperation(card, iEntIndices[card]);
+            cmd.strEntyName = isGroupOperation ? "grpEnt" : GetSdkEntityNameForOperation(card, iEntIndices[card]);
 
             double moveVal = 0, rotateVal = 0, scaleVal = 0, cenX = 0, cenY = 0;
             double.TryParse(txtMv_Value.Text, out moveVal);
@@ -4774,12 +5719,12 @@ namespace BJJCZ_BaseDevelop
                 case "picMvDown": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = -moveVal; break;
                 case "picRoClock":
                     cmd.cmdType = 23;
-                    if (!chkEntGroup.Checked && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
+                    if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
                     cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = -rotateVal;
                     break;
                 case "picRoCrossClock":
                     cmd.cmdType = 23;
-                    if (!chkEntGroup.Checked && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
+                    if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
                     cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = rotateVal;
                     break;
                 case "picScaleX": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
@@ -4797,10 +5742,122 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
+            DropOtherPendingSaveForSameFile(card);
             pendingDeferredSave[card] = true;
             EnsureDeferredSaveTimer();
             _deferredSaveTimer.Stop();
             _deferredSaveTimer.Start();
+        }
+
+        private void DropOtherPendingSaveForSameFile(int card)
+        {
+            string currentPath = GetNormalizedFilePath(currentFilePath[card]);
+            if (string.IsNullOrEmpty(currentPath))
+            {
+                return;
+            }
+
+            for (int other = 0; other < currentFilePath.Length; other++)
+            {
+                if (other == card || !pendingDeferredSave[other])
+                {
+                    continue;
+                }
+
+                string otherPath = GetNormalizedFilePath(currentFilePath[other]);
+                if (string.Equals(currentPath, otherPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    pendingDeferredSave[other] = false;
+                    AddMsg($"卡{card + 1}/卡{other + 1} 加载同一个EZD，已取消卡{other + 1}本次旧数据自动保存，等待重新加载最新文件");
+                }
+            }
+        }
+
+        private void SyncOtherCardsLoadedFromSameFile(int savedCard, string savedPath)
+        {
+            string normalizedSavedPath = GetNormalizedFilePath(savedPath);
+            if (string.IsNullOrEmpty(normalizedSavedPath))
+            {
+                return;
+            }
+
+            for (int other = 0; other < currentFilePath.Length; other++)
+            {
+                if (other == savedCard)
+                {
+                    continue;
+                }
+
+                string otherPath = GetNormalizedFilePath(currentFilePath[other]);
+                if (!string.Equals(normalizedSavedPath, otherPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (bInMark[other] || bInRed[other])
+                {
+                    AddMsg($"卡{other + 1} 正在加工/红光预览，暂不重载卡{savedCard + 1}保存后的EZD");
+                    continue;
+                }
+
+                if (pendingDeferredSave[other])
+                {
+                    AddMsg($"卡{other + 1} 还有未保存修改，暂不重载卡{savedCard + 1}保存后的EZD");
+                    continue;
+                }
+
+                int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[other], savedPath);
+                if (loadErr == 0)
+                {
+                    ResetEntityScaleStates(other);
+                    ReloadEntityInfo(other);
+                    InvalidateRoutePreviewCache(other);
+                    RefreshPreview(other);
+                    AddMsg($"卡{other + 1} 已同步加载卡{savedCard + 1}保存后的EZD");
+                }
+                else
+                {
+                    AddMsg($"卡{other + 1} 同步加载卡{savedCard + 1}保存后的EZD失败 -> {JczLmc.GetErrorText(loadErr)}");
+                }
+            }
+        }
+
+        private string GetNormalizedFilePath(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return Path.GetFullPath(filePath);
+            }
+            catch
+            {
+                return filePath;
+            }
+        }
+        private void CleanupUserGroupEntity(int card)
+        {
+            try
+            {
+                if (EntityExists(card, "grpEnt"))
+                {
+                    int err = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
+                    if (err == 0)
+                    {
+                        AddMsg($"卡{card + 1} 已解除残留组对象 grpEnt，后续按单对象操作");
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+        private double DegreesToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180.0;
         }
         private bool TryApplyAbsoluteScaleToCommand(int card, string btnName, double targetScale, ref LCZControlParam cmd)
         {
@@ -4819,7 +5876,6 @@ namespace BJJCZ_BaseDevelop
                 return false;
             }
 
-            EntityScaleState state = GetEntityScaleState(card, targetName);
             cmd.cmdType = 25;
             double centerX, centerY;
             if (!TryGetEntityCenter(card, targetName, out centerX, out centerY))
@@ -4832,19 +5888,15 @@ namespace BJJCZ_BaseDevelop
 
             if (btnName == "picScaleX")
             {
-                double currentScale = Math.Abs(state.X) < 0.000001 ? 1.0 : state.X;
-                cmd.dParam3 = targetScale / currentScale;
+                cmd.dParam3 = targetScale;
                 cmd.dParam4 = 1;
-                state.X = targetScale;
                 return true;
             }
 
             if (btnName == "picScaleY")
             {
-                double currentScale = Math.Abs(state.Y) < 0.000001 ? 1.0 : state.Y;
                 cmd.dParam3 = 1;
-                cmd.dParam4 = targetScale / currentScale;
-                state.Y = targetScale;
+                cmd.dParam4 = targetScale;
                 return true;
             }
 
@@ -4887,11 +5939,13 @@ namespace BJJCZ_BaseDevelop
             centerY = (minY + maxY) / 2.0;
             return true;
         }
+        #endregion
 
         #region 后台工作线程
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e) { }
         #endregion
 
+        #region 文件菜单
         // =============== 菜单事件实现 ===============
 
         private void File_LoadEZD_Click(object sender, EventArgs e)
@@ -4969,7 +6023,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     sfd.Filter = "PNG Image|*.png|JPEG Image|*.jpg|BMP Image|*.bmp";
                     sfd.Title = "导出预览图像";
-                    sfd.FileName = $"routeExport_{card+1}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                    sfd.FileName = $"routeExport_{card + 1}_{DateTime.Now:yyyyMMddHHmmss}.png";
 
                     if (sfd.ShowDialog() == DialogResult.OK)
                     {
@@ -5007,7 +6061,9 @@ namespace BJJCZ_BaseDevelop
                 AddMsg("没有可导出的图像");
             }
         }
+        #endregion
 
+        #region 板卡切换与显示菜单
         private void Card_NO1_Click(object sender, EventArgs e)
         {
             currentCard = 0;
@@ -5038,38 +6094,33 @@ namespace BJJCZ_BaseDevelop
         {
             // 切换日志窗口显示/隐藏
             ToolStripMenuItem item = sender as ToolStripMenuItem;
-            item.Checked = !item.Checked; 
-            splitContainer2.Panel1Collapsed = !item.Checked; 
-            splitContainer1.Panel1Collapsed = !Win_Log.Checked & !Win_Entity.Checked;
+            item.Checked = !item.Checked;
+            mainMsgBox.Visible = item.Checked;
         }
 
         private void Win_Entity_Click(object sender, EventArgs e)
         {
             ToolStripMenuItem item = sender as ToolStripMenuItem;
             item.Checked = !item.Checked;
-            splitContainer2.Panel2Collapsed = !item.Checked;
-            splitContainer1.Panel1Collapsed = !Win_Log.Checked & !Win_Entity.Checked;
+            panel3.Visible = item.Checked;
         }
 
         private void Win_Route_Click(object sender, EventArgs e)
         {
             ToolStripMenuItem item = sender as ToolStripMenuItem;
             item.Checked = !item.Checked;
-            splitContainer3.Panel1Collapsed = !item.Checked;
-            splitContainer1.Panel2Collapsed = !Win_Route.Checked & !Win_Oper.Checked;
-
-             
+            panelImage.Visible = item.Checked;
         }
 
         private void Win_Oper_Click(object sender, EventArgs e)
         {
             ToolStripMenuItem item = sender as ToolStripMenuItem;
             item.Checked = !item.Checked;
-            splitContainer3.Panel2Collapsed = !item.Checked;
-            splitContainer1.Panel2Collapsed = !Win_Route.Checked & !Win_Oper.Checked;
-
+            panel1.Visible = item.Checked;
         }
+        #endregion
 
+        #region 填充设置、笔号设置与对象辅助
         /// <summary>
         /// 设置填充参数（对应选中对象）
         /// </summary>
@@ -5102,7 +6153,7 @@ namespace BJJCZ_BaseDevelop
             };
             CMDAna(param);
         }
-        
+
         private string GetSdkEntityNameForOperation(int card, int entityIndex)
         {
             string sdkName = sdkEntNames[card] != null && entityIndex < sdkEntNames[card].Length
@@ -5180,7 +6231,7 @@ namespace BJJCZ_BaseDevelop
 
             return false;
         }
-      
+
         private string GetSourcePenCacheKey(int card, string sourceEntName)
         {
             return card.ToString() + "|" + (sourceEntName ?? string.Empty).ToLowerInvariant();
@@ -5326,7 +6377,7 @@ namespace BJJCZ_BaseDevelop
         /// 设置激光笔参数（对应当前选中对象的笔号）
         /// </summary>
         /// 
-      
+
         private void btLaserPenParam_Click(object sender, EventArgs e)
         {
             int card = currentCard;
@@ -5355,6 +6406,7 @@ namespace BJJCZ_BaseDevelop
             }
         }
         private const int PreviewAnchorPenNo = 254;
+        private static readonly Color PreviewAnchorColor = Color.Lime;
         private void CleanupPreviewAnchorEntities(int card)
         {
             try
@@ -5429,8 +6481,38 @@ namespace BJJCZ_BaseDevelop
         {
             return sourceEntName + "_Hatch";
         }
+        private string GetMarkEntityNameForOperation(int card, string sdkName)
+        {
+            if (string.IsNullOrWhiteSpace(sdkName))
+            {
+                return sdkName;
+            }
+
+            if (IsContourBackupEntity(sdkName))
+            {
+                sdkName = GetHatchSourceName(sdkName);
+            }
+
+            if (IsGeneratedHatchEntity(sdkName))
+            {
+                return sdkName;
+            }
+
+            string sourceName = GetHatchSourceName(sdkName);
+            string hatchName = GetHatchEntityName(sourceName);
+            if (EntityExists(card, hatchName))
+            {
+                HatchParam hp = new HatchParam(1);
+                if (!TryReadHatchParam(card, hatchName, 1, ref hp) || hp.bEnableHatch != 0)
+                {
+                    return hatchName;
+                }
+            }
+
+            return sdkName;
+        }
         private const string PreviewAnchorEntityPrefix = "__PreviewAnchor_";
-         private bool ShouldShowEntityInTable(string sdkName)
+        private bool ShouldShowEntityInTable(string sdkName)
         {
             if (string.IsNullOrWhiteSpace(sdkName))
             {
@@ -5456,7 +6538,9 @@ namespace BJJCZ_BaseDevelop
 
             return $"未命名{entityIndex + 1}";
         }
+        #endregion
 
+        #region 红光预览、激光加工与对象顺序按钮
         /// <summary>
         /// 振镜位置搜索（移动到指定点，例如原点）
         /// </summary>
@@ -5612,54 +6696,82 @@ namespace BJJCZ_BaseDevelop
             // 如果需要，可以修改红光预览函数中的循环条件，例如增加判断 !isContinuous 时只执行一次
             // 但由于现有代码是独立的后台线程，此处仅做记录，具体行为可在 RedLightMark 调用处扩展
         }
+        #endregion
 
-        private void btnInitial_Click(object sender, EventArgs e)
+        #region 板卡初始化、激光器开关与设备配置
+        private void ReinitializeBothCards()
         {
-            int card = currentCard;
-
-            // 初始化板卡
-            LCZControlParam param = new LCZControlParam
+            // 停止所有卡的加工/红光
+            for (int card = 0; card < 2; card++)
             {
-                cardSN = card,
-                cmdType = 1,
-                ind3 = 0
-            };
-            CMDAna(param);
+                if (bInMark[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                if (bInRed[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                bInMark[card] = false;
+                bInRed[card] = false;
+                // 清理预览辅助对象
+                CleanupPreviewAnchorEntities(card);
+                // 可选：清理变换临时分组
+                CleanupTransformPairEntities(card);
+            }
 
-            // 初始化完成后，刷新对象列表
-            if (JczInitErrs[card] == 0)
+            // 调用 SDK 初始化（与启动时参数完全一致：路径尾部带反斜杠）
+            int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
+            if (initResult == 0)
             {
-                // ========== 新增：显示卡号映射 ==========
-                int[] snArray = new int[8];
-                int ret = JczLmc.lmc1_GetAllCardSN(snArray);
-                if (ret == 0)
+                for (int card = 0; card < 2; card++)
                 {
-                    AddMsg($"----- 卡{card+1} 卡号映射 -----");
-                    for (int i = 0; i < snArray.Length; i++)
+                    JczInitErrs[card] = 0;
+                    bSimulateMode[card] = false;
+                    // 重置各类缓存/状态
+                    previewAnchorReady[card] = false;
+                    visualRotateMoveReady[card] = false;
+                    ResetEntityScaleStates(card);
+                    // 如果之前有加载过的文件，重新加载
+                    if (!string.IsNullOrEmpty(currentFilePath[card]))
                     {
-                        if (snArray[i] != -1)
+                        int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], currentFilePath[card]);
+                        if (loadErr == 0)
                         {
-                            AddMsg($"逻辑索引 {i}  -> 物理卡号 {snArray[i]}");
+                            ReloadEntityInfo(card);
+                            ApplyVisualRotateMoveParamIfReady(card, "重新初始化后恢复偏移");
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card + 1} 重新加载文件失败：{JczLmc.GetErrorText(loadErr)}");
                         }
                     }
-                    AddMsg("------------------------------");
-                }
-                // =====================================
-
-                nEntNums[card] = JczLmc.lmc1_GetEntityCount(card);
-                if (nEntNums[card] > 0)
-                {
-                    strEntNames[card] = new string[nEntNums[card]];
-                    iPenNos[card] = new int[nEntNums[card]];
-                    for (int i = 0; i < nEntNums[card]; i++)
+                    else
                     {
-                        strEntNames[card][i] = JczLmc.lmc1_GetEntityNameByIndex(card, i);
-                        iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(card, strEntNames[card][i]);
+                        // 清空对象列表（没有文件）
+                        nEntNums[card] = 0;
+                        strEntNames[card] = null;
+                        iPenNos[card] = null;
+                        sdkEntNames[card] = null;
+                        UpdateEntTable(card);
                     }
-                    UpdateEntTable(card);
                     RefreshPreview(card);
+                    cachedTransparentRoute[card] = null; // 强制刷新叠加图缓存
                 }
+                AddMsg("双卡板卡重新初始化成功，已恢复已加载文件");
             }
+            else
+            {
+                // 初始化失败，进入模拟模式（与启动时行为一致）
+                for (int card = 0; card < 2; card++)
+                {
+                    bSimulateMode[card] = true;
+                    JczInitErrs[card] = initResult;
+                }
+                AddMsg($"板卡初始化失败({JczLmc.GetErrorText(initResult)})，已切换至模拟模式");
+            }
+
+            // 刷新当前卡的界面（当前卡可能已变）
+            UpdateEntTable(currentCard);
+            UpdateLaserOperationButtonsEnabled();
+        }
+        private void btnInitial_Click(object sender, EventArgs e)
+        {
+            ReinitializeBothCards();
         }
 
         private void btnClose_Click(object sender, EventArgs e)
@@ -5984,7 +7096,7 @@ namespace BJJCZ_BaseDevelop
             if (loadErr == 0)
             {
                 currentFilePath[card] = reloadPath;
-             //   ResetPreviewAnchor(card);
+                //   ResetPreviewAnchor(card);
                 ResetEntityScaleStates(card);
                 ReloadEntityInfo(card);
                 RefreshPreview(card);
@@ -5996,7 +7108,7 @@ namespace BJJCZ_BaseDevelop
 
             return nErr;
         }
-         private class EntityScaleState
+        private class EntityScaleState
         {
             public double X = 1.0;
             public double Y = 1.0;
@@ -6050,6 +7162,9 @@ namespace BJJCZ_BaseDevelop
             AddMsg($"卡{card + 1} 配置界面尝试失败: 配置卡号={JczLmc.GetErrorText(errByConfigured)}, 逻辑卡号={JczLmc.GetErrorText(errByLogical)}, SetDevCfg2配置={JczLmc.GetErrorText(errCfg2Configured)}, SetDevCfg2逻辑={JczLmc.GetErrorText(errCfg2Logical)}");
             return errByConfigured;
         }
+        #endregion
+
+        #region EZCAD外部程序
         /// <summary>
         /// 打开 EZcad 软件（金橙子官方编辑器）
         /// 由于金橙子板卡只支持一个软件加载，需要先关闭当前的板卡连接，
@@ -6092,7 +7207,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     AddMsg("未找到 EZcad 软件（EzCad2.exe），请确认软件已安装");
                     // 未找到时自动尝试重新初始化板卡，恢复服务端状态
-                    ReinitializeCardAfterEZcadClosed(card);
+                    ReinitializeBothCards();
                     return;
                 }
 
@@ -6113,14 +7228,14 @@ namespace BJJCZ_BaseDevelop
                     // 等待 EZcad 进程退出（会阻塞当前线程，但不会阻塞 UI）
                     ezcadProcess.WaitForExit();
                     // EZcad 退出后，回到 UI 线程重新初始化板卡
-                    this.BeginInvoke(new Action(() => ReinitializeCardAfterEZcadClosed(card)));
+                    this.BeginInvoke(new Action(() => ReinitializeBothCards()));
                 });
             }
             catch (Exception ex)
             {
                 AddMsg($"打开 EZcad 时发生异常: {ex.Message}");
                 // 发生异常时也要尝试恢复板卡连接，保证服务端可用
-                ReinitializeCardAfterEZcadClosed(card);
+                ReinitializeBothCards();
             }
         }
 
@@ -6250,9 +7365,17 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"重新初始化板卡时发生异常: {ex.Message}");
             }
         }
+        #endregion
+
+        #region 其他控件事件
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+
+        }
 
 
         // 可选：添加一个窗口布局重置菜单项
+        #endregion
 
     }
 }

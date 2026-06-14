@@ -1,4 +1,4 @@
-﻿
+
 namespace VisionApplication
 {
     partial class FrmMainUI
@@ -519,14 +519,14 @@ namespace VisionApplication
             // 
             this.menuCam_Open.Name = "menuCam_Open";
             this.menuCam_Open.Size = new System.Drawing.Size(160, 22);
-            this.menuCam_Open.Text = "打开设备";
+            this.menuCam_Open.Text = "开启相机";
             this.menuCam_Open.Click += new System.EventHandler(this.menuCam_OpenCloseDev_Click);
             // 
             // menuCam_Close
             // 
             this.menuCam_Close.Name = "menuCam_Close";
             this.menuCam_Close.Size = new System.Drawing.Size(160, 22);
-            this.menuCam_Close.Text = "关闭设备";
+            this.menuCam_Close.Text = "断开相机";
             this.menuCam_Close.Click += new System.EventHandler(this.menuCam_Close_Click);
             // 
             // menuCam_Connect
@@ -1653,7 +1653,6 @@ namespace VisionApplication
             this.toolBtSta_MarkAfterLocated.Name = "toolBtSta_MarkAfterLocated";
             this.toolBtSta_MarkAfterLocated.Size = new System.Drawing.Size(36, 42);
             this.toolBtSta_MarkAfterLocated.ToolTipText = "定位后进行标刻";
-            this.toolBtSta_MarkAfterLocated.Visible = false;
             this.toolBtSta_MarkAfterLocated.Click += new System.EventHandler(this.toolBtSta_MarkAfterLocated_Click);
             // 
             // toolBtSta_SaveRes
@@ -1773,7 +1772,7 @@ namespace VisionApplication
             this.toolStripStatusLabel_LaserStatus,
             this.toolStripStatus_inferTime,
             this.toolStripStatus_ExcuteTimes});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 839);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 791);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(986, 35);
             this.statusStrip1.TabIndex = 7;
@@ -1952,7 +1951,7 @@ namespace VisionApplication
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
-            this.splitContainer1.Size = new System.Drawing.Size(986, 770);
+            this.splitContainer1.Size = new System.Drawing.Size(986, 722);
             this.splitContainer1.SplitterDistance = 108;
             this.splitContainer1.TabIndex = 8;
             // 
@@ -2013,7 +2012,7 @@ namespace VisionApplication
             this.picLogo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.picLogo.BackColor = System.Drawing.Color.White;
             this.picLogo.Image = ((System.Drawing.Image)(resources.GetObject("picLogo.Image")));
-            this.picLogo.Location = new System.Drawing.Point(5, 853);
+            this.picLogo.Location = new System.Drawing.Point(5, 805);
             this.picLogo.Name = "picLogo";
             this.picLogo.Size = new System.Drawing.Size(100, 55);
             this.picLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -2131,8 +2130,8 @@ namespace VisionApplication
             // 
             this.splitContainer3.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer3.Panel2.Controls.Add(this.splitContainer4);
-            this.splitContainer3.Size = new System.Drawing.Size(874, 770);
-            this.splitContainer3.SplitterDistance = 592;
+            this.splitContainer3.Size = new System.Drawing.Size(874, 722);
+            this.splitContainer3.SplitterDistance = 543;
             this.splitContainer3.TabIndex = 0;
             // 
             // splitContainer2
@@ -2150,8 +2149,8 @@ namespace VisionApplication
             // 
             this.splitContainer2.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer2.Panel2.Controls.Add(this.tabControl1);
-            this.splitContainer2.Size = new System.Drawing.Size(874, 592);
-            this.splitContainer2.SplitterDistance = 514;
+            this.splitContainer2.Size = new System.Drawing.Size(874, 543);
+            this.splitContainer2.SplitterDistance = 513;
             this.splitContainer2.TabIndex = 0;
             // 
             // tabControl1
@@ -2164,7 +2163,7 @@ namespace VisionApplication
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(356, 592);
+            this.tabControl1.Size = new System.Drawing.Size(357, 543);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPageCam
@@ -2179,7 +2178,7 @@ namespace VisionApplication
             this.tabPageCam.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCam.Location = new System.Drawing.Point(4, 24);
             this.tabPageCam.Name = "tabPageCam";
-            this.tabPageCam.Size = new System.Drawing.Size(348, 564);
+            this.tabPageCam.Size = new System.Drawing.Size(349, 515);
             this.tabPageCam.TabIndex = 3;
             this.tabPageCam.Text = "相机设置";
             // 
@@ -2897,7 +2896,7 @@ namespace VisionApplication
             this.tabPageBase.Location = new System.Drawing.Point(4, 24);
             this.tabPageBase.Name = "tabPageBase";
             this.tabPageBase.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBase.Size = new System.Drawing.Size(348, 564);
+            this.tabPageBase.Size = new System.Drawing.Size(349, 515);
             this.tabPageBase.TabIndex = 0;
             this.tabPageBase.Text = "模板匹配";
             // 
@@ -3448,7 +3447,7 @@ namespace VisionApplication
             this.tabPageCalib.ForeColor = System.Drawing.Color.Blue;
             this.tabPageCalib.Location = new System.Drawing.Point(4, 24);
             this.tabPageCalib.Name = "tabPageCalib";
-            this.tabPageCalib.Size = new System.Drawing.Size(348, 564);
+            this.tabPageCalib.Size = new System.Drawing.Size(349, 515);
             this.tabPageCalib.TabIndex = 4;
             this.tabPageCalib.Text = "激光视觉标定";
             // 
@@ -4232,8 +4231,8 @@ namespace VisionApplication
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.splitContainer6);
-            this.splitContainer4.Size = new System.Drawing.Size(874, 174);
-            this.splitContainer4.SplitterDistance = 114;
+            this.splitContainer4.Size = new System.Drawing.Size(874, 175);
+            this.splitContainer4.SplitterDistance = 102;
             this.splitContainer4.TabIndex = 0;
             // 
             // lblOut2
@@ -4432,8 +4431,8 @@ namespace VisionApplication
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
-            this.splitContainer6.Size = new System.Drawing.Size(756, 174);
-            this.splitContainer6.SplitterDistance = 413;
+            this.splitContainer6.Size = new System.Drawing.Size(768, 175);
+            this.splitContainer6.SplitterDistance = 317;
             this.splitContainer6.TabIndex = 0;
             // 
             // dgvLog
@@ -4453,7 +4452,7 @@ namespace VisionApplication
             this.dgvLog.RowHeadersWidth = 62;
             this.dgvLog.RowTemplate.Height = 23;
             this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dgvLog.Size = new System.Drawing.Size(413, 174);
+            this.dgvLog.Size = new System.Drawing.Size(317, 175);
             this.dgvLog.TabIndex = 0;
             // 
             // ClmnTime
@@ -4523,7 +4522,7 @@ namespace VisionApplication
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.groupBox1.Location = new System.Drawing.Point(702, 1113);
+            this.groupBox1.Location = new System.Drawing.Point(702, 1234);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(246, 65);
             this.groupBox1.TabIndex = 44;
@@ -4711,7 +4710,7 @@ namespace VisionApplication
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.ClientSize = new System.Drawing.Size(986, 874);
+            this.ClientSize = new System.Drawing.Size(986, 826);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.groupBox1);

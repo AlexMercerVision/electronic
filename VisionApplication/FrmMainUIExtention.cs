@@ -654,7 +654,7 @@ namespace VisionApplication
                         nudExposure.Value = (decimal)cup.p_Cam[icamInd].iExposeTime;
                         nudGain.Value = (decimal)cup.p_Cam[icamInd].dGain;
                         nudGamma.Value = (decimal)cup.p_Cam[icamInd].dGamma;
-                        string strRes = cup.p_Cam[icamInd].iWidth.ToString() + "* " + cup.p_Cam[icamInd].iHeight.ToString();
+                        string strRes = cup.p_Cam[icamInd].iWidth.ToString() + "*" + cup.p_Cam[icamInd].iHeight.ToString();
                         cmbResulation.Text = strRes;
 
                         if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)

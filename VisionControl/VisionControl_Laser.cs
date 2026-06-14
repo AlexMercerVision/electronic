@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+
 using System.Windows.Forms;
 using Cognex.VisionPro;
 
@@ -93,7 +93,7 @@ namespace VisionControl
         {
             try
             {
-                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Tools["CogBlobTool1"] as CogBlobTool;
                 cbt.RunParams.SegmentationParams.Polarity = cbp.bPolarity ? CogBlobSegmentationPolarityConstants.LightBlobs : CogBlobSegmentationPolarityConstants.DarkBlobs;
                 cbt.RunParams.SegmentationParams.Mode = cbp.iSegType == 0 ? CogBlobSegmentationModeConstants.HardFixedThreshold : CogBlobSegmentationModeConstants.HardDynamicThreshold;
                 cbt.RunParams.SegmentationParams.HardFixedThreshold = cbp.iThre;
@@ -112,7 +112,7 @@ namespace VisionControl
         {
             try
             {
-                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Tools["CogBlobTool1"] as CogBlobTool;
                 cbp.bPolarity = cbt.RunParams.SegmentationParams.Polarity == CogBlobSegmentationPolarityConstants.LightBlobs ? true : false;
                 cbp.iSegType = cbt.RunParams.SegmentationParams.Mode == CogBlobSegmentationModeConstants.HardFixedThreshold ? 0 : 1;
                 cbp.iThre = cbt.RunParams.SegmentationParams.HardFixedThreshold;
@@ -220,11 +220,12 @@ namespace VisionControl
         {
             try
             {
-
-                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogToolBlock ctb= (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock;
+                CogBlobTool cbt = ctb.Tools["CogBlobTool1"] as CogBlobTool;
                 cbt.InputImage = calibIm;
-                ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
-                mJM.Job(jobIndex).Run();
+                //  ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
+
+                ctb.Run();
                 Thread.Sleep(500);
             }
             catch (Exception ex)
@@ -241,7 +242,7 @@ namespace VisionControl
             try
             {
 
-                CogBlobTool cbt = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool;
+                CogBlobTool cbt = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Tools["CogBlobTool1"] as CogBlobTool;
                 int pointNum = row * col;
                 int count = cbt.Results.GetBlobs().Count;
                 if (count != pointNum)
@@ -249,7 +250,7 @@ namespace VisionControl
                 else
                 {
                     // double[,] dCoord = new double[9, 2];
-                    listCoord = (mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Coord") as List<double>;
+                    listCoord = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Outputs["Coord"].Value as List<double>;
                     if (listCoord == null || listCoord.Count / 2 != pointNum)
                         return false;
                     if (dCoor == null || dCoor.Length != count * 2)
@@ -283,7 +284,7 @@ namespace VisionControl
             {
                 for (int j = i + 1; j < count; j++)
                 {
-                    if (dCoor[2 * j + 1] < dCoor[2 * i + 1])
+                    if (dCoor[2 * j + 1]> dCoor[2 * i + 1])
                     {
                         double tmpX = dCoor[2 * i];
                         double tmpY = dCoor[2 * i + 1];
@@ -322,37 +323,25 @@ namespace VisionControl
         }
         #endregion
 
-        // 获取合金电阻图像区域      
-        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
+        // 获取合金电阻图像区域
+        public void GetAlignRegion(ref AlignImParam alImParam)
         {
             try
             {
-                CogToolBlock ctb = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock;
-                //启用该工具
-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);
-                ctb.Run();
-                CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                CogAffineTransformTool cogTrans = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
                 alImParam.dCenX = cogTrans.Region.CenterX;
                 alImParam.dCenY = cogTrans.Region.CenterY;
                 alImParam.dWidth = cogTrans.Region.SideXLength;
                 alImParam.dHeight = cogTrans.Region.SideYLength;
-                CogIPOneImageTool cogIPOneImage = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogIPOneImageTool1"] as CogIPOneImageTool;
-                CogImage8Grey cogIm = cogIPOneImage.OutputImage as CogImage8Grey;
+
+                cogTrans.Run();
+                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
-                string dataDir = @".\data";
-                if (!Directory.Exists(dataDir))
-                    Directory.CreateDirectory(dataDir);
-                // 根据工位索引决定文件名
-                string fileName = (jobIndex == 0) ? "srcBGImgA.bmp" : "srcBGImgB.bmp";
-                string strImageFile = Path.Combine(dataDir, fileName);
-                // 保存为 BMP 格式（通过扩展名自动识别）
+                string strImageFile = @".\data\" + "sourceBGImg.jpg";
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
                 mImageFile.Append(cogIm);
                 mImageFile.Close();
-                //禁用该工具
-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);
-
             }
             catch (Exception ex)
             {
@@ -361,37 +350,24 @@ namespace VisionControl
 
         }
 
-
-        public void GetAlignRegionPro(ref AlignImParam alImParam, int jobIndex)
+        public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
         {
             try
             {
-                CogToolBlock ctb = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock;
-                //启用该工具
-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);                 
-                ctb.Run();
                 CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
                 alImParam.dCenX = cogTrans.Region.CenterX;
                 alImParam.dCenY = cogTrans.Region.CenterY;
                 alImParam.dWidth = cogTrans.Region.SideXLength;
                 alImParam.dHeight = cogTrans.Region.SideYLength;
-                CogIPOneImageTool cogIPOneImage = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogIPOneImageTool1"] as CogIPOneImageTool;
-                CogImage8Grey cogIm = cogIPOneImage.OutputImage as CogImage8Grey;
+
+                cogTrans.Run();
+                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
-                string dataDir = @".\data";
-                if (!Directory.Exists(dataDir))
-                    Directory.CreateDirectory(dataDir);
-                // 根据工位索引决定文件名
-                string fileName = (jobIndex == 0) ? "srcBGImgA.bmp" : "srcBGImgB.bmp";
-                string strImageFile = Path.Combine(dataDir, fileName);
-                // 保存为 BMP 格式（通过扩展名自动识别）
+                string strImageFile = @".\data\" + "sourceBGImg.jpg";
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
                 mImageFile.Append(cogIm);
                 mImageFile.Close();
-                //禁用该工具
-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"]);
-
             }
             catch (Exception ex)
             {

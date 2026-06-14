@@ -1,4 +1,4 @@
-﻿using Cognex.VisionPro.Blob;
+using Cognex.VisionPro.Blob;
 //using PipeChanel;
 using Cognex.VisionPro.PMAlign;
 using CommonCls;
@@ -482,56 +482,52 @@ namespace VisionApplication
         //工程拷贝后可能存在盘符不一致情况，修改路径盘符
         private void ReplaceDrive()
         {
-            try
+            string tmppath;
+            string curDriver = Environment.CurrentDirectory.Substring(0, 1);
+            if (!File.Exists(cup.p_Paf.strVPPFilePath))
             {
-                string tmppath;
-                string curDriver = Environment.CurrentDirectory.Substring(0, 1);
-                if (!File.Exists(cup.p_Paf.strVPPFilePath))
+                tmppath = curDriver + cup.p_Paf.strVPPFilePath.Substring(1);
+                if (File.Exists(tmppath))
                 {
-                    tmppath = curDriver + cup.p_Paf.strVPPFilePath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strVPPFilePath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strConSavePath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strConSavePath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strErrPath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strExportPath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strLogPath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strLogPath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strPlaybackPath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strPlaybackPath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strResSavePath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strResSavePath = tmppath;
-                    }
-                    tmppath = curDriver + cup.p_Paf.strSigSavePath.Substring(1);
-                    if (File.Exists(tmppath))
-                    {
-                        cup.p_Paf.strSigSavePath = tmppath;
-                    }
-                    SaveUserParam();
+                    cup.p_Paf.strVPPFilePath = tmppath;
                 }
+                tmppath = curDriver + cup.p_Paf.strConSavePath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strConSavePath = tmppath;
+                }
+                tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strErrPath = tmppath;
+                }
+                tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strExportPath = tmppath;
+                }
+                tmppath = curDriver + cup.p_Paf.strLogPath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strLogPath = tmppath;
+                }
+                tmppath = curDriver + cup.p_Paf.strPlaybackPath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strPlaybackPath = tmppath;
+                }
+                tmppath = curDriver + cup.p_Paf.strResSavePath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strResSavePath = tmppath;
+                }
+                tmppath = curDriver + cup.p_Paf.strSigSavePath.Substring(1);
+                if (File.Exists(tmppath))
+                {
+                    cup.p_Paf.strSigSavePath = tmppath;
+                }
+                SaveUserParam();
             }
-            catch { }
         }
         //初始化用户参数
         private void InitUserParam()
@@ -566,6 +562,7 @@ namespace VisionApplication
                     menuWS_Job3.Checked = true;
                     break;
             }
+            UpdateJobMenuText();
             rts.onLS.iFeedbackType = cup.p_VPPRTP.iFeedbackType;
             switch (rts.onLS.iFeedbackType)
             {
@@ -1725,7 +1722,7 @@ namespace VisionApplication
              ProcessInitCamStatus(iInitType); 
 
          }*/
-        //关闭设备
+        //断开相机
         private void StopDevice()
         {
             // 关闭海康相机
@@ -2096,7 +2093,7 @@ namespace VisionApplication
         {
             if (csd.SendResultToIO(sPortCy, iJobIndex==0, cup.p_IOPP))
             {
-                if (pmaRes[currentCardSN].bOk)
+                if (iJobIndex >= 0 && iJobIndex < pmaRes.Length && pmaRes[iJobIndex].bOk)
                     lblOut1.ForeColor = Color.Red;
                 else
                     lblOut2.ForeColor = Color.Red;
@@ -2425,7 +2422,7 @@ namespace VisionApplication
             string strEnableMAC = mPasswordFile.GetCID();
 
             int iModelRole = -1;
-            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "6C1FF7685FEB")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
+            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "00E269A99B04")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
             {
                 rts.initStatus.bModelRoleCert = true;
 
@@ -2534,6 +2531,8 @@ namespace VisionApplication
 
                 fw.SetProgress(95, "UI初始化");
                 InitParamUI();  //必要的参数初始化 
+                // 生产环境关闭模拟触发入口
+                // InitIOSimulateTriggerUI();
 
                 //  runonetime(); // 启动默认运行一次  2024年7月22日，处理运行初始化界面 
                  
@@ -2547,6 +2546,8 @@ namespace VisionApplication
             else
             {
                 rts.initStatus.bModelRoleCert = false;
+                // 生产环境关闭模拟触发入口
+                // InitIOSimulateTriggerUI();
 
             }
             fw.Close();
@@ -2554,6 +2555,40 @@ namespace VisionApplication
             bLoadFinish = true;
             timer1.Enabled = true;
 
+        }
+        // 模拟触发入口已关闭，保留空方法避免后续误接入
+        private void InitIOSimulateTriggerUI()
+        {
+            lblIn1.DoubleClick -= lblIn1_DoubleClick;
+            lblIn2.DoubleClick -= lblIn2_DoubleClick;
+            lblIn1.Cursor = Cursors.Default;
+            lblIn2.Cursor = Cursors.Default;
+            toolTip1.SetToolTip(lblIn1, string.Empty);
+            toolTip1.SetToolTip(lblIn2, string.Empty);
+        }
+
+        private void lblIn1_DoubleClick(object sender, EventArgs e)
+        {
+            SimulateIOTrigger(GetTriggerTypeForFace(0));
+        }
+
+        private void lblIn2_DoubleClick(object sender, EventArgs e)
+        {
+            SimulateIOTrigger(GetTriggerTypeForFace(1));
+        }
+
+        private int GetTriggerTypeForFace(int faceIndex)
+        {
+            return faceIndex == 0 ? 1 : 2;
+        }
+
+        private void SimulateIOTrigger(int trigType)
+        {
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = trigType == 1 ? "模拟In1触发" : "模拟In2触发";
+            operLog.strFailReason = trigType == 1 ? "按当前代码映射触发A面" : "按当前代码映射触发B面";
+            AddLog();
+            ExeIOTrig(trigType);
         }
 
      
@@ -2884,8 +2919,10 @@ namespace VisionApplication
                 rts.iTaskType = vpWin._iTaskType;
 
             }
-            catch
+            catch(Exception ex)
             {
+                vpWin._iTaskType = iTmpType;
+                ((Button)sender).FlatStyle = FlatStyle.Popup;
                 vpWin.bMainTaskFinished = true;
             }
         }
@@ -3314,7 +3351,7 @@ namespace VisionApplication
             if (!vpWin.bMainTaskFinished)
             {
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = "关闭设备";
+                operLog.strOperEvent = "断开相机";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
 
@@ -3323,7 +3360,7 @@ namespace VisionApplication
             }
             CloseCam();
             rts.initStatus.bCamInit = false;
-            operLog.strOperEvent = "关闭设备";
+            operLog.strOperEvent = "断开相机";
             operLog.iEventStatus = 0;
             AddLog();
         }
@@ -3357,6 +3394,7 @@ namespace VisionApplication
                 vpWin._cup = cup;
                 serialInd = cup.p_SD.serInd;
                 SaveUserParam();
+                UpdateJobMenuText();
 
                 //VPP文件改变，则重新加载VPP
                 if (frs.bVPPChange)
@@ -4360,7 +4398,20 @@ namespace VisionApplication
         {
             if (!bSingleFrameModel)
             {
-                if (cup.p_CD.bListProcess[1] || cup.p_CD.bListProcess[2] || cup.p_CD.bListProcess[3] || cup.p_CD.bListProcess[4])
+                bool hasOtherProcessEnabled = false;
+                if (cup.p_CD.bListProcess != null)
+                {
+                    for (int i = 1; i < cup.p_CD.bListProcess.Length; i++)
+                    {
+                        if (cup.p_CD.bListProcess[i])
+                        {
+                            hasOtherProcessEnabled = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hasOtherProcessEnabled)
                 {
                     MessageBox.Show("请确保只有底面开启识别");
                     return;
@@ -5219,6 +5270,24 @@ namespace VisionApplication
 
         private void menuParam_SerialDebug_Click(object sender, EventArgs e)
         {
+            if (rts.iModelRole < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "串口调试";
+                operLog.strFailReason = "用户身份未验证";
+                AddLog();
+                return;
+            }
+
+            if (!vpWin.bMainTaskFinished)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "串口调试";
+                operLog.strFailReason = "当前任务没有结束";
+                AddLog();
+                return;
+            }
+
             frm_Serial fs = new frm_Serial();
             fs.ShowDialog();
         }
@@ -5867,36 +5936,51 @@ namespace VisionApplication
             else if (Readlen%10==0 && inf[0] == 0x01 && inf[1] == 0x45
                 && inf[2] == 0x05 && inf[3] == 0x01)
             {
-                //2025年10月08日  根据设置的触发条件，判断IO输入
+                // 根据设置的触发条件，判断IO输入
                 Byte bOrder = 0;
                 int OrderType = 0;
-                if (inf[4] == 1)
+
+                if (cup.p_IOPP.APlane > 0)
                 {
-                    lblIn1.ForeColor = Color.Red;
-                    OrderType = 1;
+                    bOrder = (Byte)(1 << (cup.p_IOPP.APlane - 1));
+                    if ((inf[4] & bOrder) == bOrder)
+                    {
+                        SetFaceTriggerIndicator(0, true);
+                        OrderType = 1;
+                    }
                 }
-                if (inf[4] == 2)
+                
+                if (cup.p_IOPP.BPlane > 0)
                 {
-                    lblIn2.ForeColor = Color.Red;
-                    OrderType = 2;
+                    bOrder = (Byte)(1 << (cup.p_IOPP.BPlane - 1));
+                    if ((inf[4] & bOrder) == bOrder)
+                    {
+                        SetFaceTriggerIndicator(1, true);
+                        OrderType = 2;
+                    }
                 }
 
-                /*bOrder = (Byte)(1 << (cup.p_IOPP.APlane - 1));
-                if ((inf[4] & bOrder) == bOrder)
-                    OrderType = 1;
-                bOrder = (Byte)(1 << (cup.p_IOPP.BPlane - 1));
-                if ((inf[4] & bOrder) == bOrder)
-                    OrderType = 2;
-                bOrder = (Byte)(1 << (cup.p_IOPP.EndAPlane - 1));
-                if ((inf[4] & bOrder) == bOrder)
-                    OrderType = 3;
-                bOrder = (Byte)(1 << (cup.p_IOPP.EndBPlane - 1));
-                if ((inf[4] & bOrder) == bOrder)
-                    OrderType = 4;*/
-                Thread.Sleep(5);
-                ExeIOTrig(OrderType);  //执行触发任务
-                if (!timerIOIn.Enabled)
-                    timerIOIn.Start();
+                if (cup.p_IOPP.EndAPlane > 0)
+                {
+                    bOrder = (Byte)(1 << (cup.p_IOPP.EndAPlane - 1));
+                    if ((inf[4] & bOrder) == bOrder)
+                        OrderType = 3;
+                }
+                
+                if (cup.p_IOPP.EndBPlane > 0)
+                {
+                    bOrder = (Byte)(1 << (cup.p_IOPP.EndBPlane - 1));
+                    if ((inf[4] & bOrder) == bOrder)
+                        OrderType = 4;
+                }
+
+                if (OrderType != 0)
+                {
+                    Thread.Sleep(5);
+                    ExeIOTrig(OrderType);  //执行触发任务
+                    if (!timerIOIn.Enabled)
+                        timerIOIn.Start();
+                }
             }
             else
             {
@@ -5923,7 +6007,7 @@ namespace VisionApplication
                 case 1:  //A 面触发
                          // if (cup.p_IOPP.EndBPlane == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
                     {
-                        if (bRunCondiction(1)) //运行条件判断
+                        if (bRunCondiction(10, 0)) //运行条件判断
                         {
                             // 避免重复触发，可增加防抖或状态判断
                             if (lblIn1.ForeColor != Color.Red)
@@ -5940,7 +6024,7 @@ namespace VisionApplication
 
                 case 2:  //B面触发
                     {
-                        if (bRunCondiction(1)) //运行条件判断
+                        if (bRunCondiction(10, 1)) //运行条件判断
                         {
                             // 避免重复触发，可增加防抖或状态判断
                             if (lblIn2.ForeColor != Color.Red)
@@ -5982,15 +6066,9 @@ namespace VisionApplication
                 case 1:  //A 面触发
                    // if (cup.p_IOPP.EndBPlane == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
                     {
-                        if (bRunCondiction(1)) //运行条件判断
+                        if (TryReserveAutoTriggerRun(0, "A面触发运行"))
                         {
-                            // 避免重复触发，可增加防抖或状态判断
-                            if (lblIn1.ForeColor != Color.Red)
-                            {
-                                lblIn1.Invoke(new Action(() => lblIn1.ForeColor = Color.Red));
-                                // 启动 A 面（工位 0）一次运行
-                                Task.Run(() => RunOneTimeForFace(1));
-                            }
+                            Task.Run(() => RunOneTimeForFace(0));
                         }
                            
                     }
@@ -5999,15 +6077,9 @@ namespace VisionApplication
 
                 case 2:  //B面触发
                     {
-                        if (bRunCondiction(1)) //运行条件判断
+                        if (TryReserveAutoTriggerRun(1, "B面触发运行"))
                         {
-                            // 避免重复触发，可增加防抖或状态判断
-                            if (lblIn2.ForeColor != Color.Red)
-                            {
-                                lblIn2.Invoke(new Action(() => lblIn2.ForeColor = Color.Red));
-                                // 启动 A 面（工位 0）一次运行
-                                Task.Run(() => RunOneTimeForFace(0));
-                            }
+                            Task.Run(() => RunOneTimeForFace(1));
                         }
 
                     }
@@ -6328,7 +6400,75 @@ namespace VisionApplication
         }
 
 
-        private bool bRunCondiction(int iType) 
+        private bool CheckLaserRunInterlock(string operEvent, int jobIndex)
+        {
+            if (!rts.onLS.bLock)
+                return true;
+
+            if (rts.initStatus.bJCZ != 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operEvent;
+                operLog.strFailReason = "板卡未初始化";
+                AddLog();
+                return false;
+            }
+
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                return true;
+
+            int cardSN = GetCardSNByJob(jobIndex);
+            if (cardSN >= 0 && cardSN < MaxLaserCards && iLaserWorkingTypes[cardSN] != 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operEvent;
+                operLog.strFailReason = "当前工位对应激光任务未结束";
+                AddLog();
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CheckLaserRunInterlockForEnabledJobs(string operEvent)
+        {
+            if (!rts.onLS.bLock)
+                return true;
+
+            if (rts.initStatus.bJCZ != 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operEvent;
+                operLog.strFailReason = "板卡未初始化";
+                AddLog();
+                return false;
+            }
+
+            bool[] checkedCards = new bool[MaxLaserCards];
+            for (int jobIndex = 0; jobIndex < maxCameraNum; jobIndex++)
+            {
+                if (!cup.p_CD.bListProcess[jobIndex])
+                    continue;
+
+                int cardSN = GetCardSNByJob(jobIndex);
+                if (cardSN < 0 || cardSN >= MaxLaserCards || checkedCards[cardSN])
+                    continue;
+
+                checkedCards[cardSN] = true;
+                if (iLaserWorkingTypes[cardSN] != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = operEvent;
+                    operLog.strFailReason = $"板卡{cardSN + 1}激光任务未结束";
+                    AddLog();
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool bRunCondiction(int iType, int jobIndex = -1) 
         {
             //需要的工作相机没有就绪
             if (cup.p_VPPRTP.bAcqFromCam &&  (!rts.initStatus.bCamInit || !rts.initStatus.bCamPrepared))
@@ -6377,23 +6517,9 @@ namespace VisionApplication
                     AddLog();
                     return false;
                 }
-                /*if (rts.initStatus.bJCZ != 0 && rts.onLS.bLock)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "运行一次";
-                    operLog.strFailReason = "板卡未初始化";
-                    AddLog();
+                int targetJobIndex = (jobIndex >= 0) ? jobIndex : iJobIndex;
+                if (!CheckLaserRunInterlock("运行一次", targetJobIndex))
                     return false;
-                }
-                //要进行激光标刻，但激光器还在工作
-                if (iLaserWorkingType != 0 && rts.onLS.bLock)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "运行一次";
-                    operLog.strFailReason = "其它标刻任务未结束";
-                    AddLog();
-                    return false;
-                }*/
             }
             else if (iType == 10)   //触发运行一次
             {               
@@ -6405,27 +6531,15 @@ namespace VisionApplication
                     AddLog();
                     return false;
                 }
-                //要进行激光标刻，但激光器还在工作
-             /*   if (iLaserWorkingType != 0 && rts.onLS.bLock)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "激光标刻";
-                    operLog.strFailReason = "其它任务未结束";
-                    AddLog();
+                int targetJobIndex = (jobIndex >= 0) ? jobIndex : iJobIndex;
+                if (!CheckLaserRunInterlock("触发运行", targetJobIndex))
                     return false;
-                }*/
 
             }
             else if(iType==3)  //连续运行
             {
-             /*   if (rts.initStatus.bJCZ != 0 && rts.onLS.bLock)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "运行一次";
-                    operLog.strFailReason = "板卡未初始化";
-                    AddLog();
+                if (!CheckLaserRunInterlockForEnabledJobs("连续运行"))
                     return false;
-                }*/
 
                 if (vpWin._iTaskType != 3)
                 {
@@ -6437,15 +6551,6 @@ namespace VisionApplication
                         AddLog();
                         return false;
                     }
-                    //要进行激光标刻，但激光器还在工作
-                /*    if (iLaserWorkingType != 0 && rts.onLS.bLock)
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = "运行一次";
-                        operLog.strFailReason = "其它标刻任务未结束";
-                        AddLog();
-                        return false;
-                    }*/
                 } 
             }
              
@@ -6737,10 +6842,12 @@ namespace VisionApplication
             timerIOOut.Stop();
         }
 
+   
+
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
-            lblIn1.ForeColor = Color.Black;
-            lblIn2.ForeColor = Color.Black;
+            SetFaceTriggerIndicator(0, false);
+            SetFaceTriggerIndicator(1, false);
             timerIOIn.Stop();
         }
 
@@ -6782,34 +6889,69 @@ namespace VisionApplication
         //->LaserMarkAfterVisionDet()->UpdateUIExe()
         public void RunOneTimeThread()
         {
+            int selectedJobIndex = iJobIndex;
+            if (selectedJobIndex >= 0 && selectedJobIndex < maxCameraNum)
+            {
+                try
+                {
+                    rts.iIsRunning = 1;
+                    RunOneTimeForFace(selectedJobIndex).GetAwaiter().GetResult();
+                    rts.iIsRunning = 0;
+                }
+                catch (Exception ex)
+                {
+                    rts.iIsRunning = -1;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{selectedJobIndex + 1}运行一次";
+                    operLog.strFailReason = ex.Message;
+                    AddLog();
+                }
+                finally
+                {
+                    vpWin.bMainTaskFinished = true;
+                    btFunRunOneTime.FlatStyle = FlatStyle.Popup;
+                }
+
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() => UpdateUIExeForJob(selectedJobIndex)));
+                }
+                else
+                {
+                    UpdateUIExeForJob(selectedJobIndex);
+                }
+                return;
+            }
+
             try
             {
+                int legacyJobIndex = iJobIndex;
                 rts.iIsRunning = 1;
-                vpWin._bRunOneTimeFinished[iJobIndex] = 0;
-                if (vpWin.RunOneTimeSplite(iJobIndex))
+                vpWin._bRunOneTimeFinished[legacyJobIndex] = 0;
+                if (vpWin.RunOneTimeSplite(legacyJobIndex))
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 10;
 
                     // 等待视觉检测完成
-                    while (vpWin._bRunOneTimeFinished[iJobIndex] != 2 && count < maxTimes)
+                    while (vpWin._bRunOneTimeFinished[legacyJobIndex] != 2 && count < maxTimes)
                     {
                         Thread.Sleep(10);
                         count++;
                     }
 
-                    vpWin._bRunOneTimeFinished[iJobIndex] = 2;  // 强制结束
-                    pmaRes = vpWin._PMARes;
+                    vpWin._bRunOneTimeFinished[legacyJobIndex] = 2;  // 强制结束
+                    pmaRes[legacyJobIndex] = vpWin._PMARes[legacyJobIndex];
 
                     // 视觉检测完成后，判断是否需要激光标刻
-                    if (rts.initStatus.bJCZ == 0 /*&& rts.onLS.bLock*/)
+                    if (rts.onLS.bLock && rts.initStatus.bJCZ == 0)
                     {
                         // 异步执行激光标刻，不阻塞UI
                         Task.Run(async () =>
                         {
                             try
                             {
-                                await LaserMarkAfterVisionDetAsync(iJobIndex);
+                                await LaserMarkAfterVisionDetAsync(legacyJobIndex);
                             }
                             catch (Exception ex)
                             {
@@ -6826,7 +6968,7 @@ namespace VisionApplication
                     rts.iIsRunning = -1;
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "执行一次运行";
-                    operLog.strFailReason = vpWin.strErrInfo[iJobIndex];
+                    operLog.strFailReason = vpWin.strErrInfo[legacyJobIndex];
                     AddLog();
                     iErrExecuteTimes++;
                 }
@@ -6843,16 +6985,30 @@ namespace VisionApplication
             btFunRunOneTime.FlatStyle = FlatStyle.Popup;
 
             // 更新UI
-            updateUItmp = new delegateUIUpdate(UpdateUIExe);
             if (this.InvokeRequired)
             {
-                this.Invoke(updateUItmp, null);
+                int jobIndex = (iJobIndex >= 0 && iJobIndex < maxCameraNum) ? iJobIndex : 0;
+                this.Invoke(new Action(() => UpdateUIExeForJob(jobIndex)));
+            }
+            else
+            {
+                int jobIndex = (iJobIndex >= 0 && iJobIndex < maxCameraNum) ? iJobIndex : 0;
+                UpdateUIExeForJob(jobIndex);
             }
         }
 
         private void UpdateUIExe()
         {
-            UpdateStatisticsForJob(0);  //更新统计数据
+            int jobIndex = (iJobIndex >= 0 && iJobIndex < maxCameraNum) ? iJobIndex : 0;
+            UpdateUIExeForJob(jobIndex);
+        }
+
+        private void UpdateUIExeForJob(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                return;
+
+            UpdateStatisticsForJob(jobIndex);  //更新统计数据
             if (cup.p_RTSP.bUpdateRecord)
             {                
                // AnaEventForJob(iJobIndex);
@@ -6862,22 +7018,25 @@ namespace VisionApplication
             {
                 //只输出OK或者只输出NG
                 if(/*(pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||*/  
-                    (!pmaRes[currentCardSN].bOk && cup.p_IOPP.NGOut!= 0) )
-                ExeIOOut();
+                    (!pmaRes[jobIndex].bOk && cup.p_IOPP.NGOut!= 0) )
+                    ExeIOOut(jobIndex);
             }
         }
   
         public void RunContinuousThread()
         {
-            updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
+            int selectedJobIndex = iJobIndex;
+            if (selectedJobIndex < 0 || selectedJobIndex >= maxCameraNum)
+                return;
+
             while (vpWin._bContRun)
             {
-                if (vpWin.RunOneTime(iJobIndex))
+                if (vpWin.RunOneTime(selectedJobIndex))
                 {
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5;
                     //2025年10月8日 此处条件不完全正确，待修改
-                    while (/*vpWin.mCurrentRunState != 0*/vpWin._bRunOneTimeFinished[iJobIndex] != 2 && count < maxTimes)
+                    while (/*vpWin.mCurrentRunState != 0*/vpWin._bRunOneTimeFinished[selectedJobIndex] != 2 && count < maxTimes)
                     {
                         Thread.Sleep(5);
                         count++;
@@ -6886,16 +7045,20 @@ namespace VisionApplication
                     {
 
                     }*/
-                    vpWin._bRunOneTimeFinished[iJobIndex] = 2;  //强制结束
-                    pmaRes[currentCardSN] = vpWin._PMARes[currentCardSN];
-                    if(!pmaRes[currentCardSN].bOk)
+                    vpWin._bRunOneTimeFinished[selectedJobIndex] = 2;  //强制结束
+                    pmaRes[selectedJobIndex] = vpWin._PMARes[selectedJobIndex];
+                    if(!pmaRes[selectedJobIndex].bOk)
                     {
                       //  vpWin._bContRun = false;
                     }
                     if (this.InvokeRequired)
                     {
-                        this.Invoke(updateUItmp, null);
+                        this.Invoke(new Action(() => UpdateUIExeForJob(selectedJobIndex)));
                         //    Invoke(new EventHandler(ClearHistoryQueues), new object[] { sender, e });
+                    }
+                    else
+                    {
+                        UpdateUIExeForJob(selectedJobIndex);
                     }
                     /*if(!cup.p_VPPRTP.bAcqFromCam && !cup.p_VPPRTP.bAcqFromIDB)
                      {

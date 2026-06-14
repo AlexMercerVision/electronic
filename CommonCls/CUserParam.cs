@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
@@ -86,6 +86,10 @@ namespace CommonCls
         public string AutoMarkPath;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 60)]
         public string ManuMarkPath;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 60)]
+        public string LaserTemplateFileA;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 60)]
+        public string LaserTemplateFileB;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 60)]
         public string strExportPath;
     }
@@ -199,6 +203,8 @@ namespace CommonCls
         public int[] serInd;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
         public bool[] bUsed;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+        public int[] stationCardMap;
         public int BaudRate;
         public int DataBits;
         public int parity;
@@ -324,7 +330,11 @@ namespace CommonCls
     [Serializable]
     public class CUserParam
     {
-        const int maxCameraNum = 2;
+        const int maxCameraNum = 5;
+        public const uint DefaultCameraWidth = 5472;
+        public const uint DefaultCameraHeight = 3648;
+        public const uint LegacyCameraWidth = 3072;
+        public const uint LegacyCameraHeight = 2048;
         public CameraParam[] p_Cam = new CameraParam[maxCameraNum];
         public PathAndFile p_Paf = new PathAndFile();
         public FXParam p_FX = new FXParam();
@@ -387,15 +397,15 @@ namespace CommonCls
             for (int i = 0; i < maxCameraNum; i++)
             {
                 p_Cam[i].iMonoType = 0;
-                p_Cam[i].iWidth = 3072;
-                p_Cam[i].iHeight = 2048;
+                p_Cam[i].iWidth = DefaultCameraWidth;
+                p_Cam[i].iHeight = DefaultCameraHeight;
                 p_Cam[i].dGain = 0;
                 p_Cam[i].iExposeTime = 25000;
                 p_Cam[i].iROI = new uint[4];
                 p_Cam[i].iROI[0] = 0;
                 p_Cam[i].iROI[1] = 0;
-                p_Cam[i].iROI[2] = 3072;
-                p_Cam[i].iROI[3] = 2048;
+                p_Cam[i].iROI[2] = DefaultCameraWidth;
+                p_Cam[i].iROI[3] = DefaultCameraHeight;
             }
         }
 
@@ -542,11 +552,14 @@ namespace CommonCls
         {
             p_SD.serInd = new int[4];
             p_SD.bUsed = new bool[4];
+            p_SD.stationCardMap = new int[2];
             for (int i = 0; i < 4; i++)
             {
                 p_SD.serInd[i] = i;
                 p_SD.bUsed[i] = true;
             }
+            p_SD.stationCardMap[0] = 0;
+            p_SD.stationCardMap[1] = 1;
             p_SD.BaudRate = 19200;
             p_SD.DataBits = 8;
             p_SD.parity = (int)Parity.None;
@@ -997,6 +1010,7 @@ namespace CommonCls
         private static void CheckParamCompatibility(CUserParam cup)
         {
             CUserParam cupTmp = new CUserParam();
+            UpgradeLegacyCameraResolution(cup);
 
             // 相机数组长度兼容
             if (cupTmp.p_Cam.Length > cup.p_Cam.Length)
@@ -1037,10 +1051,20 @@ namespace CommonCls
                 cup.p_CD.camInd = cupTmp.p_CD.camInd;
             }
 
-            // SubRecordsName 字段数组长度兼容
-            if (cupTmp.p_SRN.strDefaultGUIName.Length > cup.p_SRN.strDefaultGUIName.Length)
+            // CameraDistr.bListProcess 长度兼容
+            if (cup.p_CD.bListProcess == null || cupTmp.p_CD.bListProcess.Length > cup.p_CD.bListProcess.Length)
             {
-                for (int i = 0; i < cup.p_SRN.strDefaultGUIName.Length; i++)
+                int copyLength = cup.p_CD.bListProcess == null ? 0 : cup.p_CD.bListProcess.Length;
+                for (int i = 0; i < copyLength; i++)
+                    cupTmp.p_CD.bListProcess[i] = cup.p_CD.bListProcess[i];
+                cup.p_CD.bListProcess = cupTmp.p_CD.bListProcess;
+            }
+
+            // SubRecordsName 字段数组长度兼容
+            if (cup.p_SRN.strDefaultGUIName == null || cupTmp.p_SRN.strDefaultGUIName.Length > cup.p_SRN.strDefaultGUIName.Length)
+            {
+                int copyLength = cup.p_SRN.strDefaultGUIName == null ? 0 : cup.p_SRN.strDefaultGUIName.Length;
+                for (int i = 0; i < copyLength; i++)
                 {
                     cupTmp.p_SRN.strDefaultGUIName[i] = cup.p_SRN.strDefaultGUIName[i];
                     cupTmp.p_SRN.strGreyGUIName[i] = cup.p_SRN.strGreyGUIName[i];
@@ -1069,6 +1093,18 @@ namespace CommonCls
             // 串口参数兼容
             if (cup.p_SD.serInd == null || cup.p_SD.BaudRate == 0)
                 cup.p_SD = cupTmp.p_SD;
+            if (cup.p_SD.stationCardMap == null || cup.p_SD.stationCardMap.Length < 2)
+                cup.p_SD.stationCardMap = cupTmp.p_SD.stationCardMap;
+            for (int i = 0; i < cup.p_SD.stationCardMap.Length && i < 2; i++)
+            {
+                if (cup.p_SD.stationCardMap[i] < 0 || cup.p_SD.stationCardMap[i] > 1)
+                    cup.p_SD.stationCardMap[i] = i;
+            }
+            if (cup.p_SD.stationCardMap.Length >= 2 && cup.p_SD.stationCardMap[0] == cup.p_SD.stationCardMap[1])
+            {
+                cup.p_SD.stationCardMap[0] = 0;
+                cup.p_SD.stationCardMap[1] = 1;
+            }
 
             // 深度学习参数兼容
             if (cup.p_DL.modelPath == null || cup.p_DL.modelPath == "")
@@ -1136,6 +1172,10 @@ namespace CommonCls
             // 标注路径兼容
             if (string.IsNullOrEmpty(cup.p_Paf.ManuMarkPath))
                 cup.p_Paf.ManuMarkPath = @"..\..\EZDModel";
+            if (string.IsNullOrEmpty(cup.p_Paf.LaserTemplateFileA))
+                cup.p_Paf.LaserTemplateFileA = "route1.ezd";
+            if (string.IsNullOrEmpty(cup.p_Paf.LaserTemplateFileB))
+                cup.p_Paf.LaserTemplateFileB = "route2.ezd";
 
             // 运行时超时兼容
             if (cup.p_RTSP.runTimeOut == 0)
@@ -1151,6 +1191,40 @@ namespace CommonCls
         #endregion
 
         #region 其他文件操作方法（保存实时状态、操作日志等）
+        private static void UpgradeLegacyCameraResolution(CUserParam cup)
+        {
+            if (cup.p_Cam == null)
+                return;
+
+            for (int i = 0; i < cup.p_Cam.Length; i++)
+            {
+                if (cup.p_Cam[i].iROI == null || cup.p_Cam[i].iROI.Length < 4)
+                    cup.p_Cam[i].iROI = new uint[4];
+
+                bool isLegacyResolution =
+                    cup.p_Cam[i].iWidth == CUserParam.LegacyCameraWidth &&
+                    cup.p_Cam[i].iHeight == CUserParam.LegacyCameraHeight;
+
+                bool isLegacyFullRoi =
+                    cup.p_Cam[i].iROI[0] == 0 &&
+                    cup.p_Cam[i].iROI[1] == 0 &&
+                    cup.p_Cam[i].iROI[2] == CUserParam.LegacyCameraWidth &&
+                    cup.p_Cam[i].iROI[3] == CUserParam.LegacyCameraHeight;
+
+                if (isLegacyResolution)
+                {
+                    cup.p_Cam[i].iWidth = CUserParam.DefaultCameraWidth;
+                    cup.p_Cam[i].iHeight = CUserParam.DefaultCameraHeight;
+                }
+
+                if (isLegacyFullRoi)
+                {
+                    cup.p_Cam[i].iROI[2] = CUserParam.DefaultCameraWidth;
+                    cup.p_Cam[i].iROI[3] = CUserParam.DefaultCameraHeight;
+                }
+            }
+        }
+
         public bool SaveRunTimeStatus(string path, RunTimeStatus rts)
         {
             try

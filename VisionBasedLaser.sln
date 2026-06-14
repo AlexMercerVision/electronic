@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.35931.194
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11723.231 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisionApplication", "VisionApplication\VisionApplication.csproj", "{0135AB58-3551-425B-BF24-CF40606AEA54}"
 EndProject
@@ -20,8 +20,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BJJCZ", "BJJCZ_BaseDevelop\BJJCZ.csproj", "{13F93706-B292-4BD8-A658-90F85B5548E9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipeChanel", "PipeChanel\PipeChanel.csproj", "{C2B0FFBE-1B1A-41ED-AC14-41977B60F959}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xbDet", "VisionApplication\xbDet.csproj", "{0E007FA3-A265-4091-A1D8-4A05E02CE10D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -210,26 +208,6 @@ Global
 		{C2B0FFBE-1B1A-41ED-AC14-41977B60F959}.Release|x64.Build.0 = Release|Any CPU
 		{C2B0FFBE-1B1A-41ED-AC14-41977B60F959}.Release|x86.ActiveCfg = Release|Any CPU
 		{C2B0FFBE-1B1A-41ED-AC14-41977B60F959}.Release|x86.Build.0 = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM.ActiveCfg = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM.Build.0 = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM64.ActiveCfg = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|ARM64.Build.0 = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x64.ActiveCfg = Debug|x64
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x64.Build.0 = Debug|x64
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Debug|x86.Build.0 = Debug|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM.ActiveCfg = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM.Build.0 = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM64.ActiveCfg = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|ARM64.Build.0 = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x64.ActiveCfg = Release|x64
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x64.Build.0 = Release|x64
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x86.ActiveCfg = Release|Any CPU
-		{0E007FA3-A265-4091-A1D8-4A05E02CE10D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

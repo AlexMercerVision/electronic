@@ -78,7 +78,7 @@ namespace CommonCls
         public bool[] bIsColorCam = new bool[maxCameraNum];
 
         #endregion
-
+       
 
         #region
         // 新增公共方法：根据相机参数分配缓冲区
@@ -226,6 +226,11 @@ namespace CommonCls
         /// <summary>默认构造函数</summary>
         public ImgAcqFIFO()
         {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                ci24ColorAcq[i] = new CogImage24PlanarColor();
+                imageFileTool[i] = new CogImageFileTool();
+            }
         }
         #endregion
 
@@ -437,7 +442,7 @@ namespace CommonCls
         public CogImage8Grey GrabOneFrameCog(int iCamIndex)
         {
             CameraStatus currentStatus = GetCurrentCameraStatus();
-            if (_cameraStatus.iStatus[iCamIndex] < 2)
+            if (currentStatus.iStatus[iCamIndex] < 2)
                 return null;
 
             if (_cameraType == 0)
@@ -445,44 +450,27 @@ namespace CommonCls
                 nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
                 if (nRet == MyCamera.MV_OK)
                 {
-                     //保留byte[]型数据
-                    IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);                  
+                    IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
                     cogImage8Root.Initialize((Int32)stFrameInfo.nWidth, (Int32)stFrameInfo.nHeight, m_BufForDriverS[iCamIndex], (Int32)stFrameInfo.nWidth, null);
                     cogImage8Grey.SetRoot(cogImage8Root);
-                    
                 }
-                else
-                {
-                    return null;
-                }
+                else return null;
             }
             else
             {
                 nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
                 if (nRet == MyCamera.MV_OK)
                 {
-                    // 从 frameInfoForOther 中获取图像宽高和像素数据指针
-                   
-                    IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
-                    //保留byte[]型数据
                     int width = (int)stFrameInfoWithData.stFrameInfo.nWidth;
                     int height = (int)stFrameInfoWithData.stFrameInfo.nHeight;
-                    /* 
-                     IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
- */
-                    // 初始化 CogImage8Root
+                    IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
+                    // 注意：此处未调用 IntPtrToByteArray，如需保留 bImgSrcData 可加上
                     cogImage8Root.Initialize(width, height, imagePtr, width, null);
                     cogImage8Grey.SetRoot(cogImage8Root);
-                    // 应用旋转/镜像（如果需要）
-                                      
                 }
-                else
-                {
-                    return null;
-                } 
+                else return null;
             }
             ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey);
-           // ci8gAcq[iCamInd] = cogImage8Grey.Copy();
             return ci8gAcq[iCamIndex];
         }
         /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用     
@@ -704,7 +692,7 @@ namespace CommonCls
                         ind = iFileInd * cmAcqNum;
                     if (bListProcess[wsInd])
                     {
-                        ci = ReadCogImage(strFiles[wsInd][ind]);  //文件按照工位编号读取
+                        ci = ReadCogImage(strFiles[wsInd][ind],wsInd);  //文件按照工位编号读取
                         iCamIndex = cup.p_CD.camInd[wsInd];
                         if (ci is CogImage24PlanarColor)
                         {
@@ -749,7 +737,7 @@ namespace CommonCls
             {
                 if (bListProcess)
                 {
-                    ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd]);  //文件按照工位编号读取
+                    ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd],wsInd);  //文件按照工位编号读取
 
                     if (ci is CogImage24PlanarColor)
                     {
@@ -804,7 +792,7 @@ namespace CommonCls
             {
                 if (bListProcess)
                 {
-                    ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd]);  //文件按照工位编号读取
+                    ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd],wsInd);  //文件按照工位编号读取
 
                     if (ci is CogImage24PlanarColor)
                     {
@@ -817,7 +805,7 @@ namespace CommonCls
                         if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height * 3)
                             bImgSrcData[iCamIndex] = new byte[width * height * 3];
 
-                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);
+                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap());
 
                         return 1;
                     }
@@ -832,7 +820,7 @@ namespace CommonCls
                         if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
                             bImgSrcData[wsInd] = new byte[width * height * 3];
 
-                          bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
+                          bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap()); 
 
                         return 0;
                     }
@@ -861,7 +849,7 @@ namespace CommonCls
             {
                 if (bListProcess[wsInd])
                 {
-                   ICogImage ci= ReadCogImage(strFiles[wsInd][iFileInd]);  //文件存储是根据工位编号存储
+                   ICogImage ci= ReadCogImage(strFiles[wsInd][iFileInd], wsInd);  //文件存储是根据工位编号存储
                     if (ci is CogImage24PlanarColor)
                     {
                         ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)ci;
@@ -890,7 +878,49 @@ namespace CommonCls
             }
             
         }
+        private byte[] BitmapToBytes(Bitmap bitmap)
+        {
+            if (bitmap == null)
+                throw new ArgumentNullException(nameof(bitmap));
 
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+            int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+            byte[] pixels = new byte[width * height * bytesPerPixel];
+
+            BitmapData bmpData = bitmap.LockBits(
+                new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadOnly,
+                bitmap.PixelFormat
+            );
+
+            try
+            {
+                IntPtr ptr = bmpData.Scan0;
+                int stride = bmpData.Stride;
+
+                // 如果每行无填充，一次性复制全部
+                if (stride == width * bytesPerPixel)
+                {
+                    Marshal.Copy(ptr, pixels, 0, pixels.Length);
+                }
+                else
+                {
+                    // 有填充时逐行复制，跳过填充字节
+                    for (int y = 0; y < height; y++)
+                    {
+                        IntPtr rowPtr = IntPtr.Add(ptr, y * stride);
+                        Marshal.Copy(rowPtr, pixels, y * width * bytesPerPixel, width * bytesPerPixel);
+                    }
+                }
+            }
+            finally
+            {
+                bitmap.UnlockBits(bmpData);
+            }
+
+            return pixels;
+        }
         private  byte[] BitmapToBytes(Bitmap bitmap, ImageFormat format)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -928,7 +958,7 @@ namespace CommonCls
             try
             {
 
-                ICogImage ci = ReadCogImage(cup.p_Paf.strExportPath);  //文件存储是根据工位编号存储 
+                ICogImage ci = ReadCogImage(cup.p_Paf.strExportPath,wsInd);  //文件存储是根据工位编号存储 
                 {
                     ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
                     cup.p_Cam[iCamIndex].iMonoType = 0;
@@ -1740,20 +1770,20 @@ namespace CommonCls
             }
         }
         // 创建图像文件工具
-        CogImageFileTool imageFileTool = new CogImageFileTool();
-        private ICogImage ReadCogImage(string strImageFile)
-        { 
+        CogImageFileTool[] imageFileTool = new CogImageFileTool[maxCameraNum];
+        private ICogImage ReadCogImage(string strImageFile, int wsInd)
+        {
             // 以只读模式打开文件
-            imageFileTool.Operator.Open(strImageFile, CogImageFileModeConstants.Read);
+            imageFileTool[wsInd].Operator.Open(strImageFile, CogImageFileModeConstants.Read);
 
             // 执行工具，读取图像
-            imageFileTool.Run();
+            imageFileTool[wsInd].Run();
 
             // 获取输出图像（单帧）
-            ICogImage image = imageFileTool.OutputImage;
+            ICogImage image = imageFileTool[wsInd].OutputImage;
 
             // 关闭文件，释放资源
-            imageFileTool.Operator.Close();
+            imageFileTool[wsInd].Operator.Close();
             return image;
         }
         /// <summary>保存单张图像Halcon函数保存（用于连续采集）</summary>

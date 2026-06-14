@@ -5,6 +5,18 @@ using System.Windows.Forms;
 
 namespace BJJCZ_BaseDevelop
 {
+    public struct PreviewWorldEntity
+    {
+        public RectangleF Bounds;
+        public bool IsFilled;
+
+        public PreviewWorldEntity(RectangleF bounds, bool isFilled)
+        {
+            Bounds = bounds;
+            IsFilled = isFilled;
+        }
+    }
+
     /// <summary>
     /// 世界坐标系到控件像素坐标的变换
     /// </summary>
@@ -61,6 +73,8 @@ namespace BJJCZ_BaseDevelop
      
         private Image _overlayImage;        // 叠加图像（激光路径图，建议透明背景）
         private RectangleF? _overlayImageBounds;   // 叠加图独立的世界坐标范围（null则使用背景图范围）
+        private RectangleF? _canvasBounds;          // EZCAD画布在世界坐标系中的范围
+        private PreviewWorldEntity[] _previewWorldEntities; // 直接由EZD对象坐标得到的预览对象
 
         private RectangleF _worldViewBounds;       // 画图框的世界视口范围
 
@@ -148,6 +162,18 @@ namespace BJJCZ_BaseDevelop
         public void SetOverlayImage(Image img)
         {
             SetOverlayImage(img, _worldImageBounds);
+        }
+
+        public void SetCanvasBounds(RectangleF? worldBounds)
+        {
+            _canvasBounds = worldBounds;
+            Invalidate();
+        }
+
+        public void SetPreviewWorldEntities(PreviewWorldEntity[] worldEntities)
+        {
+            _previewWorldEntities = worldEntities;
+            Invalidate();
         }
         /// <summary>
         /// 清除背景图像
@@ -255,7 +281,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 绘制图像（根据其世界矩形，通过变换绘制到控件上）
         /// </summary>
-        private void DrawImageWithWorldBounds(Graphics g, Image img, RectangleF worldBounds)
+        private void DrawImageWithWorldBounds(Graphics g, Image img, RectangleF worldBounds, bool crisp = false)
         {
             if (img == null || worldBounds.Width <= 0 || worldBounds.Height <= 0)
                 return;
@@ -281,7 +307,26 @@ namespace BJJCZ_BaseDevelop
             }
             RectangleF destRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
             if (destRect.Width > 0 && destRect.Height > 0)
-                g.DrawImage(img, destRect);
+            {
+                InterpolationMode oldInterpolation = g.InterpolationMode;
+                SmoothingMode oldSmoothing = g.SmoothingMode;
+                PixelOffsetMode oldPixelOffset = g.PixelOffsetMode;
+                if (crisp)
+                {
+                    g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                    g.SmoothingMode = SmoothingMode.None;
+                    g.PixelOffsetMode = PixelOffsetMode.Half;
+                    Rectangle pixelRect = Rectangle.Round(destRect);
+                    g.DrawImage(img, pixelRect);
+                }
+                else
+                {
+                    g.DrawImage(img, destRect);
+                }
+                g.InterpolationMode = oldInterpolation;
+                g.SmoothingMode = oldSmoothing;
+                g.PixelOffsetMode = oldPixelOffset;
+            }
         }
         /* protected override void OnPaint(PaintEventArgs e)
          {
@@ -378,6 +423,67 @@ namespace BJJCZ_BaseDevelop
 
                 DrawImageWithWorldBounds(g, _overlayImage, overlayBounds);
             }
+
+            if (_previewWorldEntities != null && _previewWorldEntities.Length > 0)
+            {
+                using (SolidBrush debugBrush = new SolidBrush(Color.Red))
+                using (Pen debugPen = new Pen(Color.Red, 1f))
+                {
+                    foreach (PreviewWorldEntity entity in _previewWorldEntities)
+                    {
+                        RectangleF rect = entity.Bounds;
+                        if (rect.Width > 0 && rect.Height > 0)
+                        {
+                            DrawWorldEntityShape(g, entity, debugBrush, debugPen);
+                        }
+                    }
+                }
+            }
+
+            if (_canvasBounds.HasValue && _canvasBounds.Value.Width > 0 && _canvasBounds.Value.Height > 0)
+            {
+                DrawWorldRectangle(g, _canvasBounds.Value, Pens.DimGray);
+            }
+        }
+
+        private void DrawWorldRectangle(Graphics g, RectangleF worldBounds, Pen pen)
+        {
+            PointF topLeft = _transform.WorldToPixel(worldBounds.Left, worldBounds.Top);
+            PointF topRight = _transform.WorldToPixel(worldBounds.Right, worldBounds.Top);
+            PointF bottomRight = _transform.WorldToPixel(worldBounds.Right, worldBounds.Bottom);
+            PointF bottomLeft = _transform.WorldToPixel(worldBounds.Left, worldBounds.Bottom);
+
+            g.DrawPolygon(pen, new PointF[] { topLeft, topRight, bottomRight, bottomLeft });
+        }
+
+        private void DrawWorldEntityShape(Graphics g, PreviewWorldEntity entity, Brush brush, Pen pen)
+        {
+            RectangleF worldBounds = entity.Bounds;
+            RectangleF pixelRect = GetPixelRectFromWorldBounds(worldBounds);
+            if (pixelRect.Width <= 0 || pixelRect.Height <= 0)
+            {
+                return;
+            }
+
+            if (entity.IsFilled)
+            {
+                g.FillRectangle(brush, pixelRect);
+            }
+            g.DrawRectangle(pen, pixelRect.X, pixelRect.Y, pixelRect.Width, pixelRect.Height);
+        }
+
+        private RectangleF GetPixelRectFromWorldBounds(RectangleF worldBounds)
+        {
+            PointF topLeft = _transform.WorldToPixel(worldBounds.Left, worldBounds.Top);
+            PointF topRight = _transform.WorldToPixel(worldBounds.Right, worldBounds.Top);
+            PointF bottomRight = _transform.WorldToPixel(worldBounds.Right, worldBounds.Bottom);
+            PointF bottomLeft = _transform.WorldToPixel(worldBounds.Left, worldBounds.Bottom);
+
+            float minX = Math.Min(Math.Min(topLeft.X, topRight.X), Math.Min(bottomRight.X, bottomLeft.X));
+            float minY = Math.Min(Math.Min(topLeft.Y, topRight.Y), Math.Min(bottomRight.Y, bottomLeft.Y));
+            float maxX = Math.Max(Math.Max(topLeft.X, topRight.X), Math.Max(bottomRight.X, bottomLeft.X));
+            float maxY = Math.Max(Math.Max(topLeft.Y, topRight.Y), Math.Max(bottomRight.Y, bottomLeft.Y));
+            return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
         private Size _lastClientSize = Size.Empty;
         protected override void OnResize(EventArgs e)

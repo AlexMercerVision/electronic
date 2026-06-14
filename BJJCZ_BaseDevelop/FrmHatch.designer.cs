@@ -196,7 +196,7 @@ namespace BJJCZ_BaseDevelop
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(29, 12);
             this.label1.TabIndex = 2;
-            this.label1.Text = "角度";
+            this.label1.Text = "角度(度)";
             // 
             // label2
             // 

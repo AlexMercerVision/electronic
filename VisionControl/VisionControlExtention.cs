@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -72,6 +72,7 @@ namespace VisionControl
         bool bRecord = false;
         int[] iEventStatus = new int[6];
         int[] bRunOneTimeFinished = new int[maxCameraNum];
+        bool[] jobBusy = new bool[maxCameraNum];
         private CUserParam cup = new CUserParam();
 
         public string[] strErrInfo = new string[maxCameraNum];
@@ -160,6 +161,30 @@ namespace VisionControl
         {
             get { return bRunOneTimeFinished; }
             set { bRunOneTimeFinished = value; }
+        }
+
+        private bool IsJobBusy(int jobIndex)
+        {
+            return jobIndex >= 0 && jobIndex < maxCameraNum && jobBusy[jobIndex];
+        }
+
+        private void SetJobBusy(int jobIndex, bool busy)
+        {
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                return;
+
+            jobBusy[jobIndex] = busy;
+        }
+
+        private bool AnyJobBusy()
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                if (jobBusy[i])
+                    return true;
+            }
+
+            return false;
         }
         int iToolIndex = 0;
         public bool bActivateRun = false;
@@ -553,14 +578,15 @@ namespace VisionControl
         //每通道独立执行运行
         public bool RunOneTimeSplite(int iJobIndex)
         {            
-            if (cup.p_VPPRTP.bVisionInfer)
+            if (iJobIndex < 0 || iJobIndex >= maxCameraNum)
             {
-                //2026年4月12日 应判断单个通道的空闲状态
-                if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
-                {
-                    strErrInfo[iJobIndex] = "JM状态非空闲";
-                    return false;
-                }
+                return false;
+            }
+
+            if (IsJobBusy(iJobIndex))
+            {
+                strErrInfo[iJobIndex] = "当前工位视觉任务未结束";
+                return false;
             }
 
             if (mCurrentRunState != RunState.RunningContinuous)
@@ -571,17 +597,24 @@ namespace VisionControl
             while (bActivateRun && iCount < maxTimes)
             {
                 Thread.Sleep(5);
+                iCount++;
             }
 
             inactiveTime = 0;       //只要运行了，就将不活跃次数置零
             bRunOneTimeFinished[iJobIndex] = 0;
+            SetJobBusy(iJobIndex, true);
 
             infer_start_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks); //计时开始
             //各通道时间统一
             acqFIFO.strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
 
             //2026年4月12日 设置线程运行  
-            RunOneTime(iJobIndex);
+            if (!RunOneTime(iJobIndex))
+            {
+                SetJobBusy(iJobIndex, false);
+                bRunOneTimeFinished[iJobIndex] = 2;
+                return false;
+            }
             /*  for (int i=0;i<maxCameraNum;i++)
               {
                   if(cup.p_CD.bListProcess[i])                   
@@ -1419,7 +1452,7 @@ namespace VisionControl
         public CogBlobTool _blobCalib
         {
             //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
-            get { return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] as CogBlobTool); }
+            get { return (((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Tools["CogBlobTool1"] as CogBlobTool); }
 
         }
         public bool setBlob(CogBlobTool blobT)
@@ -2521,10 +2554,11 @@ namespace VisionControl
                         if (cup.p_CD.bListProcess[wsInd] )
                         {
                             mImageFile.Open(strImageFileS[wsInd], CogImageFileModeConstants.Write);
-                            if (cup.p_Cam[wsInd].iMonoType == 0 &&  acqFIFO.ci8gAcq[wsInd] != null)
-                                mImageFile.Append(ci8gAcq[wsInd]);
-                            else if(acqFIFO.ci24ColorAcq[wsInd] != null)
-                                mImageFile.Append(acqFIFO.ci24ColorAcq[wsInd]);
+                            // 保存时也必须按实际相机索引取图，避免工位索引和相机索引不一致时写错槽位。
+                            if (cup.p_Cam[iCamIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
+                                mImageFile.Append(acqFIFO.ci8gAcq[iCamIndex]);
+                            else if (acqFIFO.ci24ColorAcq[iCamIndex] != null)
+                                mImageFile.Append(acqFIFO.ci24ColorAcq[iCamIndex]);
 
                             mImageFile.Close();
                         }
@@ -2533,7 +2567,7 @@ namespace VisionControl
 
 
             }
-            catch
+            catch(Exception ex)
             {
                 // MessageBox.Show(se.Message);
                 // picMain.Image = bitmap;

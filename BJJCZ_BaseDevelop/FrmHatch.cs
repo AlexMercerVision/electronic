@@ -90,9 +90,9 @@ namespace BJJCZ_BaseDevelop
             imagesHatchType = new Image[]
             {
                 LoadIconOrFallback("HatchSi.png", "Si"),
-                LoadIconOrFallback("HatchArched.png", "Arch"),
-                LoadIconOrFallback("HatchLoop.png", "Loop"),
                 LoadIconOrFallback("HatchBi.png", "Bi"),
+                LoadIconOrFallback("HatchLoop.png", "Loop"),
+                LoadIconOrFallback("HatchArched.png", "Arch"),
                 LoadIconOrFallback("HatchArchedNoCross.png", "NoRev"),
             };
         }
@@ -173,6 +173,14 @@ namespace BJJCZ_BaseDevelop
         private string FormatNumber(double value)
         {
             return value.ToString("0.########", CultureInfo.InvariantCulture);
+        }
+        private double RadiansToDegrees(double radians)
+        {
+            return radians * 180.0 / Math.PI;
+        }
+        private double DegreesToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180.0;
         }
 
         private bool TryReadDouble(TextBox textBox, string fieldName, out double value)
@@ -320,8 +328,8 @@ namespace BJJCZ_BaseDevelop
                 txtLinereduction.Text = FormatNumber(hp.dHatchLineReduction);
                 txtLoopDist.Text = FormatNumber(hp.dHatchLoopDist);
 
-                nudAngle.Value = ClampToRange((decimal)hp.dHatchAngle, nudAngle);
-                nudRotateAngel.Value = ClampToRange((decimal)hp.dHatchRotateAngle, nudRotateAngel);
+                nudAngle.Value = ClampToRange((decimal)RadiansToDegrees(hp.dHatchAngle), nudAngle);
+                nudRotateAngel.Value = ClampToRange((decimal)RadiansToDegrees(hp.dHatchRotateAngle), nudRotateAngel);
 
                 // 设置填充参数序号单选按钮
                 switch (nParamIndex)
@@ -384,8 +392,8 @@ namespace BJJCZ_BaseDevelop
                 return false;
             }
 
-            hp.dHatchAngle = (double)nudAngle.Value;
-            hp.dHatchRotateAngle = (double)nudRotateAngel.Value;
+            hp.dHatchAngle = DegreesToRadians((double)nudAngle.Value);
+            hp.dHatchRotateAngle = DegreesToRadians((double)nudRotateAngel.Value);
             return true;
         }
 
