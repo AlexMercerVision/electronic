@@ -4720,7 +4720,7 @@ namespace VisionApplication
                     strFileName = templatePath,
                     ind3 = 0
                 };
-                await SendAlignParamToJCZServer(card);
+              //  await SendAlignParamToJCZServer(card);  20260614
                 await dispatcher.SendCommandAsync(loadParam);
 
                 // 开始标刻

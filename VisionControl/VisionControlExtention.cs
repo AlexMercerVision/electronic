@@ -635,7 +635,7 @@ namespace VisionControl
         {            
             try
             {  
-                if (iJobIndex >= 0)
+                if (iJobIndex >= 0)     
                 {
                     
                     //2026年4月12日 修改了采集图像函数
