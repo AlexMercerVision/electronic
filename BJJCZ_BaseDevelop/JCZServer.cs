@@ -1,4 +1,3 @@
-ï»¿
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,9 +12,9 @@ using System.Threading;
 using PipeChanel;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
-
+ 
 using System.Runtime.InteropServices;
-using System.Diagnostics;      // Process ç±»
+using System.Diagnostics;      // Process Àà
 using System.Threading.Tasks;  // Task.Run
 using System.Globalization;
 using System.Security.Cryptography;
@@ -23,26 +22,26 @@ using System.Xml.Serialization;
 namespace BJJCZ_BaseDevelop
 {
     /// <summary>
-    /// å›¾åƒå¯¹é½å‚æ•°ï¼ˆç”±å®¢æˆ·ç«¯å‘é€ï¼Œç”¨äºé¢„è§ˆå›¾ä¸èƒŒæ™¯å åŠ ï¼‰
+    /// Í¼Ïñ¶ÔÆë²ÎÊı£¨ÓÉ¿Í»§¶Ë·¢ËÍ£¬ÓÃÓÚÔ¤ÀÀÍ¼Óë±³¾°µş¼Ó£©
     /// </summary>
     public struct AlignImParam
     {
-        public int width;            // åƒç´ å®½åº¦
-        public int height;          // åƒç´ é«˜åº¦
-        public double dCenX;        // æ¿€å…‰åæ ‡ç³»ä¸­å¿ƒ X
-        public double dCenY;        // æ¿€å…‰åæ ‡ç³»ä¸­å¿ƒ Y
-        public double dWidth;       // æ¿€å…‰åæ ‡ç³»å›¾åƒå®½åº¦
-        public double dHeight;      // æ¿€å…‰åæ ‡ç³»å›¾åƒé«˜åº¦
+        public int width;            // ÏñËØ¿í¶È
+        public int height;          // ÏñËØ¸ß¶È
+        public double dCenX;        // ¼¤¹â×ø±êÏµÖĞĞÄ X
+        public double dCenY;        // ¼¤¹â×ø±êÏµÖĞĞÄ Y
+        public double dWidth;       // ¼¤¹â×ø±êÏµÍ¼Ïñ¿í¶È
+        public double dHeight;      // ¼¤¹â×ø±êÏµÍ¼Ïñ¸ß¶È
     }
     public partial class JCZServer : Form
     {
-        #region å­—æ®µã€å¸¸é‡ä¸Win32å£°æ˜
-        int[] phyCardSN = new int[2] { 0, 1 };
-        // =============== åŒç®¡é“æœåŠ¡ç«¯ ===============
+        #region ×Ö¶Î¡¢³£Á¿ÓëWin32ÉùÃ÷
+        int[] phyCardSN = new int[2] {0, 1 };
+        // =============== Ë«¹ÜµÀ·şÎñ¶Ë ===============
         private Pipechanel pipeServer0;
         private Pipechanel pipeServer1;
 
-        // =============== æ¿å¡çŠ¶æ€ ===============
+        // =============== °å¿¨×´Ì¬ ===============
         private int[] JczInitErrs = new int[2] { -1, -1 };
         private int[] nEntNums = new int[2];
         private string[][] strEntNames = new string[2][];
@@ -54,46 +53,49 @@ namespace BJJCZ_BaseDevelop
         private Bitmap[] originalImage = new Bitmap[2];
         private bool[] bSimulateMode = new bool[2] { false, false };
 
-        // =============== å…±äº«å‚æ•° ================
+        // =============== ¹²Ïí²ÎÊı ================
         private AlignImParam alImParam = new AlignImParam();
         private int currentCard = 0;
         private int lastCmdCard = 0;
-        // åœ¨ JCZServer ç±»ä¸­æ·»åŠ å­—æ®µ
-        private RectangleF[] _overlayWorldBounds = new RectangleF[2];    // å åŠ å›¾ç‰©ç†èŒƒå›´ï¼ˆmmï¼‰
+        // ÔÚ JCZServer ÀàÖĞÌí¼Ó×Ö¶Î
+        private RectangleF[] _overlayWorldBounds = new RectangleF[2];    // µş¼ÓÍ¼ÎïÀí·¶Î§£¨mm£©
         private Bitmap[] cachedTransparentRoute = new Bitmap[2];
         private int[] cachedRouteWidth = new int[2];
         private int[] cachedRouteHeight = new int[2];
 
-        private static readonly RectangleF PreviewViewBounds = new RectangleF(-100f, -100f, 200f, 200f);
+        private static readonly RectangleF PreviewViewBounds = new RectangleF(-35f, -50f, 60f, 90f);
         private static readonly RectangleF EzcadCanvasBounds = new RectangleF(-75f, -75f, 150f, 150f);
-        private static readonly RectangleF DefaultBackgroundBounds = new RectangleF(-45f, -45f, 90f, 90f);
+        private static readonly RectangleF RoutePreviewWorldBounds = new RectangleF(-150f, -150f, 300f, 300f);
+        private static readonly RectangleF DefaultBackgroundBounds = new RectangleF(-25f, -25f, 50f, 50f);
         private const int PreviewRouteBitmapScale = 3;
+        private const int PreviewRouteBitmapBaseSide = 520;
 
-        // =============== åµŒå…¥æ¨¡å¼ç›¸å…³ ===============
-        private bool _isEmbedded = false;          // ç‹¬ç«‹å¯åŠ¨é»˜è®¤æ˜¾ç¤ºå®Œæ•´ç•Œé¢ï¼Œæ”¶åˆ°ä¸»ç¨‹åºåµŒå…¥å‘½ä»¤åå†åˆ‡æ¢
+        // =============== Ç¶ÈëÄ£Ê½Ïà¹Ø ===============
+        private bool _isEmbedded = false;          // ¶ÀÁ¢Æô¶¯Ä¬ÈÏÏÔÊ¾ÍêÕû½çÃæ£¬ÊÕµ½Ö÷³ÌĞòÇ¶ÈëÃüÁîºóÔÙÇĞ»»
         private IntPtr _containerHwnd = IntPtr.Zero;
         private System.Windows.Forms.Timer _parentCheckTimer;
 
-        // =============== æ–‡ä»¶è·¯å¾„ç®¡ç† ===============
-        private string[] currentFilePath = new string[2] { null, null };  // å½“å‰åŠ è½½çš„æ–‡ä»¶è·¯å¾„
+        // =============== ÎÄ¼şÂ·¾¶¹ÜÀí ===============
+        private string[] currentFilePath = new string[2] { null, null };  // µ±Ç°¼ÓÔØµÄÎÄ¼şÂ·¾¶
 
 
-        // ===== å¯¹è±¡åç®¡ç† =====
-        private string[][] sdkEntNames = new string[2][];      // SDK åŸå§‹å¯¹è±¡åï¼ˆåŒºåˆ†æ˜¾ç¤ºåä¸çœŸå®åï¼‰
+        // ===== ¶ÔÏóÃû¹ÜÀí =====
+        private string[][] sdkEntNames = new string[2][];      // SDK Ô­Ê¼¶ÔÏóÃû£¨Çø·ÖÏÔÊ¾ÃûÓëÕæÊµÃû£©
 
-        // ===== æ¿€å…‰å™¨ä¸åŠ å·¥æ§åˆ¶ =====
-        private bool[] markStopRequested = new bool[2];        // è¯·æ±‚åœæ­¢åŠ å·¥æ ‡å¿—
-        private bool[] laserMarkEnabled = new bool[2] { true, true };  // æ¿€å…‰å™¨ä½¿èƒ½çŠ¶æ€
-        private bool[] pendingDeferredSave = new bool[2];      // å»¶è¿Ÿä¿å­˜æ ‡å¿—
-        private bool _isSavingEzd = false;                     // é˜²æ­¢è‡ªåŠ¨ä¿å­˜é‡å…¥
-        private System.Windows.Forms.Timer _deferredSaveTimer; // å»¶è¿Ÿä¿å­˜å®šæ—¶å™¨
+        // ===== ¼¤¹âÆ÷Óë¼Ó¹¤¿ØÖÆ =====
+        private bool[] markStopRequested = new bool[2];        // ÇëÇóÍ£Ö¹¼Ó¹¤±êÖ¾
+        private bool[] laserMarkEnabled = new bool[2] { true, true };  // ¼¤¹âÆ÷Ê¹ÄÜ×´Ì¬
+        private bool[] pendingDeferredSave = new bool[2];      // ÑÓ³Ù±£´æ±êÖ¾
+        private bool _isSavingEzd = false;                     // ·ÀÖ¹×Ô¶¯±£´æÖØÈë
+        private System.Windows.Forms.Timer _deferredSaveTimer; // ÑÓ³Ù±£´æ¶¨Ê±Æ÷
 
-        // ===== å¡«å……å‚æ•°ç¼“å­˜ï¼ˆæŒä¹…åŒ– + å†…å­˜ï¼‰=====
+        // ===== Ìî³ä²ÎÊı»º´æ£¨³Ö¾Ã»¯ + ÄÚ´æ£©=====
         private Dictionary<string, HatchParam> hatchParamCache = new Dictionary<string, HatchParam>();
         private Dictionary<string, int> sourceContourPenCache = new Dictionary<string, int>();
-        private const int HiddenContourPenNo = 255;            // éšè—è½®å»“ç¬”å·
+        private const int HiddenContourPenNo = 255;            // Òş²ØÂÖÀª±ÊºÅ
+        private bool[] suppressHatchDetailLogs = new bool[2];  // ÅúÁ¿Éú³ÉÕóÁĞÔ²Ê±Ñ¹µôÃ¿¸ö¶ÔÏóµÄÌî³ä¹ı³ÌÈÕÖ¾
 
-        // ===== è§†è§‰å®šä½åç§»ï¼ˆç”¨äºè§†è§‰å¯¹ä½åçš„å…¨å±€åç§»/æ—‹è½¬ï¼‰=====
+        // ===== ÊÓ¾õ¶¨Î»Æ«ÒÆ£¨ÓÃÓÚÊÓ¾õ¶ÔÎ»ºóµÄÈ«¾ÖÆ«ÒÆ/Ğı×ª£©=====
         private bool[] visualRotateMoveReady = new bool[2];
         private double[] visualMoveX = new double[2];
         private double[] visualMoveY = new double[2];
@@ -101,13 +103,13 @@ namespace BJJCZ_BaseDevelop
         private double[] visualRotateCenterY = new double[2];
         private double[] visualRotateAngle = new double[2];
 
-        // ===== å¯¹è±¡ç¼©æ”¾çŠ¶æ€è®°å¿†ï¼ˆç”¨äºç»å¯¹ç¼©æ”¾ï¼‰=====
+        // ===== ¶ÔÏóËõ·Å×´Ì¬¼ÇÒä£¨ÓÃÓÚ¾ø¶ÔËõ·Å£©=====
         private Dictionary<string, EntityScaleState> entityScaleStates = new Dictionary<string, EntityScaleState>();
 
-        // ===== è¾…åŠ©å¸¸é‡ =====
-        private const string TransformPairEntityPrefix = "__TransformPair_";  // ä¸´æ—¶åˆ†ç»„å‰ç¼€ï¼ˆç”¨äºå¡«å……å¯¹è±¡è”åˆå˜æ¢ï¼‰
+        // ===== ¸¨Öú³£Á¿ =====
+        private const string TransformPairEntityPrefix = "__TransformPair_";  // ÁÙÊ±·Ö×éÇ°×º£¨ÓÃÓÚÌî³ä¶ÔÏóÁªºÏ±ä»»£©
 
-        // =============== Windows API å£°æ˜ ===============
+        // =============== Windows API ÉùÃ÷ ===============
         [DllImport("user32.dll")]
         private static extern IntPtr GetParent(IntPtr hWnd);
 
@@ -135,7 +137,7 @@ namespace BJJCZ_BaseDevelop
         [DllImport("user32.dll")]
         private static extern int GetClientRect(IntPtr hWnd, out RECT lpRect);
 
-        // çª—å£æ ·å¼å¸¸é‡
+        // ´°¿ÚÑùÊ½³£Á¿
         private const int SW_HIDE = 0;
         private const int SW_SHOW = 5;
         private const int SW_MINIMIZE = 6;
@@ -150,9 +152,9 @@ namespace BJJCZ_BaseDevelop
         private const int WS_EX_WINDOWEDGE = 0x00000100;
         private const int WS_EX_TOOLWINDOW = 0x00000080;
 
-        // ç®¡é“å‘½ä»¤ç±»å‹
-        private const int CMD_REQUEST_EMBED = 200;      // è¯·æ±‚åµŒå…¥
-        private const int CMD_CONTAINER_HANDLE = 201;   // è¿”å›å®¹å™¨å¥æŸ„
+        // ¹ÜµÀÃüÁîÀàĞÍ
+        private const int CMD_REQUEST_EMBED = 200;      // ÇëÇóÇ¶Èë
+        private const int CMD_CONTAINER_HANDLE = 201;   // ·µ»ØÈİÆ÷¾ä±ú
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
@@ -164,12 +166,12 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region æ„é€ å‡½æ•°ä¸å»¶è¿Ÿä¿å­˜å®šæ—¶å™¨
-        // =============== æ„é€ å‡½æ•° ===============
+        #region ¹¹Ôìº¯ÊıÓëÑÓ³Ù±£´æ¶¨Ê±Æ÷
+        // =============== ¹¹Ôìº¯Êı ===============
         public JCZServer()
         {
             InitializeComponent();
-            this.DoubleBuffered = true;   // æ·»åŠ è¿™ä¸€è¡Œ
+            this.DoubleBuffered = true;   // Ìí¼ÓÕâÒ»ĞĞ
             ConfigureMainPanelLayout();
             ConfigurePreviewBoxLayout();
             pipeServer0 = new Pipechanel(1, "PipeServer0", "PipeClient0");
@@ -180,7 +182,7 @@ namespace BJJCZ_BaseDevelop
 
             InitParentCheckTimer();
 
-            // æ–°å¢ï¼šåˆå§‹åŒ–å»¶è¿Ÿä¿å­˜å®šæ—¶å™¨ï¼ˆä¹Ÿå¯ä»¥åœ¨é¦–æ¬¡ä½¿ç”¨æ—¶åˆ›å»ºï¼‰
+            // ĞÂÔö£º³õÊ¼»¯ÑÓ³Ù±£´æ¶¨Ê±Æ÷£¨Ò²¿ÉÒÔÔÚÊ×´ÎÊ¹ÓÃÊ±´´½¨£©
             EnsureDeferredSaveTimer();
         }
         private void EnsureDeferredSaveTimer()
@@ -218,38 +220,38 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region çª—ä½“åŠ è½½ä¸æ¿€å…‰æŒ‰é’®çŠ¶æ€
-        // =============== çª—ä½“åŠ è½½ ===============
+        #region ´°Ìå¼ÓÔØÓë¼¤¹â°´Å¥×´Ì¬
+        // =============== ´°Ìå¼ÓÔØ ===============
         private void JCZServer_Load(object sender, EventArgs e)
         {
             JCZServerIcon.Visible = true;
-            AddMsg("åŒç®¡é“æœåŠ¡ç«¯å¯åŠ¨å®Œæˆï¼Œç­‰å¾…æ¿å¡0/1è¿æ¥");
+            AddMsg("Ë«¹ÜµÀ·şÎñ¶ËÆô¶¯Íê³É£¬µÈ´ı°å¿¨0/1Á¬½Ó");
             TryInitializeCards();
 
-            // ä¸»ç¨‹åºæš‚æœªå‘é€å¯¹ä½å‚æ•°æ—¶ï¼Œä¸´æ—¶èƒŒæ™¯å›¾å›ºå®šæ”¾åœ¨æ¿€å…‰åæ ‡ X/Y = -45~45ã€‚
+            // Ö÷³ÌĞòÔİÎ´·¢ËÍ¶ÔÎ»²ÎÊıÊ±£¬ÁÙÊ±±³¾°Í¼¹Ì¶¨·ÅÔÚ¼¤¹â×ø±ê X/Y = -45~45¡£
             alImParam.dCenX = DefaultBackgroundBounds.Left + DefaultBackgroundBounds.Width / 2f;
             alImParam.dCenY = DefaultBackgroundBounds.Top + DefaultBackgroundBounds.Height / 2f;
             alImParam.dWidth = DefaultBackgroundBounds.Width;
             alImParam.dHeight = DefaultBackgroundBounds.Height;
 
-            // æ ‡åˆ»è·¯å¾„å›¾å¯¹åº”EZCADç”»å¸ƒèŒƒå›´ã€‚SDKé¢„è§ˆå–å›¾å’Œå åŠ è´´å›¾å¿…é¡»ä½¿ç”¨åŒä¸€èŒƒå›´ã€‚
-            _overlayWorldBounds[0] = EzcadCanvasBounds;
-            _overlayWorldBounds[1] = EzcadCanvasBounds;
+            // ±ê¿ÌÂ·¾¶Í¼Ê¹ÓÃ¹Ì¶¨¼¤¹â×ø±ê·¶Î§£¬ºì¿òÒÆ¶¯²»»á¸Ä±ä±³¾°Í¼ÏÔÊ¾±ÈÀı¡£
+            _overlayWorldBounds[0] = RoutePreviewWorldBounds;
+            _overlayWorldBounds[1] = RoutePreviewWorldBounds;
 
-            // å›¾åƒæ˜¾ç¤ºæ¡†åæ ‡èŒƒå›´ï¼šå¤§é¢„è§ˆçª—å£ X/Y = -100~100ï¼Œå†…éƒ¨æ˜¾ç¤º EZCAD ç”»å¸ƒ -75~75ã€‚
+            // ³õÊ¼ÊÓ¿ÚÖ»ÊÇºó±¸Öµ£»Êµ¼ÊË¢ĞÂÊ±°´±³¾°Í¼ºÍ¼Ó¹¤¶ÔÏóµÄ¼¤¹â×ø±ê·¶Î§·Å´óÏÔÊ¾¡£
             pictureBox1.SetWorldViewBounds(PreviewViewBounds);
             pictureBox2.SetWorldViewBounds(PreviewViewBounds);
             pictureBox1.SetCanvasBounds(EzcadCanvasBounds);
             pictureBox2.SetCanvasBounds(EzcadCanvasBounds);
 
-
-            // ç«‹å³è®¾ç½®å¸ƒå±€ä¸ºå®Œæ•´æ¨¡å¼ï¼ˆåˆ†å‰²çº¿å±…ä¸­ï¼‰
+            
+            // Á¢¼´ÉèÖÃ²¼¾ÖÎªÍêÕûÄ£Ê½£¨·Ö¸îÏß¾ÓÖĞ£©
             SetupDefaultLayoutImmediately();
 
-            // ç‹¬ç«‹å¯åŠ¨æ—¶ä¿æŒå®Œæ•´ç•Œé¢ï¼›æ”¶åˆ°ä¸»ç¨‹åºåµŒå…¥å‘½ä»¤åæ‰åˆ‡æ¢åµŒå…¥å¸ƒå±€ã€‚
+            // ¶ÀÁ¢Æô¶¯Ê±±£³ÖÍêÕû½çÃæ£»ÊÕµ½Ö÷³ÌĞòÇ¶ÈëÃüÁîºó²ÅÇĞ»»Ç¶Èë²¼¾Ö¡£
             ApplyEmbeddedLayout();
 
-            UpdateLaserOperationButtonsEnabled();   // æ ¹æ®åˆå§‹æ¿€å…‰å™¨ä½¿èƒ½çŠ¶æ€æ›´æ–° UI æŒ‰é’®
+            UpdateLaserOperationButtonsEnabled();   // ¸ù¾İ³õÊ¼¼¤¹âÆ÷Ê¹ÄÜ×´Ì¬¸üĞÂ UI °´Å¥
         }
         private void UpdateLaserOperationButtonsEnabled()
         {
@@ -279,16 +281,16 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
         /// <summary>
-        /// è®¾ç½®å®¹å™¨çª—å£å¥æŸ„å¹¶æ‰§è¡ŒåµŒå…¥
+        /// ÉèÖÃÈİÆ÷´°¿Ú¾ä±ú²¢Ö´ĞĞÇ¶Èë
         /// </summary>
-        #region åµŒå…¥æ¨¡å¼ä¸ç•Œé¢å¸ƒå±€
+        #region Ç¶ÈëÄ£Ê½Óë½çÃæ²¼¾Ö
         public void SetContainerAndEmbed(IntPtr containerHwnd)
         {
             if (containerHwnd == IntPtr.Zero) return;
             _containerHwnd = containerHwnd;
             _isEmbedded = true;
 
-            // ç¡®ä¿åœ¨ UI çº¿ç¨‹ä¸Šæ‰§è¡ŒåµŒå…¥
+            // È·±£ÔÚ UI Ïß³ÌÉÏÖ´ĞĞÇ¶Èë
             if (this.InvokeRequired)
                 this.Invoke(new Action(PerformEmbed));
             else
@@ -296,11 +298,11 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// æ‰§è¡ŒåµŒå…¥æ“ä½œï¼ˆå¿…é¡»åœ¨ UI çº¿ç¨‹è°ƒç”¨ï¼‰
+        /// Ö´ĞĞÇ¶Èë²Ù×÷£¨±ØĞëÔÚ UI Ïß³Ìµ÷ÓÃ£©
         /// </summary>
         private void PerformEmbed()
         {
-            // äºŒæ¬¡æ£€æŸ¥ï¼šç¡®ä¿åœ¨ UI çº¿ç¨‹
+            // ¶ş´Î¼ì²é£ºÈ·±£ÔÚ UI Ïß³Ì
             if (this.InvokeRequired)
             {
                 this.Invoke(new Action(PerformEmbed));
@@ -311,24 +313,24 @@ namespace BJJCZ_BaseDevelop
 
             try
             {
-                // è®¾ç½®çˆ¶çª—å£
+                // ÉèÖÃ¸¸´°¿Ú
                 SetParent(this.Handle, _containerHwnd);
 
-                // ç§»é™¤è¾¹æ¡†ã€æ ‡é¢˜æ ã€ç³»ç»Ÿèœå•ç­‰
+                // ÒÆ³ı±ß¿ò¡¢±êÌâÀ¸¡¢ÏµÍ³²Ëµ¥µÈ
                 int style = GetWindowLong(this.Handle, GWL_STYLE);
                 style &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
                 SetWindowLong(this.Handle, GWL_STYLE, style);
 
-                // è®¾ç½®ä¸ºå·¥å…·çª—å£ï¼ˆä¸åœ¨ä»»åŠ¡æ æ˜¾ç¤ºï¼‰
+                // ÉèÖÃÎª¹¤¾ß´°¿Ú£¨²»ÔÚÈÎÎñÀ¸ÏÔÊ¾£©
                 int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
                 exStyle &= ~(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE);
                 exStyle |= WS_EX_TOOLWINDOW;
                 SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
 
-                // å¯é€‰ï¼šç¦ç”¨çª—å£äº¤äº’ï¼ˆåŸæ³¨é‡Šæ‰çš„ EnableWindow å¯æ ¹æ®éœ€è¦å¼€å¯ï¼‰
+                // ¿ÉÑ¡£º½ûÓÃ´°¿Ú½»»¥£¨Ô­×¢ÊÍµôµÄ EnableWindow ¿É¸ù¾İĞèÒª¿ªÆô£©
                 // EnableWindow(this.Handle, false);
 
-                // è·å–å®¹å™¨å¤§å°å¹¶è°ƒæ•´
+                // »ñÈ¡ÈİÆ÷´óĞ¡²¢µ÷Õû
                 RECT containerRect;
                 GetClientRect(_containerHwnd, out containerRect);
                 int width = containerRect.Right - containerRect.Left;
@@ -339,20 +341,20 @@ namespace BJJCZ_BaseDevelop
                 this.WindowState = FormWindowState.Normal;
                 ShowWindow(this.Handle, SW_SHOW);
 
-                // åº”ç”¨åµŒå…¥å¸ƒå±€ï¼ˆéšè—å¯¹è±¡æ¸…å•å’Œæ“ä½œé¢æ¿ï¼Œåªæ˜¾ç¤ºæ—¥å¿—å’Œå›¾åƒåŒºï¼‰
+                // Ó¦ÓÃÇ¶Èë²¼¾Ö£¨Òş²Ø¶ÔÏóÇåµ¥ºÍ²Ù×÷Ãæ°å£¬Ö»ÏÔÊ¾ÈÕÖ¾ºÍÍ¼ÏñÇø£©
                 ApplyEmbeddedLayout();
 
-                // å¼ºåˆ¶è°ƒæ•´å­æ§ä»¶å¸ƒå±€ï¼Œç¡®ä¿åµŒå…¥åæ§ä»¶ä½ç½®æ­£ç¡®
+                // Ç¿ÖÆµ÷Õû×Ó¿Ø¼ş²¼¾Ö£¬È·±£Ç¶Èëºó¿Ø¼şÎ»ÖÃÕıÈ·
                 this.PerformLayout();
             }
             catch (Exception ex)
             {
-                // å¯è®°å½•æ—¥å¿—
+                // ¿É¼ÇÂ¼ÈÕÖ¾
             }
         }
         /* private void PerformEmbed()
          {
-             // äºŒæ¬¡æ£€æŸ¥ï¼šç¡®ä¿åœ¨ UI çº¿ç¨‹
+             // ¶ş´Î¼ì²é£ºÈ·±£ÔÚ UI Ïß³Ì
              if (this.InvokeRequired)
              {
                  this.Invoke(new Action(PerformEmbed));
@@ -363,24 +365,24 @@ namespace BJJCZ_BaseDevelop
 
              try
              {
-                 // è®¾ç½®çˆ¶çª—å£
+                 // ÉèÖÃ¸¸´°¿Ú
                  SetParent(this.Handle, _containerHwnd);
 
-                 // ç§»é™¤è¾¹æ¡†ã€æ ‡é¢˜æ ã€ç³»ç»Ÿèœå•ç­‰
+                 // ÒÆ³ı±ß¿ò¡¢±êÌâÀ¸¡¢ÏµÍ³²Ëµ¥µÈ
                  int style = GetWindowLong(this.Handle, GWL_STYLE);
                  style &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
                  SetWindowLong(this.Handle, GWL_STYLE, style);
 
-                 // è®¾ç½®ä¸ºå·¥å…·çª—å£ï¼ˆä¸åœ¨ä»»åŠ¡æ æ˜¾ç¤ºï¼‰
+                 // ÉèÖÃÎª¹¤¾ß´°¿Ú£¨²»ÔÚÈÎÎñÀ¸ÏÔÊ¾£©
                  int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
                  exStyle &= ~(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE);
                  exStyle |= WS_EX_TOOLWINDOW;
                  SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
 
-                 // ç¦ç”¨çª—å£ï¼ˆä¸å¯æ´»åŠ¨ï¼‰
+                 // ½ûÓÃ´°¿Ú£¨²»¿É»î¶¯£©
               //   EnableWindow(this.Handle, false);
 
-                 // è·å–å®¹å™¨å¤§å°å¹¶è°ƒæ•´
+                 // »ñÈ¡ÈİÆ÷´óĞ¡²¢µ÷Õû
                  RECT containerRect;
                  GetClientRect(_containerHwnd, out containerRect);
                  int width = containerRect.Right - containerRect.Left;
@@ -391,10 +393,10 @@ namespace BJJCZ_BaseDevelop
                  this.WindowState = FormWindowState.Normal;
                  ShowWindow(this.Handle, SW_SHOW);
 
-                 // åº”ç”¨åµŒå…¥å¸ƒå±€
+                 // Ó¦ÓÃÇ¶Èë²¼¾Ö
                  ApplyEmbeddedLayout();
 
-                 // å¼ºåˆ¶å†æ¬¡æŠ˜å ï¼ˆé˜²æ­¢è¢«å…¶ä»–äº‹ä»¶è¦†ç›–ï¼‰
+                 // Ç¿ÖÆÔÙ´ÎÕÛµş£¨·ÀÖ¹±»ÆäËûÊÂ¼ş¸²¸Ç£©
                  this.BeginInvoke(new Action(() =>
                  {
                      if (_isEmbedded)
@@ -406,71 +408,71 @@ namespace BJJCZ_BaseDevelop
              }
              catch (Exception ex)
              {
-                 // å¯è®°å½•æ—¥å¿—
+                 // ¿É¼ÇÂ¼ÈÕÖ¾
              }
          }*/
 
         /// <summary>
-        /// åˆ†ç¦»åµŒå…¥ï¼Œæ˜¾ç¤ºå®Œæ•´çª—å£
+        /// ·ÖÀëÇ¶Èë£¬ÏÔÊ¾ÍêÕû´°¿Ú
         /// </summary>
         public void DetachAndShowFull()
         {
             try
             {
-                // æ¢å¤çˆ¶çª—å£ä¸ºæ¡Œé¢
+                // »Ö¸´¸¸´°¿ÚÎª×ÀÃæ
                 SetParent(this.Handle, IntPtr.Zero);
 
-                // æ¢å¤çª—å£æ ·å¼
+                // »Ö¸´´°¿ÚÑùÊ½
                 int style = GetWindowLong(this.Handle, GWL_STYLE);
                 style |= (WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
                 SetWindowLong(this.Handle, GWL_STYLE, style);
 
-                // æ¢å¤æ‰©å±•æ ·å¼
+                // »Ö¸´À©Õ¹ÑùÊ½
                 int exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
                 exStyle &= ~WS_EX_TOOLWINDOW;
                 exStyle |= WS_EX_APPWINDOW;
                 SetWindowLong(this.Handle, GWL_EXSTYLE, exStyle);
 
-                // å¯ç”¨çª—å£
+                // ÆôÓÃ´°¿Ú
                 EnableWindow(this.Handle, true);
 
-                // è®¾ç½®çª—å£å¤§å°å¹¶å±…ä¸­ï¼Œé¿å…å®Œæ•´ç•Œé¢æ‰“å¼€åè¢«å±å¹•åº•éƒ¨é®ä½
+                // ÉèÖÃ´°¿Ú´óĞ¡²¢¾ÓÖĞ£¬±ÜÃâÍêÕû½çÃæ´ò¿ªºó±»ÆÁÄ»µ×²¿ÕÚ×¡
                 FitWindowToWorkingArea();
 
                 _isEmbedded = false;
 
-                // åº”ç”¨å®Œæ•´å¸ƒå±€
+                // Ó¦ÓÃÍêÕû²¼¾Ö
                 ApplyEmbeddedLayout();
 
-                // æ˜¾ç¤ºçª—å£
+                // ÏÔÊ¾´°¿Ú
                 this.Show();
                 this.WindowState = FormWindowState.Normal;
                 ShowWindow(this.Handle, SW_SHOW);
 
-                // *** æ–°å¢ï¼šè°ƒæ•´åˆ†å‰²çº¿è·ç¦»ï¼Œä½¿ä¸Šä¸‹é¢æ¿æ¯”ä¾‹åˆé€‚ ***
-                //    AdjustSplitterDistance();
+                // *** ĞÂÔö£ºµ÷Õû·Ö¸îÏß¾àÀë£¬Ê¹ÉÏÏÂÃæ°å±ÈÀıºÏÊÊ ***
+            //    AdjustSplitterDistance();
 
-                //   AddMsg($"å·²åˆ†ç¦»ï¼Œæ˜¾ç¤ºå®Œæ•´çª—å£");
+                //   AddMsg($"ÒÑ·ÖÀë£¬ÏÔÊ¾ÍêÕû´°¿Ú");
             }
             catch (Exception ex)
             {
-                //  AddMsg($"åˆ†ç¦»å¤±è´¥: {ex.Message}");
+                //  AddMsg($"·ÖÀëÊ§°Ü: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// ç«‹å³è®¾ç½®é»˜è®¤å¸ƒå±€ï¼ˆä¸è§¦å‘é¢å¤–é‡ç»˜ï¼‰
+        /// Á¢¼´ÉèÖÃÄ¬ÈÏ²¼¾Ö£¨²»´¥·¢¶îÍâÖØ»æ£©
         /// </summary>
         private void SetupDefaultLayoutImmediately()
         {
-            // æš‚åœå¸ƒå±€æ›´æ–°
-            // å±•å¼€æ‰€æœ‰åŒºåŸŸ
+            // ÔİÍ£²¼¾Ö¸üĞÂ
+            // Õ¹¿ªËùÓĞÇøÓò
             mainMsgBox.Visible = true;
             panelImage.Visible = true;
             panel3.Visible = true;
             panel1.Visible = true;
 
-            // æ›´æ–°èœå•é¡¹å‹¾é€‰çŠ¶æ€ï¼ˆå¦‚æœèœå•é¡¹æ§åˆ¶æ˜¾ç¤ºï¼‰
+            // ¸üĞÂ²Ëµ¥Ïî¹´Ñ¡×´Ì¬£¨Èç¹û²Ëµ¥Ïî¿ØÖÆÏÔÊ¾£©
             Win_Log.Checked = true;
             Win_Entity.Checked = true;
             Win_Route.Checked = true;
@@ -479,7 +481,7 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// æ ¹æ®åµŒå…¥æ¨¡å¼è°ƒæ•´ç•Œé¢å¸ƒå±€
+        /// ¸ù¾İÇ¶ÈëÄ£Ê½µ÷Õû½çÃæ²¼¾Ö
         /// </summary>
         private void ApplyEmbeddedLayout()
         {
@@ -491,7 +493,7 @@ namespace BJJCZ_BaseDevelop
 
             if (_isEmbedded)
             {
-                // åµŒå…¥æ¨¡å¼ï¼šåªæ˜¾ç¤ºæ—¥å¿—å’Œå›¾åƒåŒºï¼Œéšè—å¯¹è±¡æ¸…å•å’Œæ“ä½œé¢æ¿
+                // Ç¶ÈëÄ£Ê½£ºÖ»ÏÔÊ¾ÈÕÖ¾ºÍÍ¼ÏñÇø£¬Òş²Ø¶ÔÏóÇåµ¥ºÍ²Ù×÷Ãæ°å
                 panel3.Visible = false;
                 panel1.Visible = false;
                 menuStrip1.Visible = false;
@@ -536,8 +538,8 @@ namespace BJJCZ_BaseDevelop
         {
             this.WindowState = FormWindowState.Normal;
             Rectangle area = Screen.FromControl(this).WorkingArea;
-            int width = Math.Min(1210, Math.Max(1130, area.Width - 20));
-            int height = Math.Min(700, Math.Max(680, area.Height - 20));
+            int width = Math.Min(1280, Math.Max(1210, area.Width - 20));
+            int height = Math.Min(690, Math.Max(680, area.Height - 20));
             Size clientSize = new Size(width, height);
 
             this.MaximumSize = Size.Empty;
@@ -553,11 +555,11 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            int margin = 14;
+            int margin = 10;
             int columnGap = 42;
-            int rowGap = 14;
+            int rowGap = 6;
             int top = (menuStrip1 != null && menuStrip1.Visible) ? menuStrip1.Bottom + 8 : margin;
-            int bottomMargin = 14;
+            int bottomMargin = 6;
             int clientWidth = Math.Max(1, this.ClientSize.Width);
             int clientHeight = Math.Max(1, this.ClientSize.Height);
 
@@ -566,17 +568,24 @@ namespace BJJCZ_BaseDevelop
             int rightWidth = Math.Max(420, clientWidth - rightX - margin);
 
             bool showBottomPanels = panel3.Visible || panel1.Visible;
-            int desiredBottomHeight = 285;
+            int desiredBottomHeight = 220;
             int topHeight = showBottomPanels
                 ? clientHeight - top - rowGap - desiredBottomHeight - bottomMargin
                 : clientHeight - top - bottomMargin;
             topHeight = showBottomPanels
-                ? Math.Max(300, Math.Min(320, topHeight))
+                ? Math.Max(360, Math.Min(400, topHeight))
                 : Math.Max(1, topHeight);
+            if (showBottomPanels)
+            {
+                const int previewGap = 32;
+                const int previewPadding = 1;
+                int previewPanelHeight = Math.Max(360, (rightWidth - previewPadding * 2 - previewGap) / 2 + previewPadding * 2);
+                topHeight = Math.Min(topHeight, previewPanelHeight);
+            }
 
             int bottomY = top + topHeight + rowGap;
             int bottomHeight = showBottomPanels
-                ? Math.Max(285, clientHeight - bottomY - bottomMargin)
+                ? Math.Max(210, clientHeight - bottomY - bottomMargin)
                 : 0;
 
             mainMsgBox.Bounds = new Rectangle(margin, top, leftWidth, topHeight);
@@ -586,6 +595,7 @@ namespace BJJCZ_BaseDevelop
                 panel3.Bounds = new Rectangle(margin, bottomY, leftWidth, bottomHeight);
                 panel1.Bounds = new Rectangle(rightX, bottomY, rightWidth, bottomHeight);
                 LayoutEntityTable();
+                LayoutOperationPanel();
             }
 
             LayoutPreviewBoxes();
@@ -618,12 +628,98 @@ namespace BJJCZ_BaseDevelop
             btMoveEntAfter.Left = actionX;
             label10.Left = actionX;
             chkEntGroup.Left = actionX + 58;
-            btLaserPenParam.Width = 58;
-            btHatchParam.Width = 56;
-            btLaserPenParam.Left = Math.Min(actionX, Math.Max(4, panelWidth - btLaserPenParam.Width - btHatchParam.Width - 18));
-            btHatchParam.Left = Math.Min(btLaserPenParam.Left + btLaserPenParam.Width + 10, Math.Max(4, panelWidth - btHatchParam.Width - 8));
+            int actionButtonTop = Math.Min(Math.Max(4, panelHeight - 50), 178);
+            btLaserPenParam.SetBounds(Math.Min(actionX, Math.Max(4, panelWidth - 124)), actionButtonTop, 56, 34);
+            btHatchParam.SetBounds(Math.Min(btLaserPenParam.Left + btLaserPenParam.Width + 10, Math.Max(4, panelWidth - 62)), btLaserPenParam.Top, 56, 34);
         }
 
+        private int GetOperationButtonWidth(int panelWidth)
+        {
+            const int pad = 8;
+            const int colGap = 8;
+            return Math.Max(108, Math.Min(132, (panelWidth - 430 - pad - colGap * 2) / 3));
+        }
+
+        private int GetOperationButtonStartX(int panelWidth)
+        {
+            const int pad = 8;
+            const int colGap = 8;
+            int btnW = GetOperationButtonWidth(panelWidth);
+            int buttonsWidth = btnW * 3 + colGap * 2;
+            return Math.Max(370, panelWidth - pad - buttonsWidth);
+        }
+        private void LayoutOperationPanel()
+        {
+            if (panel1 == null)
+            {
+                return;
+            }
+
+            int panelWidth = Math.Max(1, panel1.ClientSize.Width);
+            int icon = 40;
+
+            int moveLeft = 14;
+            int moveCx = moveLeft + 50;
+            int moveTop = 20;
+            label1.SetBounds(moveCx + 4, 4, label1.Width, label1.Height);
+            picMvUp.SetBounds(moveCx, moveTop, icon, icon);
+            label2.SetBounds(moveLeft, moveTop + 36, label2.Width, label2.Height);
+            picMvLeft.SetBounds(moveLeft, moveTop + 52, icon, icon);
+            txtMv_Value.SetBounds(moveCx - 2, moveTop + 61, 38, txtMv_Value.Height);
+            label3.SetBounds(moveCx + 46, moveTop + 36, label3.Width, label3.Height);
+            picMvRight.SetBounds(moveCx + 48, moveTop + 52, icon, icon);
+            picMvDown.SetBounds(moveCx, moveTop + 94, icon, icon);
+            label4.SetBounds(moveCx + 4, moveTop + 134, label4.Width, label4.Height);
+
+            int transX = 205;
+            label6.SetBounds(transX + 4, 4, label6.Width, label6.Height);
+            picRoClock.SetBounds(transX, moveTop, icon, icon);
+            txtRo_Value.SetBounds(transX + 48, moveTop + 8, 38, txtRo_Value.Height);
+            label7.SetBounds(transX + 100, 4, label7.Width, label7.Height);
+            picRoCrossClock.SetBounds(transX + 96, moveTop, icon, icon);
+            label15.SetBounds(transX, moveTop + 58, label15.Width, label15.Height);
+            txtRo_cenX.SetBounds(transX, moveTop + 80, 72, txtRo_cenX.Height);
+            label16.SetBounds(transX + 84, moveTop + 58, label16.Width, label16.Height);
+            txtRo_cenY.SetBounds(transX + 84, moveTop + 80, 72, txtRo_cenY.Height);
+            picScaleX.SetBounds(transX, moveTop + 138, icon, icon);
+            txtScale_Value.SetBounds(transX + 51, moveTop + 146, 38, txtScale_Value.Height);
+            picScaleY.SetBounds(transX + 96, moveTop + 138, icon, icon);
+            label8.SetBounds(transX, moveTop + 184, label8.Width, label8.Height);
+            label9.SetBounds(transX + 96, moveTop + 184, label9.Width, label9.Height);
+
+            int colGap = 8;
+            int rowGap = 5;
+            int btnW = GetOperationButtonWidth(panelWidth);
+            int btnH = 36;
+            int startX = GetOperationButtonStartX(panelWidth);
+            int startY = 6;
+
+            Button[,] buttons = new Button[,]
+            {
+                { btnInitial, btOpenLaser, btMark },
+                { btnClose, btCloseLaser, btnStopMark },
+                { btRedPreview, btRedPreviewCou, btRedPreviewEnt },
+                { btMarkEnt, btZJPosSearch, btParam }
+            };
+
+            for (int r = 0; r < buttons.GetLength(0); r++)
+            {
+                for (int c = 0; c < buttons.GetLength(1); c++)
+                {
+                    Button button = buttons[r, c];
+                    if (button == null) continue;
+                    button.SetBounds(startX + c * (btnW + colGap), startY + r * (btnH + rowGap), btnW, btnH);
+                }
+            }
+
+            int infoY = startY + 4 * (btnH + rowGap) + 2;
+            int textY = infoY + 20;
+            label12.SetBounds(startX, infoY, label12.Width, label12.Height);
+            txtZJPosX.SetBounds(startX, textY, Math.Min(76, btnW), txtZJPosX.Height);
+            label5.SetBounds(startX + btnW + colGap, infoY, label5.Width, label5.Height);
+            txtZJPosY.SetBounds(startX + btnW + colGap, textY, Math.Min(76, btnW), txtZJPosY.Height);
+            chkContinue.SetBounds(startX + 2 * (btnW + colGap), textY + 3, chkContinue.Width, chkContinue.Height);
+        }
         private void LayoutPreviewBoxes()
         {
             if (panelImage == null || pictureBox1 == null || pictureBox2 == null)
@@ -631,35 +727,44 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            int gap = 48;
-            int padding = 4;
+            int gap = 32;
+            int padding = 1;
             int availableWidth = Math.Max(1, panelImage.ClientSize.Width - padding * 2 - gap);
             int availableHeight = Math.Max(1, panelImage.ClientSize.Height - padding * 2);
-            int side = Math.Max(1, Math.Min(availableHeight, availableWidth / 2));
-            int desiredRightPreviewLeft = btnInitial.Left;
-            int maxAlignedSide = panelImage.ClientSize.Width - padding - desiredRightPreviewLeft;
-            if (maxAlignedSide > 0)
+            float aspect1 = GetPreviewBoxAspect(0);
+            float aspect2 = GetPreviewBoxAspect(1);
+
+            int height = availableHeight;
+            int width1 = Math.Max(1, (int)Math.Round(height * aspect1));
+            int width2 = Math.Max(1, (int)Math.Round(height * aspect2));
+            int totalWidth = width1 + width2 + gap;
+            if (totalWidth > availableWidth)
             {
-                side = Math.Min(side, Math.Max(180, maxAlignedSide));
+                double ratio = (double)availableWidth / totalWidth;
+                width1 = Math.Max(1, (int)Math.Round(width1 * ratio));
+                width2 = Math.Max(1, (int)Math.Round(width2 * ratio));
+                height = Math.Max(1, (int)Math.Round(height * ratio));
+                totalWidth = width1 + width2 + gap;
             }
 
-            int minRightPreviewLeft = padding + side + gap;
-            int maxRightPreviewLeft = panelImage.ClientSize.Width - padding - side;
-            int rightPreviewLeft = Math.Min(
-                Math.Max(minRightPreviewLeft, desiredRightPreviewLeft),
-                Math.Max(minRightPreviewLeft, maxRightPreviewLeft));
             int left = 0;
             int top = padding;
 
-            pictureBox1.Bounds = new Rectangle(left, top, side, side);
-            pictureBox2.Bounds = new Rectangle(rightPreviewLeft, top, side, side);
+            pictureBox1.Bounds = new Rectangle(left, top, width1, height);
+            pictureBox2.Bounds = new Rectangle(left + width1 + gap, top, width2, height);
+        }
+
+        private float GetPreviewBoxAspect(int card)
+        {
+            // The preview frame is only a zoomed window; keep it square and let world bounds control the mapping.
+            return 1f;
         }
         /// <summary>
-        /// è°ƒæ•´ splitContainer1 çš„åˆ†å‰²è·ç¦»ï¼Œåªåœ¨å®Œæ•´æ¨¡å¼ä¸‹ç”Ÿæ•ˆ
+        /// µ÷Õû splitContainer1 µÄ·Ö¸î¾àÀë£¬Ö»ÔÚÍêÕûÄ£Ê½ÏÂÉúĞ§
         /// </summary>
-
+        
         /// <summary>
-        /// åˆå§‹åŒ–çˆ¶çª—å£æ£€æµ‹å®šæ—¶å™¨
+        /// ³õÊ¼»¯¸¸´°¿Ú¼ì²â¶¨Ê±Æ÷
         /// </summary>
         private void InitParentCheckTimer()
         {
@@ -670,14 +775,14 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// å®šæ—¶æ£€æµ‹çˆ¶çª—å£çŠ¶æ€
+        /// ¶¨Ê±¼ì²â¸¸´°¿Ú×´Ì¬
         /// </summary>
         private void ParentCheckTimer_Tick(object sender, EventArgs e)
         {
-            // æ£€æŸ¥çª—å£å¥æŸ„æ˜¯å¦å·²åˆ›å»º
+            // ¼ì²é´°¿Ú¾ä±úÊÇ·ñÒÑ´´½¨
             if (!this.IsHandleCreated)
             {
-                return;  // å¥æŸ„æœªåˆ›å»ºï¼Œè·³è¿‡æœ¬æ¬¡æ‰§è¡Œ
+                return;  // ¾ä±úÎ´´´½¨£¬Ìø¹ı±¾´ÎÖ´ĞĞ
             }
 
             if (_isEmbedded && _containerHwnd != IntPtr.Zero)
@@ -686,7 +791,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     this.BeginInvoke(new Action(() =>
                     {
-                        //   AddMsg("çˆ¶çª—å£å·²å…³é—­ï¼Œæœ€å°åŒ–åˆ°æ‰˜ç›˜");
+                     //   AddMsg("¸¸´°¿ÚÒÑ¹Ø±Õ£¬×îĞ¡»¯µ½ÍĞÅÌ");
                         this.WindowState = FormWindowState.Minimized;
                         this.ShowInTaskbar = false;
                         JCZServerIcon.Visible = true;
@@ -697,9 +802,9 @@ namespace BJJCZ_BaseDevelop
         #endregion
 
         /// <summary>
-        /// å°è¯•åˆå§‹åŒ–ä¸¤ä¸ªæ¿å¡
+        /// ³¢ÊÔ³õÊ¼»¯Á½¸ö°å¿¨
         /// </summary>
-        #region æ¿å¡åˆå§‹åŒ–ã€ç®¡é“é€šä¿¡ä¸æ—¥å¿—
+        #region °å¿¨³õÊ¼»¯¡¢¹ÜµÀÍ¨ĞÅÓëÈÕÖ¾
         private void TryInitializeCards()
         {
             int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
@@ -707,39 +812,45 @@ namespace BJJCZ_BaseDevelop
             {
                 JczInitErrs[0] = 0;
                 JczInitErrs[1] = 0;
-                AddMsg("æ¿å¡åˆå§‹åŒ–æˆåŠŸï¼Œæ­£å¸¸æ¨¡å¼è¿è¡Œ");
-
-                // ========== æ–°å¢ï¼šæŸ¥è¯¢å¹¶æ˜¾ç¤ºæ‰€æœ‰å¡çš„æ˜ å°„å…³ç³» ==========
-                int[] snArray = new int[8];
-                int ret = JczLmc.lmc1_GetAllCardSN(snArray);
-                if (ret == 0)
-                {
-                    AddMsg("----- å¡å·æ˜ å°„ä¿¡æ¯ -----");
-                    for (int i = 0; i < snArray.Length; i++)
-                    {
-                        if (snArray[i] != -1)
-                        {
-                            AddMsg($"é€»è¾‘ç´¢å¼• {i + 1}  -> ç‰©ç†å¡å· {snArray[i]}");
-                        }
-                    }
-                    AddMsg("------------------------");
-                }
-                else
-                {
-                    AddMsg($"è·å–å¡å·æ˜ å°„å¤±è´¥ï¼Œé”™è¯¯ç : {ret}");
-                }
-                // =================================================
+                AddMsg("°å¿¨³õÊ¼»¯³É¹¦£¬Õı³£Ä£Ê½ÔËĞĞ");
+                RefreshPhysicalCardMapping("Æô¶¯³õÊ¼»¯");
 
             }
             else
             {
                 bSimulateMode[0] = true;
                 bSimulateMode[1] = true;
-                AddMsg($"æ¿å¡åˆå§‹åŒ–å¤±è´¥({JczLmc.GetErrorText(initResult)})ï¼Œå·²åˆ‡æ¢è‡³æ¨¡æ‹Ÿæ¨¡å¼");
+                AddMsg($"°å¿¨³õÊ¼»¯Ê§°Ü({JczLmc.GetErrorText(initResult)})£¬ÒÑÇĞ»»ÖÁÄ£ÄâÄ£Ê½");
             }
         }
 
-        // =============== ç®¡é“æ¶ˆæ¯æ¥æ”¶ ===============
+        private void RefreshPhysicalCardMapping(string stage)
+        {
+            int[] snArray = new int[8];
+            int ret = JczLmc.lmc1_GetAllCardSN(snArray);
+            if (ret != 0)
+            {
+                AddMsg($"{stage}»ñÈ¡¿¨ºÅÓ³ÉäÊ§°Ü£¬´íÎóÂë: {ret}£¬¼ÌĞøÊ¹ÓÃµ±Ç°Ó³Éä: ¿¨1->{phyCardSN[0]} ¿¨2->{phyCardSN[1]}");
+                return;
+            }
+
+            AddMsg("----- ¿¨ºÅÓ³ÉäĞÅÏ¢ -----");
+            for (int i = 0; i < snArray.Length; i++)
+            {
+                if (snArray[i] != -1)
+                {
+                    AddMsg($"Âß¼­Ë÷Òı {i + 1}  -> ÎïÀí¿¨ºÅ {snArray[i]}");
+                }
+            }
+
+            // ¶àÍ·¿âÊ¾ÀıÀï GetAllCardSN ·µ»ØµÄÊÇ¿¨IDÏÔÊ¾ĞÅÏ¢£»
+            // LoadEzdFile/Mark µÈº¯ÊıÈÔÈ»Ê¹ÓÃ¿¨²ÛË÷Òı i£¬Òò´ËÁ½Â·¹ÜµÀ¼ÌĞø¶ÔÓ¦ SDK ¿¨²Û0/1¡£
+            phyCardSN[0] = 0;
+            phyCardSN[1] = 1;
+            AddMsg("------------------------");
+        }
+
+        // =============== ¹ÜµÀÏûÏ¢½ÓÊÕ ===============
         private void Pipechanel_msgReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
         {
             Pipechanel pipe = sender as Pipechanel;
@@ -761,7 +872,7 @@ namespace BJJCZ_BaseDevelop
             currentCard = card;
             lastCmdCard = card;
 
-            // å¤„ç†å®¢æˆ·ç«¯è¿”å›çš„å®¹å™¨å¥æŸ„
+            // ´¦Àí¿Í»§¶Ë·µ»ØµÄÈİÆ÷¾ä±ú
             if (param.cmdType == CMD_CONTAINER_HANDLE && param.nErr == 0)
             {
                 SetContainerAndEmbed((IntPtr)param.dParam1);
@@ -771,7 +882,7 @@ namespace BJJCZ_BaseDevelop
             CMDAna(param);
         }
 
-        // =============== æ—¥å¿— ===============
+        // =============== ÈÕÖ¾ ===============
         private void AddMsg(string txtMsg)
         {
             if (mainMsgBox.IsDisposed) return;
@@ -784,53 +895,53 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// æ ¹æ®å‘½ä»¤ç±»å‹è¿”å›ä¸­æ–‡æè¿°
+        /// ¸ù¾İÃüÁîÀàĞÍ·µ»ØÖĞÎÄÃèÊö
         /// </summary>
         private string GetCmdDescription(int cmdType)
         {
             switch (cmdType)
             {
-                case 0: return "æŸ¥è¯¢çŠ¶æ€";
-                case 1: return "åˆå§‹åŒ–æ¿å¡";
-                case 2: return "å…³é—­æ¿å¡";
-                case 3: return "å¼€å…³æ¿€å…‰å™¨";
-                case 4: return "åŠ è½½æ–‡ä»¶";
-                case 5: return "ä¿å­˜æ–‡ä»¶";
-                case 6: return "åŠ è½½æ–‡ä»¶å¹¶è·å–å¯¹è±¡";
-                case 7: return "æŸ¥è¯¢å¯¹è±¡ä¿¡æ¯";
-                case 10: return "æ¿€å…‰åŠ å·¥";
-                case 11: return "åœæ­¢åŠ å·¥";
-                case 12: return "çº¢å…‰é¢„è§ˆè¾¹ç•Œ";
-                case 13: return "çº¢å…‰é¢„è§ˆè½®å»“";
-                case 15: return "æŒ¯é•œç§»åŠ¨";
-                case 21: return "åŠ å·¥æŒ‡å®šå¯¹è±¡";
-                case 22: return "çº¢å…‰é¢„è§ˆå¯¹è±¡";
-                case 23: return "æ—‹è½¬å¯¹è±¡";
-                case 24: return "ç§»åŠ¨å¯¹è±¡";
-                case 25: return "ç¼©æ”¾å¯¹è±¡";
-                case 27: return "è®¾ç½®æ—‹è½¬å¹³ç§»";
-                case 28: return "ç¾¤ç»„/è§£ç»„";
-                case 31: return "é‡å‘½åå¯¹è±¡";
-                case 40: return "è®¾å¤‡é…ç½®";
-                case 42: return "æ›´æ–°å¯¹é½å‚æ•°";
-                case 44: return "ç”Ÿæˆé˜µåˆ—å¡«å……åœ†æ¨¡æ¿";
-                case 90: return "ç•Œé¢å¸ƒå±€";
-                case 100: return "æŸ¥è¯¢çŠ¶æ€å¹¶åŠ è½½";
-                case 110: return "æ¿€å…‰åŠ å·¥(æ¸…é™¤åç§»)";
-                case 200: return "è¯·æ±‚åµŒå…¥";
-                case 201: return "å®¹å™¨å¥æŸ„";
-                default: return $"æœªçŸ¥å‘½ä»¤({cmdType})";
+                case 0: return "²éÑ¯×´Ì¬";
+                case 1: return "³õÊ¼»¯°å¿¨";
+                case 2: return "¹Ø±Õ°å¿¨";
+                case 3: return "¿ª¹Ø¼¤¹âÆ÷";
+                case 4: return "¼ÓÔØÎÄ¼ş";
+                case 5: return "±£´æÎÄ¼ş";
+                case 6: return "¼ÓÔØÎÄ¼ş²¢»ñÈ¡¶ÔÏó";
+                case 7: return "²éÑ¯¶ÔÏóĞÅÏ¢";
+                case 10: return "¼¤¹â¼Ó¹¤";
+                case 11: return "Í£Ö¹¼Ó¹¤";
+                case 12: return "ºì¹âÔ¤ÀÀ±ß½ç";
+                case 13: return "ºì¹âÔ¤ÀÀÂÖÀª";
+                case 15: return "Õñ¾µÒÆ¶¯";
+                case 21: return "¼Ó¹¤Ö¸¶¨¶ÔÏó";
+                case 22: return "ºì¹âÔ¤ÀÀ¶ÔÏó";
+                case 23: return "Ğı×ª¶ÔÏó";
+                case 24: return "ÒÆ¶¯¶ÔÏó";
+                case 25: return "Ëõ·Å¶ÔÏó";
+                case 27: return "ÉèÖÃĞı×ªÆ½ÒÆ";
+                case 28: return "Èº×é/½â×é";
+                case 31: return "ÖØÃüÃû¶ÔÏó";
+                case 40: return "Éè±¸ÅäÖÃ";
+                case 42: return "¸üĞÂ¶ÔÆë²ÎÊı";
+                case 44: return "Éú³ÉÕóÁĞÌî³äÔ²Ä£°å";
+                case 90: return "½çÃæ²¼¾Ö";
+                case 100: return "²éÑ¯×´Ì¬²¢¼ÓÔØ";
+                case 110: return "¼¤¹â¼Ó¹¤(Çå³ıÆ«ÒÆ)";
+                case 200: return "ÇëÇóÇ¶Èë";
+                case 201: return "ÈİÆ÷¾ä±ú";
+                default: return $"Î´ÖªÃüÁî({cmdType})";
             }
         }
 
         /// <summary>
-        /// æ ¹æ®å‘½ä»¤ç±»å‹è¿”å›æ“ä½œå¯¹è±¡æè¿°
+        /// ¸ù¾İÃüÁîÀàĞÍ·µ»Ø²Ù×÷¶ÔÏóÃèÊö
         /// </summary>
         private string GetCmdTarget(LCZControlParam param)
         {
             switch (param.cmdType)
             {
-                case 3: return param.bOpen ? "å¼€" : "å…³";
+                case 3: return param.bOpen ? "¿ª" : "¹Ø";
                 case 4:
                 case 6:
                 case 100:
@@ -845,22 +956,22 @@ namespace BJJCZ_BaseDevelop
                     return !string.IsNullOrEmpty(param.strEntyName) ? param.strEntyName : "";
                 case 12:
                 case 13:
-                    return param.bOpen ? "å¼€å§‹" : "åœæ­¢";
+                    return param.bOpen ? "¿ªÊ¼" : "Í£Ö¹";
                 case 15:
                     return $"({param.dParam1:F2},{param.dParam2:F2})";
                 case 44:
-                    return $"{param.ind1}è¡Œ x {param.ind2}åˆ—";
+                    return $"{param.ind1}ĞĞ x {param.ind2}ÁĞ";
                 default:
                     return "";
             }
         }
         #endregion
 
-        #region åŸºç¡€å¯¹è±¡æ·»åŠ ä¸é˜»å¡åŠ å·¥
-        // åœ¨ JczLmc.cs çš„ #region æ·»åŠ åˆ é™¤å¯¹è±¡ åŒºåŸŸæ·»åŠ 
+        #region »ù´¡¶ÔÏóÌí¼ÓÓë×èÈû¼Ó¹¤
+        // ÔÚ JczLmc.cs µÄ #region Ìí¼ÓÉ¾³ı¶ÔÏó ÇøÓòÌí¼Ó
 
         /// <summary>
-        /// æ·»åŠ çº¿æ®µåˆ°æŒ‡å®šæ¿å¡
+        /// Ìí¼ÓÏß¶Îµ½Ö¸¶¨°å¿¨
         /// </summary>
         public int AddLineToLib(int cardSN, double x1, double y1, double x2, double y2,
                                         string entName, int penNo, bool hatch = false)
@@ -872,49 +983,51 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// æ·»åŠ çŸ©å½¢åˆ°æŒ‡å®šæ¿å¡
+        /// Ìí¼Ó¾ØĞÎµ½Ö¸¶¨°å¿¨
         /// </summary>
-        public int AddRectangleToLib(int cardSN, double x, double y, double width, double height,
+        public  int AddRectangleToLib(int cardSN, double x, double y, double width, double height,
                                              string entName, int penNo, bool hatch = false)
         {
-            double[,] points = new double[5, 2];  // 5ä¸ªç‚¹ï¼ˆé—­åˆå›åˆ°èµ·ç‚¹ï¼‰
-            points[0, 0] = x; points[0, 1] = y;           // å·¦ä¸‹
-            points[1, 0] = x; points[1, 1] = y + height;  // å·¦ä¸Š
-            points[2, 0] = x + width; points[2, 1] = y + height; // å³ä¸Š
-            points[3, 0] = x + width; points[3, 1] = y;        // å³ä¸‹
-            points[4, 0] = x; points[4, 1] = y;           // å›åˆ°èµ·ç‚¹ï¼ˆé—­åˆï¼‰
+            double[,] points = new double[5, 2];  // 5¸öµã£¨±ÕºÏ»Øµ½Æğµã£©
+            points[0, 0] = x; points[0, 1] = y;           // ×óÏÂ
+            points[1, 0] = x; points[1, 1] = y + height;  // ×óÉÏ
+            points[2, 0] = x + width; points[2, 1] = y + height; // ÓÒÉÏ
+            points[3, 0] = x + width; points[3, 1] = y;        // ÓÒÏÂ
+            points[4, 0] = x; points[4, 1] = y;           // »Øµ½Æğµã£¨±ÕºÏ£©
             return JczLmc.lmc1_AddCurveToLib(phyCardSN[cardSN], points, 5, entName, penNo, hatch ? 1 : 0);
         }
 
         /// <summary>
-        /// æ·»åŠ ç‚¹åˆ°æŒ‡å®šæ¿å¡ï¼ˆå¯ç”¨äºç‚¹é˜µæ ‡å®šï¼‰
+        /// Ìí¼Óµãµ½Ö¸¶¨°å¿¨£¨¿ÉÓÃÓÚµãÕó±ê¶¨£©
         /// </summary>
-        public int AddPointToLib(int cardSN, double x, double y, string entName,
+        public  int AddPointToLib(int cardSN, double x, double y, string entName,
                                          int penNo, double delayMs = 100)
         {
-            // ä½¿ç”¨æ‰“ç‚¹å‡½æ•°ï¼Œä¸æ˜¯æ·»åŠ å¯¹è±¡åˆ°æ•°æ®åº“
+            // Ê¹ÓÃ´òµãº¯Êı£¬²»ÊÇÌí¼Ó¶ÔÏóµ½Êı¾İ¿â
             return JczLmc.lmc1_MarkPoint(phyCardSN[cardSN], x, y, delayMs, penNo);
         }
 
         /// <summary>
-        /// é˜»å¡ç­‰å¾…æ ‡åˆ»å®Œæˆï¼ˆåŒæ­¥ç‰ˆæœ¬ï¼Œé€‚åˆ BackgroundWorkerï¼‰
+        /// ×èÈûµÈ´ı±ê¿ÌÍê³É£¨Í¬²½°æ±¾£¬ÊÊºÏ BackgroundWorker£©
         /// </summary>
-        public int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
+        public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
         {
             if (!CanStartLaserMark(cardSN))
             {
                 return 19;
             }
-            // å¼€å§‹æ ‡åˆ»
+            // ¿ªÊ¼±ê¿Ì
+            AddMsg($"¿¨{cardSN + 1} µ÷ÓÃlmc1_Mark: SDK¿¨²Û={phyCardSN[cardSN]} Fly={bFlyMark}");
             int nErr = JczLmc.lmc1_Mark(phyCardSN[cardSN], bFlyMark);
+            AddMsg($"¿¨{cardSN + 1} lmc1_Mark·µ»Ø: {JczLmc.GetErrorText(nErr)}");
             if (nErr != 0)
             {
                 return nErr;
             }
 
-            // è½®è¯¢ç­‰å¾…æ ‡åˆ»å®Œæˆ
+            // ÂÖÑ¯µÈ´ı±ê¿ÌÍê³É
             int elapsedMs = 0;
-            int checkInterval = 10;  // æ¯10msæ£€æŸ¥ä¸€æ¬¡
+            int checkInterval = 10;  // Ã¿10ms¼ì²éÒ»´Î
 
             while (elapsedMs < timeoutMs)
             {
@@ -924,7 +1037,7 @@ namespace BJJCZ_BaseDevelop
                     return 8;
                 }
                 int finishStatus = JczLmc.lmc1_IsMarkFinish(phyCardSN[cardSN]);
-                // IsMarkFinish è¿”å›å€¼ï¼š1=å¾…æœºï¼ˆå®Œæˆï¼‰ï¼Œ0=åŠ å·¥ä¸­
+                // IsMarkFinish ·µ»ØÖµ£º1=´ı»ú£¨Íê³É£©£¬0=¼Ó¹¤ÖĞ
                 if (finishStatus == 1)
                 {
                     return 0;
@@ -934,14 +1047,69 @@ namespace BJJCZ_BaseDevelop
                 elapsedMs += checkInterval;
             }
 
-            // è¶…æ—¶ï¼Œå°è¯•åœæ­¢
+            // ³¬Ê±£¬³¢ÊÔÍ£Ö¹
             JczLmc.lmc1_StopMark(phyCardSN[cardSN]);
-            return 10;  // è¿”å›è¶…æ—¶é”™è¯¯ç 
+            return 10;  // ·µ»Ø³¬Ê±´íÎóÂë
+        }
+
+        private int StartMarkAllObjects(int card, int responseCmdType, int clientSeq, bool useVisualRotateMove, string visualStage, string markLabel)
+        {
+            if (!CanStartLaserMark(card))
+            {
+                return 19;
+            }
+
+            if (bInMark[card])
+            {
+                AddMsg($"¿¨{card + 1} ÕıÔÚ¼Ó¹¤ÖĞ£¬{markLabel}Ôİ²»ÄÜ¿ªÊ¼");
+                return 19;
+            }
+
+            markStopRequested[card] = false;
+            bInMark[card] = true;
+            CleanupPreviewAnchorEntities(card);
+
+            bool markUsesVisualRotateMove = false;
+            if (useVisualRotateMove)
+            {
+                markUsesVisualRotateMove = ApplyVisualRotateMoveParamIfReady(card, visualStage);
+                if (!markUsesVisualRotateMove)
+                {
+                    JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
+                }
+            }
+
+            var worker = new BackgroundWorker();
+            worker.DoWork += (s, ev) =>
+            {
+                int markErr = lmc1_MarkBlocking(card, false);
+                bInMark[card] = false;
+                if (markUsesVisualRotateMove)
+                {
+                    visualRotateMoveReady[card] = false;
+                }
+
+                AddMsg(markStopRequested[card]
+                    ? $"¿¨{card + 1} {markLabel}ÒÑÍ£Ö¹ -> {JczLmc.GetErrorText(markErr)}"
+                    : $"¿¨{card + 1} {markLabel}Íê³É -> {JczLmc.GetErrorText(markErr)}");
+
+                var result = new LCZControlParam
+                {
+                    cardSN = card,
+                    cmdType = responseCmdType,
+                    nErr = markErr,
+                    bOpen = true,
+                    ind3 = clientSeq
+                };
+                SendResponse(result);
+            };
+            worker.RunWorkerAsync();
+            return 0;
         }
         #endregion
 
-        #region ç®¡é“å‘½ä»¤è§£æ
-        // =============== æ ¸å¿ƒå‘½ä»¤è§£æï¼ˆç®€åŒ–ç‰ˆï¼Œä¿ç•™åŸæœ‰é€»è¾‘ï¼‰===============
+        #region ¹ÜµÀÃüÁî½âÎö
+        // =============== ºËĞÄÃüÁî½âÎö£¨¼ò»¯°æ£¬±£ÁôÔ­ÓĞÂß¼­£©===============
         /*private void CMDAna(LCZControlParam param)
         {
             int clientSeq = param.ind3;
@@ -949,7 +1117,7 @@ namespace BJJCZ_BaseDevelop
 
             string cmdDesc = GetCmdDescription(param.cmdType);
             string cmdTarget = GetCmdTarget(param);
-            string logMsg = $"æ”¶åˆ°å‘½ä»¤ [å¡{card+1}] {cmdDesc}";
+            string logMsg = $"ÊÕµ½ÃüÁî [¿¨{card+1}] {cmdDesc}";
             if (!string.IsNullOrEmpty(cmdTarget))
             {
                 logMsg += $" - {cmdTarget}";
@@ -970,7 +1138,7 @@ namespace BJJCZ_BaseDevelop
             {
                 param.nErr = 11;
                 SendResponse(param);
-                AddMsg($"å¡{card+1} æœªåˆå§‹åŒ–ï¼Œæ‹’ç»æ‰§è¡Œå‘½ä»¤");
+                AddMsg($"¿¨{card+1} Î´³õÊ¼»¯£¬¾Ü¾øÖ´ĞĞÃüÁî");
             //    return;
             }
 
@@ -989,7 +1157,7 @@ namespace BJJCZ_BaseDevelop
                             nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                             if (nErr == 0)
                             {
-                                // ä¿å­˜å½“å‰æ–‡ä»¶è·¯å¾„
+                                // ±£´æµ±Ç°ÎÄ¼şÂ·¾¶
                                 currentFilePath[card] = param.strFileName;
 
                                 nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
@@ -1005,7 +1173,7 @@ namespace BJJCZ_BaseDevelop
                             }
                             else
                             {
-                                AddMsg($"å¡{card+1} åŠ è½½æ–‡ä»¶å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"¿¨{card+1} ¼ÓÔØÎÄ¼şÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                             }
                         }
                         break;
@@ -1013,30 +1181,30 @@ namespace BJJCZ_BaseDevelop
                     case 1:
                         nErr = JczLmc.InitializeCard(Application.StartupPath, false, this.Handle);
                         JczInitErrs[card] = nErr;
-                        AddMsg($"å¡{card+1} åˆå§‹åŒ–{(nErr == 0 ? "æˆåŠŸ" : "å¤±è´¥")} -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card+1} ³õÊ¼»¯{(nErr == 0 ? "³É¹¦" : "Ê§°Ü")} -> {JczLmc.GetErrorText(nErr)}");
                         if (nErr != 0)
                         {
                             bSimulateMode[card] = true;
-                            AddMsg($"å¡{card+1} å·²åˆ‡æ¢è‡³æ¨¡æ‹Ÿæ¨¡å¼");
+                            AddMsg($"¿¨{card+1} ÒÑÇĞ»»ÖÁÄ£ÄâÄ£Ê½");
                         }
                         break;
 
                     case 2:
                         nErr = JczLmc.lmc1_Close();
                         JczInitErrs[card] = nErr;
-                        AddMsg($"å¡{card+1} å…³é—­ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card+1} ¹Ø±Õ -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 3:
                         nErr = JczLmc.lmc1_LaserOn(phyCardSN[card], param.bOpen);
-                        AddMsg($"å¡{card+1} {(param.bOpen ? "æ‰“å¼€" : "å…³é—­")}æ¿€å…‰ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card+1} {(param.bOpen ? "´ò¿ª" : "¹Ø±Õ")}¼¤¹â -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 4:
                         nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                         if (nErr == 0)
                         {
-                            // ä¿å­˜å½“å‰æ–‡ä»¶è·¯å¾„
+                            // ±£´æµ±Ç°ÎÄ¼şÂ·¾¶
                             currentFilePath[card] = param.strFileName;
 
                             nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
@@ -1051,20 +1219,20 @@ namespace BJJCZ_BaseDevelop
                            
                         }
                         RefreshPreview(card);
-                        AddMsg($"å¡{card+1} åŠ è½½æ–‡ä»¶ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card+1} ¼ÓÔØÎÄ¼ş -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
-                    case 5:  // ä¿å­˜æ–‡ä»¶ - ä¿®æ”¹ä¸ºè‡ªåŠ¨ä½¿ç”¨åŸè·¯å¾„
+                    case 5:  // ±£´æÎÄ¼ş - ĞŞ¸ÄÎª×Ô¶¯Ê¹ÓÃÔ­Â·¾¶
                         string savePath = param.strFileName;
 
-                        // å¦‚æœå‘½ä»¤ä¸­æ²¡æœ‰æŒ‡å®šæ–‡ä»¶åï¼Œä½†æœ‰æš‚å­˜çš„æ–‡ä»¶è·¯å¾„ï¼Œåˆ™ä½¿ç”¨åŸè·¯å¾„
+                        // Èç¹ûÃüÁîÖĞÃ»ÓĞÖ¸¶¨ÎÄ¼şÃû£¬µ«ÓĞÔİ´æµÄÎÄ¼şÂ·¾¶£¬ÔòÊ¹ÓÃÔ­Â·¾¶
                         if (string.IsNullOrEmpty(savePath) && !string.IsNullOrEmpty(currentFilePath[card]))
                         {
                             savePath = currentFilePath[card];
-                            AddMsg($"å¡{card+1} è‡ªåŠ¨ä¿å­˜åˆ°åŸè·¯å¾„: {savePath}");
+                            AddMsg($"¿¨{card+1} ×Ô¶¯±£´æµ½Ô­Â·¾¶: {savePath}");
                         }
 
-                        // å¦‚æœä»ç„¶æ²¡æœ‰è·¯å¾„ï¼Œä½¿ç”¨é»˜è®¤è·¯å¾„
+                        // Èç¹ûÈÔÈ»Ã»ÓĞÂ·¾¶£¬Ê¹ÓÃÄ¬ÈÏÂ·¾¶
                         if (string.IsNullOrEmpty(savePath))
                         {
                             savePath = Path.Combine(Application.StartupPath, "route.ezd");
@@ -1073,10 +1241,10 @@ namespace BJJCZ_BaseDevelop
                         nErr = SaveEntLibToFileWithoutPreviewAnchor(card, savePath);
                         if (nErr == 0)
                         {
-                            // ä¿å­˜æˆåŠŸåæ›´æ–°æš‚å­˜è·¯å¾„ï¼ˆå¦‚æœæ˜¯æ–°è·¯å¾„ï¼‰
+                            // ±£´æ³É¹¦ºó¸üĞÂÔİ´æÂ·¾¶£¨Èç¹ûÊÇĞÂÂ·¾¶£©
                             currentFilePath[card] = savePath;
                         }
-                        AddMsg($"å¡{card+1} ä¿å­˜æ–‡ä»¶ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card+1} ±£´æÎÄ¼ş -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 10:
@@ -1092,7 +1260,7 @@ namespace BJJCZ_BaseDevelop
                                 //nErr = JczLmc.lmc1_Mark(card, false);
                                   nErr =  lmc1_MarkBlocking(card, false);
                                 bInMark[card] = false;
-                                AddMsg($"å¡{card+1} åŠ å·¥å®Œæˆ -> {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"¿¨{card+1} ¼Ó¹¤Íê³É -> {JczLmc.GetErrorText(nErr)}");
                                 var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
                                 SendResponse(result);
                             };
@@ -1206,65 +1374,65 @@ namespace BJJCZ_BaseDevelop
                             nErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], strEntNames[card][param.ind1], param.strEntyName);
                         RefreshPreview(card);
                         break;
-                    case 34:  // æ·»åŠ åœ†
-                              // å‚æ•°æ˜ å°„ï¼š
-                              // dParam1 = ptCenX (åœ†å¿ƒXåæ ‡)
-                              // dParam2 = ptCenY (åœ†å¿ƒYåæ ‡)
-                              // dParam3 = dRadius (åœ†åŠå¾„)
-                              // strEntyName = å¯¹è±¡åç§°
-                              // ind1 = ç¬”å·
-                              // bOpen = æ˜¯å¦å¡«å…… (å¯é€‰ï¼Œå¦‚æœæœåŠ¡ç«¯æ”¯æŒ)
-                              // bFirst = æ˜¯å¦å¯ç”¨å¡«å…… (æ‰©å±•å‚æ•°)
+                    case 34:  // Ìí¼ÓÔ²
+                              // ²ÎÊıÓ³Éä£º
+                              // dParam1 = ptCenX (Ô²ĞÄX×ø±ê)
+                              // dParam2 = ptCenY (Ô²ĞÄY×ø±ê)
+                              // dParam3 = dRadius (Ô²°ë¾¶)
+                              // strEntyName = ¶ÔÏóÃû³Æ
+                              // ind1 = ±ÊºÅ
+                              // bOpen = ÊÇ·ñÌî³ä (¿ÉÑ¡£¬Èç¹û·şÎñ¶ËÖ§³Ö)
+                              // bFirst = ÊÇ·ñÆôÓÃÌî³ä (À©Õ¹²ÎÊı)
 
                         double centerX = param.dParam1;
                         double centerY = param.dParam2;
                         double radius = param.dParam3;
                         string entNameCir = string.IsNullOrEmpty(param.strEntyName) ? "Circle" : param.strEntyName;
-                        int penNo = param.ind1 > 0 ? param.ind1 : 1;  // é»˜è®¤ç¬”å·1
+                        int penNo = param.ind1 > 0 ? param.ind1 : 1;  // Ä¬ÈÏ±ÊºÅ1
 
-                        // è°ƒç”¨æ·»åŠ åœ†çš„å‡½æ•°
+                        // µ÷ÓÃÌí¼ÓÔ²µÄº¯Êı
                         nErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], centerX, centerY, radius, entNameCir, penNo);
                        // nErr = JczLmc.AddCircleToLib(card, centerX, centerY, radius, entName, penNo);
 
                         if (nErr == 0)
                         {
-                            // å¦‚æœéœ€è¦å¡«å……ï¼Œå¯ä»¥åç»­è°ƒç”¨å¡«å……å‡½æ•°
+                            // Èç¹ûĞèÒªÌî³ä£¬¿ÉÒÔºóĞøµ÷ÓÃÌî³äº¯Êı
                             if (param.bOpen && radius > 0)
                             {
-                                // åˆ›å»ºå¡«å……å¯¹è±¡åç§°
+                                // ´´½¨Ìî³ä¶ÔÏóÃû³Æ
                                 string hatchEntName = entNameCir + "_Hatch";
                                 nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
                                 if (nErr == 0)
                                 {
-                                    AddMsg($"å¡{card+1} æ·»åŠ åœ†å¹¶å¡«å……æˆåŠŸ -> {entNameCir}");
+                                    AddMsg($"¿¨{card+1} Ìí¼ÓÔ²²¢Ìî³ä³É¹¦ -> {entNameCir}");
                                 }
                                 else
                                 {
-                                    AddMsg($"å¡{card+1} æ·»åŠ åœ†æˆåŠŸï¼Œä½†å¡«å……å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"¿¨{card+1} Ìí¼ÓÔ²³É¹¦£¬µ«Ìî³äÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"å¡{card+1} æ·»åŠ åœ†æˆåŠŸ -> {entNameCir} (åœ†å¿ƒ:{centerX},{centerY} åŠå¾„:{radius})");
+                                AddMsg($"¿¨{card+1} Ìí¼ÓÔ²³É¹¦ -> {entNameCir} (Ô²ĞÄ:{centerX},{centerY} °ë¾¶:{radius})");
                             }
 
-                            // åˆ·æ–°å¯¹è±¡åˆ—è¡¨
+                            // Ë¢ĞÂ¶ÔÏóÁĞ±í
                         //    RefreshEntityList(card);
                         }
                         else
                         {
-                            AddMsg($"å¡{card+1} æ·»åŠ åœ†å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card+1} Ìí¼ÓÔ²Ê§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
-                    case 35:  // æ·»åŠ çº¿æ®µ
-                              // å‚æ•°æ˜ å°„ï¼š
-                              // dParam1 = X1 (èµ·ç‚¹X)
-                              // dParam2 = Y1 (èµ·ç‚¹Y)  
-                              // dParam3 = X2 (ç»ˆç‚¹X)
-                              // dParam4 = Y2 (ç»ˆç‚¹Y)
-                              // strEntyName = å¯¹è±¡åç§°
-                              // ind1 = ç¬”å· (é»˜è®¤2)
-                              // bOpen = æ˜¯å¦å¡«å…… (çº¿æ®µå¡«å……æ— æ•ˆï¼Œä½†ä¿ç•™å‚æ•°)
+                    case 35:  // Ìí¼ÓÏß¶Î
+                              // ²ÎÊıÓ³Éä£º
+                              // dParam1 = X1 (ÆğµãX)
+                              // dParam2 = Y1 (ÆğµãY)  
+                              // dParam3 = X2 (ÖÕµãX)
+                              // dParam4 = Y2 (ÖÕµãY)
+                              // strEntyName = ¶ÔÏóÃû³Æ
+                              // ind1 = ±ÊºÅ (Ä¬ÈÏ2)
+                              // bOpen = ÊÇ·ñÌî³ä (Ïß¶ÎÌî³äÎŞĞ§£¬µ«±£Áô²ÎÊı)
                         int penNo2 = param.ind1 > 0 ? param.ind1 : 2;
 
                         nErr = AddLineToLib(card, param.dParam1, param.dParam2,
@@ -1273,7 +1441,7 @@ namespace BJJCZ_BaseDevelop
 
                         if (nErr == 0)
                         {
-                            // åˆ·æ–°å¯¹è±¡åˆ—è¡¨
+                            // Ë¢ĞÂ¶ÔÏóÁĞ±í
                             nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
@@ -1286,22 +1454,22 @@ namespace BJJCZ_BaseDevelop
 
                             UpdateEntTable(card);
                             RefreshPreview(card);
-                            AddMsg($"å¡{card+1} æ·»åŠ çº¿æ®µæˆåŠŸ -> {param.strEntyName}");
+                            AddMsg($"¿¨{card+1} Ìí¼ÓÏß¶Î³É¹¦ -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"å¡{card+1} æ·»åŠ çº¿æ®µå¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card+1} Ìí¼ÓÏß¶ÎÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
-                    case 36:  // æ·»åŠ çŸ©å½¢
-                              // å‚æ•°æ˜ å°„ï¼š
-                              // dParam1 = X (å·¦ä¸‹è§’X)
-                              // dParam2 = Y (å·¦ä¸‹è§’Y)
-                              // dParam3 = Width (å®½åº¦)
-                              // dParam4 = Height (é«˜åº¦)
-                              // strEntyName = å¯¹è±¡åç§°
-                              // ind1 = ç¬”å·
-                              // bOpen = æ˜¯å¦å¡«å……
+                    case 36:  // Ìí¼Ó¾ØĞÎ
+                              // ²ÎÊıÓ³Éä£º
+                              // dParam1 = X (×óÏÂ½ÇX)
+                              // dParam2 = Y (×óÏÂ½ÇY)
+                              // dParam3 = Width (¿í¶È)
+                              // dParam4 = Height (¸ß¶È)
+                              // strEntyName = ¶ÔÏóÃû³Æ
+                              // ind1 = ±ÊºÅ
+                              // bOpen = ÊÇ·ñÌî³ä
 
                         int rectPenNo = param.ind1 > 0 ? param.ind1 : 2;
 
@@ -1311,7 +1479,7 @@ namespace BJJCZ_BaseDevelop
 
                         if (nErr == 0)
                         {
-                            // åˆ·æ–°å¯¹è±¡åˆ—è¡¨
+                            // Ë¢ĞÂ¶ÔÏóÁĞ±í
                             nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
@@ -1324,41 +1492,41 @@ namespace BJJCZ_BaseDevelop
 
                             UpdateEntTable(card);
                             RefreshPreview(card);
-                            AddMsg($"å¡{card+1} æ·»åŠ çŸ©å½¢æˆåŠŸ -> {param.strEntyName}");
+                            AddMsg($"¿¨{card+1} Ìí¼Ó¾ØĞÎ³É¹¦ -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"å¡{card+1} æ·»åŠ çŸ©å½¢å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card+1} Ìí¼Ó¾ØĞÎÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
-                    case 37:    // è·å–/è®¾ç½®å¡«å……å‚æ•°
-                        if (param.bOpen)  // æ‰“å¼€å¡«å……å‚æ•°è®¾ç½®å¯¹è¯æ¡†
+                    case 37:    // »ñÈ¡/ÉèÖÃÌî³ä²ÎÊı
+                        if (param.bOpen)  // ´ò¿ªÌî³ä²ÎÊıÉèÖÃ¶Ô»°¿ò
                         {
                             try
                             {
-                                // è·å–å½“å‰å¯¹è±¡çš„å¡«å……å‚æ•°ï¼ˆå¦‚æœå·²æœ‰å¡«å……ï¼‰
+                                // »ñÈ¡µ±Ç°¶ÔÏóµÄÌî³ä²ÎÊı£¨Èç¹ûÒÑÓĞÌî³ä£©
                                 HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
                                 GetHatchParamForEntity(card, param.strEntyName, ref hp);
 
-                                // æ˜¾ç¤ºå¡«å……å‚æ•°è®¾ç½®å¯¹è¯æ¡†
+                                // ÏÔÊ¾Ìî³ä²ÎÊıÉèÖÃ¶Ô»°¿ò
                                 FrmHatch fh = new FrmHatch(hp);
                                 DialogResult dr = fh.ShowDialog();
 
                                 if (dr == DialogResult.OK)
                                 {
                                     hp = fh.hp;
-                                    // å…ˆç§»é™¤åŸæœ‰å¡«å……ï¼ˆå¦‚æœå­˜åœ¨ï¼‰
+                                    // ÏÈÒÆ³ıÔ­ÓĞÌî³ä£¨Èç¹û´æÔÚ£©
                                     JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
-                                    // è®¾ç½®æ–°çš„å¡«å……å‚æ•°
+                                    // ÉèÖÃĞÂµÄÌî³ä²ÎÊı
                                     SetHatchParamForEntity(card, hp);
-                                    // ä¸ºå¯¹è±¡æ·»åŠ å¡«å……
+                                    // Îª¶ÔÏóÌí¼ÓÌî³ä
                                     string hatchEntName = param.strEntyName + "_Hatch";
                                     nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
 
                                     if (nErr == 0)
                                     {
-                                        AddMsg($"å¡{card+1} ä¸ºå¯¹è±¡ {param.strEntyName} è®¾ç½®å¡«å……æˆåŠŸ");
-                                        // ä¿å­˜æ–‡ä»¶
+                                        AddMsg($"¿¨{card+1} Îª¶ÔÏó {param.strEntyName} ÉèÖÃÌî³ä³É¹¦");
+                                        // ±£´æÎÄ¼ş
                                         if (!string.IsNullOrEmpty(param.strFileName))
                                         {
                                             JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
@@ -1368,15 +1536,15 @@ namespace BJJCZ_BaseDevelop
                                     }
                                     else
                                     {
-                                        AddMsg($"å¡{card+1} è®¾ç½®å¡«å……å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                                        AddMsg($"¿¨{card+1} ÉèÖÃÌî³äÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                                     }
                                 }
-                                else if (dr == DialogResult.Abort)  // åˆ é™¤å¡«å……
+                                else if (dr == DialogResult.Abort)  // É¾³ıÌî³ä
                                 {
                                     nErr = JczLmc.lmc1_UnHatchEnt(phyCardSN[card], param.strEntyName);
                                     if (nErr == 0)
                                     {
-                                        AddMsg($"å¡{card+1} åˆ é™¤å¯¹è±¡ {param.strEntyName} å¡«å……æˆåŠŸ");
+                                        AddMsg($"¿¨{card+1} É¾³ı¶ÔÏó {param.strEntyName} Ìî³ä³É¹¦");
                                         if (!string.IsNullOrEmpty(param.strFileName))
                                         {
                                             JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
@@ -1388,11 +1556,11 @@ namespace BJJCZ_BaseDevelop
                             }
                             catch (Exception ex)
                             {
-                                AddMsg($"å¡{card+1} è®¾ç½®å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                                AddMsg($"¿¨{card+1} ÉèÖÃÌî³ä²ÎÊıÒì³£: {ex.Message}");
                                 nErr = -1;
                             }
                         }
-                        else  // ä»…è·å–å¡«å……å‚æ•°ï¼ˆä¸æ˜¾ç¤ºå¯¹è¯æ¡†ï¼‰
+                        else  // ½ö»ñÈ¡Ìî³ä²ÎÊı£¨²»ÏÔÊ¾¶Ô»°¿ò£©
                         {
                             HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
                             GetHatchParamForEntity(card, param.strEntyName, ref hp);
@@ -1400,46 +1568,46 @@ namespace BJJCZ_BaseDevelop
                         }
                         break;
 
-                    case 38:  // å¡«å……å¯¹è±¡
+                    case 38:  // Ìî³ä¶ÔÏó
                         try
                         {
-                            // æ£€æŸ¥å¯¹è±¡æ˜¯å¦å­˜åœ¨
+                            // ¼ì²é¶ÔÏóÊÇ·ñ´æÔÚ
                             if (string.IsNullOrEmpty(param.strEntyName))
                             {
-                                AddMsg($"å¡{card+1} å¡«å……å¯¹è±¡å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                                AddMsg($"¿¨{card+1} Ìî³ä¶ÔÏóÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                                 nErr = 20;
                                 break;
                             }
 
                             string hatchEntName = param.strEntyName + "_Hatch";
 
-                            // å…ˆå°è¯•ç§»é™¤å·²æœ‰çš„å¡«å……ï¼ˆé¿å…é‡å¤å¡«å……ï¼‰
+                            // ÏÈ³¢ÊÔÒÆ³ıÒÑÓĞµÄÌî³ä£¨±ÜÃâÖØ¸´Ìî³ä£©
                        //     JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
 
-                            // æ·»åŠ å¡«å……
+                            // Ìí¼ÓÌî³ä
                             nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
 
                             if (nErr == 0)
                             {
-                                AddMsg($"å¡{card+1} ä¸ºå¯¹è±¡ {param.strEntyName} æ·»åŠ å¡«å……æˆåŠŸ");
+                                AddMsg($"¿¨{card+1} Îª¶ÔÏó {param.strEntyName} Ìí¼ÓÌî³ä³É¹¦");
                               //  RefreshPreview(card);
                              //   UpdateEntTable(card);
 
-                                // å¦‚æœéœ€è¦ä¿å­˜æ–‡ä»¶
+                                // Èç¹ûĞèÒª±£´æÎÄ¼ş
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
                                     nErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], param.strFileName);
-                                    AddMsg($"å¡{card+1} ä¿å­˜æ–‡ä»¶: {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"¿¨{card+1} ±£´æÎÄ¼ş: {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"å¡{card+1} æ·»åŠ å¡«å……å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"¿¨{card+1} Ìí¼ÓÌî³äÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            AddMsg($"å¡{card+1} å¡«å……å¯¹è±¡å¼‚å¸¸: {ex.Message}");
+                            AddMsg($"¿¨{card+1} Ìî³ä¶ÔÏóÒì³£: {ex.Message}");
                             nErr = -1;
                         }
                         break;
@@ -1454,23 +1622,25 @@ namespace BJJCZ_BaseDevelop
                         alImParam.dCenY = param.dParam2;
                         alImParam.dWidth = param.dParam3;
                         alImParam.dHeight = param.dParam4;
-                        AddMsg($"å¡{card + 1} æ”¶åˆ°ä¸»ç¨‹åºå¯¹é½å‚æ•°: åƒç´ ({param.ind1} x {param.ind2}) ä¸­å¿ƒ({param.dParam1:0.###},{param.dParam2:0.###}) å°ºå¯¸({param.dParam3:0.###} x {param.dParam4:0.###})");
-                        // ç«‹å³æ ¹æ®æ–°å‚æ•°é‡æ–°è®¾ç½®èƒŒæ™¯å›¾ä¸å åŠ å›¾çš„ä¸–ç•ŒèŒƒå›´
+                        AddMsg($"¿¨{card + 1} ÊÕµ½Ö÷³ÌĞò¶ÔÆë²ÎÊı: ÏñËØ({param.ind1} x {param.ind2}) ÖĞĞÄ({param.dParam1:0.###},{param.dParam2:0.###}) ³ß´ç({param.dParam3:0.###} x {param.dParam4:0.###})");
+                        // Á¢¼´¸ù¾İĞÂ²ÎÊıÖØĞÂÉèÖÃ±³¾°Í¼Óëµş¼ÓÍ¼µÄÊÀ½ç·¶Î§
                         this.BeginInvoke(new Action(() =>
                         {
                             RefreshPreview(card);
                         }));
                         break;
-                    // åœ¨ CMDAna çš„ switch ä¸­æ·»åŠ æ–°çš„ case
-                    case 43:  // è®¾ç½®å åŠ å›¾çš„ä¸–ç•ŒèŒƒå›´
-                              // å‚æ•°ï¼šdParam1 = Xmin, dParam2 = Ymin, dParam3 = Width, dParam4 = Height
+                    // ÔÚ CMDAna µÄ switch ÖĞÌí¼ÓĞÂµÄ case
+                    case 43:  // ÉèÖÃµş¼ÓÍ¼µÄÊÀ½ç·¶Î§
+                              // ²ÎÊı£ºdParam1 = Xmin, dParam2 = Ymin, dParam3 = Width, dParam4 = Height
                         float xmin = (float)param.dParam1;
                         float ymin = (float)param.dParam2;
                         float width = (float)param.dParam3;
                         float height = (float)param.dParam4;
-                        _overlayWorldBounds = new RectangleF(xmin, ymin, width, height);
-                        AddMsg($"å¡{card+1} è®¾ç½®å åŠ å›¾èŒƒå›´: X=[{xmin},{xmin + width}] Y=[{ymin},{ymin + height}]");
-                        // ç«‹å³åˆ·æ–°é¢„è§ˆä»¥åº”ç”¨æ–°èŒƒå›´
+                        _overlayWorldBounds[card] = RoutePreviewWorldBounds;
+                        AddMsg($"¿¨{card+1} ÊÕµ½µş¼ÓÍ¼·¶Î§ÃüÁî£¬ºì¿òÔ¤ÀÀ¹Ì¶¨Ê¹ÓÃ¼¤¹â×ø±ê X/Y=-150~150");
+                        ResetPreviewAnchor(card);
+                        InvalidateRoutePreviewCache(card);
+                        // Á¢¼´Ë¢ĞÂÔ¤ÀÀÒÔÓ¦ÓÃ¹Ì¶¨·¶Î§
                         RefreshPreview(card);
                         break;
                     case 90:
@@ -1514,13 +1684,13 @@ namespace BJJCZ_BaseDevelop
 
             string cmdDesc = GetCmdDescription(param.cmdType);
             string cmdTarget = GetCmdTarget(param);
-            string logMsg = $"æ”¶åˆ°å‘½ä»¤ [å¡{card + 1}] {cmdDesc}";
+            string logMsg = $"ÊÕµ½ÃüÁî [¿¨{card + 1}] {cmdDesc}";
             if (!string.IsNullOrEmpty(cmdTarget))
             {
                 logMsg += $" - {cmdTarget}";
             }
             AddMsg(logMsg);
-
+            
             if (bSimulateMode[card])
             {
                 SimulateCommand(param);
@@ -1535,7 +1705,7 @@ namespace BJJCZ_BaseDevelop
             {
                 param.nErr = 11;
                 SendResponse(param);
-                AddMsg($"å¡{card + 1} æœªåˆå§‹åŒ–ï¼Œæ‹’ç»æ‰§è¡Œå‘½ä»¤");
+                AddMsg($"¿¨{card + 1} Î´³õÊ¼»¯£¬¾Ü¾øÖ´ĞĞÃüÁî");
                 //    return;
             }
 
@@ -1547,6 +1717,9 @@ namespace BJJCZ_BaseDevelop
                 switch (param.cmdType)
                 {
                     case 0:
+                        nErr = JczInitErrs[card];//Ö»²éÑ¯°å¿¨×´Ì¬£¬²»¼ÓÔØÎÄ¼ş£¬ÃüÁîĞèÒª·Ö¿ª
+                        break;
+
                     case 100:
                         nErr = JczInitErrs[card];
                         if (nErr == 0)
@@ -1554,7 +1727,7 @@ namespace BJJCZ_BaseDevelop
                             nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                             if (nErr == 0)
                             {
-                                // ä¿å­˜å½“å‰æ–‡ä»¶è·¯å¾„
+                                // ±£´æµ±Ç°ÎÄ¼şÂ·¾¶
                                 currentFilePath[card] = param.strFileName;
                                 ResetEntityScaleStates(card);
                                 /* 
@@ -1567,17 +1740,17 @@ namespace BJJCZ_BaseDevelop
                                      iPenNos[card][i] = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], strEntNames[card][i]);
                                  }
                                  UpdateEntTable(card);*/
-                                ApplyVisualRotateMoveParamIfReady(card, "åŠ è½½æ–‡ä»¶åæ¢å¤è§†è§‰å®šä½åç§»");
+                                ApplyVisualRotateMoveParamIfReady(card, "¼ÓÔØÎÄ¼şºó»Ö¸´ÊÓ¾õ¶¨Î»Æ«ÒÆ");
 
                                 ReloadEntityInfo(card);
                                 RefreshPreview(card);
                             }
                             else
                             {
-                                AddMsg($"å¡{card + 1} åŠ è½½æ–‡ä»¶å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"¿¨{card + 1} ¼ÓÔØÎÄ¼şÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                             }
                         }
-                        // æ¸…é™¤ç¼“å­˜ï¼ˆåŠ è½½æ–°æ–‡ä»¶åå›¾å½¢å·²å˜ï¼‰
+                        // Çå³ı»º´æ£¨¼ÓÔØĞÂÎÄ¼şºóÍ¼ĞÎÒÑ±ä£©
                         cachedTransparentRoute[card] = null;
                         break;
 
@@ -1585,25 +1758,29 @@ namespace BJJCZ_BaseDevelop
                         if (JczInitErrs[card] == 0)
                         {
                             nErr = 0;
-                            AddMsg($"å¡{card + 1} å·²åˆå§‹åŒ–ï¼Œæ— éœ€é‡å¤åˆå§‹åŒ–");
+                            AddMsg($"¿¨{card + 1} ÒÑ³õÊ¼»¯£¬ÎŞĞèÖØ¸´³õÊ¼»¯");
                         }
                         else
                         {
                             nErr = JczLmc.InitializeCard(Application.StartupPath, false, this.Handle);
                             JczInitErrs[card] = nErr;
-                            AddMsg($"å¡{card + 1} åˆå§‹åŒ–{(nErr == 0 ? "æˆåŠŸ" : "å¤±è´¥")} -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card + 1} ³õÊ¼»¯{(nErr == 0 ? "³É¹¦" : "Ê§°Ü")} -> {JczLmc.GetErrorText(nErr)}");
+                            if (nErr == 0)
+                            {
+                                RefreshPhysicalCardMapping($"¿¨{card + 1} ³õÊ¼»¯ºó");
+                            }
                         }
                         if (nErr != 0)
                         {
                             bSimulateMode[card] = true;
-                            AddMsg($"å¡{card + 1} å·²åˆ‡æ¢è‡³æ¨¡æ‹Ÿæ¨¡å¼");
+                            AddMsg($"¿¨{card + 1} ÒÑÇĞ»»ÖÁÄ£ÄâÄ£Ê½");
                         }
                         break;
 
                     case 2:
                         nErr = JczLmc.lmc1_Close();
                         JczInitErrs[card] = nErr;
-                        AddMsg($"å¡{card + 1} å…³é—­ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card + 1} ¹Ø±Õ -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 3:
@@ -1614,11 +1791,11 @@ namespace BJJCZ_BaseDevelop
                             {
                                 laserMarkEnabled[card] = true;
                                 UpdateLaserOperationButtonsEnabled();
-                                AddMsg($"å¡{card + 1} å·²å…è®¸åç»­æ¿€å…‰åŠ å·¥");
+                                AddMsg($"¿¨{card + 1} ÒÑÔÊĞíºóĞø¼¤¹â¼Ó¹¤");
                             }
                             else
                             {
-                                AddMsg($"å¡{card + 1} æ‰“å¼€æ¿€å…‰å™¨å¤±è´¥ï¼Œåç»­åŠ å·¥å…è®¸çŠ¶æ€ä¿æŒä¸º: {(laserMarkEnabled[card] ? "å…è®¸" : "ç¦æ­¢")}");
+                                AddMsg($"¿¨{card + 1} ´ò¿ª¼¤¹âÆ÷Ê§°Ü£¬ºóĞø¼Ó¹¤ÔÊĞí×´Ì¬±£³ÖÎª: {(laserMarkEnabled[card] ? "ÔÊĞí" : "½ûÖ¹")}");
                             }
                         }
                         else
@@ -1626,11 +1803,11 @@ namespace BJJCZ_BaseDevelop
                             laserMarkEnabled[card] = false;
                             SendStopMark(card);
                             bInRed[card] = false;
-                            // ResetRedPreviewButtons();
+                           // ResetRedPreviewButtons();
                             UpdateLaserOperationButtonsEnabled();
-                            AddMsg($"å¡{card + 1} å·²ç¦æ­¢åç»­æ¿€å…‰åŠ å·¥/çº¢å…‰é¢„è§ˆ");
+                            AddMsg($"¿¨{card + 1} ÒÑ½ûÖ¹ºóĞø¼¤¹â¼Ó¹¤/ºì¹âÔ¤ÀÀ");
                         }
-                        AddMsg($"å¡{card + 1} {(param.bOpen ? "æ‰“å¼€" : "å…³é—­")}æ¿€å…‰ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card + 1} {(param.bOpen ? "´ò¿ª" : "¹Ø±Õ")}¼¤¹â -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 4:
@@ -1638,34 +1815,34 @@ namespace BJJCZ_BaseDevelop
                         if (nErr == 0 && !bSimulateMode[card])
                         {
                             currentFilePath[card] = param.strFileName;
-                            // ä¿å­˜å½“å‰æ–‡ä»¶è·¯å¾„
+                            // ±£´æµ±Ç°ÎÄ¼şÂ·¾¶
 
                             ResetPreviewAnchor(card);
                             ResetEntityScaleStates(card);
-                            ApplyVisualRotateMoveParamIfReady(card, "åŠ è½½æ–‡ä»¶åæ¢å¤è§†è§‰å®šä½åç§»");
+                            ApplyVisualRotateMoveParamIfReady(card, "¼ÓÔØÎÄ¼şºó»Ö¸´ÊÓ¾õ¶¨Î»Æ«ÒÆ");
 
                             ReloadEntityInfo(card);
                             CapturePreviewAnchorBounds(card);
-
-
+                           
+                        
                         }
-                        // æ¸…é™¤ç¼“å­˜ï¼ˆæ–°æ–‡ä»¶å†…å®¹ä¸åŒï¼‰
+                        // Çå³ı»º´æ£¨ĞÂÎÄ¼şÄÚÈİ²»Í¬£©
                         InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
-                        AddMsg($"å¡{card + 1} åŠ è½½æ–‡ä»¶ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card + 1} ¼ÓÔØÎÄ¼ş -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
-                    case 5:  // ä¿å­˜æ–‡ä»¶ - ä¿®æ”¹ä¸ºè‡ªåŠ¨ä½¿ç”¨åŸè·¯å¾„
+                    case 5:  // ±£´æÎÄ¼ş - ĞŞ¸ÄÎª×Ô¶¯Ê¹ÓÃÔ­Â·¾¶
                         string savePath = param.strFileName;
 
-                        // å¦‚æœå‘½ä»¤ä¸­æ²¡æœ‰æŒ‡å®šæ–‡ä»¶åï¼Œä½†æœ‰æš‚å­˜çš„æ–‡ä»¶è·¯å¾„ï¼Œåˆ™ä½¿ç”¨åŸè·¯å¾„
+                        // Èç¹ûÃüÁîÖĞÃ»ÓĞÖ¸¶¨ÎÄ¼şÃû£¬µ«ÓĞÔİ´æµÄÎÄ¼şÂ·¾¶£¬ÔòÊ¹ÓÃÔ­Â·¾¶
                         if (string.IsNullOrEmpty(savePath) && !string.IsNullOrEmpty(currentFilePath[card]))
                         {
                             savePath = currentFilePath[card];
-                            AddMsg($"å¡{card + 1} è‡ªåŠ¨ä¿å­˜åˆ°åŸè·¯å¾„: {savePath}");
+                            AddMsg($"¿¨{card + 1} ×Ô¶¯±£´æµ½Ô­Â·¾¶: {savePath}");
                         }
 
-                        // å¦‚æœä»ç„¶æ²¡æœ‰è·¯å¾„ï¼Œä½¿ç”¨é»˜è®¤è·¯å¾„
+                        // Èç¹ûÈÔÈ»Ã»ÓĞÂ·¾¶£¬Ê¹ÓÃÄ¬ÈÏÂ·¾¶
                         if (string.IsNullOrEmpty(savePath))
                         {
                             savePath = Path.Combine(Application.StartupPath, "route.ezd");
@@ -1674,56 +1851,26 @@ namespace BJJCZ_BaseDevelop
                         nErr = SaveEntLibToFileWithoutPreviewAnchor(card, savePath);
                         if (nErr == 0)
                         {
-                            // ä¿å­˜æˆåŠŸåæ›´æ–°æš‚å­˜è·¯å¾„ï¼ˆå¦‚æœæ˜¯æ–°è·¯å¾„ï¼‰
+                            // ±£´æ³É¹¦ºó¸üĞÂÔİ´æÂ·¾¶£¨Èç¹ûÊÇĞÂÂ·¾¶£©
                             currentFilePath[card] = savePath;
                             SyncOtherCardsLoadedFromSameFile(card, savePath);
                         }
-                        AddMsg($"å¡{card + 1} ä¿å­˜æ–‡ä»¶ -> {JczLmc.GetErrorText(nErr)}");
+                        AddMsg($"¿¨{card + 1} ±£´æÎÄ¼ş -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
                     case 10:
                     case 110:
-                        if (!CanStartLaserMark(card))
+                        nErr = StartMarkAllObjects(
+                            card,
+                            param.cmdType,
+                            param.ind3,
+                            param.cmdType == 110,
+                            "¼Ó¹¤Ç°Ê¹ÓÃÊÓ¾õ¶¨Î»Æ«ÒÆ",
+                            "¼Ó¹¤");
+                        if (nErr == 0)
                         {
-                            nErr = 19;
-                            break;
-                        }
-
-                        if (!bInMark[card])
-                        {
-                            markStopRequested[card] = false;
-                            bInMark[card] = true;
-                            CleanupPreviewAnchorEntities(card);
-                            bool markUsesVisualRotateMove = false;
-                            if (param.cmdType == 110)
-                            {
-                                markUsesVisualRotateMove = ApplyVisualRotateMoveParamIfReady(card, "åŠ å·¥å‰ä½¿ç”¨è§†è§‰å®šä½åç§»");
-                                if (!markUsesVisualRotateMove)
-                                {
-                                    JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
-                                }
-                            }
-                            int markSeq = param.ind3;
-                            var worker = new BackgroundWorker();
-                            worker.DoWork += (s, ev) =>
-                            {
-                                //nErr = JczLmc.lmc1_Mark(card, false);
-                                nErr = lmc1_MarkBlocking(card, false);
-                                bInMark[card] = false;
-                                if (markUsesVisualRotateMove)
-                                {
-                                    visualRotateMoveReady[card] = false;
-                                }
-                                AddMsg(markStopRequested[card]
-                                    ? $"å¡{card + 1} åŠ å·¥å·²åœæ­¢ -> {JczLmc.GetErrorText(nErr)}"
-                                    : $"å¡{card + 1} åŠ å·¥å®Œæˆ -> {JczLmc.GetErrorText(nErr)}");
-                                var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
-                                SendResponse(result);
-                            };
-                            worker.RunWorkerAsync();
                             needResponse = false;
                         }
-                        else param.nErr = 19;
                         break;
                         /* if (!bInMark[card])
                          {
@@ -1735,7 +1882,7 @@ namespace BJJCZ_BaseDevelop
                                  bInMark[card] = true;
                                  nErr = lmc1_MarkBlocking(card, false);
                                  bInMark[card] = false;
-                                 AddMsg($"å¡{card + 1} åŠ å·¥å®Œæˆ -> {JczLmc.GetErrorText(nErr)}");
+                                 AddMsg($"¿¨{card + 1} ¼Ó¹¤Íê³É -> {JczLmc.GetErrorText(nErr)}");
                                  var result = new LCZControlParam { cardSN = card, cmdType = param.cmdType, nErr = nErr, bOpen = true, ind3 = markSeq };
                                  SendResponse(result);
                              };
@@ -1748,9 +1895,9 @@ namespace BJJCZ_BaseDevelop
                     case 11:
                         nErr = SendStopMark(card);
                         bInRed[card] = false;
-                        //   ResetRedPreviewButtons();
-                        QueryGalvoPosition(card, "åœæ­¢å");
-                        AddMsg($"å¡{card + 1} å·²å‘é€åœæ­¢åŠ å·¥å‘½ä»¤ -> {JczLmc.GetErrorText(nErr)}");
+                     //   ResetRedPreviewButtons();
+                        QueryGalvoPosition(card, "Í£Ö¹ºó");
+                        AddMsg($"¿¨{card + 1} ÒÑ·¢ËÍÍ£Ö¹¼Ó¹¤ÃüÁî -> {JczLmc.GetErrorText(nErr)}");
 
                         break;
 
@@ -1765,7 +1912,7 @@ namespace BJJCZ_BaseDevelop
                         if (!bInMark[card])
                         {
                             CleanupPreviewAnchorEntities(card);
-                            ClearRotateMoveParamForManualOperation(card, param.cmdType == 12 ? "çº¢å…‰é¢„è§ˆè¾¹ç•Œ" : "çº¢å…‰é¢„è§ˆè½®å»“");
+                            ClearRotateMoveParamForManualOperation(card, param.cmdType == 12 ? "ºì¹âÔ¤ÀÀ±ß½ç" : "ºì¹âÔ¤ÀÀÂÖÀª");
                             if (bInRed[card]) { StopRedPreview(card, null); Thread.Sleep(50); }
                             if (param.bOpen)
                             {
@@ -1779,9 +1926,9 @@ namespace BJJCZ_BaseDevelop
                                         int redErr = RunRedLightPreviewOnce(card, param.cmdType, null);
                                         if (redErr != 0 && redErr != 19)
                                         {
-                                            AddMsg($"å¡{card + 1} çº¢å…‰é¢„è§ˆå¯åŠ¨å¤±è´¥ -> {JczLmc.GetErrorText(redErr)}");
+                                            AddMsg($"¿¨{card + 1} ºì¹âÔ¤ÀÀÆô¶¯Ê§°Ü -> {JczLmc.GetErrorText(redErr)}");
                                             bInRed[card] = false;
-                                            //  ResetRedPreviewButtons();
+                                          //  ResetRedPreviewButtons();
                                             return;
                                         }
 
@@ -1844,9 +1991,9 @@ namespace BJJCZ_BaseDevelop
                             {
                                 if (!string.Equals(markEntName, entName, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} å­˜åœ¨å¡«å……ï¼ŒåŠ å·¥ç›®æ ‡åˆ‡æ¢ä¸º {markEntName}");
+                                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} ´æÔÚÌî³ä£¬¼Ó¹¤Ä¿±êÇĞ»»Îª {markEntName}");
                                 }
-                                ClearRotateMoveParamForManualOperation(card, $"åŠ å·¥å¯¹è±¡ {markEntName}");
+                                ClearRotateMoveParamForManualOperation(card, $"¼Ó¹¤¶ÔÏó {markEntName}");
                                 nErr = JczLmc.lmc1_MarkEntity(phyCardSN[card], markEntName);
                             }
                             else
@@ -1855,7 +2002,7 @@ namespace BJJCZ_BaseDevelop
                             }
                         }
                         else nErr = 18;
-
+                         
                         break;
 
                     case 22:
@@ -1879,10 +2026,10 @@ namespace BJJCZ_BaseDevelop
                                     {
                                         nErr = 18;
                                         bInRed[card] = false;
-                                        AddMsg($"å¡{card + 1} çº¢å…‰é¢„è§ˆå¯¹è±¡å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                                        AddMsg($"¿¨{card + 1} ºì¹âÔ¤ÀÀ¶ÔÏóÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                                         break;
                                     }
-                                    ClearRotateMoveParamForManualOperation(card, $"çº¢å…‰é¢„è§ˆå¯¹è±¡ {previewEntName}");
+                                    ClearRotateMoveParamForManualOperation(card, $"ºì¹âÔ¤ÀÀ¶ÔÏó {previewEntName}");
                                     bool continuousRed = IsRedPreviewContinuous();
                                     var workerEntRed = new BackgroundWorker();
                                     workerEntRed.DoWork += (s, ev) =>
@@ -1892,9 +2039,9 @@ namespace BJJCZ_BaseDevelop
                                             int redErr = RunRedLightPreviewOnce(card, 13, previewEntName);
                                             if (redErr != 0 && redErr != 19)
                                             {
-                                                AddMsg($"å¡{card + 1} çº¢å…‰é¢„è§ˆå¯¹è±¡å¯åŠ¨å¤±è´¥ -> {JczLmc.GetErrorText(redErr)}");
+                                                AddMsg($"¿¨{card + 1} ºì¹âÔ¤ÀÀ¶ÔÏóÆô¶¯Ê§°Ü -> {JczLmc.GetErrorText(redErr)}");
                                                 bInRed[card] = false;
-                                                //  ResetRedPreviewButtons();
+                                              //  ResetRedPreviewButtons();
                                                 return;
                                             }
 
@@ -1941,31 +2088,31 @@ namespace BJJCZ_BaseDevelop
                     }
                     break;*/
 
-                    case 23:  // æ—‹è½¬å¯¹è±¡
+                    case 23:  // Ğı×ª¶ÔÏó
                         {
                             string targetEntName = ResolveTransformEntityName(param);
                             if (!string.IsNullOrEmpty(targetEntName))
                                 nErr = RotateLogicalEntity(card, targetEntName, param.dParam3, param.dParam4, param.dParam5);
                             else
                                 nErr = 20;
-                        }
+                        }                       
                         InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
                         break;
 
-                    case 24:  // ç§»åŠ¨å¯¹è±¡
+                    case 24:  // ÒÆ¶¯¶ÔÏó
                         {
                             string targetEntName = ResolveTransformEntityName(param);
                             if (!string.IsNullOrEmpty(targetEntName))
                                 nErr = MoveLogicalEntity(card, targetEntName, ref param.dParam1, ref param.dParam2);
                             else
                                 nErr = 20;
-                        }
+                        } 
                         InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
                         break;
 
-                    case 25:  // ç¼©æ”¾å¯¹è±¡
+                    case 25:  // Ëõ·Å¶ÔÏó
                         {
                             string targetEntName = ResolveTransformEntityName(param);
                             if (!string.IsNullOrEmpty(targetEntName))
@@ -1973,7 +2120,7 @@ namespace BJJCZ_BaseDevelop
                                                           param.dParam3, param.dParam4);
                             else
                                 nErr = 20;
-                        }
+                        }                        
                         InvalidateRoutePreviewCache(card);
                         RefreshPreview(card);
                         break;
@@ -1983,10 +2130,13 @@ namespace BJJCZ_BaseDevelop
                                                                param.dParam3, param.dParam4, param.dParam5);
                         */
                         SaveVisualRotateMoveParam(card, param);
-                        AddMsg($"å¡{card + 1} ä¸»ç¨‹åºæ—‹è½¬å¹³ç§»: X={param.dParam1:0.###} Y={param.dParam2:0.###}");
-                        AddMsg($"å¡{card + 1} ä¸»ç¨‹åºæ—‹è½¬å¹³ç§»: ä¸­å¿ƒ({param.dParam3:0.###},{param.dParam4:0.###}) è§’åº¦={param.dParam5:0.###}");
-                        nErr = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], param.dParam1, param.dParam2,
-                                                              param.dParam3, param.dParam4, param.dParam5);
+                        AddMsg($"¿¨{card + 1} Ö÷³ÌĞòĞı×ªÆ½ÒÆ: X={param.dParam1:0.###} Y={param.dParam2:0.###}");
+                        AddMsg($"¿¨{card + 1} Ö÷³ÌĞòĞı×ªÆ½ÒÆ: ÖĞĞÄ({param.dParam3:0.###},{param.dParam4:0.###}) ½Ç¶È={param.dParam5:0.###}");
+                       JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], param.dParam1, param.dParam2,
+                                                               param.dParam3, param.dParam4, param.dParam5);
+                        nErr = 0;  //Ç¿ÖÆÇå³ş´íÎóÂë
+                      /*  nErr = JczLmc.lmc1_SetRotateMoveParam(0, 0, 0,
+                                                              0, 0, 0);*/
                         //    RefreshPreview(card);
 
                         break;
@@ -2002,15 +2152,15 @@ namespace BJJCZ_BaseDevelop
                         else
                             nErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
                         break;
-                    case 31:  // é‡å‘½åå¯¹è±¡
+                    case 31:  // ÖØÃüÃû¶ÔÏó
                         if (param.ind1 < strEntNames[card]?.Length)
                             nErr = RenameLogicalEntity(card, GetSdkEntityNameForOperation(card, param.ind1), param.strEntyName);
-                        //      RefreshPreview(card);
+                  //      RefreshPreview(card);
                         ReloadEntityInfo(card);
                         cachedTransparentRoute[card] = null;
                         break;
 
-                    /*case 34:  // æ·»åŠ åœ†
+                    /*case 34:  // Ìí¼ÓÔ²
                         double centerX = param.dParam1;
                         double centerY = param.dParam2;
                         double radius = param.dParam3;
@@ -2025,15 +2175,15 @@ namespace BJJCZ_BaseDevelop
                                 string hatchEntName = entNameCir + "_Hatch";
                                 nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
                                 if (nErr == 0)
-                                    AddMsg($"å¡{card + 1} æ·»åŠ åœ†å¹¶å¡«å……æˆåŠŸ -> {entNameCir}");
+                                    AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²²¢Ìî³ä³É¹¦ -> {entNameCir}");
                                 else
-                                    AddMsg($"å¡{card + 1} æ·»åŠ åœ†æˆåŠŸï¼Œä½†å¡«å……å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²³É¹¦£¬µ«Ìî³äÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                             }
                             else
                             {
-                                AddMsg($"å¡{card + 1} æ·»åŠ åœ†æˆåŠŸ -> {entNameCir} (åœ†å¿ƒ:{centerX},{centerY} åŠå¾„:{radius})");
+                                AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²³É¹¦ -> {entNameCir} (Ô²ĞÄ:{centerX},{centerY} °ë¾¶:{radius})");
                             }
-                            // åˆ·æ–°å¯¹è±¡åˆ—è¡¨ä¸é¢„è§ˆ
+                            // Ë¢ĞÂ¶ÔÏóÁĞ±íÓëÔ¤ÀÀ
                             nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
@@ -2048,69 +2198,69 @@ namespace BJJCZ_BaseDevelop
                         }
                         else
                         {
-                            AddMsg($"å¡{card + 1} æ·»åŠ åœ†å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²Ê§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;*/
-                    case 34:  // æ·»åŠ åœ†
-                              // å‚æ•°æ˜ å°„ï¼š
-                              // dParam1 = ptCenX (åœ†å¿ƒXåæ ‡)
-                              // dParam2 = ptCenY (åœ†å¿ƒYåæ ‡)
-                              // dParam3 = dRadius (åœ†åŠå¾„)
-                              // strEntyName = å¯¹è±¡åç§°
-                              // ind1 = ç¬”å·
-                              // bOpen = æ˜¯å¦å¡«å…… (å¯é€‰ï¼Œå¦‚æœæœåŠ¡ç«¯æ”¯æŒ)
-                              // bFirst = æ˜¯å¦å¯ç”¨å¡«å…… (æ‰©å±•å‚æ•°)
+                    case 34:  // Ìí¼ÓÔ²
+                              // ²ÎÊıÓ³Éä£º
+                              // dParam1 = ptCenX (Ô²ĞÄX×ø±ê)
+                              // dParam2 = ptCenY (Ô²ĞÄY×ø±ê)
+                              // dParam3 = dRadius (Ô²°ë¾¶)
+                              // strEntyName = ¶ÔÏóÃû³Æ
+                              // ind1 = ±ÊºÅ
+                              // bOpen = ÊÇ·ñÌî³ä (¿ÉÑ¡£¬Èç¹û·şÎñ¶ËÖ§³Ö)
+                              // bFirst = ÊÇ·ñÆôÓÃÌî³ä (À©Õ¹²ÎÊı)
 
                         double centerX = param.dParam1;
                         double centerY = param.dParam2;
                         double radius = param.dParam3;
                         string entNameCir = string.IsNullOrEmpty(param.strEntyName) ? "Circle" : param.strEntyName;
-                        int penNo = param.ind1 > 0 ? param.ind1 : 1;  // é»˜è®¤ç¬”å·1
+                        int penNo = param.ind1 > 0 ? param.ind1 : 1;  // Ä¬ÈÏ±ÊºÅ1
 
-                        // è°ƒç”¨æ·»åŠ åœ†çš„å‡½æ•°
+                        // µ÷ÓÃÌí¼ÓÔ²µÄº¯Êı
                         nErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], centerX, centerY, radius, entNameCir, penNo);
                         // nErr = JczLmc.AddCircleToLib(card, centerX, centerY, radius, entName, penNo);
 
                         if (nErr == 0)
                         {
-                            // å¦‚æœéœ€è¦å¡«å……ï¼Œå¯ä»¥åç»­è°ƒç”¨å¡«å……å‡½æ•°
+                            // Èç¹ûĞèÒªÌî³ä£¬¿ÉÒÔºóĞøµ÷ÓÃÌî³äº¯Êı
                             if (param.bOpen && radius > 0)
                             {
-                                // åˆ›å»ºå¡«å……å¯¹è±¡åç§°
+                                // ´´½¨Ìî³ä¶ÔÏóÃû³Æ
                                 string hatchEntName = entNameCir + "_Hatch";
                                 nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], entNameCir, hatchEntName);
                                 if (nErr == 0)
                                 {
-                                    AddMsg($"å¡{card + 1} æ·»åŠ åœ†å¹¶å¡«å……æˆåŠŸ -> {entNameCir}");
+                                    AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²²¢Ìî³ä³É¹¦ -> {entNameCir}");
                                 }
                                 else
                                 {
-                                    AddMsg($"å¡{card + 1} æ·»åŠ åœ†æˆåŠŸï¼Œä½†å¡«å……å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²³É¹¦£¬µ«Ìî³äÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"å¡{card + 1} æ·»åŠ åœ†æˆåŠŸ -> {entNameCir} (åœ†å¿ƒ:{centerX},{centerY} åŠå¾„:{radius})");
+                                AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²³É¹¦ -> {entNameCir} (Ô²ĞÄ:{centerX},{centerY} °ë¾¶:{radius})");
                             }
 
                             ReloadEntityInfo(card);
-                            //      RefreshPreview(card);
+                      //      RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
                         }
                         else
                         {
-                            AddMsg($"å¡{card + 1} æ·»åŠ åœ†å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card + 1} Ìí¼ÓÔ²Ê§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
-                        // æ·»åŠ çº¿æ®µ
-                        // å‚æ•°æ˜ å°„ï¼š
-                        // dParam1 = X1 (èµ·ç‚¹X)
-                        // dParam2 = Y1 (èµ·ç‚¹Y)  
-                        // dParam3 = X2 (ç»ˆç‚¹X)
-                        // dParam4 = Y2 (ç»ˆç‚¹Y)
-                        // strEntyName = å¯¹è±¡åç§°
-                        // ind1 = ç¬”å· (é»˜è®¤2)
-                        // bOpen = æ˜¯å¦å¡«å…… (çº¿æ®µå¡«å……æ— æ•ˆï¼Œä½†ä¿ç•™å‚æ•°)
+                        // Ìí¼ÓÏß¶Î
+                        // ²ÎÊıÓ³Éä£º
+                        // dParam1 = X1 (ÆğµãX)
+                        // dParam2 = Y1 (ÆğµãY)  
+                        // dParam3 = X2 (ÖÕµãX)
+                        // dParam4 = Y2 (ÖÕµãY)
+                        // strEntyName = ¶ÔÏóÃû³Æ
+                        // ind1 = ±ÊºÅ (Ä¬ÈÏ2)
+                        // bOpen = ÊÇ·ñÌî³ä (Ïß¶ÎÌî³äÎŞĞ§£¬µ«±£Áô²ÎÊı)
                         int penNo2 = param.ind1 > 0 ? param.ind1 : 2;
 
                         nErr = AddLineToLib(card, param.dParam1, param.dParam2,
@@ -2122,21 +2272,21 @@ namespace BJJCZ_BaseDevelop
                             ReloadEntityInfo(card);
                             RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
-                            AddMsg($"å¡{card + 1} æ·»åŠ çº¿æ®µæˆåŠŸ -> {param.strEntyName}");
+                            AddMsg($"¿¨{card + 1} Ìí¼ÓÏß¶Î³É¹¦ -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"å¡{card + 1} æ·»åŠ çº¿æ®µå¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card + 1} Ìí¼ÓÏß¶ÎÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
-                    /* case 35:  // æ·»åŠ çº¿æ®µ
+                    /* case 35:  // Ìí¼ÓÏß¶Î
                          int penNo2 = param.ind1 > 0 ? param.ind1 : 2;
                          nErr = AddLineToLib(card, param.dParam1, param.dParam2,
                                              param.dParam3, param.dParam4,
                                              param.strEntyName, penNo2, param.bOpen);
                          if (nErr == 0)
                          {
-                             // åˆ·æ–°å¯¹è±¡åˆ—è¡¨
+                             // Ë¢ĞÂ¶ÔÏóÁĞ±í
                              nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                              strEntNames[card] = new string[nEntNums[card]];
                              iPenNos[card] = new int[nEntNums[card]];
@@ -2148,22 +2298,22 @@ namespace BJJCZ_BaseDevelop
                              UpdateEntTable(card);
                              RefreshPreview(card);
                              cachedTransparentRoute[card] = null;
-                             AddMsg($"å¡{card + 1} æ·»åŠ çº¿æ®µæˆåŠŸ -> {param.strEntyName}");
+                             AddMsg($"¿¨{card + 1} Ìí¼ÓÏß¶Î³É¹¦ -> {param.strEntyName}");
                          }
                          else
                          {
-                             AddMsg($"å¡{card + 1} æ·»åŠ çº¿æ®µå¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                             AddMsg($"¿¨{card + 1} Ìí¼ÓÏß¶ÎÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                          }
                          break;*/
 
-                    /*case 36:  // æ·»åŠ çŸ©å½¢
+                    /*case 36:  // Ìí¼Ó¾ØĞÎ
                         int rectPenNo = param.ind1 > 0 ? param.ind1 : 2;
                         nErr = AddRectangleToLib(card, param.dParam1, param.dParam2,
                                                   param.dParam3, param.dParam4,
                                                   param.strEntyName, rectPenNo, param.bOpen);
                         if (nErr == 0)
                         {
-                            // åˆ·æ–°å¯¹è±¡åˆ—è¡¨
+                            // Ë¢ĞÂ¶ÔÏóÁĞ±í
                             nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                             strEntNames[card] = new string[nEntNums[card]];
                             iPenNos[card] = new int[nEntNums[card]];
@@ -2175,22 +2325,22 @@ namespace BJJCZ_BaseDevelop
                             UpdateEntTable(card);
                             RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
-                            AddMsg($"å¡{card + 1} æ·»åŠ çŸ©å½¢æˆåŠŸ -> {param.strEntyName}");
+                            AddMsg($"¿¨{card + 1} Ìí¼Ó¾ØĞÎ³É¹¦ -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"å¡{card + 1} æ·»åŠ çŸ©å½¢å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card + 1} Ìí¼Ó¾ØĞÎÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;*/
-                    case 36:  // æ·»åŠ çŸ©å½¢
-                              // å‚æ•°æ˜ å°„ï¼š
-                              // dParam1 = X (å·¦ä¸‹è§’X)
-                              // dParam2 = Y (å·¦ä¸‹è§’Y)
-                              // dParam3 = Width (å®½åº¦)
-                              // dParam4 = Height (é«˜åº¦)
-                              // strEntyName = å¯¹è±¡åç§°
-                              // ind1 = ç¬”å·
-                              // bOpen = æ˜¯å¦å¡«å……
+                    case 36:  // Ìí¼Ó¾ØĞÎ
+                              // ²ÎÊıÓ³Éä£º
+                              // dParam1 = X (×óÏÂ½ÇX)
+                              // dParam2 = Y (×óÏÂ½ÇY)
+                              // dParam3 = Width (¿í¶È)
+                              // dParam4 = Height (¸ß¶È)
+                              // strEntyName = ¶ÔÏóÃû³Æ
+                              // ind1 = ±ÊºÅ
+                              // bOpen = ÊÇ·ñÌî³ä
 
                         int rectPenNo = param.ind1 > 0 ? param.ind1 : 2;
 
@@ -2201,25 +2351,25 @@ namespace BJJCZ_BaseDevelop
                         if (nErr == 0)
                         {
                             ReloadEntityInfo(card);
-                            //      RefreshPreview(card);
+                      //      RefreshPreview(card);
                             cachedTransparentRoute[card] = null;
-                            AddMsg($"å¡{card + 1} æ·»åŠ çŸ©å½¢æˆåŠŸ -> {param.strEntyName}");
+                            AddMsg($"¿¨{card + 1} Ìí¼Ó¾ØĞÎ³É¹¦ -> {param.strEntyName}");
                         }
                         else
                         {
-                            AddMsg($"å¡{card + 1} æ·»åŠ çŸ©å½¢å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                            AddMsg($"¿¨{card + 1} Ìí¼Ó¾ØĞÎÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
                         }
                         break;
-                    case 37:  // è·å–/è®¾ç½®å¡«å……å‚æ•°
-                        /* if (param.bOpen)  // æ‰“å¼€å¡«å……å‚æ•°è®¾ç½®å¯¹è¯æ¡†
+                    case 37:  // »ñÈ¡/ÉèÖÃÌî³ä²ÎÊı
+                        /* if (param.bOpen)  // ´ò¿ªÌî³ä²ÎÊıÉèÖÃ¶Ô»°¿ò
                          {
                              try
                              {
-                                 // è·å–å½“å‰å¯¹è±¡çš„å¡«å……å‚æ•°ï¼ˆå¦‚æœå·²æœ‰å¡«å……ï¼‰
+                                 // »ñÈ¡µ±Ç°¶ÔÏóµÄÌî³ä²ÎÊı£¨Èç¹ûÒÑÓĞÌî³ä£©
                                  HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
                                  GetHatchParamForEntity(card, param.strEntyName, ref hp);
 
-                                 // æ˜¾ç¤ºå¡«å……å‚æ•°è®¾ç½®å¯¹è¯æ¡†
+                                 // ÏÔÊ¾Ìî³ä²ÎÊıÉèÖÃ¶Ô»°¿ò
                                  FrmHatch fh = new FrmHatch(hp);
                                  DialogResult dr = fh.ShowDialog();
 
@@ -2235,14 +2385,14 @@ namespace BJJCZ_BaseDevelop
                                      {
                                          nErr = 0;
                                          AddMsg(hp.bEnableHatch == 0
-                                             ? $"å¡{card} å·²æ¸…é™¤å¯¹è±¡ {sourceEntName} çš„å¡«å……"
-                                             : $"å¡{card} ä¸ºå¯¹è±¡ {sourceEntName} è®¾ç½®å¡«å……æˆåŠŸ");
-                                         // ä¿å­˜æ–‡ä»¶
+                                             ? $"¿¨{card} ÒÑÇå³ı¶ÔÏó {sourceEntName} µÄÌî³ä"
+                                             : $"¿¨{card} Îª¶ÔÏó {sourceEntName} ÉèÖÃÌî³ä³É¹¦");
+                                         // ±£´æÎÄ¼ş
                                          string saveFileName = !string.IsNullOrEmpty(param.strFileName) ? param.strFileName : currentFilePath[card];
                                          if (!string.IsNullOrEmpty(saveFileName))
                                          {
                                              int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, saveFileName);
-                                             AddMsg($"å¡{card} ä¿å­˜å¡«å……å‚æ•°åˆ°EZD: {JczLmc.GetErrorText(saveErr)}");
+                                             AddMsg($"¿¨{card} ±£´æÌî³ä²ÎÊıµ½EZD: {JczLmc.GetErrorText(saveErr)}");
                                          }
                                          RefreshPreview(card);
                                          ReloadEntityInfo(card);
@@ -2250,10 +2400,10 @@ namespace BJJCZ_BaseDevelop
                                      else
                                      {
                                          nErr = -1;
-                                         AddMsg($"å¡{card} è®¾ç½®å¡«å……å¤±è´¥");
+                                         AddMsg($"¿¨{card} ÉèÖÃÌî³äÊ§°Ü");
                                      }
                                  }
-                                 else if (dr == DialogResult.Abort)  // åˆ é™¤å¡«å……
+                                 else if (dr == DialogResult.Abort)  // É¾³ıÌî³ä
                                  {
                                      nErr = RemoveHatchPreservingSource(card, param.strEntyName) ? 0 : -1;
                                      if (nErr == 0)
@@ -2262,7 +2412,7 @@ namespace BJJCZ_BaseDevelop
                                          if (!string.IsNullOrEmpty(saveFileName))
                                          {
                                              int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, saveFileName);
-                                             AddMsg($"å¡{card} ä¿å­˜åˆ é™¤å¡«å……ç»“æœåˆ°EZD: {JczLmc.GetErrorText(saveErr)}");
+                                             AddMsg($"¿¨{card} ±£´æÉ¾³ıÌî³ä½á¹ûµ½EZD: {JczLmc.GetErrorText(saveErr)}");
                                          }
                                          cachedTransparentRoute[card] = null;
                                          RefreshPreview(card);
@@ -2272,26 +2422,26 @@ namespace BJJCZ_BaseDevelop
                              }
                              catch (Exception ex)
                              {
-                                 AddMsg($"å¡{card} è®¾ç½®å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                                 AddMsg($"¿¨{card} ÉèÖÃÌî³ä²ÎÊıÒì³£: {ex.Message}");
                                  nErr = -1;
                              }
                          }
-                         else  // ä»…è·å–å¡«å……å‚æ•°ï¼ˆä¸æ˜¾ç¤ºå¯¹è¯æ¡†ï¼‰
+                         else  // ½ö»ñÈ¡Ìî³ä²ÎÊı£¨²»ÏÔÊ¾¶Ô»°¿ò£©
                          {
                              HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
                              GetHatchParamForEntity(card, param.strEntyName, ref hp);
                              nErr = 0;
                          }
                          break;*/
-                        if (param.bOpen)  // æ‰“å¼€å¡«å……å‚æ•°è®¾ç½®å¯¹è¯æ¡†
+                        if (param.bOpen)  // ´ò¿ªÌî³ä²ÎÊıÉèÖÃ¶Ô»°¿ò
                         {
                             try
                             {
-                                // è·å–å½“å‰å¯¹è±¡çš„å¡«å……å‚æ•°ï¼ˆå¦‚æœå·²æœ‰å¡«å……ï¼‰
+                                // »ñÈ¡µ±Ç°¶ÔÏóµÄÌî³ä²ÎÊı£¨Èç¹ûÒÑÓĞÌî³ä£©
                                 HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
                                 GetHatchParamForEntity(card, param.strEntyName, ref hp);
 
-                                // æ˜¾ç¤ºå¡«å……å‚æ•°è®¾ç½®å¯¹è¯æ¡†
+                                // ÏÔÊ¾Ìî³ä²ÎÊıÉèÖÃ¶Ô»°¿ò
                                 FrmHatch fh = new FrmHatch(hp);
                                 DialogResult dr = fh.ShowDialog();
 
@@ -2307,14 +2457,14 @@ namespace BJJCZ_BaseDevelop
                                     {
                                         nErr = 0;
                                         AddMsg(hp.bEnableHatch == 0
-                                            ? $"å¡{card + 1} å·²æ¸…é™¤å¯¹è±¡ {sourceEntName} çš„å¡«å……"
-                                            : $"å¡{card + 1} ä¸ºå¯¹è±¡ {sourceEntName} è®¾ç½®å¡«å……æˆåŠŸ");
-                                        // ä¿å­˜æ–‡ä»¶
+                                            ? $"¿¨{card + 1} ÒÑÇå³ı¶ÔÏó {sourceEntName} µÄÌî³ä"
+                                            : $"¿¨{card + 1} Îª¶ÔÏó {sourceEntName} ÉèÖÃÌî³ä³É¹¦");
+                                        // ±£´æÎÄ¼ş
                                         string saveFileName = !string.IsNullOrEmpty(param.strFileName) ? param.strFileName : currentFilePath[card];
                                         if (!string.IsNullOrEmpty(saveFileName))
                                         {
                                             int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, saveFileName);
-                                            AddMsg($"å¡{card + 1} ä¿å­˜å¡«å……å‚æ•°åˆ°EZD: {JczLmc.GetErrorText(saveErr)}");
+                                            AddMsg($"¿¨{card + 1} ±£´æÌî³ä²ÎÊıµ½EZD: {JczLmc.GetErrorText(saveErr)}");
                                         }
                                         ReloadEntityInfo(card);
                                         InvalidateRoutePreviewCache(card);
@@ -2323,10 +2473,10 @@ namespace BJJCZ_BaseDevelop
                                     else
                                     {
                                         nErr = -1;
-                                        AddMsg($"å¡{card + 1} è®¾ç½®å¡«å……å¤±è´¥");
+                                        AddMsg($"¿¨{card + 1} ÉèÖÃÌî³äÊ§°Ü");
                                     }
                                 }
-                                else if (dr == DialogResult.Abort)  // åˆ é™¤å¡«å……
+                                else if (dr == DialogResult.Abort)  // É¾³ıÌî³ä
                                 {
                                     nErr = RemoveHatchPreservingSource(card, param.strEntyName) ? 0 : -1;
                                     if (nErr == 0)
@@ -2335,7 +2485,7 @@ namespace BJJCZ_BaseDevelop
                                         if (!string.IsNullOrEmpty(saveFileName))
                                         {
                                             int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, saveFileName);
-                                            AddMsg($"å¡{card + 1} ä¿å­˜åˆ é™¤å¡«å……ç»“æœåˆ°EZD: {JczLmc.GetErrorText(saveErr)}");
+                                            AddMsg($"¿¨{card + 1} ±£´æÉ¾³ıÌî³ä½á¹ûµ½EZD: {JczLmc.GetErrorText(saveErr)}");
                                         }
                                         ReloadEntityInfo(card);
                                         InvalidateRoutePreviewCache(card);
@@ -2345,23 +2495,23 @@ namespace BJJCZ_BaseDevelop
                             }
                             catch (Exception ex)
                             {
-                                AddMsg($"å¡{card + 1} è®¾ç½®å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                                AddMsg($"¿¨{card + 1} ÉèÖÃÌî³ä²ÎÊıÒì³£: {ex.Message}");
                                 nErr = -1;
                             }
                         }
-                        else  // ä»…è·å–å¡«å……å‚æ•°ï¼ˆä¸æ˜¾ç¤ºå¯¹è¯æ¡†ï¼‰
+                        else  // ½ö»ñÈ¡Ìî³ä²ÎÊı£¨²»ÏÔÊ¾¶Ô»°¿ò£©
                         {
                             HatchParam hp = new HatchParam(param.ind1 > 0 ? param.ind1 : 1);
                             GetHatchParamForEntity(card, param.strEntyName, ref hp);
                             nErr = 0;
                         }
                         break;
-                    case 38:  // å¡«å……å¯¹è±¡
+                    case 38:  // Ìî³ä¶ÔÏó
                         /*try
                         {
                             if (string.IsNullOrEmpty(param.strEntyName))
                             {
-                                AddMsg($"å¡{card + 1} å¡«å……å¯¹è±¡å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                                AddMsg($"¿¨{card + 1} Ìî³ä¶ÔÏóÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                                 nErr = 20;
                                 break;
                             }
@@ -2370,72 +2520,72 @@ namespace BJJCZ_BaseDevelop
 
                             if (nErr == 0)
                             {
-                                AddMsg($"å¡{card + 1} ä¸ºå¯¹è±¡ {param.strEntyName} æ·»åŠ å¡«å……æˆåŠŸ");
+                                AddMsg($"¿¨{card + 1} Îª¶ÔÏó {param.strEntyName} Ìí¼ÓÌî³ä³É¹¦");
                                 RefreshPreview(card);
                                 ReloadEntityInfo(card);
                                 cachedTransparentRoute[card] = null;
-                                // å¦‚æœéœ€è¦ä¿å­˜æ–‡ä»¶
+                                // Èç¹ûĞèÒª±£´æÎÄ¼ş
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
                                     nErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);
-                                    AddMsg($"å¡{card + 1} ä¿å­˜æ–‡ä»¶: {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"¿¨{card + 1} ±£´æÎÄ¼ş: {JczLmc.GetErrorText(nErr)}");
                                 }
  
                                
                             }
                             else
-                                AddMsg($"å¡{card + 1} æ·»åŠ å¡«å……å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"¿¨{card + 1} Ìí¼ÓÌî³äÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                         }
                         catch (Exception ex)
                         {
-                            AddMsg($"å¡{card + 1} å¡«å……å¯¹è±¡å¼‚å¸¸: {ex.Message}");
+                            AddMsg($"¿¨{card + 1} Ìî³ä¶ÔÏóÒì³£: {ex.Message}");
                             nErr = -1;
                         }
                         break;*/
                         try
                         {
-                            // æ£€æŸ¥å¯¹è±¡æ˜¯å¦å­˜åœ¨
+                            // ¼ì²é¶ÔÏóÊÇ·ñ´æÔÚ
                             if (string.IsNullOrEmpty(param.strEntyName))
                             {
-                                AddMsg($"å¡{card + 1} å¡«å……å¯¹è±¡å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                                AddMsg($"¿¨{card + 1} Ìî³ä¶ÔÏóÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                                 nErr = 20;
                                 break;
                             }
 
                             string hatchEntName = param.strEntyName + "_Hatch";
 
-                            // å…ˆå°è¯•ç§»é™¤å·²æœ‰çš„å¡«å……ï¼ˆé¿å…é‡å¤å¡«å……ï¼‰
+                            // ÏÈ³¢ÊÔÒÆ³ıÒÑÓĞµÄÌî³ä£¨±ÜÃâÖØ¸´Ìî³ä£©
                             // JczLmc.lmc1_UnHatchEnt(card, param.strEntyName);
 
-                            // æ·»åŠ å¡«å……
+                            // Ìí¼ÓÌî³ä
                             nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], param.strEntyName, hatchEntName);
 
                             if (nErr == 0)
                             {
-                                AddMsg($"å¡{card + 1} ä¸ºå¯¹è±¡ {param.strEntyName} æ·»åŠ å¡«å……æˆåŠŸ");
+                                AddMsg($"¿¨{card + 1} Îª¶ÔÏó {param.strEntyName} Ìí¼ÓÌî³ä³É¹¦");
                                 RefreshPreview(card);
                                 ReloadEntityInfo(card);
 
-                                // å¦‚æœéœ€è¦ä¿å­˜æ–‡ä»¶
+                                // Èç¹ûĞèÒª±£´æÎÄ¼ş
                                 if (!string.IsNullOrEmpty(param.strFileName))
                                 {
                                     nErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);
-                                    AddMsg($"å¡{card + 1} ä¿å­˜æ–‡ä»¶: {JczLmc.GetErrorText(nErr)}");
+                                    AddMsg($"¿¨{card + 1} ±£´æÎÄ¼ş: {JczLmc.GetErrorText(nErr)}");
                                 }
                             }
                             else
                             {
-                                AddMsg($"å¡{card + 1} æ·»åŠ å¡«å……å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                                AddMsg($"¿¨{card + 1} Ìí¼ÓÌî³äÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            AddMsg($"å¡{card + 1} å¡«å……å¯¹è±¡å¼‚å¸¸: {ex.Message}");
+                            AddMsg($"¿¨{card + 1} Ìî³ä¶ÔÏóÒì³£: {ex.Message}");
                             nErr = -1;
                         }
                         break;
                     case 40:
-                        nErr = OpenDeviceConfig(card);
+                        nErr = OpenDeviceConfig(card);                        
                         break;
 
                     case 42:
@@ -2451,75 +2601,51 @@ namespace BJJCZ_BaseDevelop
                         alImParam = align;
                         previewAlignParams[card] = align;
                         previewAlignParamReady[card] = IsValidPreviewAlignParam(align);
-                        AddMsg($"å¡{card + 1} ä¸»ç¨‹åºå¯¹é½å‚æ•°: åƒç´ ({align.width} x {align.height}) æœ‰æ•ˆ={previewAlignParamReady[card]}");
-                        AddMsg($"å¡{card + 1} ä¸»ç¨‹åºå¯¹é½å‚æ•°: ä¸­å¿ƒ({align.dCenX:0.###},{align.dCenY:0.###}) å°ºå¯¸({align.dWidth:0.###} x {align.dHeight:0.###})");
+                        AddMsg($"¿¨{card + 1} Ö÷³ÌĞò¶ÔÆë²ÎÊı: ÏñËØ({align.width} x {align.height}) ÓĞĞ§={previewAlignParamReady[card]}");
+                        AddMsg($"¿¨{card + 1} Ö÷³ÌĞò¶ÔÆë²ÎÊı: ÖĞĞÄ({align.dCenX:0.###},{align.dCenY:0.###}) ³ß´ç({align.dWidth:0.###} x {align.dHeight:0.###})");
                         this.BeginInvoke(new Action(() =>
                         {
-                            // å¯¹é½å‚æ•°æ”¹å˜ï¼Œå›¾å½¢æ˜ å°„èŒƒå›´å˜åŒ–ï¼Œéœ€è¦é‡æ–°ç”Ÿæˆå åŠ å›¾ï¼ˆå¼ºåˆ¶æ¸…é™¤ç¼“å­˜ï¼‰
+                            // ¶ÔÆë²ÎÊı¸Ä±ä£¬Í¼ĞÎÓ³Éä·¶Î§±ä»¯£¬ĞèÒªÖØĞÂÈ·¶¨Ô¤ÀÀÊÓ¿Ú²¢ÖØĞÂÉú³Éµş¼ÓÍ¼¡£
+                            ResetPreviewAnchor(card);
                             InvalidateRoutePreviewCache(card);
                             RefreshPreview(card);
-
+                            
                         }));
                         break;
 
-                    case 43:  // è®¾ç½®å åŠ å›¾çš„ä¸–ç•ŒèŒƒå›´
+                    case 43:  // ÉèÖÃµş¼ÓÍ¼µÄÊÀ½ç·¶Î§
                         float xmin = (float)param.dParam1;
                         float ymin = (float)param.dParam2;
                         float width = (float)param.dParam3;
                         float height = (float)param.dParam4;
-                        _overlayWorldBounds[card] = new RectangleF(xmin, ymin, width, height);
-                        AddMsg($"å¡{card + 1} è®¾ç½®å åŠ å›¾èŒƒå›´: X=[{xmin},{xmin + width}] Y=[{ymin},{ymin + height}]");
-                        RefreshPreview(card);
-
+                        _overlayWorldBounds[card] = RoutePreviewWorldBounds;
+                        AddMsg($"¿¨{card + 1} ÊÕµ½µş¼ÓÍ¼·¶Î§ÃüÁî£¬ºì¿òÔ¤ÀÀ¹Ì¶¨Ê¹ÓÃ¼¤¹â×ø±ê X/Y=-150~150");
+                        ResetPreviewAnchor(card);
+                        InvalidateRoutePreviewCache(card);
+                        RefreshPreview(card); 
+                         
                         break;
 
-                    case 44:  // ç”Ÿæˆé˜µåˆ—å¡«å……åœ†æ¨¡æ¿ï¼Œå¹¶å¯ç›´æ¥æ ‡åˆ»
-                        nErr = GenerateFilledCircleTemplate(card, param); //GenerateFilledCircleTemplateåœ¨å¡«å……ç”Ÿæˆé‡Œ
+                    case 44:  // Éú³ÉÕóÁĞÌî³äÔ²Ä£°å£¬²¢¿ÉÖ±½Ó±ê¿Ì
+                        nErr = GenerateFilledCircleTemplate(card, param); //GenerateFilledCircleTemplateÔÚÌî³äÉú³ÉÀï
                         if (nErr != 0)
                         {
                             break;
                         }
 
-                        if (param.bOpen)                      //åˆ¤æ–­ä¸»ç¨‹åºæ˜¯å¦è¦æ±‚ç”Ÿæˆåç›´æ¥åŠ å·¥
+                        if (param.bOpen)                      //ÅĞ¶ÏÖ÷³ÌĞòÊÇ·ñÒªÇóÉú³ÉºóÖ±½Ó¼Ó¹¤
                         {
-                            if (!CanStartLaserMark(card))     //æ£€æŸ¥æ¿€å…‰å™¨æ˜¯å¦æ‰“å¼€ï¼Œæ²¡æ‰“å¼€å°±ä¸è®©æ‰“
+                            nErr = StartMarkAllObjects(
+                                card,
+                                param.cmdType,
+                                clientSeq,
+                                false,
+                                null,
+                                "ÕóÁĞÌî³äÔ²Ä£°å¼Ó¹¤");
+                            if (nErr == 0)
                             {
-                                nErr = 19;
-                                break;
+                                needResponse = false;
                             }
-
-                            if (bInMark[card])
-                            {
-                                nErr = 19;
-                                AddMsg($"å¡{card + 1} æ­£åœ¨åŠ å·¥ä¸­ï¼Œé˜µåˆ—å¡«å……åœ†æ¨¡æ¿æš‚ä¸èƒ½å¼€å§‹åŠ å·¥");//å¦‚æœç¨‹åºæœ¬æ¥å°±åœ¨åŠ å·¥ï¼Œé‚£ä¹ˆç”Ÿæˆæ¨¡ç‰ˆå°±ä¸èƒ½åŠ å·¥
-                                break;
-                            }
-
-                            markStopRequested[card] = false;
-                            bInMark[card] = true;//è¿›å…¥åŠ å·¥çŠ¶æ€
-                            CleanupPreviewAnchorEntities(card);//åŠ å·¥å‰æ¸…æ‰é¢„è§ˆè¾…åŠ©å¯¹è±¡ï¼Œé¿å…é¢„è§ˆç”¨çš„éšè—æ¡†æ··è¿›å®é™…åŠ å·¥
-
-                            var worker = new BackgroundWorker();//å¼€ä¸€ä¸ªåå°çº¿ç¨‹å¯¹è±¡ã€‚åŠ å·¥ä¸èƒ½ç›´æ¥å¡æ­»ç•Œé¢ï¼Œæ‰€ä»¥æ”¾åå°æ‰§è¡Œ
-                            worker.DoWork += (s, ev) =>
-                            {
-                                int markErr = lmc1_MarkBlocking(card, false); //è°ƒç”¨ SDK åŠ å·¥å½“å‰å¯¹è±¡åº“,æ‰“çš„å°±æ˜¯åˆšç”Ÿæˆçš„å¡«å……åœ†
-                                bInMark[card] = false;//åŠ å·¥ç»“æŸï¼Œâ€œæ­£åœ¨åŠ å·¥â€çŠ¶æ€å·²ç»å–æ¶ˆ
-                                AddMsg(markStopRequested[card]
-                                    ? $"å¡{card + 1} é˜µåˆ—å¡«å……åœ†æ¨¡æ¿åŠ å·¥å·²åœæ­¢ -> {JczLmc.GetErrorText(markErr)}"
-                                    : $"å¡{card + 1} é˜µåˆ—å¡«å……åœ†æ¨¡æ¿åŠ å·¥å®Œæˆ -> {JczLmc.GetErrorText(markErr)}");
-
-                                var result = new LCZControlParam  //ä¸­é€”å¦‚æœç‚¹å‡»äº†åœæ­¢åŠ å·¥ï¼Œé‚£ä¹ˆå°±æ˜¾ç¤ºåœæ­¢åŠ å·¥
-                                {
-                                    cardSN = card,
-                                    cmdType = param.cmdType,
-                                    nErr = markErr,
-                                    bOpen = true,
-                                    ind3 = clientSeq
-                                };
-                                SendResponse(result);//åŠ å·¥ç»“æœè¿”å›ä¸»ç¨‹åº
-                            };
-                            worker.RunWorkerAsync();
-                            needResponse = false;
                         }
                         break;
 
@@ -2536,7 +2662,7 @@ namespace BJJCZ_BaseDevelop
                         panel3.Visible = showEntity;
                         panel1.Visible = showOper;
 
-                        // åŒæ­¥èœå•å‹¾é€‰ï¼ˆå¯é€‰ï¼‰
+                        // Í¬²½²Ëµ¥¹´Ñ¡£¨¿ÉÑ¡£©
                         Win_Log.Checked = showLog;
                         Win_Entity.Checked = showEntity;
                         Win_Route.Checked = showImage;
@@ -2549,7 +2675,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"æ‰§è¡Œå‘½ä»¤å¼‚å¸¸: {ex.Message}");
+                AddMsg($"Ö´ĞĞÃüÁîÒì³£: {ex.Message}");
             }
 
             if (needResponse)
@@ -2561,12 +2687,12 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region é¢„è§ˆé”šç‚¹çŠ¶æ€ã€å¯¹è±¡é‡å‘½åä¸çº¢å…‰åŠ å·¥è¾…åŠ©
-        private bool[] previewAnchorReady = new bool[2];          // æ ‡è®°å½“å‰å¡ç‰‡çš„é¢„è§ˆé”šç‚¹ï¼ˆå›ºå®šä¸–ç•Œè§†å£è¾¹ç•Œï¼‰æ˜¯å¦å·²æˆåŠŸåˆå§‹åŒ–
-        private Rectangle[] previewAnchorRects = new Rectangle[2]; // SDKé¢„è§ˆå›¾ä¸­å›ºå®šè§†é‡é”šç‚¹å¯¹åº”çš„åƒç´ è£å‰ªæ¡†
-        private Size[] previewAnchorSourceSizes = new Size[2];     // è®°å½•è£å‰ªæ¡†å¯¹åº”çš„SDKåŸå›¾å°ºå¯¸ï¼Œå°ºå¯¸å˜åŒ–æ—¶é‡æ–°è¯†åˆ«
-        private RectangleF[] previewAnchorWorldRects = new RectangleF[2];   // å½“å‰å¡ç‰‡çš„ä¸–ç•Œåæ ‡è§†å£è¾¹ç•Œï¼ˆç”¨äºå±…ä¸­æ˜¾ç¤ºé¢„è§ˆå†…å®¹ï¼‰
-        private RectangleF[] previewGuardWorldRects = new RectangleF[2];     // ä¿æŠ¤è¾¹ç•Œä¸–ç•ŒçŸ©å½¢ï¼Œé€šå¸¸ä¸ºè§†å£è¾¹ç•Œçš„æ‰©å±•ï¼ˆç”¨äºç”Ÿæˆè¶³å¤Ÿå¤§çš„é¢„è§ˆä½å›¾ï¼‰
+        #region Ô¤ÀÀÃªµã×´Ì¬¡¢¶ÔÏóÖØÃüÃûÓëºì¹â¼Ó¹¤¸¨Öú
+        private bool[] previewAnchorReady = new bool[2];          // ±ê¼Çµ±Ç°¿¨Æ¬µÄÔ¤ÀÀÃªµã£¨¹Ì¶¨ÊÀ½çÊÓ¿Ú±ß½ç£©ÊÇ·ñÒÑ³É¹¦³õÊ¼»¯
+        private Rectangle[] previewAnchorRects = new Rectangle[2]; // SDKÔ¤ÀÀÍ¼ÖĞ¹Ì¶¨ÊÓÒ°Ãªµã¶ÔÓ¦µÄÏñËØ²Ã¼ô¿ò
+        private Size[] previewAnchorSourceSizes = new Size[2];     // ¼ÇÂ¼²Ã¼ô¿ò¶ÔÓ¦µÄSDKÔ­Í¼³ß´ç£¬³ß´ç±ä»¯Ê±ÖØĞÂÊ¶±ğ
+        private RectangleF[] previewAnchorWorldRects = new RectangleF[2];   // µ±Ç°¿¨Æ¬µÄÊÀ½ç×ø±êÊÓ¿Ú±ß½ç£¨ÓÃÓÚ¾ÓÖĞÏÔÊ¾Ô¤ÀÀÄÚÈİ£©
+        private RectangleF[] previewGuardWorldRects = new RectangleF[2];     // ±£»¤±ß½çÊÀ½ç¾ØĞÎ£¬Í¨³£ÎªÊÓ¿Ú±ß½çµÄÀ©Õ¹£¨ÓÃÓÚÉú³É×ã¹»´óµÄÔ¤ÀÀÎ»Í¼£©
         private void ResetPreviewAnchor(int card)
         {
             CleanupPreviewAnchorEntities(card);
@@ -2578,59 +2704,59 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// é‡å‘½åä¸€ä¸ªé€»è¾‘å¯¹è±¡ï¼ˆä»¥åŠå®ƒå¯èƒ½å…³è”çš„å¡«å……å¯¹è±¡ï¼‰
+        /// ÖØÃüÃûÒ»¸öÂß¼­¶ÔÏó£¨ÒÔ¼°Ëü¿ÉÄÜ¹ØÁªµÄÌî³ä¶ÔÏó£©
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•ï¼ˆ0æˆ–1ï¼‰</param>
-        /// <param name="entName">å½“å‰é€»è¾‘å¯¹è±¡åç§°ï¼ˆå¯èƒ½æ˜¯è½®å»“åæˆ–å¡«å……åï¼‰</param>
-        /// <param name="newName">æ–°çš„é€»è¾‘å¯¹è±¡åç§°</param>
-        /// <returns>0è¡¨ç¤ºæˆåŠŸï¼Œé0è¡¨ç¤ºé”™è¯¯ç </returns>
+        /// <param name="card">°å¿¨Ë÷Òı£¨0»ò1£©</param>
+        /// <param name="entName">µ±Ç°Âß¼­¶ÔÏóÃû³Æ£¨¿ÉÄÜÊÇÂÖÀªÃû»òÌî³äÃû£©</param>
+        /// <param name="newName">ĞÂµÄÂß¼­¶ÔÏóÃû³Æ</param>
+        /// <returns>0±íÊ¾³É¹¦£¬·Ç0±íÊ¾´íÎóÂë</returns>
         private int RenameLogicalEntity(int card, string entName, string newName)
         {
-            // å‚æ•°æ ¡éªŒï¼šåç§°ä¸èƒ½ä¸ºç©ºæˆ–ä»…ç©ºç™½å­—ç¬¦
+            // ²ÎÊıĞ£Ñé£ºÃû³Æ²»ÄÜÎª¿Õ»ò½ö¿Õ°××Ö·û
             if (string.IsNullOrWhiteSpace(entName) || string.IsNullOrWhiteSpace(newName))
             {
-                return 20;  // å‚æ•°è¾“å…¥é”™è¯¯
+                return 20;  // ²ÎÊıÊäÈë´íÎó
             }
 
-            // è·å–â€œæºåç§°â€ï¼šå¦‚æœä¼ å…¥çš„æ˜¯å¡«å……å¯¹è±¡åï¼ˆå¦‚ "Rect_Hatch"ï¼‰ï¼Œåˆ™æˆªå» "_Hatch" åç¼€å¾—åˆ°è½®å»“åï¼ˆå¦‚ "Rect"ï¼‰
+            // »ñÈ¡¡°Ô´Ãû³Æ¡±£ºÈç¹û´«ÈëµÄÊÇÌî³ä¶ÔÏóÃû£¨Èç "Rect_Hatch"£©£¬Ôò½ØÈ¥ "_Hatch" ºó×ºµÃµ½ÂÖÀªÃû£¨Èç "Rect"£©
             string sourceName = GetHatchSourceName(entName);
-            // æ ¹æ®è½®å»“åæ„é€ å…¶å¯¹åº”çš„å¡«å……å¯¹è±¡åï¼ˆè½®å»“å + "_Hatch"ï¼‰
+            // ¸ù¾İÂÖÀªÃû¹¹ÔìÆä¶ÔÓ¦µÄÌî³ä¶ÔÏóÃû£¨ÂÖÀªÃû + "_Hatch"£©
             string oldHatchName = GetHatchEntityName(sourceName);
-            // æ ¹æ®æ–°è½®å»“åæ„é€ æ–°å¡«å……å¯¹è±¡å
+            // ¸ù¾İĞÂÂÖÀªÃû¹¹ÔìĞÂÌî³ä¶ÔÏóÃû
             string newHatchName = GetHatchEntityName(newName);
 
-            // 1. é‡å‘½åè½®å»“å¯¹è±¡ï¼ˆä» sourceName æ”¹ä¸º newNameï¼‰
+            // 1. ÖØÃüÃûÂÖÀª¶ÔÏó£¨´Ó sourceName ¸ÄÎª newName£©
             int err = JczLmc.lmc1_ChangeEntName(phyCardSN[card], sourceName, newName);
             if (err != 0)
             {
-                return err;  // é‡å‘½åå¤±è´¥ï¼Œç›´æ¥è¿”å›é”™è¯¯ç 
+                return err;  // ÖØÃüÃûÊ§°Ü£¬Ö±½Ó·µ»Ø´íÎóÂë
             }
 
-            // 2. å¦‚æœè¯¥è½®å»“å¯¹è±¡å­˜åœ¨å¯¹åº”çš„å¡«å……å¯¹è±¡ï¼ˆæ—§å¡«å……åå­˜åœ¨ï¼‰ï¼Œåˆ™åŒæ­¥é‡å‘½åå¡«å……å¯¹è±¡
+            // 2. Èç¹û¸ÃÂÖÀª¶ÔÏó´æÔÚ¶ÔÓ¦µÄÌî³ä¶ÔÏó£¨¾ÉÌî³äÃû´æÔÚ£©£¬ÔòÍ¬²½ÖØÃüÃûÌî³ä¶ÔÏó
             if (EntityExists(card, oldHatchName))
             {
                 int hatchErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], oldHatchName, newHatchName);
                 if (hatchErr != 0)
                 {
-                    // å¡«å……å¯¹è±¡é‡å‘½åå¤±è´¥æ—¶è®°å½•æ—¥å¿—ï¼Œä½†æ³¨æ„æ­¤æ—¶è½®å»“å·²ç»æ”¹åï¼Œå¯èƒ½éœ€è¦å›æ»šï¼Ÿ
-                    // å½“å‰è®¾è®¡ä»…è®°å½•é”™è¯¯å¹¶è¿”å›ï¼Œå¯èƒ½å¯¼è‡´è½®å»“ä¸å¡«å……åç§°ä¸ä¸€è‡´ã€‚
-                    AddMsg($"å¡{card + 1} é‡å‘½åå†…éƒ¨å¡«å……å¯¹è±¡å¤±è´¥: {JczLmc.GetErrorText(hatchErr)}");
+                    // Ìî³ä¶ÔÏóÖØÃüÃûÊ§°ÜÊ±¼ÇÂ¼ÈÕÖ¾£¬µ«×¢Òâ´ËÊ±ÂÖÀªÒÑ¾­¸ÄÃû£¬¿ÉÄÜĞèÒª»Ø¹ö£¿
+                    // µ±Ç°Éè¼Æ½ö¼ÇÂ¼´íÎó²¢·µ»Ø£¬¿ÉÄÜµ¼ÖÂÂÖÀªÓëÌî³äÃû³Æ²»Ò»ÖÂ¡£
+                    AddMsg($"¿¨{card + 1} ÖØÃüÃûÄÚ²¿Ìî³ä¶ÔÏóÊ§°Ü: {JczLmc.GetErrorText(hatchErr)}");
                     return hatchErr;
                 }
             }
 
-            // 3. ç§»é™¤è¿™ä¸¤ä¸ªå®ä½“åœ¨â€œç¼©æ”¾çŠ¶æ€è®°å¿†â€ä¸­çš„ç¼“å­˜ï¼ˆé¿å…æ—§çš„ç¼©æ”¾æ¯”ä¾‹å½±å“åç»­æ“ä½œï¼‰
-            RemoveEntityScaleState(card, sourceName);   // æ—§è½®å»“åçš„ç¼©æ”¾çŠ¶æ€
-            RemoveEntityScaleState(card, oldHatchName); // æ—§å¡«å……åçš„ç¼©æ”¾çŠ¶æ€ï¼ˆè‹¥ä¸å­˜åœ¨åˆ™æ— å½±å“ï¼‰
+            // 3. ÒÆ³ıÕâÁ½¸öÊµÌåÔÚ¡°Ëõ·Å×´Ì¬¼ÇÒä¡±ÖĞµÄ»º´æ£¨±ÜÃâ¾ÉµÄËõ·Å±ÈÀıÓ°ÏìºóĞø²Ù×÷£©
+            RemoveEntityScaleState(card, sourceName);   // ¾ÉÂÖÀªÃûµÄËõ·Å×´Ì¬
+            RemoveEntityScaleState(card, oldHatchName); // ¾ÉÌî³äÃûµÄËõ·Å×´Ì¬£¨Èô²»´æÔÚÔòÎŞÓ°Ïì£©
 
-            return 0;  // å…¨éƒ¨æˆåŠŸ
+            return 0;  // È«²¿³É¹¦
         }
 
         private void RemoveEntityScaleState(int card, string entName)
         {
             entityScaleStates.Remove(GetEntityScaleKey(card, entName));
         }
-
+     
         private void SaveVisualRotateMoveParam(int card, LCZControlParam param)
         {
             if (card < 0 || card >= visualRotateMoveReady.Length)
@@ -2645,7 +2771,7 @@ namespace BJJCZ_BaseDevelop
             visualRotateAngle[card] = param.dParam5;
             visualRotateMoveReady[card] = true;
         }
-
+     
         private int RunRedLightPreviewOnce(int card, int cmdType, string entName)
         {
             try
@@ -2671,7 +2797,7 @@ namespace BJJCZ_BaseDevelop
                     int err = RunRedLightPreviewEntity(card, name);
                     if (err != 0 && err != 19)
                     {
-                        AddMsg($"å¡{card + 1} çº¢å…‰è½®å»“å¯¹è±¡ {name} å¤±è´¥ -> {JczLmc.GetErrorText(err)}");
+                        AddMsg($"¿¨{card + 1} ºì¹âÂÖÀª¶ÔÏó {name} Ê§°Ü -> {JczLmc.GetErrorText(err)}");
                         return err;
                     }
                 }
@@ -2680,16 +2806,16 @@ namespace BJJCZ_BaseDevelop
             }
             catch (AccessViolationException ex)
             {
-                AddMsg($"å¡{card + 1} çº¢å…‰é¢„è§ˆè®¿é—®å†…å­˜å¼‚å¸¸ï¼Œå·²åœæ­¢: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ºì¹âÔ¤ÀÀ·ÃÎÊÄÚ´æÒì³££¬ÒÑÍ£Ö¹: {ex.Message}");
                 return 9;
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} çº¢å…‰é¢„è§ˆå¼‚å¸¸ï¼Œå·²åœæ­¢: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ºì¹âÔ¤ÀÀÒì³££¬ÒÑÍ£Ö¹: {ex.Message}");
                 return 9;
             }
         }
-
+       
         private string[] GetRedLightContourNames(int card)
         {
             string[] names = sdkEntNames[card] != null && sdkEntNames[card].Length > 0
@@ -2704,8 +2830,8 @@ namespace BJJCZ_BaseDevelop
                 .Where(name => !name.StartsWith(TransformPairEntityPrefix, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
         }
-
-
+       
+        
         private int RunRedLightPreviewEntity(int card, string entName)
         {
             if (string.IsNullOrWhiteSpace(entName))
@@ -2760,11 +2886,11 @@ namespace BJJCZ_BaseDevelop
             int err = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
             if (err == 0)
             {
-                AddMsg($"å¡{card + 1} å·²æ¸…é™¤æŒ¯é•œå…¨å±€åç§»/æ—‹è½¬ -> {reason}");
+                AddMsg($"¿¨{card + 1} ÒÑÇå³ıÕñ¾µÈ«¾ÖÆ«ÒÆ/Ğı×ª -> {reason}");
             }
             else
             {
-                AddMsg($"å¡{card + 1} æ¸…é™¤æŒ¯é•œå…¨å±€åç§»/æ—‹è½¬å¤±è´¥ -> {JczLmc.GetErrorText(err)}");
+                AddMsg($"¿¨{card + 1} Çå³ıÕñ¾µÈ«¾ÖÆ«ÒÆ/Ğı×ªÊ§°Ü -> {JczLmc.GetErrorText(err)}");
             }
         }
         private bool IsRedPreviewContinuous()
@@ -2775,10 +2901,10 @@ namespace BJJCZ_BaseDevelop
         {
             JczLmc.lmc1_StopMark(phyCardSN[card]);
             bInRed[card] = false;
-            // ResetRedPreviewButtons();
+           // ResetRedPreviewButtons();
             if (!string.IsNullOrEmpty(reason))
             {
-                AddMsg($"å¡{card + 1} {reason}");
+                AddMsg($"¿¨{card + 1} {reason}");
             }
         }
         private int QueryGalvoPosition(int card, string reason)
@@ -2790,7 +2916,7 @@ namespace BJJCZ_BaseDevelop
 
             if (JczInitErrs[card] != 0 && !bSimulateMode[card])
             {
-                AddMsg($"å¡{card + 1} æ¿å¡æœªåˆå§‹åŒ–ï¼Œæ— æ³•æŸ¥è¯¢æŒ¯é•œä½ç½®");
+                AddMsg($"¿¨{card + 1} °å¿¨Î´³õÊ¼»¯£¬ÎŞ·¨²éÑ¯Õñ¾µÎ»ÖÃ");
                 return 11;
             }
 
@@ -2806,16 +2932,16 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!TryQueryAxisCoordinate(card, out x, out y))
                 {
-                    AddMsg($"å¡{card + 1} æŸ¥è¯¢æŒ¯é•œä½ç½®å¤±è´¥: å½“å‰MultiMarkEzd.dllä¸æ”¯æŒlmc1_GetCurCooræ¥å£");
+                    AddMsg($"¿¨{card + 1} ²éÑ¯Õñ¾µÎ»ÖÃÊ§°Ü: µ±Ç°MultiMarkEzd.dll²»Ö§³Ölmc1_GetCurCoor½Ó¿Ú");
                     return 18;
                 }
 
                 nErr = 0;
-                AddMsg($"å¡{card + 1} å½“å‰MultiMarkEzd.dllæ— lmc1_GetCurCoorï¼Œå·²ä½¿ç”¨è½´åæ ‡æ¥å£å…œåº•");
+                AddMsg($"¿¨{card + 1} µ±Ç°MultiMarkEzd.dllÎŞlmc1_GetCurCoor£¬ÒÑÊ¹ÓÃÖá×ø±ê½Ó¿Ú¶µµ×");
             }
             catch (DllNotFoundException ex)
             {
-                AddMsg($"å¡{card + 1} æŸ¥è¯¢æŒ¯é•œä½ç½®å¤±è´¥: æ‰¾ä¸åˆ°MultiMarkEzd.dll ({ex.Message})");
+                AddMsg($"¿¨{card + 1} ²éÑ¯Õñ¾µÎ»ÖÃÊ§°Ü: ÕÒ²»µ½MultiMarkEzd.dll ({ex.Message})");
                 return 12;
             }
             if (nErr == 0)
@@ -2835,11 +2961,11 @@ namespace BJJCZ_BaseDevelop
                     updateAction();
                 }
 
-                AddMsg($"å¡{card + 1} {reason}æŒ¯é•œä½ç½®: X={x:0.###}, Y={y:0.###}");
+                AddMsg($"¿¨{card + 1} {reason}Õñ¾µÎ»ÖÃ: X={x:0.###}, Y={y:0.###}");
             }
             else
             {
-                AddMsg($"å¡{card + 1} æŸ¥è¯¢æŒ¯é•œä½ç½®å¤±è´¥ -> {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"¿¨{card + 1} ²éÑ¯Õñ¾µÎ»ÖÃÊ§°Ü -> {JczLmc.GetErrorText(nErr)}");
             }
 
             return nErr;
@@ -2862,7 +2988,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è½´åæ ‡å…œåº•æŸ¥è¯¢å¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} Öá×ø±ê¶µµ×²éÑ¯Ê§°Ü: {ex.Message}");
                 return false;
             }
         }
@@ -2883,11 +3009,11 @@ namespace BJJCZ_BaseDevelop
 
             if (err == 0)
             {
-                AddMsg($"å¡{card + 1} ä¿ç•™è§†è§‰å®šä½åç§» -> {reason}: X={visualMoveX[card]:0.###}, Y={visualMoveY[card]:0.###}, R={visualRotateAngle[card]:0.###}");
+                AddMsg($"¿¨{card + 1} ±£ÁôÊÓ¾õ¶¨Î»Æ«ÒÆ -> {reason}: X={visualMoveX[card]:0.###}, Y={visualMoveY[card]:0.###}, R={visualRotateAngle[card]:0.###}");
             }
             else
             {
-                AddMsg($"å¡{card + 1} åº”ç”¨è§†è§‰å®šä½åç§»å¤±è´¥ -> {reason}: {JczLmc.GetErrorText(err)}");
+                AddMsg($"¿¨{card + 1} Ó¦ÓÃÊÓ¾õ¶¨Î»Æ«ÒÆÊ§°Ü -> {reason}: {JczLmc.GetErrorText(err)}");
             }
 
             return err == 0;
@@ -2902,7 +3028,7 @@ namespace BJJCZ_BaseDevelop
 
             if (!laserMarkEnabled[card])
             {
-                AddMsg($"å¡{card + 1} æ¿€å…‰å™¨å·²å…³é—­ï¼Œå·²ç¦æ­¢æ¿€å…‰åŠ å·¥/çº¢å…‰é¢„è§ˆï¼›è¯·å…ˆç‚¹å‡»\"æ‰“å¼€æ¿€å…‰å™¨\"");
+                AddMsg($"¿¨{card + 1} ¼¤¹âÆ÷ÒÑ¹Ø±Õ£¬ÒÑ½ûÖ¹¼¤¹â¼Ó¹¤/ºì¹âÔ¤ÀÀ£»ÇëÏÈµã»÷\"´ò¿ª¼¤¹âÆ÷\"");
                 return false;
             }
 
@@ -2932,27 +3058,67 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region å¡«å……ç”Ÿæˆã€ç¼“å­˜ä¸è½®å»“ç¬”å·å¤„ç†
-        private string FindBlankTemplatePath()
+        #region Ìî³äÉú³É¡¢»º´æÓëÂÖÀª±ÊºÅ´¦Àí
+        private string ResolveExistingEzdPath(string path)
         {
-            //1. NoneTemplate.ezd æ˜¯ç”Ÿæˆæ ‡åˆ»æ¨¡æ¿çš„åº•æ¿ï¼Œç”¨æ¥ä¿ç•™ç¬”å·ã€åŠ å·¥å‚æ•°ç­‰ EZD é»˜è®¤è®¾ç½®ã€‚
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
             string[] candidates =
             {
-                @"D:\æ¿€å…‰é™¤èƒ¶\EZDModel\EZDModel å¡«å……è®¾ç½®æ¼”ç¤ºezd\NoneTemplate.ezd",
-                @"D:\æ¿€å…‰é™¤èƒ¶\EZDModel\EZDModel\NoneTemplate.ezd",
-                @"D:\æ¿€å…‰é™¤èƒ¶\EZDModel\EZDModel ezdè°ƒè¯•å¤‡ä»½1\NoneTemplate.ezd",
+                path,
+                Path.Combine(Application.StartupPath, path)
+            };
 
-                Path.Combine(Application.StartupPath, "NoneTemplate.ezd"),
-                Path.Combine(Application.StartupPath, "EzdModel", "NoneTemplate.ezd"),
-                Path.Combine(Application.StartupPath, "EZDModel", "NoneTemplate.ezd"),
-                Path.Combine(Application.StartupPath, "..", "EZDModel", "EZDModel", "NoneTemplate.ezd"),
-                Path.Combine(Application.StartupPath, "..", "..", "EZDModel", "EZDModel", "NoneTemplate.ezd")    //æŒ‰ç…§å‡ ä¸ªç°åœºçš„ä¿å­˜è·¯å¾„æ‰¾ç©ºç™½æ¨¡æ¿NoneTemplate.ezdï¼ˆç°åœºè·¯å¾„å¯ä»¥æ›´æ”¹ï¼‰
+            foreach (string candidate in candidates)
+            {
+                try
+                {
+                    string fullPath = Path.GetFullPath(candidate);
+                    if (File.Exists(fullPath))
+                    {
+                        return fullPath;
+                    }
+                }
+                catch
+                {
+                    // Â·¾¶¸ñÊ½²»ºÏ·¨Ê±Ìø¹ı£¬¼ÌĞø³¢ÊÔÏÂÒ»¸öºòÑ¡Â·¾¶¡£
+                }
+            }
+
+            return null;
+        }
+
+        private string FindTemplateBasePath(int card)
+        {
+            string loadedDir = null;
+            string loadedPath = ResolveExistingEzdPath(currentFilePath[card]);
+            if (!string.IsNullOrEmpty(loadedPath))
+            {
+                loadedDir = Path.GetDirectoryName(loadedPath);
+            }
+
+            // route0.ezd ÊÇÖ÷³ÌĞòÕıÊ½Ä£°å£¬²»ÄÜÄÃÀ´×öÉú³Éµ×°å¡£
+            // ±ê¿ÌÄ£°åÉú³ÉÖ»¼ÓÔØ route4.ezd£¬ËæºóÇå¿Õ¶ÔÏó²¢Éú³ÉĞÂµÄÕóÁĞÔ²¡£
+            string[] candidates =
+            {
+                string.IsNullOrEmpty(loadedDir) ? null : Path.Combine(loadedDir, "route4.ezd"),
+                @"D:\¼¤¹â³ı½º\EZDModel\EZDModel\route4.ezd",
+                @"D:\¼¤¹â³ı½º\EZDModel\EZDModel ezdµ÷ÊÔ±¸·İ1\route4.ezd",
+                @"D:\VisionData\route4.ezd",
+                Path.Combine(Application.StartupPath, "route4.ezd"),
+                Path.Combine(Application.StartupPath, "EzdModel", "route4.ezd"),
+                Path.Combine(Application.StartupPath, "EZDModel", "route4.ezd"),
+                Path.Combine(Application.StartupPath, "..", "EZDModel", "EZDModel", "route4.ezd"),
+                Path.Combine(Application.StartupPath, "..", "..", "EZDModel", "EZDModel", "route4.ezd")
             };
 
             foreach (string path in candidates)
             {
-                string fullPath = Path.GetFullPath(path);
-                if (File.Exists(fullPath))
+                string fullPath = ResolveExistingEzdPath(path);
+                if (!string.IsNullOrEmpty(fullPath))
                 {
                     return fullPath;
                 }
@@ -2961,137 +3127,162 @@ namespace BJJCZ_BaseDevelop
             return null;
         }
 
-        //2.åˆ›å»ºæ ‡åˆ»æ¨¡ç‰ˆæ—¶ï¼Œå‚æ•°è®¾ç½®çš„ä¸€äº›é™åˆ¶ï¼Œç”Ÿæˆå‡½æ•°æ¨¡ç‰ˆ
+        private void AddEntityCountLog(int card, string stage)
+        {
+            try
+            {
+                int count = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                AddMsg($"¿¨{card + 1} {stage}: ¶ÔÏóÊıÁ¿={count}");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"¿¨{card + 1} {stage}: ¶ÁÈ¡¶ÔÏóÊıÁ¿Ê§°Ü - {ex.Message}");
+            }
+        }
+
+        //2.´´½¨±ê¿ÌÄ£°æÊ±£¬²ÎÊıÉèÖÃµÄÒ»Ğ©ÏŞÖÆ£¬Éú³Éº¯ÊıÄ£°æ
         private int GenerateFilledCircleTemplate(int card, LCZControlParam param)
         {
             int rows = param.ind1;
             int cols = param.ind2;
-            int penNo = 2;//è§„å®šç¬”å·é¢œè‰²åªèƒ½ä¸º2çº¢è‰²  ind3 ind4æ²¡æœ‰å–
+            int penNo = 2;//¹æ¶¨±ÊºÅÑÕÉ«Ö»ÄÜÎª2ºìÉ«  ind3 ind4Ã»ÓĞÈ¡
             double centerX = param.dParam1;
             double centerY = param.dParam2;
             double radius = param.dParam3;
             double spacingX = param.dParam4;
             double spacingY = param.dParam5;
 
-            //è®¾ç½®å‚æ•°æ—¶çš„é€»è¾‘
+            //ÉèÖÃ²ÎÊıÊ±µÄÂß¼­
             if (rows <= 0 || cols <= 0)
             {
-                AddMsg($"å¡{card + 1} ç”Ÿæˆé˜µåˆ—å¡«å……åœ†å¤±è´¥: è¡Œæ•°/åˆ—æ•°å¿…é¡»å¤§äº0");
+                AddMsg($"¿¨{card + 1} Éú³ÉÕóÁĞÌî³äÔ²Ê§°Ü: ĞĞÊı/ÁĞÊı±ØĞë´óÓÚ0");
                 return 20;
             }
 
             if (rows * cols > 200)
             {
-                AddMsg($"å¡{card + 1} ç”Ÿæˆé˜µåˆ—å¡«å……åœ†å¤±è´¥: å¯¹è±¡æ•°é‡è¿‡å¤š({rows * cols})");//è¡Œåˆ—ä¸èƒ½ç”Ÿæˆè¿‡å¤š
+                AddMsg($"¿¨{card + 1} Éú³ÉÕóÁĞÌî³äÔ²Ê§°Ü: ¶ÔÏóÊıÁ¿¹ı¶à({rows * cols})");//ĞĞÁĞ²»ÄÜÉú³É¹ı¶à
                 return 20;
             }
 
             if (radius <= 0)
             {
-                AddMsg($"å¡{card + 1} ç”Ÿæˆé˜µåˆ—å¡«å……åœ†å¤±è´¥: åœ†åŠå¾„å¿…é¡»å¤§äº0");
+                AddMsg($"¿¨{card + 1} Éú³ÉÕóÁĞÌî³äÔ²Ê§°Ü: Ô²°ë¾¶±ØĞë´óÓÚ0");
                 return 20;
             }
 
             if (cols > 1 && spacingX <= 0)
             {
-                AddMsg($"å¡{card + 1} ç”Ÿæˆé˜µåˆ—å¡«å……åœ†å¤±è´¥: å¤šåˆ—æ—¶Xé—´è·å¿…é¡»å¤§äº0");
+                AddMsg($"¿¨{card + 1} Éú³ÉÕóÁĞÌî³äÔ²Ê§°Ü: ¶àÁĞÊ±X¼ä¾à±ØĞë´óÓÚ0");
                 return 20;
             }
 
             if (rows > 1 && spacingY <= 0)
             {
-                AddMsg($"å¡{card + 1} ç”Ÿæˆé˜µåˆ—å¡«å……åœ†å¤±è´¥: å¤šè¡Œæ—¶Yé—´è·å¿…é¡»å¤§äº0");
+                AddMsg($"¿¨{card + 1} Éú³ÉÕóÁĞÌî³äÔ²Ê§°Ü: ¶àĞĞÊ±Y¼ä¾à±ØĞë´óÓÚ0");
                 return 20;
             }
 
-            AddMsg($"å¡{card + 1} é˜µåˆ—å¡«å……åœ†å‚æ•°: è¡Œåˆ—({rows} x {cols}) åŠå¾„={radius:0.###} é»˜è®¤ç¬”å·={penNo}");
-            AddMsg($"å¡{card + 1} é˜µåˆ—å¡«å……åœ†å‚æ•°: ä¸­å¿ƒ({centerX:0.###},{centerY:0.###}) é—´è·({spacingX:0.###},{spacingY:0.###})"); //æ—¥å¿—ä¼šæ˜¾ç¤ºå‡ºå¡«å……åœ†çš„å‚æ•°
+            AddMsg($"¿¨{card + 1} ÕóÁĞÌî³äÔ²²ÎÊı: ĞĞÁĞ({rows} x {cols}) °ë¾¶={radius:0.###} Ä¬ÈÏ±ÊºÅ={penNo}");
+            AddMsg($"¿¨{card + 1} ÕóÁĞÌî³äÔ²²ÎÊı: ÖĞĞÄ({centerX:0.###},{centerY:0.###}) ¼ä¾à({spacingX:0.###},{spacingY:0.###})"); //ÈÕÖ¾»áÏÔÊ¾³öÌî³äÔ²µÄ²ÎÊı
 
             CleanupPreviewAnchorEntities(card);
-            CleanupTransformPairEntities(card);  //ç”Ÿæˆæ–°æ¨¡æ¿å‰ï¼Œæ¸…æ‰é¢„è§ˆè¾…åŠ©å¯¹è±¡å’Œå˜æ¢ä¸´æ—¶å¯¹è±¡
+            CleanupTransformPairEntities(card);  //Éú³ÉĞÂÄ£°åÇ°£¬ÇåµôÔ¤ÀÀ¸¨Öú¶ÔÏóºÍ±ä»»ÁÙÊ±¶ÔÏó
 
-            string blankTemplatePath = FindBlankTemplatePath(); //å…ˆæ‰¾ç©ºç™½æ¨¡æ¿ï¼Œæ‰¾ä¸åˆ°å°±æ— æ³•å¡«å……
-            if (string.IsNullOrEmpty(blankTemplatePath))
+            string templateBasePath = FindTemplateBasePath(card); //Ö»Ê¹ÓÃÓĞ²ÎÊıÄ£°å×öÕóÁĞÔ²Éú³Éµ×°å
+            if (string.IsNullOrEmpty(templateBasePath))
             {
-                AddMsg($"å¡{card + 1} ç”Ÿæˆé˜µåˆ—å¡«å……åœ†å¤±è´¥: æœªæ‰¾åˆ°ç©ºç™½æ¨¡æ¿ NoneTemplate.ezd");
+                AddMsg($"¿¨{card + 1} Éú³ÉÕóÁĞÌî³äÔ²Ê§°Ü: Î´ÕÒµ½Ä£°åµ×°å route4.ezd");
                 return 20;
             }
 
-            // å…ˆåŠ è½½ç©ºç™½æ¨¡æ¿ï¼Œå†æ¸…ç©ºå¯¹è±¡ï¼›è¿™æ ·èƒ½ç»§æ‰¿ç©ºç™½æ¨¡æ¿é‡Œçš„ç¬”å·å’ŒåŠ å·¥å‚æ•°ã€‚
-            int loadBlankErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], blankTemplatePath);
+            // ÏÈ¼ÓÔØÓĞ²ÎÊıÄ£°åµ×°å£¬ÔÙÇå¿Õ¶ÔÏó£»ÕâÑùÖ»½èÓÃµ×°åÀïµÄÉè±¸¡¢±ÊºÅ¡¢¼Ó¹¤²ÎÊı£¬²»±£Áô¾ÉÍ¼ĞÎ¡£
+            AddMsg($"¿¨{card + 1} ×¼±¸¼ÓÔØÄ£°åµ×°å: {templateBasePath}");
+            int loadBlankErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], templateBasePath);
             if (loadBlankErr != 0)
             {
-                AddMsg($"å¡{card + 1} åŠ è½½ç©ºç™½æ¨¡æ¿å¤±è´¥: {blankTemplatePath}");
-                AddMsg($"å¡{card + 1} åŠ è½½ç©ºç™½æ¨¡æ¿å¤±è´¥: {JczLmc.GetErrorText(loadBlankErr)}");
+                AddMsg($"¿¨{card + 1} ¼ÓÔØÄ£°åµ×°åÊ§°Ü: {templateBasePath}");
+                AddMsg($"¿¨{card + 1} ¼ÓÔØÄ£°åµ×°åÊ§°Ü: {JczLmc.GetErrorText(loadBlankErr)}");
                 return loadBlankErr;
             }
 
-            AddMsg($"å¡{card + 1} å·²åŠ è½½ç©ºç™½æ¨¡æ¿: {blankTemplatePath}");
+            AddMsg($"¿¨{card + 1} ÒÑ¼ÓÔØÄ£°åµ×°å: {templateBasePath}");
+            AddEntityCountLog(card, "Ä£°åµ×°å¼ÓÔØºó");
 
             int clearErr = JczLmc.lmc1_ClearEntLib(phyCardSN[card]);
             if (clearErr != 0)
             {
-                AddMsg($"å¡{card + 1} æ¸…ç©ºå¯¹è±¡åº“å¤±è´¥: {JczLmc.GetErrorText(clearErr)}");
+                AddMsg($"¿¨{card + 1} Çå¿Õ¶ÔÏó¿âÊ§°Ü: {JczLmc.GetErrorText(clearErr)}");
                 return clearErr;
             }
-            //ä¿å­˜è·¯å¾„
-            currentFilePath[card] = string.IsNullOrWhiteSpace(param.strFileName) ? null : param.strFileName;//å¦‚æœä¸»ç¨‹åºä¼ äº†ä¿å­˜è·¯å¾„ï¼Œå°±è®°å½•å½“å‰æ–‡ä»¶è·¯å¾„ï¼›æ²¡ä¼ å°±è®¾ä¸ºç©º
+            AddEntityCountLog(card, "Çå¿Õ¶ÔÏó¿âºó");
+            //±£´æÂ·¾¶
+            currentFilePath[card] = string.IsNullOrWhiteSpace(param.strFileName) ? null : param.strFileName;//Èç¹ûÖ÷³ÌĞò´«ÁË±£´æÂ·¾¶£¬¾Í¼ÇÂ¼µ±Ç°ÎÄ¼şÂ·¾¶£»Ã»´«¾ÍÉèÎª¿Õ
             ResetPreviewAnchor(card);
-            ResetEntityScaleStates(card);//é‡ç½®é¢„è§ˆé”šç‚¹å’Œç¼©æ”¾çŠ¶æ€ï¼Œå› ä¸ºå¯¹è±¡åº“å·²ç»æ¢æˆæ–°æ¨¡æ¿äº†
+            ResetEntityScaleStates(card);//ÖØÖÃÔ¤ÀÀÃªµãºÍËõ·Å×´Ì¬£¬ÒòÎª¶ÔÏó¿âÒÑ¾­»»³ÉĞÂÄ£°åÁË
 
             HatchParam hp = new HatchParam(1);
-            hp.nPenNo = penNo;//å¡«å……ç¬”å·ä¸º2
-            hp.bEnableContour = false;//ä¸é¢å¤–æ‰“åœ†è½®å»“
-            hp.bEnableHatch = 1;//å¯ç”¨å¡«å……
+            hp.nPenNo = penNo;//Ìî³ä±ÊºÅÎª2
+            hp.bEnableContour = true;//±£ÁôÔ²ÂÖÀªÒ»Æğ¼Ó¹¤£¬±ãÓÚÈ·ÈÏÏÖ³¡ÖÁÉÙÄÜ´ò³öÂÖÀª
+            hp.bEnableHatch = 1;//ÆôÓÃÌî³ä
 
-            string namePrefix = string.IsNullOrWhiteSpace(param.strEntyName) //ç”Ÿæˆå¯¹è±¡åå‰ç¼€,ä¸»ç¨‹åºæ²¡ä¼ åå­—çš„è¯å°±å« MarkCircle
+            string namePrefix = string.IsNullOrWhiteSpace(param.strEntyName) //Éú³É¶ÔÏóÃûÇ°×º,Ö÷³ÌĞòÃ»´«Ãû×ÖµÄ»°¾Í½Ğ MarkCircle
                 ? "MarkCircle"
                 : param.strEntyName.Trim();
 
-            double firstX = centerX - (cols - 1) * spacingX / 2.0; //æ ¹æ®é˜µåˆ—åœ†æ•´ä½“ä¸­å¿ƒç®—å·¦ä¸Šè§’ç¬¬ä¸€ä¸ªåœ†çš„ä½ç½®
+            double firstX = centerX - (cols - 1) * spacingX / 2.0; //¸ù¾İÕóÁĞÔ²ÕûÌåÖĞĞÄËã×óÉÏ½ÇµÚÒ»¸öÔ²µÄÎ»ÖÃ
             double firstY = centerY + (rows - 1) * spacingY / 2.0;
             int index = 1;
 
-            for (int row = 0; row < rows; row++)  //æŒ‰ç…§è¡Œåˆ—å¾ªç¯ç”Ÿæˆæ¯ä¸€ä¸ªåœ†
+            for (int row = 0; row < rows; row++)  //°´ÕÕĞĞÁĞÑ­»·Éú³ÉÃ¿Ò»¸öÔ²
             {
                 for (int col = 0; col < cols; col++)
                 {
-                    double x = firstX + col * spacingX;//ç®—å½“å‰åœ†å¿ƒçš„åæ ‡
+                    double x = firstX + col * spacingX;//Ëãµ±Ç°Ô²ĞÄµÄ×ø±ê
                     double y = firstY - row * spacingY;
-                    string entName = $"{namePrefix}_{index:00}";//ç”Ÿæˆå¯¹è±¡åå­—
+                    string entName = $"{namePrefix}_{index:00}";//Éú³É¶ÔÏóÃû×Ö
 
-                    int addErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], x, y, radius, entName, penNo);//è°ƒç”¨SDKæ·»åŠ åœ†å¯¹è±¡
+                    int addErr = JczLmc.lmc1_AddCircleToLib(phyCardSN[card], x, y, radius, entName, penNo);//µ÷ÓÃSDKÌí¼ÓÔ²¶ÔÏó
                     if (addErr != 0)
                     {
-                        AddMsg($"å¡{card + 1} æ·»åŠ é˜µåˆ—åœ† {entName} å¤±è´¥: {JczLmc.GetErrorText(addErr)}");
+                        AddMsg($"¿¨{card + 1} Ìí¼ÓÕóÁĞÔ² {entName} Ê§°Ü: {JczLmc.GetErrorText(addErr)}");
                         return addErr;
                     }
 
-                    if (!ApplyHatchPreservingSource(card, entName, hp))//ç»™åœ†è¿›è¡Œå¡«å……
+                    bool oldSuppressHatchLog = suppressHatchDetailLogs[card];
+                    bool hatchOk;
+                    suppressHatchDetailLogs[card] = true;
+                    try
                     {
-                        AddMsg($"å¡{card + 1} å¡«å……é˜µåˆ—åœ† {entName} å¤±è´¥");
+                        hatchOk = ApplyHatchPreservingSource(card, entName, hp);//¸øÔ²½øĞĞÌî³ä
+                    }
+                    finally
+                    {
+                        suppressHatchDetailLogs[card] = oldSuppressHatchLog;
+                    }
+
+                    if (!hatchOk)
+                    {
+                        AddMsg($"¿¨{card + 1} Ìî³äÕóÁĞÔ² {entName} Ê§°Ü");
                         return -1;
                     }
 
-                    index++;//å‡†å¤‡ä¸‹ä¸€ä¸ªåœ†
+                    index++;//×¼±¸ÏÂÒ»¸öÔ²
                 }
             }
 
+            AddEntityCountLog(card, "ÕóÁĞÔ²Éú³Éºó");
             ReloadEntityInfo(card);
             InvalidateRoutePreviewCache(card);
-            RefreshPreview(card);   //é‡æ–°è¯»å–å¯¹è±¡åˆ—è¡¨ï¼Œæ¸…æ‰é¢„è§ˆç¼“å­˜ï¼Œåˆ·æ–°é¢„è§ˆå›¾
+            RefreshPreview(card);   //ÖØĞÂ¶ÁÈ¡¶ÔÏóÁĞ±í£¬ÇåµôÔ¤ÀÀ»º´æ£¬Ë¢ĞÂÔ¤ÀÀÍ¼
 
             if (!string.IsNullOrWhiteSpace(param.strFileName))
             {
-                int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);//ä¿å­˜è‡³ä¸»ç¨‹åºå‘é€çš„è·¯å¾„
-                if (saveErr != 0)
-                {
-                    AddMsg($"å¡{card + 1} ä¿å­˜é˜µåˆ—å¡«å……åœ†æ¨¡æ¿å¤±è´¥: {JczLmc.GetErrorText(saveErr)}");
-                    return saveErr;
-                }
+                // ¾Åµã±ê¶¨Ä£°å²»ÔÙ±£´æEZDÎÄ¼ş£»Ã¿´ÎÓÉÖ÷³ÌĞòÏÂ·¢²ÎÊıºóÖØĞÂÉú³É£¬²¢Ö±½ÓÊ¹ÓÃµ±Ç°ÄÚ´æ¶ÔÏó¼Ó¹¤¡£
+                AddMsg($"¿¨{card + 1} ¾Åµã±ê¶¨Ä£°å²»±£´æEZD£¬½öÊ¹ÓÃµ±Ç°ÄÚ´æ¶ÔÏóÖ±½Ó¼Ó¹¤: {param.strFileName}");
             }
 
-            AddMsg($"å¡{card + 1} é˜µåˆ—å¡«å……åœ†æ¨¡æ¿ç”Ÿæˆå®Œæˆï¼Œå…±{rows * cols}ä¸ªåœ†");
+            AddMsg($"¿¨{card + 1} ÕóÁĞÌî³äÔ²Ä£°åÉú³ÉÍê³É£¬¹²{rows * cols}¸öÔ²");
             return 0;
         }
 
@@ -3099,12 +3290,12 @@ namespace BJJCZ_BaseDevelop
 
 
 
-        //JCZServerè½¯ä»¶è‡ªå·±çš„å¡«å……è®¾ç½®é€»è¾‘
+        //JCZServerÈí¼ş×Ô¼ºµÄÌî³äÉèÖÃÂß¼­
         private bool ApplyHatchPreservingSource(int card, string sourceEntName, HatchParam hp)
         {
             if (string.IsNullOrEmpty(sourceEntName))
             {
-                AddMsg($"å¡{card + 1} è®¾ç½®å¡«å……å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                AddMsg($"¿¨{card + 1} ÉèÖÃÌî³äÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                 return false;
             }
 
@@ -3115,7 +3306,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!RestoreContourBackup(card, sourceEntName, backupEntName))
                 {
-                    AddMsg($"å¡{card + 1} è®¾ç½®å¡«å……å¤±è´¥: æ‰¾ä¸åˆ°åŸè½®å»“ {sourceEntName}");
+                    AddMsg($"¿¨{card + 1} ÉèÖÃÌî³äÊ§°Ü: ÕÒ²»µ½Ô­ÂÖÀª {sourceEntName}");
                     return false;
                 }
             }
@@ -3127,7 +3318,7 @@ namespace BJJCZ_BaseDevelop
             int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], sourceEntName, backupEntName);
             if (copyErr != 0)
             {
-                AddMsg($"å¡{card + 1} å¤‡ä»½åŸè½®å»“ {sourceEntName} å¤±è´¥: {JczLmc.GetErrorText(copyErr)}");
+                AddMsg($"¿¨{card + 1} ±¸·İÔ­ÂÖÀª {sourceEntName} Ê§°Ü: {JczLmc.GetErrorText(copyErr)}");
                 return false;
             }
 
@@ -3137,7 +3328,7 @@ namespace BJJCZ_BaseDevelop
             if (paramErr != 0)
             {
                 RestoreContourBackup(card, sourceEntName, backupEntName);
-                AddMsg($"å¡{card + 1} è®¾ç½®å¡«å……å‚æ•°å¤±è´¥: {JczLmc.GetErrorText(paramErr)}");
+                AddMsg($"¿¨{card + 1} ÉèÖÃÌî³ä²ÎÊıÊ§°Ü: {JczLmc.GetErrorText(paramErr)}");
                 return false;
             }
 
@@ -3145,7 +3336,7 @@ namespace BJJCZ_BaseDevelop
             if (nErr != 0)
             {
                 RestoreContourBackup(card, sourceEntName, backupEntName);
-                AddMsg($"å¡{card + 1} ä¸ºå¯¹è±¡ {sourceEntName} ç”Ÿæˆå¡«å……å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"¿¨{card + 1} Îª¶ÔÏó {sourceEntName} Éú³ÉÌî³äÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                 return false;
             }
 
@@ -3159,7 +3350,7 @@ namespace BJJCZ_BaseDevelop
             int fullParamErr = SetHatchEntParam2ForEntity(card, hatchEntName, hatchEntityHp);
             if (fullParamErr != 0)
             {
-                AddMsg($"å¡{card + 1} å®Œæ•´å¡«å……å‚æ•°å†™å…¥å¤±è´¥ï¼Œå·²ä¿ç•™åŸºç¡€å¡«å……å‚æ•°");
+                AddMsg($"¿¨{card + 1} ÍêÕûÌî³ä²ÎÊıĞ´ÈëÊ§°Ü£¬ÒÑ±£Áô»ù´¡Ìî³ä²ÎÊı");
             }
 
             CacheHatchParamForPair(card, sourceEntName, hatchEntName, hp);
@@ -3168,12 +3359,12 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!HideSourceContourForHatchOnly(card, sourceEntName))
                 {
-                    AddMsg($"å¡{card + 1} å·²å…³é—­å¡«å……å¯¹è±¡è½®å»“æ ‡åˆ»ï¼Œä½†éšè—åŸè½®å»“å¯¹è±¡å¤±è´¥");
+                    AddMsg($"¿¨{card + 1} ÒÑ¹Ø±ÕÌî³ä¶ÔÏóÂÖÀª±ê¿Ì£¬µ«Òş²ØÔ­ÂÖÀª¶ÔÏóÊ§°Ü");
                     return false;
                 }
 
                 DeleteEntityIfExists(card, backupEntName);
-                AddMsg($"å¡{card + 1} å·²å…³é—­å¡«å……å¯¹è±¡è½®å»“æ ‡åˆ»ï¼ŒåŸè½®å»“å¯¹è±¡ {sourceEntName} å·²ä¿ç•™å¹¶éšè—é¢„è§ˆ");
+                AddMsg($"¿¨{card + 1} ÒÑ¹Ø±ÕÌî³ä¶ÔÏóÂÖÀª±ê¿Ì£¬Ô­ÂÖÀª¶ÔÏó {sourceEntName} ÒÑ±£Áô²¢Òş²ØÔ¤ÀÀ");
             }
             else if (EntityExists(card, sourceEntName))
             {
@@ -3198,8 +3389,8 @@ namespace BJJCZ_BaseDevelop
         private HatchParam BuildGenerationHatchParam(HatchParam hp)
         {
             HatchParam generationHp = hp;
-            // ç”Ÿæˆå¡«å……å¯¹è±¡æ—¶å¿…é¡»å°Šé‡â€œä½¿èƒ½è½®å»“â€ï¼Œå¦åˆ™_Hatché‡Œä¼šæå‰ç”Ÿæˆè½®å»“å­çº¿ï¼Œ
-            // åç»­å†å†™bEnableContour=falseä¹Ÿæ— æ³•ä»é¢„è§ˆé‡Œå½»åº•å»æ‰é‚£åœˆè½®å»“ã€‚
+            // Éú³ÉÌî³ä¶ÔÏóÊ±±ØĞë×ğÖØ¡°Ê¹ÄÜÂÖÀª¡±£¬·ñÔò_HatchÀï»áÌáÇ°Éú³ÉÂÖÀª×ÓÏß£¬
+            // ºóĞøÔÙĞ´bEnableContour=falseÒ²ÎŞ·¨´ÓÔ¤ÀÀÀï³¹µ×È¥µôÄÇÈ¦ÂÖÀª¡£
             if (Math.Abs(generationHp.dHatchLineReduction) > 0.000001)
             {
                 generationHp.dHatchStartOffset += generationHp.dHatchLineReduction;
@@ -3227,7 +3418,7 @@ namespace BJJCZ_BaseDevelop
             return true;
         }
 
-
+      
         private bool EnsureHiddenContourPen(int card)
         {
             try
@@ -3288,15 +3479,15 @@ namespace BJJCZ_BaseDevelop
                     return true;
                 }
 
-                AddMsg($"å¡{card + 1} è®¾ç½®éšè—è½®å»“ç¬”å·å¤±è´¥: {JczLmc.GetErrorText(setErr)}");
+                AddMsg($"¿¨{card + 1} ÉèÖÃÒş²ØÂÖÀª±ÊºÅÊ§°Ü: {JczLmc.GetErrorText(setErr)}");
             }
             catch (EntryPointNotFoundException)
             {
-                AddMsg($"å¡{card + 1} å½“å‰DLLä¸æ”¯æŒç¬”å·é«˜çº§å‚æ•°æ¥å£ï¼Œæ”¹ç”¨ç¦ç”¨ç¬”å·æ¥å£éšè—è½®å»“");
+                AddMsg($"¿¨{card + 1} µ±Ç°DLL²»Ö§³Ö±ÊºÅ¸ß¼¶²ÎÊı½Ó¿Ú£¬¸ÄÓÃ½ûÓÃ±ÊºÅ½Ó¿ÚÒş²ØÂÖÀª");
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è®¾ç½®éšè—è½®å»“ç¬”å·å¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ÉèÖÃÒş²ØÂÖÀª±ÊºÅÒì³£: {ex.Message}");
             }
 
             try
@@ -3306,7 +3497,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} ç¦ç”¨éšè—è½®å»“ç¬”å·å¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ½ûÓÃÒş²ØÂÖÀª±ÊºÅÒì³£: {ex.Message}");
                 return false;
             }
         }
@@ -3365,7 +3556,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} ä¿å­˜æœ¬åœ°å¡«å……å‚æ•°ç¼“å­˜å¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ±£´æ±¾µØÌî³ä²ÎÊı»º´æÊ§°Ü: {ex.Message}");
             }
         }
         private string SerializeHatchParam(HatchParam hp)
@@ -3418,7 +3609,10 @@ namespace BJJCZ_BaseDevelop
             try
             {
                 int nErr = SetHatchEntParam2Raw(card, hatchEntName, hp);
-                AddMsg($"å¡{card + 1} è®¾ç½®å®Œæ•´å¡«å……å‚æ•°: {(nErr == 0 ? "æˆåŠŸ" : "å¤±è´¥")} - {JczLmc.GetErrorText(nErr)}");
+                if (!suppressHatchDetailLogs[card] || nErr != 0)
+                {
+                    AddMsg($"¿¨{card + 1} ÉèÖÃÍêÕûÌî³ä²ÎÊı: {(nErr == 0 ? "³É¹¦" : "Ê§°Ü")} - {JczLmc.GetErrorText(nErr)}");
+                }
                 if (nErr == 0)
                 {
                     return nErr;
@@ -3429,12 +3623,15 @@ namespace BJJCZ_BaseDevelop
                 compatibleHp.bHatchAutoRotate = false;
                 compatibleHp.bHatchAllCalc = false;
                 nErr = SetHatchEntParam2Raw(card, hatchEntName, compatibleHp);
-                AddMsg($"å¡{card + 1} åˆ†é˜¶æ®µå†™å…¥é«˜çº§å¡«å……å‚æ•°: {(nErr == 0 ? "æˆåŠŸ" : "å¤±è´¥")} - {JczLmc.GetErrorText(nErr)}");
+                if (!suppressHatchDetailLogs[card] || nErr != 0)
+                {
+                    AddMsg($"¿¨{card + 1} ·Ö½×¶ÎĞ´Èë¸ß¼¶Ìî³ä²ÎÊı: {(nErr == 0 ? "³É¹¦" : "Ê§°Ü")} - {JczLmc.GetErrorText(nErr)}");
+                }
                 return nErr;
             }
             catch (Exception ex)
             {
-                AddMsg($"è®¾ç½®å®Œæ•´å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                AddMsg($"ÉèÖÃÍêÕûÌî³ä²ÎÊıÒì³£: {ex.Message}");
                 return -1;
             }
         }
@@ -3473,7 +3670,7 @@ namespace BJJCZ_BaseDevelop
 
             if (string.Equals(sourceEntName, hatchEntName, StringComparison.OrdinalIgnoreCase))
             {
-                AddMsg($"å¡{card + 1} è·³è¿‡åˆ é™¤ï¼šå¡«å……å¯¹è±¡åä¸åŸè½®å»“å¯¹è±¡ç›¸åŒ ({sourceEntName})");
+                AddMsg($"¿¨{card + 1} Ìø¹ıÉ¾³ı£ºÌî³ä¶ÔÏóÃûÓëÔ­ÂÖÀª¶ÔÏóÏàÍ¬ ({sourceEntName})");
                 return false;
             }
 
@@ -3487,34 +3684,43 @@ namespace BJJCZ_BaseDevelop
             }
             catch (EntryPointNotFoundException)
             {
-                AddMsg($"å¡{card + 1} å½“å‰DLLä¸æ”¯æŒ lmc1_UnHatchEntï¼Œæ”¹ç”¨åˆ é™¤å¡«å……å¯¹è±¡ {hatchEntName}");
+                if (!suppressHatchDetailLogs[card])
+                {
+                    AddMsg($"¿¨{card + 1} µ±Ç°DLL²»Ö§³Ö lmc1_UnHatchEnt£¬¸ÄÓÃÉ¾³ıÌî³ä¶ÔÏó {hatchEntName}");
+                }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} å–æ¶ˆå¡«å……å¼‚å¸¸ï¼Œæ”¹ç”¨åˆ é™¤å¡«å……å¯¹è±¡ {hatchEntName}: {ex.Message}");
+                AddMsg($"¿¨{card + 1} È¡ÏûÌî³äÒì³££¬¸ÄÓÃÉ¾³ıÌî³ä¶ÔÏó {hatchEntName}: {ex.Message}");
             }
 
             try
             {
                 if (!EntityExists(card, hatchEntName))
                 {
-                    AddMsg($"å¡{card + 1} æœªæ‰¾åˆ°å¡«å……å¯¹è±¡ {hatchEntName}ï¼ŒåŸè½®å»“ {sourceEntName} ä¿ç•™");
+                    if (!suppressHatchDetailLogs[card])
+                    {
+                        AddMsg($"¿¨{card + 1} Î´ÕÒµ½Ìî³ä¶ÔÏó {hatchEntName}£¬Ô­ÂÖÀª {sourceEntName} ±£Áô");
+                    }
                     return true;
                 }
 
                 int nErr = JczLmc.lmc1_DeleteEnt(phyCardSN[card], hatchEntName);
                 if (nErr == 0 || nErr == 2)
                 {
-                    AddMsg($"å¡{card + 1} å·²åˆ é™¤å¡«å……å¯¹è±¡ {hatchEntName}ï¼ŒåŸè½®å»“ {sourceEntName} ä¿ç•™");
+                    if (!suppressHatchDetailLogs[card])
+                    {
+                        AddMsg($"¿¨{card + 1} ÒÑÉ¾³ıÌî³ä¶ÔÏó {hatchEntName}£¬Ô­ÂÖÀª {sourceEntName} ±£Áô");
+                    }
                     return true;
                 }
 
-                AddMsg($"å¡{card + 1} åˆ é™¤å¡«å……å¯¹è±¡ {hatchEntName} å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                AddMsg($"¿¨{card + 1} É¾³ıÌî³ä¶ÔÏó {hatchEntName} Ê§°Ü: {JczLmc.GetErrorText(nErr)}");
                 return false;
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} åˆ é™¤å¡«å……å¯¹è±¡ {hatchEntName} å¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} É¾³ıÌî³ä¶ÔÏó {hatchEntName} Ê§°Ü: {ex.Message}");
                 return false;
             }
         }
@@ -3539,7 +3745,7 @@ namespace BJJCZ_BaseDevelop
                 if (hatchRemoved)
                 {
                     RemoveCachedHatchParamForPair(card, sourceEntName, hatchEntName);
-                    AddMsg($"å¡{card + 1} å·²åˆ é™¤æ— è½®å»“å¡«å……å¯¹è±¡ {hatchEntName}");
+                    AddMsg($"¿¨{card + 1} ÒÑÉ¾³ıÎŞÂÖÀªÌî³ä¶ÔÏó {hatchEntName}");
                 }
 
                 return hatchRemoved;
@@ -3547,13 +3753,13 @@ namespace BJJCZ_BaseDevelop
 
             if (!sourceExists && hatchExists)
             {
-                AddMsg($"å¡{card + 1} æ— æ³•å®‰å…¨åˆ é™¤å¡«å…… {hatchEntName}: æ‰¾ä¸åˆ°åŸè½®å»“ {sourceEntName}ï¼Œè¯·é‡æ–°åŠ è½½åŸå§‹EZDåå†æ“ä½œ");
+                AddMsg($"¿¨{card + 1} ÎŞ·¨°²È«É¾³ıÌî³ä {hatchEntName}: ÕÒ²»µ½Ô­ÂÖÀª {sourceEntName}£¬ÇëÖØĞÂ¼ÓÔØÔ­Ê¼EZDºóÔÙ²Ù×÷");
                 return false;
             }
 
             if (!hatchExists)
             {
-                AddMsg($"å¡{card + 1} æœªæ‰¾åˆ°å¡«å……å¯¹è±¡ {hatchEntName}ï¼ŒåŸè½®å»“ {sourceEntName} ä¿ç•™");
+                AddMsg($"¿¨{card + 1} Î´ÕÒµ½Ìî³ä¶ÔÏó {hatchEntName}£¬Ô­ÂÖÀª {sourceEntName} ±£Áô");
                 return true;
             }
 
@@ -3567,7 +3773,7 @@ namespace BJJCZ_BaseDevelop
             {
                 RestoreSourceContourPen(card, sourceEntName);
                 RemoveCachedHatchParamForPair(card, sourceEntName, hatchEntName);
-                AddMsg($"å¡{card + 1} å·²åˆ é™¤ {sourceEntName} çš„å¡«å……ï¼ŒåŸè½®å»“ä¿ç•™");
+                AddMsg($"¿¨{card + 1} ÒÑÉ¾³ı {sourceEntName} µÄÌî³ä£¬Ô­ÂÖÀª±£Áô");
             }
 
             return removed;
@@ -3607,7 +3813,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} åˆ é™¤æœ¬åœ°å¡«å……å‚æ•°ç¼“å­˜å¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} É¾³ı±¾µØÌî³ä²ÎÊı»º´æÊ§°Ü: {ex.Message}");
             }
         }
         private string GetPersistentHatchParamKey(int card, string entName)
@@ -3710,7 +3916,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è¯»å–æœ¬åœ°å¡«å……å‚æ•°XMLå¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ¶ÁÈ¡±¾µØÌî³ä²ÎÊıXMLÊ§°Ü: {ex.Message}");
                 return false;
             }
         }
@@ -3730,11 +3936,14 @@ namespace BJJCZ_BaseDevelop
             int nErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], backupEntName, sourceEntName);
             if (nErr == 0)
             {
-                AddMsg($"å¡{card + 1} å·²æ¢å¤åŸè½®å»“ {sourceEntName}");
+                if (!suppressHatchDetailLogs[card])
+                {
+                    AddMsg($"¿¨{card + 1} ÒÑ»Ö¸´Ô­ÂÖÀª {sourceEntName}");
+                }
                 return true;
             }
 
-            AddMsg($"å¡{card + 1} æ¢å¤åŸè½®å»“ {sourceEntName} å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+            AddMsg($"¿¨{card + 1} »Ö¸´Ô­ÂÖÀª {sourceEntName} Ê§°Ü: {JczLmc.GetErrorText(nErr)}");
             return false;
         }
         private void RestoreSourceContourPen(int card, string sourceEntName)
@@ -3777,27 +3986,33 @@ namespace BJJCZ_BaseDevelop
                 int nErr = JczLmc.lmc1_ChangeEntPenNo(phyCardSN[card], entName, penNo);
                 if (nErr != 0)
                 {
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} æ”¹ç¬”å·å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} ¸Ä±ÊºÅÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                     return;
                 }
 
-                AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} å·²è®¾ç½®ä¸ºç¬”å· {penNo}");
+                if (!suppressHatchDetailLogs[card])
+                {
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} ÒÑÉèÖÃÎª±ÊºÅ {penNo}");
+                }
             }
             catch (EntryPointNotFoundException)
             {
                 try
                 {
                     JczLmc.lmc1_SetEntAllChildPen(phyCardSN[card], entName, penNo);
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} å·²è®¾ç½®ä¸ºç¬”å· {penNo}");
+                    if (!suppressHatchDetailLogs[card])
+                    {
+                        AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} ÒÑÉèÖÃÎª±ÊºÅ {penNo}");
+                    }
                 }
                 catch
                 {
-                    AddMsg($"å¡{card + 1} å½“å‰DLLä¸æ”¯æŒå¯¹è±¡æ”¹ç¬”å·æ¥å£ï¼Œæ— æ³•ç›´æ¥åˆ‡æ¢å¯¹è±¡ {entName} ç¬”å·");
+                    AddMsg($"¿¨{card + 1} µ±Ç°DLL²»Ö§³Ö¶ÔÏó¸Ä±ÊºÅ½Ó¿Ú£¬ÎŞ·¨Ö±½ÓÇĞ»»¶ÔÏó {entName} ±ÊºÅ");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è®¾ç½®å¯¹è±¡ {entName} ç¬”å·å¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ÉèÖÃ¶ÔÏó {entName} ±ÊºÅÒì³£: {ex.Message}");
             }
         }
 
@@ -3813,7 +4028,7 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region å¯¹è±¡ç§»åŠ¨æ—‹è½¬ç¼©æ”¾ä¸EZDä¿å­˜
+        #region ¶ÔÏóÒÆ¶¯Ğı×ªËõ·ÅÓëEZD±£´æ
         private int MoveLogicalEntity(int card, string entName, ref double moveX, ref double moveY)
         {
             double x = moveX;
@@ -3840,7 +4055,7 @@ namespace BJJCZ_BaseDevelop
 
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                AddMsg($"å¡{card + 1} ä¿å­˜EZDå¤±è´¥: æ–‡ä»¶è·¯å¾„ä¸ºç©º");
+                AddMsg($"¿¨{card + 1} ±£´æEZDÊ§°Ü: ÎÄ¼şÂ·¾¶Îª¿Õ");
                 return 20;
             }
 
@@ -3851,7 +4066,7 @@ namespace BJJCZ_BaseDevelop
                 string dir = Path.GetDirectoryName(fullPath);
                 if (string.IsNullOrEmpty(dir))
                 {
-                    AddMsg($"å¡{card + 1} ä¿å­˜EZDå¤±è´¥: æ— æ•ˆè·¯å¾„ {fileName}");
+                    AddMsg($"¿¨{card + 1} ±£´æEZDÊ§°Ü: ÎŞĞ§Â·¾¶ {fileName}");
                     return 20;
                 }
 
@@ -3864,15 +4079,15 @@ namespace BJJCZ_BaseDevelop
                 int saveErr = SaveEntLibToFileWithRetry(card, tempPath);
                 if (saveErr != 0)
                 {
-                    AddMsg($"å¡{card + 1} ä¿å­˜ä¸´æ—¶EZDå¤±è´¥: {JczLmc.GetErrorText(saveErr)}");
-                    AddMsg($"å¡{card + 1} å°è¯•ç›´æ¥ä¿å­˜åˆ°åŸEZDè·¯å¾„: {fullPath}");
+                    AddMsg($"¿¨{card + 1} ±£´æÁÙÊ±EZDÊ§°Ü: {JczLmc.GetErrorText(saveErr)}");
+                    AddMsg($"¿¨{card + 1} ³¢ÊÔÖ±½Ó±£´æµ½Ô­EZDÂ·¾¶: {fullPath}");
                     return SaveEntLibDirectWithBackup(card, fullPath);
                 }
 
                 FileInfo tempInfo = new FileInfo(tempPath);
                 if (!tempInfo.Exists || tempInfo.Length == 0)
                 {
-                    AddMsg($"å¡{card + 1} ä¿å­˜ä¸´æ—¶EZDå¤±è´¥: æ–‡ä»¶ä¸ºç©º");
+                    AddMsg($"¿¨{card + 1} ±£´æÁÙÊ±EZDÊ§°Ü: ÎÄ¼şÎª¿Õ");
                     return 12;
                 }
 
@@ -3897,12 +4112,12 @@ namespace BJJCZ_BaseDevelop
                 }
 
                 TryDeleteFile(backupPath);
-                AddMsg($"å¡{card + 1} å·²ä¿å­˜EZD: {fullPath}");
+                AddMsg($"¿¨{card + 1} ÒÑ±£´æEZD: {fullPath}");
                 return 0;
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} ä¿å­˜EZDå¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ±£´æEZDÒì³£: {ex.Message}");
                 return 12;
             }
             finally
@@ -3926,12 +4141,12 @@ namespace BJJCZ_BaseDevelop
                         return 0;
                     }
 
-                    AddMsg($"å¡{card + 1} ä¿å­˜EZDç¬¬{i}æ¬¡å¤±è´¥: {JczLmc.GetErrorText(lastErr)}");
+                    AddMsg($"¿¨{card + 1} ±£´æEZDµÚ{i}´ÎÊ§°Ü: {JczLmc.GetErrorText(lastErr)}");
                 }
                 catch (Exception ex)
                 {
                     lastErr = 12;
-                    AddMsg($"å¡{card + 1} ä¿å­˜EZDç¬¬{i}æ¬¡å¼‚å¸¸: {ex.Message}");
+                    AddMsg($"¿¨{card + 1} ±£´æEZDµÚ{i}´ÎÒì³£: {ex.Message}");
                 }
 
                 Thread.Sleep(120);
@@ -3955,17 +4170,17 @@ namespace BJJCZ_BaseDevelop
                 if (saveErr == 0)
                 {
                     TryDeleteFile(backupPath);
-                    AddMsg($"å¡{card + 1} ç›´æ¥ä¿å­˜EZDæˆåŠŸ: {fullPath}");
+                    AddMsg($"¿¨{card + 1} Ö±½Ó±£´æEZD³É¹¦: {fullPath}");
                     return 0;
                 }
 
-                AddMsg($"å¡{card + 1} ç›´æ¥ä¿å­˜EZDå¤±è´¥: {JczLmc.GetErrorText(saveErr)}");
+                AddMsg($"¿¨{card + 1} Ö±½Ó±£´æEZDÊ§°Ü: {JczLmc.GetErrorText(saveErr)}");
                 RestoreBackupFile(fullPath, backupPath, card);
                 return saveErr;
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} ç›´æ¥ä¿å­˜EZDå¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} Ö±½Ó±£´æEZDÒì³£: {ex.Message}");
                 RestoreBackupFile(fullPath, backupPath, card);
                 return 12;
             }
@@ -3978,12 +4193,12 @@ namespace BJJCZ_BaseDevelop
                 if (File.Exists(backupPath))
                 {
                     File.Copy(backupPath, fullPath, true);
-                    AddMsg($"å¡{card + 1} å·²ä»å¤‡ä»½æ¢å¤EZD: {backupPath}");
+                    AddMsg($"¿¨{card + 1} ÒÑ´Ó±¸·İ»Ö¸´EZD: {backupPath}");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} ä»å¤‡ä»½æ¢å¤EZDå¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ´Ó±¸·İ»Ö¸´EZDÊ§°Ü: {ex.Message}");
             }
         }
 
@@ -4039,7 +4254,7 @@ namespace BJJCZ_BaseDevelop
                 int groupErr = JczLmc.lmc1_GroupEnt2(phyCardSN[card], names, names.Length, groupName, GetDisplayPenNumber(card, entName));
                 if (groupErr != 0)
                 {
-                    AddMsg($"å¡{card + 1} åˆå¹¶å¡«å……å¯¹è±¡æ“ä½œå¤±è´¥: {JczLmc.GetErrorText(groupErr)}");
+                    AddMsg($"¿¨{card + 1} ºÏ²¢Ìî³ä¶ÔÏó²Ù×÷Ê§°Ü: {JczLmc.GetErrorText(groupErr)}");
                     return groupErr;
                 }
 
@@ -4047,7 +4262,7 @@ namespace BJJCZ_BaseDevelop
                 int ungroupErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], groupName);
                 if (ungroupErr != 0)
                 {
-                    AddMsg($"å¡{card + 1} è¿˜åŸå¡«å……å¯¹è±¡åˆ†ç»„å¤±è´¥: {JczLmc.GetErrorText(ungroupErr)}");
+                    AddMsg($"¿¨{card + 1} »¹Ô­Ìî³ä¶ÔÏó·Ö×éÊ§°Ü: {JczLmc.GetErrorText(ungroupErr)}");
                     return ungroupErr;
                 }
 
@@ -4131,7 +4346,7 @@ namespace BJJCZ_BaseDevelop
 
             if (!string.IsNullOrEmpty(requestedName))
             {
-                AddMsg($"å¡{card + 1} æœªæ‰¾åˆ°å¯¹è±¡ {requestedName}ï¼Œå°è¯•æŒ‰å½“å‰é€‰ä¸­è¡Œè§£æçœŸå®å¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Î´ÕÒµ½¶ÔÏó {requestedName}£¬³¢ÊÔ°´µ±Ç°Ñ¡ÖĞĞĞ½âÎöÕæÊµ¶ÔÏó");
             }
 
             if (param.ind1 >= 0 && param.ind1 < (strEntNames[card]?.Length ?? 0))
@@ -4142,19 +4357,19 @@ namespace BJJCZ_BaseDevelop
                     return sdkName;
                 }
 
-                AddMsg($"å¡{card + 1} é€‰ä¸­è¡Œ {param.ind1 + 1} æ— æ³•å®šä½çœŸå®å¯¹è±¡ï¼Œå·²å–æ¶ˆæœ¬æ¬¡å˜æ¢");
+                AddMsg($"¿¨{card + 1} Ñ¡ÖĞĞĞ {param.ind1 + 1} ÎŞ·¨¶¨Î»ÕæÊµ¶ÔÏó£¬ÒÑÈ¡Ïû±¾´Î±ä»»");
             }
             else
             {
-                AddMsg($"å¡{card + 1} æœªé€‰ä¸­æœ‰æ•ˆå¯¹è±¡ï¼Œå·²å–æ¶ˆæœ¬æ¬¡å˜æ¢");
+                AddMsg($"¿¨{card + 1} Î´Ñ¡ÖĞÓĞĞ§¶ÔÏó£¬ÒÑÈ¡Ïû±¾´Î±ä»»");
             }
 
             return null;
         }
-
-
+      
+        
         /// <summary>
-        /// ä¿å­˜å½“å‰æ¿å¡çš„å¯¹è±¡åº“åˆ°åŸæ–‡ä»¶è·¯å¾„
+        /// ±£´æµ±Ç°°å¿¨µÄ¶ÔÏó¿âµ½Ô­ÎÄ¼şÂ·¾¶
         /// </summary>
         private void SaveToOriginalPath(int card)
         {
@@ -4166,7 +4381,7 @@ namespace BJJCZ_BaseDevelop
                     EnsureDeferredSaveTimer();
                     _deferredSaveTimer.Stop();
                     _deferredSaveTimer.Start();
-                    AddMsg($"å¡{card + 1} ä¿å­˜æ­£åœ¨è¿›è¡Œï¼Œæœ¬æ¬¡ä¿å­˜å·²å»¶å");
+                    AddMsg($"¿¨{card + 1} ±£´æÕıÔÚ½øĞĞ£¬±¾´Î±£´æÒÑÑÓºó");
                     return;
                 }
 
@@ -4176,7 +4391,7 @@ namespace BJJCZ_BaseDevelop
                     EnsureDeferredSaveTimer();
                     _deferredSaveTimer.Stop();
                     _deferredSaveTimer.Start();
-                    AddMsg($"å¡{card + 1} åŠ å·¥/çº¢å…‰é¢„è§ˆä¸­ï¼Œæœ¬æ¬¡ä¿å­˜å·²å»¶å");
+                    AddMsg($"¿¨{card + 1} ¼Ó¹¤/ºì¹âÔ¤ÀÀÖĞ£¬±¾´Î±£´æÒÑÑÓºó");
                     return;
                 }
 
@@ -4184,7 +4399,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     cardSN = card,
                     cmdType = 5,
-                    strFileName = currentFilePath[card],  // ä½¿ç”¨åŸè·¯å¾„
+                    strFileName = currentFilePath[card],  // Ê¹ÓÃÔ­Â·¾¶
                     ind3 = 0
                 };
 
@@ -4200,12 +4415,12 @@ namespace BJJCZ_BaseDevelop
             }
             else
             {
-                AddMsg($"å¡{card + 1} æ²¡æœ‰å¯ä¿å­˜çš„åŸæ–‡ä»¶è·¯å¾„ï¼Œè¯·å…ˆåŠ è½½æ–‡ä»¶æˆ–æŒ‡å®šä¿å­˜è·¯å¾„");
+                AddMsg($"¿¨{card + 1} Ã»ÓĞ¿É±£´æµÄÔ­ÎÄ¼şÂ·¾¶£¬ÇëÏÈ¼ÓÔØÎÄ¼ş»òÖ¸¶¨±£´æÂ·¾¶");
             }
         }
 
         /// <summary>
-        /// è·å–å½“å‰æ¿å¡çš„æ–‡ä»¶è·¯å¾„
+        /// »ñÈ¡µ±Ç°°å¿¨µÄÎÄ¼şÂ·¾¶
         /// </summary>
         public string GetCurrentFilePath(int card)
         {
@@ -4213,7 +4428,7 @@ namespace BJJCZ_BaseDevelop
         }
 
         /// <summary>
-        /// è®¾ç½®å½“å‰æ¿å¡çš„æ–‡ä»¶è·¯å¾„ï¼ˆç”¨äºæ–°å»ºæ–‡ä»¶åè®¾ç½®ï¼‰
+        /// ÉèÖÃµ±Ç°°å¿¨µÄÎÄ¼şÂ·¾¶£¨ÓÃÓÚĞÂ½¨ÎÄ¼şºóÉèÖÃ£©
         /// </summary>
         public void SetCurrentFilePath(int card, string filePath)
         {
@@ -4221,9 +4436,9 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region å¡«å……å‚æ•°è¯»å–ä¸å†™å…¥
+        #region Ìî³ä²ÎÊı¶ÁÈ¡ÓëĞ´Èë
         /// <summary>
-        /// è·å–å¯¹è±¡çš„å¡«å……å‚æ•°
+        /// »ñÈ¡¶ÔÏóµÄÌî³ä²ÎÊı
         /// </summary>
         /// 
         private void GetHatchParamForEntity(int card, string entName, ref HatchParam hp)
@@ -4232,7 +4447,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (string.IsNullOrEmpty(entName))
                 {
-                    AddMsg($"å¡{card + 1} è·å–å¡«å……å‚æ•°å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                    AddMsg($"¿¨{card + 1} »ñÈ¡Ìî³ä²ÎÊıÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                     return;
                 }
 
@@ -4240,7 +4455,7 @@ namespace BJJCZ_BaseDevelop
                     TryGetCachedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
                     TryGetCachedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
                 {
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} ä½¿ç”¨ä¸Šæ¬¡ä¿å­˜çš„å¡«å……å‚æ•°");
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} Ê¹ÓÃÉÏ´Î±£´æµÄÌî³ä²ÎÊı");
                     return;
                 }
 
@@ -4248,7 +4463,7 @@ namespace BJJCZ_BaseDevelop
                     TryLoadHatchParamXml(card, GetHatchSourceName(entName), ref hp) ||
                     TryLoadHatchParamXml(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
                 {
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} ä½¿ç”¨æœ¬åœ°XMLå¡«å……å‚æ•°");
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} Ê¹ÓÃ±¾µØXMLÌî³ä²ÎÊı");
                     CacheHatchParam(card, entName, hp);
                     return;
                 }
@@ -4257,7 +4472,7 @@ namespace BJJCZ_BaseDevelop
                     TryGetPersistedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
                     TryGetPersistedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
                 {
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} ä½¿ç”¨æœ¬åœ°ä¿å­˜çš„å¡«å……å‚æ•°");
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} Ê¹ÓÃ±¾µØ±£´æµÄÌî³ä²ÎÊı");
                     CacheHatchParam(card, entName, hp);
                     return;
                 }
@@ -4320,7 +4535,7 @@ namespace BJJCZ_BaseDevelop
 
                 if (!foundAny)
                 {
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} æ— å¡«å……å‚æ•°ï¼Œä½¿ç”¨é»˜è®¤å€¼");
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} ÎŞÌî³ä²ÎÊı£¬Ê¹ÓÃÄ¬ÈÏÖµ");
                 }
                 else if (hp.bEnableHatch == 0)
                 {
@@ -4329,12 +4544,12 @@ namespace BJJCZ_BaseDevelop
                     hp = new HatchParam(1);
                     hp.nPenNo = penNo;
                     hp.nParamIndex = paramIndex;
-                    AddMsg($"å¡{card + 1} å¯¹è±¡ {entName} æœªå¯ç”¨å¡«å……ï¼Œä½¿ç”¨EZCADé»˜è®¤å¡«å……å‚æ•°");
+                    AddMsg($"¿¨{card + 1} ¶ÔÏó {entName} Î´ÆôÓÃÌî³ä£¬Ê¹ÓÃEZCADÄ¬ÈÏÌî³ä²ÎÊı");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è·å–å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} »ñÈ¡Ìî³ä²ÎÊıÒì³£: {ex.Message}");
             }
         }
         private bool TryGetPersistedHatchParam(int card, string entName, ref HatchParam hp)
@@ -4369,7 +4584,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è¯»å–æœ¬åœ°å¡«å……å‚æ•°ç¼“å­˜å¤±è´¥: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ¶ÁÈ¡±¾µØÌî³ä²ÎÊı»º´æÊ§°Ü: {ex.Message}");
             }
 
             return false;
@@ -4427,11 +4642,11 @@ namespace BJJCZ_BaseDevelop
             {
                 if (string.IsNullOrEmpty(entName))
                 {
-                    AddMsg($"å¡{card+1} è·å–å¡«å……å‚æ•°å¤±è´¥: å¯¹è±¡åç§°ä¸ºç©º");
+                    AddMsg($"¿¨{card+1} »ñÈ¡Ìî³ä²ÎÊıÊ§°Ü: ¶ÔÏóÃû³ÆÎª¿Õ");
                     return;
                 }
 
-                // è°ƒç”¨JczLmcçš„è·å–å¡«å……å‚æ•°å‡½æ•°
+                // µ÷ÓÃJczLmcµÄ»ñÈ¡Ìî³ä²ÎÊıº¯Êı
                 nErr = JczLmc.lmc1_GetHatchEntParam2(phyCardSN[card], entName,
                     ref hp.bEnableContour,
                     hp.nParamIndex,
@@ -4458,20 +4673,20 @@ namespace BJJCZ_BaseDevelop
 
                 if (nErr != 0)
                 {
-                    AddMsg($"å¡{card+1} å¯¹è±¡ {entName} æ— å¡«å……å‚æ•°ï¼Œä½¿ç”¨é»˜è®¤å€¼");
+                    AddMsg($"¿¨{card+1} ¶ÔÏó {entName} ÎŞÌî³ä²ÎÊı£¬Ê¹ÓÃÄ¬ÈÏÖµ");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card+1} è·å–å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card+1} »ñÈ¡Ìî³ä²ÎÊıÒì³£: {ex.Message}");
             }
         }*/
 
         /// <summary>
-        /// è®¾ç½®å¯¹è±¡çš„å¡«å……å‚æ•°
+        /// ÉèÖÃ¶ÔÏóµÄÌî³ä²ÎÊı
         /// </summary>
         /// <summary>
-        /// è®¾ç½®å¯¹è±¡çš„å¡«å……å‚æ•°
+        /// ÉèÖÃ¶ÔÏóµÄÌî³ä²ÎÊı
         /// </summary>
         private int SetHatchParamForEntity(int card, HatchParam hp)
         {
@@ -4498,11 +4713,14 @@ namespace BJJCZ_BaseDevelop
                     hp.dHatchEndOffset,
                     hp.dHatchAngle + 90);
 
-                AddMsg($"å¡{card + 1} è®¾ç½®å½“å‰å¡«å……å‚æ•°: {(nErr == 0 ? "æˆåŠŸ" : "å¤±è´¥")} - {JczLmc.GetErrorText(nErr)}");
+                if (!suppressHatchDetailLogs[card] || nErr != 0)
+                {
+                    AddMsg($"¿¨{card + 1} ÉèÖÃµ±Ç°Ìî³ä²ÎÊı: {(nErr == 0 ? "³É¹¦" : "Ê§°Ü")} - {JczLmc.GetErrorText(nErr)}");
+                }
             }
             catch (Exception ex)
             {
-                AddMsg($"è®¾ç½®å¡«å……å‚æ•°å¼‚å¸¸: {ex.Message}");
+                AddMsg($"ÉèÖÃÌî³ä²ÎÊıÒì³£: {ex.Message}");
                 nErr = -1;
             }
 
@@ -4539,7 +4757,7 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region æ¨¡æ‹Ÿæ¨¡å¼ä¸ç®¡é“å“åº”
+        #region Ä£ÄâÄ£Ê½Óë¹ÜµÀÏìÓ¦
         private void SimulateCommand(LCZControlParam param)
         {
             int clientSeq = param.ind3;
@@ -4547,7 +4765,7 @@ namespace BJJCZ_BaseDevelop
             bool needResponse = true;
 
             string cmdDesc = GetCmdDescription(param.cmdType);
-            AddMsg($"å¡{card + 1} [æ¨¡æ‹Ÿ] {cmdDesc}");
+            AddMsg($"¿¨{card+1} [Ä£Äâ] {cmdDesc}");
 
             switch (param.cmdType)
             {
@@ -4576,25 +4794,25 @@ namespace BJJCZ_BaseDevelop
         private void SendResponse(LCZControlParam param)
         {
             string cmdDesc = GetCmdDescription(param.cmdType);
-            string result = param.nErr == 0 ? "æˆåŠŸ" : $"å¤±è´¥({JczLmc.GetErrorText(param.nErr)})";
-            AddMsg($"å‘é€å“åº” [å¡{param.cardSN + 1}] {cmdDesc} - {result}");
+            string result = param.nErr == 0 ? "³É¹¦" : $"Ê§°Ü({JczLmc.GetErrorText(param.nErr)})";
+            AddMsg($"·¢ËÍÏìÓ¦ [¿¨{param.cardSN+1}] {cmdDesc} - {result}");
 
             Pipechanel server = (param.cardSN == 0) ? pipeServer0 : pipeServer1;
             server.SendParam(param);
         }
         #endregion
 
-        #region é¢„è§ˆå›¾ã€èƒŒæ™¯å›¾ä¸é€æ˜å åŠ 
-        // =============== é¢„è§ˆå›¾åˆ·æ–° ===============
+        #region Ô¤ÀÀÍ¼¡¢±³¾°Í¼ÓëÍ¸Ã÷µş¼Ó
+        // =============== Ô¤ÀÀÍ¼Ë¢ĞÂ ===============
         /// <summary>
-        /// ç¡®ä¿é¢„è§ˆé”šç‚¹ç¬”å·ï¼ˆå›ºå®šç¬”å· 254ï¼‰å·²æ­£ç¡®é…ç½®ã€‚
-        /// è¯¥ç¬”å·ç”¨äºåœ¨è·å–é¢„è§ˆå›¾åƒæ—¶ä¸´æ—¶æ·»åŠ ä¸€ä¸ªä¸å¯è§çš„è¾…åŠ©çŸ©å½¢ï¼ˆå›ºå®šè§†é‡è¾¹ç•Œï¼‰ï¼Œ
-        /// ä»¥ç¡®ä¿é¢„è§ˆå›¾èƒ½å¤Ÿå®Œæ•´æ˜¾ç¤ºè®¾å®šçš„ä¸–ç•Œåæ ‡èŒƒå›´ï¼ŒåŒæ—¶é¿å…è¯¥ç¬”å·åœ¨å®é™…æ¿€å…‰åŠ å·¥ä¸­äº§ç”Ÿæ ‡åˆ»ã€‚
-        /// é…ç½®å†…å®¹ï¼šè®¾ç½®ç¬”å·åç§°ä¸º "PreviewAnchor"ï¼Œé¢œè‰²ä¸ºç™½è‰²ï¼Œå¹¶å°è¯•å°†å…¶ç¦ç”¨æ ‡åˆ»ã€‚
-        /// è‹¥é€šè¿‡ lmc1_SetPenParam4 é…ç½®å¤±è´¥ï¼Œåˆ™å›é€€è°ƒç”¨ lmc1_SetPenDisableState æ¥ç¦ç”¨è¯¥ç¬”å·ã€‚
+        /// È·±£Ô¤ÀÀÃªµã±ÊºÅ£¨¹Ì¶¨±ÊºÅ 254£©ÒÑÕıÈ·ÅäÖÃ¡£
+        /// ¸Ã±ÊºÅÓÃÓÚÔÚ»ñÈ¡Ô¤ÀÀÍ¼ÏñÊ±ÁÙÊ±Ìí¼ÓÒ»¸ö²»¿É¼ûµÄ¸¨Öú¾ØĞÎ£¨¹Ì¶¨ÊÓÒ°±ß½ç£©£¬
+        /// ÒÔÈ·±£Ô¤ÀÀÍ¼ÄÜ¹»ÍêÕûÏÔÊ¾Éè¶¨µÄÊÀ½ç×ø±ê·¶Î§£¬Í¬Ê±±ÜÃâ¸Ã±ÊºÅÔÚÊµ¼Ê¼¤¹â¼Ó¹¤ÖĞ²úÉú±ê¿Ì¡£
+        /// ÅäÖÃÄÚÈİ£ºÉèÖÃ±ÊºÅÃû³ÆÎª "PreviewAnchor"£¬ÑÕÉ«Îª°×É«£¬²¢³¢ÊÔ½«Æä½ûÓÃ±ê¿Ì¡£
+        /// ÈôÍ¨¹ı lmc1_SetPenParam4 ÅäÖÃÊ§°Ü£¬Ôò»ØÍËµ÷ÓÃ lmc1_SetPenDisableState À´½ûÓÃ¸Ã±ÊºÅ¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•ï¼ˆ0 æˆ– 1ï¼‰</param>
-        /// <returns>é…ç½®æˆåŠŸè¿”å› trueï¼Œå¦åˆ™è¿”å› false</returns>
+        /// <param name="card">°å¿¨Ë÷Òı£¨0 »ò 1£©</param>
+        /// <returns>ÅäÖÃ³É¹¦·µ»Ø true£¬·ñÔò·µ»Ø false</returns>
         private bool EnsurePreviewAnchorPen(int card)
         {
             try
@@ -4665,11 +4883,11 @@ namespace BJJCZ_BaseDevelop
             }
         }
         /// <summary>
-        /// ç¡®ä¿åœ¨æŒ‡å®šæ¿å¡çš„å¯¹è±¡åº“ä¸­å­˜åœ¨ä¸€ä¸ªç”¨äºå›ºå®šé¢„è§ˆè§†é‡çš„è¾…åŠ©çŸ©å½¢å®ä½“ã€‚
-        /// è¯¥çŸ©å½¢ä¸ä¼šå‚ä¸å®é™…æ¿€å…‰åŠ å·¥ï¼Œä»…ç”¨äºåœ¨è·å–é¢„è§ˆå›¾åƒå‰ä¸´æ—¶æ·»åŠ åˆ°å¯¹è±¡åº“ä¸­ï¼Œ
-        /// ä»¥å¼ºåˆ¶ SDK ç”ŸæˆåŒ…å«å®Œæ•´ä¸–ç•Œåæ ‡èŒƒå›´çš„é¢„è§ˆå›¾ã€‚è·å–å®Œé¢„è§ˆå›¾åƒåï¼Œè¯¥å®ä½“ä¼šè¢«åŠæ—¶åˆ é™¤ã€‚
+        /// È·±£ÔÚÖ¸¶¨°å¿¨µÄ¶ÔÏó¿âÖĞ´æÔÚÒ»¸öÓÃÓÚ¹Ì¶¨Ô¤ÀÀÊÓÒ°µÄ¸¨Öú¾ØĞÎÊµÌå¡£
+        /// ¸Ã¾ØĞÎ²»»á²ÎÓëÊµ¼Ê¼¤¹â¼Ó¹¤£¬½öÓÃÓÚÔÚ»ñÈ¡Ô¤ÀÀÍ¼ÏñÇ°ÁÙÊ±Ìí¼Óµ½¶ÔÏó¿âÖĞ£¬
+        /// ÒÔÇ¿ÖÆ SDK Éú³É°üº¬ÍêÕûÊÀ½ç×ø±ê·¶Î§µÄÔ¤ÀÀÍ¼¡£»ñÈ¡ÍêÔ¤ÀÀÍ¼Ïñºó£¬¸ÃÊµÌå»á±»¼°Ê±É¾³ı¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•ï¼ˆ0 æˆ– 1ï¼‰</param>
+        /// <param name="card">°å¿¨Ë÷Òı£¨0 »ò 1£©</param>
         private void EnsurePreviewAnchorEntity(int card)
         {
             if (!EnsurePreviewAnchorBounds(card))
@@ -4697,31 +4915,31 @@ namespace BJJCZ_BaseDevelop
                 int err = JczLmc.lmc1_AddCurveToLib(phyCardSN[card], points, 5, anchorName, PreviewAnchorPenNo, 0);
                 if (err != 0)
                 {
-                    AddMsg($"å¡{card + 1} æ·»åŠ é¢„è§ˆå›ºå®šè¾¹ç•Œå¤±è´¥: {JczLmc.GetErrorText(err)}");
+                    AddMsg($"¿¨{card + 1} Ìí¼ÓÔ¤ÀÀ¹Ì¶¨±ß½çÊ§°Ü: {JczLmc.GetErrorText(err)}");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} æ·»åŠ é¢„è§ˆå›ºå®šè¾¹ç•Œå¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} Ìí¼ÓÔ¤ÀÀ¹Ì¶¨±ß½çÒì³£: {ex.Message}");
             }
         }
         /// <summary>
-        /// è¿”å›ç”¨äºé¢„è§ˆé”šç‚¹å®ä½“çš„å›ºå®šåç§°ã€‚
-        /// æ ¼å¼ä¸º "__PreviewAnchor_" + cardï¼Œç”¨äºåœ¨ä¸åŒæ¿å¡ä¹‹é—´åŒºåˆ†è¯¥è¾…åŠ©å®ä½“ã€‚
+        /// ·µ»ØÓÃÓÚÔ¤ÀÀÃªµãÊµÌåµÄ¹Ì¶¨Ãû³Æ¡£
+        /// ¸ñÊ½Îª "__PreviewAnchor_" + card£¬ÓÃÓÚÔÚ²»Í¬°å¿¨Ö®¼äÇø·Ö¸Ã¸¨ÖúÊµÌå¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>é¢„è§ˆé”šç‚¹å®ä½“çš„åç§°</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>Ô¤ÀÀÃªµãÊµÌåµÄÃû³Æ</returns>
         private string GetPreviewAnchorEntityName(int card)
         {
             return PreviewAnchorEntityPrefix + card;
         }
         /// <summary>
-        /// æ ¹æ®ç»™å®šçš„ä¸–ç•Œè§†å£è¾¹ç•Œï¼Œè®¡ç®—å‡ºä¸€ä¸ªç¨å¤§çš„â€œä¿æŠ¤è¾¹ç•Œâ€ã€‚
-        /// è¯¥è¾¹ç•Œç”¨äºåœ¨è·å–é¢„è§ˆå›¾æ—¶æ‰©å¤§ç»˜åˆ¶èŒƒå›´ï¼Œé˜²æ­¢å› è¾¹ç¼˜è£å‰ªå¯¼è‡´é¢„è§ˆå›¾åƒè¾¹ç¼˜å‡ºç°ç©ºç™½ã€‚
-        /// æ‰©å±•é‡ä¸ºè§†å£å®½åº¦å’Œé«˜åº¦çš„ä¸€åŠï¼ˆè‡³å°‘ 1mmï¼‰ã€‚
+        /// ¸ù¾İ¸ø¶¨µÄÊÀ½çÊÓ¿Ú±ß½ç£¬¼ÆËã³öÒ»¸öÉÔ´óµÄ¡°±£»¤±ß½ç¡±¡£
+        /// ¸Ã±ß½çÓÃÓÚÔÚ»ñÈ¡Ô¤ÀÀÍ¼Ê±À©´ó»æÖÆ·¶Î§£¬·ÀÖ¹Òò±ßÔµ²Ã¼ôµ¼ÖÂÔ¤ÀÀÍ¼Ïñ±ßÔµ³öÏÖ¿Õ°×¡£
+        /// À©Õ¹Á¿ÎªÊÓ¿Ú¿í¶ÈºÍ¸ß¶ÈµÄÒ»°ë£¨ÖÁÉÙ 1mm£©¡£
         /// </summary>
-        /// <param name="viewBounds">å½“å‰è§†å£çš„ä¸–ç•Œåæ ‡çŸ©å½¢ï¼ˆç”¨æˆ·æœŸæœ›æ˜¾ç¤ºçš„åŒºåŸŸï¼‰</param>
-        /// <returns>æ‰©å±•åçš„ä¿æŠ¤è¾¹ç•ŒçŸ©å½¢ï¼Œç”¨äºç”Ÿæˆè¶³å¤Ÿå¤§çš„é¢„è§ˆä½å›¾</returns>
+        /// <param name="viewBounds">µ±Ç°ÊÓ¿ÚµÄÊÀ½ç×ø±ê¾ØĞÎ£¨ÓÃ»§ÆÚÍûÏÔÊ¾µÄÇøÓò£©</param>
+        /// <returns>À©Õ¹ºóµÄ±£»¤±ß½ç¾ØĞÎ£¬ÓÃÓÚÉú³É×ã¹»´óµÄÔ¤ÀÀÎ»Í¼</returns>
         private RectangleF BuildPreviewGuardBounds(RectangleF viewBounds)
         {
             if (viewBounds.Width <= 0 || viewBounds.Height <= 0)
@@ -4737,15 +4955,43 @@ namespace BJJCZ_BaseDevelop
                 viewBounds.Right + padX,
                 viewBounds.Bottom + padY);
         }
+        private RectangleF BuildPreviewViewBoundsFromBackground(RectangleF bgBounds)
+        {
+            if (bgBounds.Width <= 0 || bgBounds.Height <= 0)
+            {
+                return PreviewViewBounds;
+            }
+
+            float centerX = bgBounds.Left + bgBounds.Width / 2f;
+            float centerY = bgBounds.Top + bgBounds.Height / 2f;
+            float viewWidth = Math.Max(PreviewViewBounds.Width, bgBounds.Width + 2f);
+            float viewHeight = bgBounds.Height + 2f;
+
+            return RectangleF.FromLTRB(
+                centerX - viewWidth / 2f,
+                centerY - viewHeight / 2f,
+                centerX + viewWidth / 2f,
+                centerY + viewHeight / 2f);
+        }
+        private RectangleF GetRoutePreviewWorldBounds(int card)
+        {
+            if (card >= 0 && card < _overlayWorldBounds.Length &&
+                _overlayWorldBounds[card].Width > 0 && _overlayWorldBounds[card].Height > 0)
+            {
+                return _overlayWorldBounds[card];
+            }
+
+            return RoutePreviewWorldBounds;
+        }
         private const float DefaultCenteredPreviewShortSide = 45f;
         /// <summary>
-        /// è·å–æŒ‡å®šæ¿å¡é¢„è§ˆèƒŒæ™¯å›¾åƒçš„å®½é«˜æ¯”ã€‚
-        /// å¦‚æœæ¿å¡å·²åŠ è½½åŸå§‹èƒŒæ™¯å›¾åƒï¼Œåˆ™ä½¿ç”¨è¯¥å›¾åƒçš„å®½é«˜æ¯”ï¼›
-        /// å¦åˆ™ä½¿ç”¨ pictureBox1 æ§ä»¶çš„å®½é«˜æ¯”ä½œä¸ºåå¤‡ï¼›è‹¥ä»æ— æ•ˆåˆ™è¿”å› 1.0ã€‚
-        /// è¯¥å®½é«˜æ¯”ç”¨äºæ„å»ºå±…ä¸­é¢„è§ˆè¾¹ç•Œæ—¶ä¿æŒèƒŒæ™¯å›¾åƒçš„åŸå§‹æ¯”ä¾‹ã€‚
+        /// »ñÈ¡Ö¸¶¨°å¿¨Ô¤ÀÀ±³¾°Í¼ÏñµÄ¿í¸ß±È¡£
+        /// Èç¹û°å¿¨ÒÑ¼ÓÔØÔ­Ê¼±³¾°Í¼Ïñ£¬ÔòÊ¹ÓÃ¸ÃÍ¼ÏñµÄ¿í¸ß±È£»
+        /// ·ñÔòÊ¹ÓÃ pictureBox1 ¿Ø¼şµÄ¿í¸ß±È×÷Îªºó±¸£»ÈôÈÔÎŞĞ§Ôò·µ»Ø 1.0¡£
+        /// ¸Ã¿í¸ß±ÈÓÃÓÚ¹¹½¨¾ÓÖĞÔ¤ÀÀ±ß½çÊ±±£³Ö±³¾°Í¼ÏñµÄÔ­Ê¼±ÈÀı¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>å®½é«˜æ¯”ï¼ˆå®½åº¦/é«˜åº¦ï¼‰ï¼Œå§‹ç»ˆå¤§äº 0.0001</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>¿í¸ß±È£¨¿í¶È/¸ß¶È£©£¬Ê¼ÖÕ´óÓÚ 0.0001</returns>
         private float GetPreviewBackgroundAspect(int card)
         {
             if (card >= 0 && card < originalImage.Length && originalImage[card] != null &&
@@ -4762,11 +5008,11 @@ namespace BJJCZ_BaseDevelop
             return 1f;
         }
         /// <summary>
-        /// å½“æ— æ³•é€šè¿‡å®é™…å›¾åƒå¯¹é½å‚æ•°è·å–é¢„è§ˆè¾¹ç•Œæ—¶ï¼Œä½¿ç”¨æ­¤å‡½æ•°æ„å»ºä¸€ä¸ªå±…ä¸­çš„é»˜è®¤é¢„è§ˆä¸–ç•ŒçŸ©å½¢ã€‚
-        /// çŸ©å½¢çš„çŸ­è¾¹å›ºå®šä¸º 45mmï¼Œé•¿è¾¹æ ¹æ®èƒŒæ™¯å›¾åƒçš„å®½é«˜æ¯”è‡ªåŠ¨è°ƒæ•´ï¼Œä»¥ç¡®ä¿é¢„è§ˆåŒºåŸŸä¸ä¸¥é‡å˜å½¢ã€‚
+        /// µ±ÎŞ·¨Í¨¹ıÊµ¼ÊÍ¼Ïñ¶ÔÆë²ÎÊı»ñÈ¡Ô¤ÀÀ±ß½çÊ±£¬Ê¹ÓÃ´Ëº¯Êı¹¹½¨Ò»¸ö¾ÓÖĞµÄÄ¬ÈÏÔ¤ÀÀÊÀ½ç¾ØĞÎ¡£
+        /// ¾ØĞÎµÄ¶Ì±ß¹Ì¶¨Îª 45mm£¬³¤±ß¸ù¾İ±³¾°Í¼ÏñµÄ¿í¸ß±È×Ô¶¯µ÷Õû£¬ÒÔÈ·±£Ô¤ÀÀÇøÓò²»ÑÏÖØ±äĞÎ¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>ä»¥ (0,0) ä¸ºä¸­å¿ƒã€å®½åº¦/é«˜åº¦åŸºäºèƒŒæ™¯å›¾æ¯”ä¾‹çš„çŸ©å½¢</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>ÒÔ (0,0) ÎªÖĞĞÄ¡¢¿í¶È/¸ß¶È»ùÓÚ±³¾°Í¼±ÈÀıµÄ¾ØĞÎ</returns>
         private RectangleF BuildCenteredPreviewBounds(int card)
         {
             float aspect = GetPreviewBackgroundAspect(card);
@@ -4785,17 +5031,17 @@ namespace BJJCZ_BaseDevelop
             return RectangleF.FromLTRB(-width / 2f, -height / 2f, width / 2f, height / 2f);
         }
         /// <summary>
-        /// æ ‡è®°å½“å‰æ¿å¡çš„å›¾åƒå¯¹é½å‚æ•°æ˜¯å¦å·²å°±ç»ªã€‚
-        /// å½“å®¢æˆ·ç«¯é€šè¿‡å‘½ä»¤ 42 å‘é€æœ‰æ•ˆçš„å¯¹é½å‚æ•°åï¼Œè¯¥æ ‡å¿—ä½è¢«è®¾ç½®ä¸º trueã€‚
+        /// ±ê¼Çµ±Ç°°å¿¨µÄÍ¼Ïñ¶ÔÆë²ÎÊıÊÇ·ñÒÑ¾ÍĞ÷¡£
+        /// µ±¿Í»§¶ËÍ¨¹ıÃüÁî 42 ·¢ËÍÓĞĞ§µÄ¶ÔÆë²ÎÊıºó£¬¸Ã±êÖ¾Î»±»ÉèÖÃÎª true¡£
         /// </summary>
         private bool[] previewAlignParamReady = new bool[2];
         /// <summary>
-        /// å°è¯•è·å–å½“å‰æ¿å¡æœ‰æ•ˆçš„å›¾åƒå¯¹é½è¾¹ç•Œï¼ˆä¸–ç•Œåæ ‡çŸ©å½¢ï¼‰ã€‚
-        /// å¯¹é½å‚æ•°ç”±å®¢æˆ·ç«¯é€šè¿‡å‘½ä»¤ 42 å‘é€ï¼Œæè¿°äº†èƒŒæ™¯å›¾åƒåœ¨æ¿€å…‰åæ ‡ç³»ä¸­çš„èŒƒå›´ã€‚
+        /// ³¢ÊÔ»ñÈ¡µ±Ç°°å¿¨ÓĞĞ§µÄÍ¼Ïñ¶ÔÆë±ß½ç£¨ÊÀ½ç×ø±ê¾ØĞÎ£©¡£
+        /// ¶ÔÆë²ÎÊıÓÉ¿Í»§¶ËÍ¨¹ıÃüÁî 42 ·¢ËÍ£¬ÃèÊöÁË±³¾°Í¼ÏñÔÚ¼¤¹â×ø±êÏµÖĞµÄ·¶Î§¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <param name="bounds">è¾“å‡ºå‚æ•°ï¼Œè‹¥æˆåŠŸåˆ™è¿”å›å¯¹åº”çš„ä¸–ç•Œåæ ‡çŸ©å½¢</param>
-        /// <returns>æ˜¯å¦å­˜åœ¨æœ‰æ•ˆå¯¹é½å‚æ•°ä¸”è¾¹ç•Œå®½é«˜ä¸ºæ­£</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <param name="bounds">Êä³ö²ÎÊı£¬Èô³É¹¦Ôò·µ»Ø¶ÔÓ¦µÄÊÀ½ç×ø±ê¾ØĞÎ</param>
+        /// <returns>ÊÇ·ñ´æÔÚÓĞĞ§¶ÔÆë²ÎÊıÇÒ±ß½ç¿í¸ßÎªÕı</returns>
         private bool TryGetAlignPreviewBounds(int card, out RectangleF bounds)
         {
             bounds = RectangleF.Empty;
@@ -4822,27 +5068,26 @@ namespace BJJCZ_BaseDevelop
             return bounds.Width > 0 && bounds.Height > 0;
         }
         /// <summary>
-        /// æ•è·å½“å‰æ¿å¡çš„é¢„è§ˆé”šç‚¹è¾¹ç•Œï¼ˆä¸–ç•Œåæ ‡è§†å£èŒƒå›´ï¼‰ã€‚
-        /// ä¼˜å…ˆä½¿ç”¨å®¢æˆ·ç«¯æä¾›çš„å›¾åƒå¯¹é½å‚æ•°ï¼›è‹¥ä¸å¯ç”¨ï¼Œåˆ™å›é€€åˆ°å±…ä¸­çš„é»˜è®¤é¢„è§ˆçŸ©å½¢ã€‚
-        /// åŒæ—¶æ ¹æ®è§†å£è¾¹ç•Œè®¡ç®—å‡ºä¿æŠ¤è¾¹ç•Œï¼ˆBuildPreviewGuardBoundsï¼‰ï¼Œå¹¶æ ‡è®° previewAnchorReady[card] = trueã€‚
+        /// ²¶»ñµ±Ç°°å¿¨µÄÔ¤ÀÀÃªµã±ß½ç£¨ÊÀ½ç×ø±êÊÓ¿Ú·¶Î§£©¡£
+        /// ÓÅÏÈÊ¹ÓÃ¿Í»§¶ËÌá¹©µÄÍ¼Ïñ¶ÔÆë²ÎÊı£»Èô²»¿ÉÓÃ£¬Ôò»ØÍËµ½¾ÓÖĞµÄÄ¬ÈÏÔ¤ÀÀ¾ØĞÎ¡£
+        /// Í¬Ê±¸ù¾İÊÓ¿Ú±ß½ç¼ÆËã³ö±£»¤±ß½ç£¨BuildPreviewGuardBounds£©£¬²¢±ê¼Ç previewAnchorReady[card] = true¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>å§‹ç»ˆè¿”å› trueï¼ˆè‡³å°‘ä¼šè®¾ç½®ä¸€ä¸ªé»˜è®¤è¾¹ç•Œï¼‰</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>Ê¼ÖÕ·µ»Ø true£¨ÖÁÉÙ»áÉèÖÃÒ»¸öÄ¬ÈÏ±ß½ç£©</returns>
         private bool CapturePreviewAnchorBounds(int card)
         {
-            // çº¢æ¡†é¢„è§ˆå›ºå®šåœ¨æ•´ä¸ªæ¿€å…‰é¢„è§ˆè§†å›¾å†…ç”Ÿæˆï¼Œæ—¢ä¿ç•™EZCADç”»å¸ƒå¤–éœ²å‡ºçš„éƒ¨åˆ†ï¼Œ
-            // åˆé¿å…SDKæŒ‰å¯¹è±¡åŒ…å›´ç›’è‡ªåŠ¨ç¼©æ”¾å¯¼è‡´æ‰€æœ‰çº¢æ¡†ä¸€èµ·æ¼‚ç§»ã€‚
-            previewAnchorWorldRects[card] = PreviewViewBounds;
+            // SDK route preview is generated in this fixed laser-coordinate range.
+            previewAnchorWorldRects[card] = GetRoutePreviewWorldBounds(card);
             previewGuardWorldRects[card] = BuildPreviewGuardBounds(previewAnchorWorldRects[card]);
             previewAnchorReady[card] = true;
             return true;
         }
         /// <summary>
-        /// ç¡®ä¿é¢„è§ˆé”šç‚¹è¾¹ç•Œï¼ˆè§†å£èŒƒå›´å’Œä¿æŠ¤è¾¹ç•Œï¼‰å·²ç»å°±ç»ªã€‚
-        /// å¦‚æœå°šæœªå°±ç»ªï¼Œåˆ™è°ƒç”¨ CapturePreviewAnchorBounds è¿›è¡Œåˆå§‹åŒ–ã€‚
+        /// È·±£Ô¤ÀÀÃªµã±ß½ç£¨ÊÓ¿Ú·¶Î§ºÍ±£»¤±ß½ç£©ÒÑ¾­¾ÍĞ÷¡£
+        /// Èç¹ûÉĞÎ´¾ÍĞ÷£¬Ôòµ÷ÓÃ CapturePreviewAnchorBounds ½øĞĞ³õÊ¼»¯¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>è¾¹ç•Œæœ‰æ•ˆï¼ˆå®½é«˜>0ï¼‰æ—¶è¿”å› true</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>±ß½çÓĞĞ§£¨¿í¸ß>0£©Ê±·µ»Ø true</returns>
         private bool EnsurePreviewAnchorBounds(int card)
         {
             if (previewAnchorReady[card] &&
@@ -4862,11 +5107,11 @@ namespace BJJCZ_BaseDevelop
             return true;
         }
         /// <summary>
-        /// æ ¹æ®æ¿å¡çš„ä¿æŠ¤è¾¹ç•Œå’Œè§†å£è¾¹ç•Œï¼Œè®¡ç®—ç”Ÿæˆé¢„è§ˆä½å›¾æ‰€éœ€çš„åˆç†å°ºå¯¸ã€‚
-        /// è‹¥ä¿æŠ¤è¾¹ç•Œå¤§äºè§†å£è¾¹ç•Œï¼Œåˆ™æŒ‰æ¯”ä¾‹æ”¾å¤§ä½å›¾å°ºå¯¸ï¼Œé¿å…è¾¹ç¼˜è£å‰ªï¼ŒåŒæ—¶é™åˆ¶æœ€å¤§è¾¹é•¿ä¸º 2048 åƒç´ ã€‚
+        /// ¸ù¾İ°å¿¨µÄ±£»¤±ß½çºÍÊÓ¿Ú±ß½ç£¬¼ÆËãÉú³ÉÔ¤ÀÀÎ»Í¼ËùĞèµÄºÏÀí³ß´ç¡£
+        /// Èô±£»¤±ß½ç´óÓÚÊÓ¿Ú±ß½ç£¬Ôò°´±ÈÀı·Å´óÎ»Í¼³ß´ç£¬±ÜÃâ±ßÔµ²Ã¼ô£¬Í¬Ê±ÏŞÖÆ×î´ó±ß³¤Îª 2048 ÏñËØ¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>å»ºè®®çš„é¢„è§ˆä½å›¾å°ºå¯¸ï¼ˆå®½åº¦ã€é«˜åº¦ï¼‰</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>½¨ÒéµÄÔ¤ÀÀÎ»Í¼³ß´ç£¨¿í¶È¡¢¸ß¶È£©</returns>
         private Size GetGuardPreviewBitmapSize(int card)
         {
             Size displaySize = GetPreviewDisplaySize(card);
@@ -4890,16 +5135,16 @@ namespace BJJCZ_BaseDevelop
                 Math.Min(previewHeight, 2048));
         }
         /// <summary>
-        /// å­˜å‚¨ä»å®¢æˆ·ç«¯æ¥æ”¶çš„å›¾åƒå¯¹é½å‚æ•°ï¼ˆåƒç´ å°ºå¯¸åŠæ¿€å…‰åæ ‡ç³»èŒƒå›´ï¼‰ã€‚
-        /// ç”±å‘½ä»¤ 42 æ›´æ–°ï¼Œç”¨äºç¡®å®šèƒŒæ™¯å›¾åƒåœ¨ä¸–ç•Œåæ ‡ä¸­çš„æ˜¾ç¤ºåŒºåŸŸã€‚
+        /// ´æ´¢´Ó¿Í»§¶Ë½ÓÊÕµÄÍ¼Ïñ¶ÔÆë²ÎÊı£¨ÏñËØ³ß´ç¼°¼¤¹â×ø±êÏµ·¶Î§£©¡£
+        /// ÓÉÃüÁî 42 ¸üĞÂ£¬ÓÃÓÚÈ·¶¨±³¾°Í¼ÏñÔÚÊÀ½ç×ø±êÖĞµÄÏÔÊ¾ÇøÓò¡£
         /// </summary>
         private AlignImParam[] previewAlignParams = new AlignImParam[2];
         /// <summary>
-        /// åˆ¤æ–­ç»™å®šçš„å›¾åƒå¯¹é½å‚æ•°æ˜¯å¦æœ‰æ•ˆã€‚
-        /// æœ‰æ•ˆæ¡ä»¶ï¼šå®½åº¦å’Œé«˜åº¦åƒç´ å€¼å¤§äº 0ï¼Œä¸”æ¿€å…‰åæ ‡ç³»å®½åº¦å’Œé«˜åº¦ç»å¯¹å€¼å¤§äº 1e-6ã€‚
+        /// ÅĞ¶Ï¸ø¶¨µÄÍ¼Ïñ¶ÔÆë²ÎÊıÊÇ·ñÓĞĞ§¡£
+        /// ÓĞĞ§Ìõ¼ş£º¿í¶ÈºÍ¸ß¶ÈÏñËØÖµ´óÓÚ 0£¬ÇÒ¼¤¹â×ø±êÏµ¿í¶ÈºÍ¸ß¶È¾ø¶ÔÖµ´óÓÚ 1e-6¡£
         /// </summary>
-        /// <param name="align">å¯¹é½å‚æ•°ç»“æ„</param>
-        /// <returns>æœ‰æ•ˆè¿”å› true</returns>
+        /// <param name="align">¶ÔÆë²ÎÊı½á¹¹</param>
+        /// <returns>ÓĞĞ§·µ»Ø true</returns>
         private bool IsValidPreviewAlignParam(AlignImParam align)
         {
             return align.width > 0 &&
@@ -4931,27 +5176,23 @@ namespace BJJCZ_BaseDevelop
                 centerY + height / 2f);
         }
         /// <summary>
-        /// è·å–ç”¨äºé¢„è§ˆæ˜¾ç¤ºçš„ä½å›¾å°ºå¯¸ï¼ˆåƒç´ å®½é«˜ï¼‰ã€‚
-        /// ä¼˜å…ˆä½¿ç”¨å®¢æˆ·ç«¯æä¾›çš„å¯¹é½å‚æ•°ä¸­çš„åŸå§‹å›¾åƒå°ºå¯¸ï¼Œå¦åˆ™å›é€€åˆ° pictureBox1 çš„æ§ä»¶å°ºå¯¸ã€‚
+        /// »ñÈ¡ÓÃÓÚÔ¤ÀÀÏÔÊ¾µÄÎ»Í¼³ß´ç£¨ÏñËØ¿í¸ß£©¡£
+        /// ÓÅÏÈÊ¹ÓÃ¿Í»§¶ËÌá¹©µÄ¶ÔÆë²ÎÊıÖĞµÄÔ­Ê¼Í¼Ïñ³ß´ç£¬·ñÔò»ØÍËµ½ pictureBox1 µÄ¿Ø¼ş³ß´ç¡£
         /// </summary>
-        /// <param name="card">æ¿å¡ç´¢å¼•</param>
-        /// <returns>é¢„è§ˆæ˜¾ç¤ºåŒºåŸŸå°ºå¯¸</returns>
+        /// <param name="card">°å¿¨Ë÷Òı</param>
+        /// <returns>Ô¤ÀÀÏÔÊ¾ÇøÓò³ß´ç</returns>
         private Size GetPreviewDisplaySize(int card)
         {
-            CoordPictureBox targetBox = (card == 1) ? pictureBox2 : pictureBox1;
-            int controlWidth = Math.Max(1, targetBox.Width);
-            int controlHeight = Math.Max(1, targetBox.Height);
-
             RectangleF view = previewAnchorWorldRects[card];
             float aspect = (view.Width > 0 && view.Height > 0)
                 ? Math.Max(0.0001f, view.Width / view.Height)
-                : Math.Max(0.0001f, EzcadCanvasBounds.Width / EzcadCanvasBounds.Height);
+                : 1f;
 
-            int width = controlWidth;
+            int width = PreviewRouteBitmapBaseSide;
             int height = Math.Max(1, (int)Math.Round(width / aspect));
-            if (height > controlHeight)
+            if (height > PreviewRouteBitmapBaseSide)
             {
-                height = controlHeight;
+                height = PreviewRouteBitmapBaseSide;
                 width = Math.Max(1, (int)Math.Round(height * aspect));
             }
 
@@ -4960,40 +5201,76 @@ namespace BJJCZ_BaseDevelop
         }
         private void RefreshPreview(int card)
         {
-            // å¦‚æœæ­£åœ¨æ¨¡æ‹Ÿæ¨¡å¼ï¼Œå¯ä»¥è·³è¿‡ï¼ˆæŒ‰éœ€ä¿ç•™ï¼‰
+            // Èç¹ûÕıÔÚÄ£ÄâÄ£Ê½£¬¿ÉÒÔÌø¹ı£¨°´Ğè±£Áô£©
             // if (bSimulateMode[card]) return;
             CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
             try
             {
-                // 1. åŠ è½½èƒŒæ™¯å›¾åƒï¼ˆå¦‚æœå°šæœªåŠ è½½ï¼‰
+                // 1. ¼ÓÔØ±³¾°Í¼Ïñ£¨Èç¹ûÉĞÎ´¼ÓÔØ£©¡£Ê¹ÓÃ³ÌĞòÄ¿Â¼½âÎö£¬±ÜÃâÖ÷³ÌĞòÀ­ÆğÊ±¹¤×÷Ä¿Â¼±ä»¯µ¼ÖÂÏà¶ÔÂ·¾¶Ê§Ğ§¡£
                 if (originalImage[card] == null)
                 {
-                    string bgFile = (card == 0) ? @"..\data\sourceBGImgA.bmp" : @"..\data\sourceBGImgB.bmp";
+                    string bgName = (card == 0) ? "sourceBGImgA.jpg" : "sourceBGImgB.jpg";
+                    string bgFile = Path.GetFullPath(Path.Combine(Application.StartupPath, "..", "data", bgName));
+                    if (!File.Exists(bgFile))
+                    {
+                        string relativeBgFile = (card == 0) ? @"..\data\sourceBGImgA.jpg" : @"..\data\sourceBGImgB.jpg";
+                        bgFile = Path.GetFullPath(relativeBgFile);
+                    }
+
                     if (File.Exists(bgFile))
+                    {
                         originalImage[card] = new Bitmap(bgFile);
+                        AddMsg($"¿¨{card + 1} ±³¾°Í¼¼ÓÔØ³É¹¦: {bgFile}");
+                    }
+                    else
+                    {
+                        AddMsg($"¿¨{card + 1} ±³¾°Í¼²»´æÔÚ: {bgFile}");
+                    }
                 }
 
-                Bitmap routeImg = null;
+                // Background defines the visible window; route preview keeps a larger EZCAD-like laser range.
+                RectangleF bgBounds = GetBackgroundWorldBounds(card);
+                RectangleF displayBounds = BuildPreviewViewBoundsFromBackground(bgBounds);
+                RectangleF routeBounds = GetRoutePreviewWorldBounds(card);
+                previewAnchorWorldRects[card] = routeBounds;
+                previewGuardWorldRects[card] = BuildPreviewGuardBounds(routeBounds);
+                previewAnchorReady[card] = true;
+                targetBox.SetWorldViewBounds(displayBounds);
 
+                if (originalImage[card] != null)
+                {
+                    targetBox.SetWorldImage(originalImage[card],
+                        bgBounds.Left, bgBounds.Right,
+                        bgBounds.Top, bgBounds.Bottom,
+                        autoFit: false);
+                }
+                targetBox.SetCanvasBounds(EzcadCanvasBounds);
+                targetBox.SetPreviewWorldEntities(null);
+
+                Bitmap routeImg = null;
+               
 
                 //   if (routeImg == null) return;
                 if (!bSimulateMode[card])
                 {
                     try
                     {
-                        // 2. åªåœ¨å–é¢„è§ˆå›¾çš„ç¬é—´ä¸´æ—¶å›ºå®šJCZè§†é‡ï¼Œå–å®Œç«‹å³åˆ é™¤ï¼Œé¿å…æ··å…¥å¯¹è±¡åˆ—è¡¨ã€‚
+                        // 2. Ö»ÔÚÈ¡Ô¤ÀÀÍ¼µÄË²¼äÁÙÊ±¹Ì¶¨JCZÊÓÒ°£¬È¡ÍêÁ¢¼´É¾³ı£¬±ÜÃâ»ìÈë¶ÔÏóÁĞ±í¡£
                         EnsurePreviewAnchorEntity(card);
                         Size previewSize = GetScaledPreviewBitmapSize(GetPreviewDisplaySize(card));
 
-                        // 3. è·å–æ¿€å…‰è·¯å¾„é¢„è§ˆå›¾ï¼ˆå¸¦é€æ˜èƒŒæ™¯ï¼‰
+                        // 3. »ñÈ¡¼¤¹âÂ·¾¶Ô¤ÀÀÍ¼£¨´øÍ¸Ã÷±³¾°£©
                         routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
                             phyCardSN[card],
                             targetBox.Handle,
                             previewSize.Width,
                             previewSize.Height);
-                        routeImg.Save("tst1_src.png");
-                        routeImg = CropPreviewToAnchorBounds(card, routeImg);
-                        routeImg.Save("tst1_crop.png");
+                        if (routeImg != null)
+                        {
+                            routeImg.Save("tst1_src.png");
+                            routeImg = CropPreviewToAnchorBounds(card, routeImg);
+                            routeImg.Save("tst1_crop.png");
+                        }
                     }
                     finally
                     {
@@ -5008,15 +5285,19 @@ namespace BJJCZ_BaseDevelop
                 }
                 else
                 {
-                    // æ¨¡æ‹Ÿæ¨¡å¼ï¼šä»é»˜è®¤è·¯å¾„åŠ è½½æµ‹è¯•å›¾ç‰‡
+                    // Ä£ÄâÄ£Ê½£º´ÓÄ¬ÈÏÂ·¾¶¼ÓÔØ²âÊÔÍ¼Æ¬
                     string routeFile = "..\\EzdModel\\route.png";
                     if (File.Exists(routeFile))
                         routeImg = new Bitmap(routeFile);
                 }
 
-                if (routeImg == null) return;
+                if (routeImg == null)
+                {
+                    targetBox.SetOverlayImage(null, null);
+                    return;
+                }
 
-                // SDKæ¯æ¬¡è¿”å›çš„æ–°å›¾å†…å®¹å¯èƒ½å˜åŒ–ä½†å°ºå¯¸ç›¸åŒï¼Œä¸èƒ½åªæŒ‰å®½é«˜å¤ç”¨ç¼“å­˜ã€‚
+                // SDKÃ¿´Î·µ»ØµÄĞÂÍ¼ÄÚÈİ¿ÉÄÜ±ä»¯µ«³ß´çÏàÍ¬£¬²»ÄÜÖ»°´¿í¸ß¸´ÓÃ»º´æ¡£
                 if (cachedTransparentRoute[card] != null)
                     cachedTransparentRoute[card].Dispose();
 
@@ -5024,8 +5305,8 @@ namespace BJJCZ_BaseDevelop
                 cachedRouteWidth[card] = routeImg.Width;
                 cachedRouteHeight[card] = routeImg.Height;
 
-                // åŸå§‹ä¸´æ—¶å›¾åƒä¸å†éœ€è¦ï¼Œé‡Šæ”¾ï¼ˆå¦‚æœ SDK è¿”å›çš„æ–°å¯¹è±¡ï¼‰
-                if (routeImg != cachedTransparentRoute[card])  // é¿å…é‡å¤é‡Šæ”¾
+                // Ô­Ê¼ÁÙÊ±Í¼Ïñ²»ÔÙĞèÒª£¬ÊÍ·Å£¨Èç¹û SDK ·µ»ØµÄĞÂ¶ÔÏó£©
+                if (routeImg != cachedTransparentRoute[card])  // ±ÜÃâÖØ¸´ÊÍ·Å
                     routeImg.Dispose();
 
                 if (cachedTransparentRoute[card] != null)
@@ -5033,31 +5314,20 @@ namespace BJJCZ_BaseDevelop
                     cachedTransparentRoute[card].Save("tst1.png");
                 }
 
-                // 4. èƒŒæ™¯å›¾æŒ‰ä¸»ç¨‹åºå‘é€çš„æ¿€å…‰åæ ‡èŒƒå›´æ”¾ç½®ï¼Œå’Œçº¢æ¡†/ç”»å¸ƒå…±ç”¨åŒä¸€ä¸–ç•Œåæ ‡ç³»ã€‚
-                RectangleF bgBounds = GetBackgroundWorldBounds(card);
-
-                // 5. è®¾ç½®èƒŒæ™¯å›¾ï¼ˆæ³¨æ„ Y å‚æ•°é¡ºåºï¼šminY, maxYï¼‰
-                if (originalImage[card] != null)
-                {
-                    targetBox.SetWorldImage(originalImage[card],
-                        bgBounds.Left, bgBounds.Right,
-                        bgBounds.Top, bgBounds.Bottom,
-                        autoFit: false);
-                }
-
-                // 6. çº¢æ¡†é¢„è§ˆå›ºå®šè´´åœ¨EZCADç”»å¸ƒèŒƒå›´ï¼Œé¿å…èƒŒæ™¯èŒƒå›´å˜åŒ–å¯¼è‡´çº¢æ¡†æ•´ä½“æ¼‚ç§»æˆ–ç¼©æ”¾ã€‚
+                // 4. ºì¿òÌùÔÚÍ¬Ò»¸öÎÈ¶¨¼¤¹â×ø±êÊÓ¿ÚÀï£¬ÒÆ¶¯¶ÔÏó²»»á¸Ä±äÆäËûÂ·¾¶±ÈÀı¡£
                 RectangleF overlayBounds = (previewAnchorWorldRects[card].Width > 0 && previewAnchorWorldRects[card].Height > 0)
                             ? previewAnchorWorldRects[card]
-                            : EzcadCanvasBounds;
+                            : GetRoutePreviewWorldBounds(card);
 
-                // æœ€ç»ˆçº¢æ¡†ä½¿ç”¨SDKé¢„è§ˆå›¾ï¼Œä¿è¯è½®å»“/å¡«å……/æ—‹è½¬/ç¼©æ”¾ä¸EZCADçš„æ˜¾ç¤ºä¸€è‡´ã€‚
+                // ×îÖÕºì¿òÊ¹ÓÃSDKÔ¤ÀÀÍ¼£¬±£Ö¤ÂÖÀª/Ìî³ä/Ğı×ª/Ëõ·ÅÓëEZCADµÄÏÔÊ¾Ò»ÖÂ¡£
                 targetBox.SetCanvasBounds(EzcadCanvasBounds);
                 targetBox.SetPreviewWorldEntities(null);
                 targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
+                
             }
             catch (Exception ex)
             {
-                AddMsg($"åˆ·æ–°é¢„è§ˆå¤±è´¥: {ex.Message}");
+                AddMsg($"Ë¢ĞÂÔ¤ÀÀÊ§°Ü: {ex.Message}");
             }
         }
         private void InvalidateRoutePreviewCache(int card)
@@ -5076,7 +5346,7 @@ namespace BJJCZ_BaseDevelop
             cachedRouteWidth[card] = 0;
             cachedRouteHeight[card] = 0;
         }
-        // è¾…åŠ©æ–¹æ³•ï¼šå°†ç™½è‰²èƒŒæ™¯å˜ä¸ºé€æ˜
+        // ¸¨Öú·½·¨£º½«°×É«±³¾°±äÎªÍ¸Ã÷
         /*private Bitmap MakeTransparentBackground(Bitmap img)
         {
             if (img == null) return null;
@@ -5086,7 +5356,7 @@ namespace BJJCZ_BaseDevelop
                 g.Clear(Color.Transparent);
                 g.DrawImage(img, 0, 0);
             }
-            // ç®€å•å°†ç™½è‰²åƒç´ è®¾ä¸ºé€æ˜ï¼ˆæ›´ä¸¥æ ¼çš„ç®—æ³•å¯å‚è€ƒ MakeWhiteTransparentï¼‰
+            // ¼òµ¥½«°×É«ÏñËØÉèÎªÍ¸Ã÷£¨¸üÑÏ¸ñµÄËã·¨¿É²Î¿¼ MakeWhiteTransparent£©
             for (int x = 0; x < img.Width; x++)
             {
                 for (int y = 0; y < img.Height; y++)
@@ -5110,11 +5380,18 @@ namespace BJJCZ_BaseDevelop
 
             Size sourceSize = new Size(img.Width, img.Height);
             Rectangle cropRect = Rectangle.Empty;
-            if (card >= 0 && card < previewAnchorRects.Length &&
-                previewAnchorRects[card].Width > 0 && previewAnchorRects[card].Height > 0 &&
-                previewAnchorSourceSizes[card] == sourceSize)
+            bool hasCachedCrop = card >= 0 && card < previewAnchorRects.Length &&
+                previewAnchorRects[card].Width > 0 && previewAnchorRects[card].Height > 0;
+
+            if (hasCachedCrop && previewAnchorSourceSizes[card] == sourceSize)
             {
                 cropRect = previewAnchorRects[card];
+            }
+            else if (hasCachedCrop && previewAnchorSourceSizes[card].Width > 0 && previewAnchorSourceSizes[card].Height > 0)
+            {
+                cropRect = ScaleCropRect(previewAnchorRects[card], previewAnchorSourceSizes[card], sourceSize);
+                previewAnchorRects[card] = cropRect;
+                previewAnchorSourceSizes[card] = sourceSize;
             }
             else
             {
@@ -5146,6 +5423,27 @@ namespace BJJCZ_BaseDevelop
 
             img.Dispose();
             return cropped;
+        }
+
+        private Rectangle ScaleCropRect(Rectangle cropRect, Size oldSize, Size newSize)
+        {
+            if (oldSize.Width <= 0 || oldSize.Height <= 0 || newSize.Width <= 0 || newSize.Height <= 0)
+            {
+                return cropRect;
+            }
+
+            float scaleX = (float)newSize.Width / oldSize.Width;
+            float scaleY = (float)newSize.Height / oldSize.Height;
+            int left = Math.Max(0, (int)Math.Round(cropRect.Left * scaleX));
+            int top = Math.Max(0, (int)Math.Round(cropRect.Top * scaleY));
+            int right = Math.Min(newSize.Width, (int)Math.Round(cropRect.Right * scaleX));
+            int bottom = Math.Min(newSize.Height, (int)Math.Round(cropRect.Bottom * scaleY));
+            if (right <= left || bottom <= top)
+            {
+                return Rectangle.Empty;
+            }
+
+            return Rectangle.FromLTRB(left, top, right, bottom);
         }
 
         private Rectangle FindPreviewAnchorCropRect(Bitmap img)
@@ -5185,7 +5483,12 @@ namespace BJJCZ_BaseDevelop
 
         private bool IsPreviewAnchorColor(Color color)
         {
-            return color.G > 180 && color.R < 120 && color.B < 120;
+            return IsPreviewAnchorRgb(color.R, color.G, color.B);
+        }
+
+        private bool IsPreviewAnchorRgb(byte r, byte g, byte b)
+        {
+            return g > 160 && r < 150 && b < 150;
         }
 
         private Size GetScaledPreviewBitmapSize(Size displaySize)
@@ -5240,7 +5543,7 @@ namespace BJJCZ_BaseDevelop
                             byte g = srcRow[x * 3 + 1];
                             byte r = srcRow[x * 3 + 2];
 
-                            if (IsPreviewAnchorPixelOnCropBorder(x, y, img.Width, img.Height, r, g, b))
+                            if (IsPreviewAnchorRgb(r, g, b))
                             {
                                 dstRow[x * 4] = 0;
                                 dstRow[x * 4 + 1] = 0;
@@ -5310,7 +5613,7 @@ namespace BJJCZ_BaseDevelop
         private byte ComputePreviewNonWhiteAlpha(byte r, byte g, byte b)
         {
             int distanceFromWhite = (255 - r) + (255 - g) + (255 - b);
-            if (distanceFromWhite <= 36)
+            if (distanceFromWhite <=36)
             {
                 return 0;
             }
@@ -5412,8 +5715,8 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region å®ä½“è¡¨æ ¼ä¸å¯¹è±¡ä¿¡æ¯
-        // =============== å®ä½“è¡¨æ ¼æ›´æ–° ===============
+        #region ÊµÌå±í¸ñÓë¶ÔÏóĞÅÏ¢
+        // =============== ÊµÌå±í¸ñ¸üĞÂ ===============
         private void UpdateEntTable(int card)
         {
             if (bSimulateMode[card]) return;
@@ -5428,23 +5731,24 @@ namespace BJJCZ_BaseDevelop
             for (int i = 0; i < nEntNums[card]; i++)
             {
                 string entName = strEntNames[card][i];
-                string entType = GetEntityType(card, entName);  // åŠ¨æ€è·å–ç±»å‹
+                string sdkName = (sdkEntNames[card] != null && i < sdkEntNames[card].Length) ? sdkEntNames[card][i] : entName;
+                string entType = GetEntityType(card, sdkName);  // ¶¯Ì¬»ñÈ¡ÀàĞÍ
 
                 dgvEnt.Rows.Add();
                 dgvEnt.Rows[i].Cells[0].Value = true;
                 dgvEnt.Rows[i].Cells[1].Value = entName;
-                dgvEnt.Rows[i].Cells[2].Value = entType;       // å¡«å……ç±»å‹åˆ—
+                dgvEnt.Rows[i].Cells[2].Value = entType;       // Ìî³äÀàĞÍÁĞ
                 dgvEnt.Rows[i].Cells[3].Value = iPenNos[card][i].ToString();
                 dgvEnt.Rows[i].HeaderCell.Value = (i + 1).ToString();
             }
         }
         /// <summary>
-        /// è·å–æŒ‡å®šå¯¹è±¡çš„ç±»å‹ï¼ˆå¡«å……/è½®å»“ï¼‰
+        /// »ñÈ¡Ö¸¶¨¶ÔÏóµÄÀàĞÍ£¨Ìî³ä/ÂÖÀª£©
         /// </summary>
         private string GetEntityType(int card, string entName)
         {
             if (bSimulateMode[card] || string.IsNullOrEmpty(entName))
-                return "è½®å»“";
+                return "ÂÖÀª";
 
             try
             {
@@ -5452,10 +5756,10 @@ namespace BJJCZ_BaseDevelop
                 string hatchEntName = GetHatchEntityName(sourceEntName);
                 if (!IsGeneratedHatchEntity(entName) && EntityExists(card, hatchEntName))
                 {
-                    return "å¡«å……";
+                    return "Ìî³ä";
                 }
 
-                // è°ƒç”¨è·å–å¡«å……å‚æ•°å‡½æ•°
+                // µ÷ÓÃ»ñÈ¡Ìî³ä²ÎÊıº¯Êı
                 bool bEnableContour = false;
                 int nParamIndex = 1;
                 int bEnableHatch = 1;
@@ -5490,21 +5794,21 @@ namespace BJJCZ_BaseDevelop
                     ref bHatchAutoRotate, ref dHatchRotateAngle, ref bHatchCross,
                     ref dCycCount);
 
-                // å¦‚æœè·å–æˆåŠŸä¸”å¡«å……ä½¿èƒ½ï¼Œåˆ™ä¸ºå¡«å……å¯¹è±¡
-                if (nErr == 0 && bEnableHatch != 0)
-                    return "å¡«å……";
+                // Èç¹û»ñÈ¡³É¹¦ÇÒÌî³äÊ¹ÄÜ£¬ÔòÎªÌî³ä¶ÔÏó
+                if (nErr == 0 && bEnableHatch!=0)
+                    return "Ìî³ä";
                 else
-                    return "è½®å»“";
+                    return "ÂÖÀª";
             }
             catch
             {
-                return "è½®å»“";
+                return "ÂÖÀª";
             }
         }
         #endregion
 
-        #region çª—å£èœå•ã€æ‰˜ç›˜ä¸å¸ƒå±€äº‹ä»¶
-        // =============== ç•Œé¢äº‹ä»¶ ===============
+        #region ´°¿Ú²Ëµ¥¡¢ÍĞÅÌÓë²¼¾ÖÊÂ¼ş
+        // =============== ½çÃæÊÂ¼ş ===============
         private void menuSplit_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
@@ -5517,9 +5821,9 @@ namespace BJJCZ_BaseDevelop
             int card = currentCard;
             if (imLaserRoute[card] != null)
             {
-                string name = $"routeExport{card + 1}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                string name = $"routeExport{card+1}_{DateTime.Now:yyyyMMddHHmmss}.png";
                 imLaserRoute[card].Save(name, ImageFormat.Png);
-                AddMsg($"å¯¼å‡ºé¢„è§ˆå›¾ -> {name}");
+                AddMsg($"µ¼³öÔ¤ÀÀÍ¼ -> {name}");
             }
         }
 
@@ -5531,7 +5835,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!bSimulateMode[0] && !bSimulateMode[1])
                     JczLmc.lmc1_Close();
-                AddMsg("å…³é—­æ‰€æœ‰æ¿å¡");
+                AddMsg("¹Ø±ÕËùÓĞ°å¿¨");
             }
             catch { }
             Application.Exit();
@@ -5543,29 +5847,29 @@ namespace BJJCZ_BaseDevelop
             {
                 e.Cancel = true;
 
-                // å¦‚æœå½“å‰æ˜¯åˆ†ç¦»çŠ¶æ€ï¼Œå…ˆåˆ†ç¦»å†éšè—
+                // Èç¹ûµ±Ç°ÊÇ·ÖÀë×´Ì¬£¬ÏÈ·ÖÀëÔÙÒş²Ø
                 if (!_isEmbedded)
                 {
                     DetachAndShowFull();
                 }
 
-                // å®Œå…¨éšè—çª—å£ï¼Œä»»åŠ¡æ ä¸ä¼šå‡ºç°ä»»ä½•å›¾æ ‡
+                // ÍêÈ«Òş²Ø´°¿Ú£¬ÈÎÎñÀ¸²»»á³öÏÖÈÎºÎÍ¼±ê
                 this.Hide();
                 this.ShowInTaskbar = false;
                 JCZServerIcon.Visible = true;
 
-                // å¯é€‰ï¼šä»ç„¶æŠ˜å ç•Œé¢ï¼Œä»¥ä¾¿ä¸‹æ¬¡æ˜¾ç¤ºæ—¶ä¿æŒå¸ƒå±€
-                //     splitContainer1.Panel1Collapsed = true;
-                //     splitContainer1.SplitterDistance = 0;
-                //
-                // å‘å®¢æˆ·ç«¯å‘é€è¯·æ±‚åµŒå…¥çš„æ¶ˆæ¯ï¼ˆå¦‚æœéœ€è¦ï¼‰
+                // ¿ÉÑ¡£ºÈÔÈ»ÕÛµş½çÃæ£¬ÒÔ±ãÏÂ´ÎÏÔÊ¾Ê±±£³Ö²¼¾Ö
+           //     splitContainer1.Panel1Collapsed = true;
+           //     splitContainer1.SplitterDistance = 0;
+//
+                // Ïò¿Í»§¶Ë·¢ËÍÇëÇóÇ¶ÈëµÄÏûÏ¢£¨Èç¹ûĞèÒª£©
                 // RequestClientToEmbed();
-                // AddMsg("å·²æœ€å°åŒ–åˆ°ç³»ç»Ÿæ‰˜ç›˜");
+                // AddMsg("ÒÑ×îĞ¡»¯µ½ÏµÍ³ÍĞÅÌ");
             }
         }
 
         /// <summary>
-        /// å‘å®¢æˆ·ç«¯å‘é€è¯·æ±‚åµŒå…¥çš„æ¶ˆæ¯
+        /// Ïò¿Í»§¶Ë·¢ËÍÇëÇóÇ¶ÈëµÄÏûÏ¢
         /// </summary>
         private void RequestClientToEmbed()
         {
@@ -5585,11 +5889,11 @@ namespace BJJCZ_BaseDevelop
                     Pipechanel server = (card == 0) ? pipeServer0 : pipeServer1;
                     server.SendParam(requestParam);
                 }
-                //  AddMsg("å·²å‘é€åµŒå…¥è¯·æ±‚åˆ°å®¢æˆ·ç«¯");
+              //  AddMsg("ÒÑ·¢ËÍÇ¶ÈëÇëÇóµ½¿Í»§¶Ë");
             }
             catch (Exception ex)
             {
-                // AddMsg($"å‘é€åµŒå…¥è¯·æ±‚å¤±è´¥: {ex.Message}");
+               // AddMsg($"·¢ËÍÇ¶ÈëÇëÇóÊ§°Ü: {ex.Message}");
             }
         }
 
@@ -5597,7 +5901,7 @@ namespace BJJCZ_BaseDevelop
         {
             ResetLayoutToDefault();
 
-            //    AddMsg("çª—å£å¸ƒå±€å·²é‡ç½®");
+            //    AddMsg("´°¿Ú²¼¾ÖÒÑÖØÖÃ");
         }
 
         private void notifyIcon1_DoubleClick(object sender, EventArgs e)
@@ -5608,7 +5912,7 @@ namespace BJJCZ_BaseDevelop
             }
             else
             {
-                // æ˜¾ç¤ºçª—å£
+                // ÏÔÊ¾´°¿Ú
                 if (!this.Visible)
                     this.Show();
                 if (this.WindowState == FormWindowState.Minimized)
@@ -5616,7 +5920,7 @@ namespace BJJCZ_BaseDevelop
                 this.ShowInTaskbar = true;
                 this.BringToFront();
 
-                // ä½¿ç”¨ BeginInvoke ç¡®ä¿åœ¨çª—å£å®Œå…¨æ˜¾ç¤ºåé‡ç½®å¸ƒå±€
+                // Ê¹ÓÃ BeginInvoke È·±£ÔÚ´°¿ÚÍêÈ«ÏÔÊ¾ºóÖØÖÃ²¼¾Ö
                 this.BeginInvoke(new Action(() => ResetLayoutToDefault()));
             }
         }
@@ -5629,13 +5933,13 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            // æ˜¾ç¤ºæ‰€æœ‰åŒºåŸŸ
+            // ÏÔÊ¾ËùÓĞÇøÓò
             mainMsgBox.Visible = true;
             panelImage.Visible = true;
             panel3.Visible = true;
             panel1.Visible = true;
 
-            // æ›´æ–°èœå•å‹¾é€‰
+            // ¸üĞÂ²Ëµ¥¹´Ñ¡
             Win_Log.Checked = true;
             Win_Entity.Checked = true;
             Win_Route.Checked = true;
@@ -5643,10 +5947,10 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region å¯¹è±¡é€‰æ‹©ã€é‡å‘½åã€å˜æ¢ä¸è‡ªåŠ¨ä¿å­˜
-        // åœ¨ JCZServer æ„é€ å‡½æ•°ä¸­æ·»åŠ 
-
-
+        #region ¶ÔÏóÑ¡Ôñ¡¢ÖØÃüÃû¡¢±ä»»Óë×Ô¶¯±£´æ
+        // ÔÚ JCZServer ¹¹Ôìº¯ÊıÖĞÌí¼Ó
+          
+         
         private void dgvEnt_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
@@ -5672,7 +5976,7 @@ namespace BJJCZ_BaseDevelop
             strEntNames[card][iEntIndices[card]] = newName;
             dgvEnt.Rows[iEntIndices[card]].Cells[1].Value = newName;
 
-            // ä¿å­˜åˆ°åŸæ–‡ä»¶è·¯å¾„ï¼ˆä¸å¼¹å‡ºå¯¹è¯æ¡†ï¼‰
+            // ±£´æµ½Ô­ÎÄ¼şÂ·¾¶£¨²»µ¯³ö¶Ô»°¿ò£©
             SaveToOriginalPath(card);
         }
 
@@ -5732,7 +6036,7 @@ namespace BJJCZ_BaseDevelop
             }
             CMDAna(cmd);
 
-            // é«˜é¢‘æ“ä½œå»¶è¿Ÿä¿å­˜ï¼Œé¿å…æ¯ç‚¹ä¸€æ¬¡éƒ½åŒæ­¥å†™EZDå¯¼è‡´ç•Œé¢å¡é¡¿ã€‚
+            // ¸ßÆµ²Ù×÷ÑÓ³Ù±£´æ£¬±ÜÃâÃ¿µãÒ»´Î¶¼Í¬²½Ğ´EZDµ¼ÖÂ½çÃæ¿¨¶Ù¡£
             ScheduleSaveToOriginalPath(card);
         }
         private void ScheduleSaveToOriginalPath(int card)
@@ -5768,7 +6072,7 @@ namespace BJJCZ_BaseDevelop
                 if (string.Equals(currentPath, otherPath, StringComparison.OrdinalIgnoreCase))
                 {
                     pendingDeferredSave[other] = false;
-                    AddMsg($"å¡{card + 1}/å¡{other + 1} åŠ è½½åŒä¸€ä¸ªEZDï¼Œå·²å–æ¶ˆå¡{other + 1}æœ¬æ¬¡æ—§æ•°æ®è‡ªåŠ¨ä¿å­˜ï¼Œç­‰å¾…é‡æ–°åŠ è½½æœ€æ–°æ–‡ä»¶");
+                    AddMsg($"¿¨{card + 1}/¿¨{other + 1} ¼ÓÔØÍ¬Ò»¸öEZD£¬ÒÑÈ¡Ïû¿¨{other + 1}±¾´Î¾ÉÊı¾İ×Ô¶¯±£´æ£¬µÈ´ıÖØĞÂ¼ÓÔØ×îĞÂÎÄ¼ş");
                 }
             }
         }
@@ -5796,13 +6100,13 @@ namespace BJJCZ_BaseDevelop
 
                 if (bInMark[other] || bInRed[other])
                 {
-                    AddMsg($"å¡{other + 1} æ­£åœ¨åŠ å·¥/çº¢å…‰é¢„è§ˆï¼Œæš‚ä¸é‡è½½å¡{savedCard + 1}ä¿å­˜åçš„EZD");
+                    AddMsg($"¿¨{other + 1} ÕıÔÚ¼Ó¹¤/ºì¹âÔ¤ÀÀ£¬Ôİ²»ÖØÔØ¿¨{savedCard + 1}±£´æºóµÄEZD");
                     continue;
                 }
 
                 if (pendingDeferredSave[other])
                 {
-                    AddMsg($"å¡{other + 1} è¿˜æœ‰æœªä¿å­˜ä¿®æ”¹ï¼Œæš‚ä¸é‡è½½å¡{savedCard + 1}ä¿å­˜åçš„EZD");
+                    AddMsg($"¿¨{other + 1} »¹ÓĞÎ´±£´æĞŞ¸Ä£¬Ôİ²»ÖØÔØ¿¨{savedCard + 1}±£´æºóµÄEZD");
                     continue;
                 }
 
@@ -5813,11 +6117,11 @@ namespace BJJCZ_BaseDevelop
                     ReloadEntityInfo(other);
                     InvalidateRoutePreviewCache(other);
                     RefreshPreview(other);
-                    AddMsg($"å¡{other + 1} å·²åŒæ­¥åŠ è½½å¡{savedCard + 1}ä¿å­˜åçš„EZD");
+                    AddMsg($"¿¨{other + 1} ÒÑÍ¬²½¼ÓÔØ¿¨{savedCard + 1}±£´æºóµÄEZD");
                 }
                 else
                 {
-                    AddMsg($"å¡{other + 1} åŒæ­¥åŠ è½½å¡{savedCard + 1}ä¿å­˜åçš„EZDå¤±è´¥ -> {JczLmc.GetErrorText(loadErr)}");
+                    AddMsg($"¿¨{other + 1} Í¬²½¼ÓÔØ¿¨{savedCard + 1}±£´æºóµÄEZDÊ§°Ü -> {JczLmc.GetErrorText(loadErr)}");
                 }
             }
         }
@@ -5847,7 +6151,7 @@ namespace BJJCZ_BaseDevelop
                     int err = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
                     if (err == 0)
                     {
-                        AddMsg($"å¡{card + 1} å·²è§£é™¤æ®‹ç•™ç»„å¯¹è±¡ grpEntï¼Œåç»­æŒ‰å•å¯¹è±¡æ“ä½œ");
+                        AddMsg($"¿¨{card + 1} ÒÑ½â³ı²ĞÁô×é¶ÔÏó grpEnt£¬ºóĞø°´µ¥¶ÔÏó²Ù×÷");
                     }
                 }
             }
@@ -5863,7 +6167,7 @@ namespace BJJCZ_BaseDevelop
         {
             if (targetScale <= 0)
             {
-                AddMsg($"å¡{card + 1} ç¼©æ”¾æ¯”ä¾‹å¿…é¡»å¤§äº0");
+                AddMsg($"¿¨{card + 1} Ëõ·Å±ÈÀı±ØĞë´óÓÚ0");
                 return false;
             }
 
@@ -5872,7 +6176,7 @@ namespace BJJCZ_BaseDevelop
                 : cmd.strEntyName;
             if (string.IsNullOrWhiteSpace(targetName) || !EntityExists(card, targetName))
             {
-                AddMsg($"å¡{card + 1} æœªæ‰¾åˆ°ç¼©æ”¾å¯¹è±¡ï¼Œå·²å–æ¶ˆæœ¬æ¬¡ç¼©æ”¾");
+                AddMsg($"¿¨{card + 1} Î´ÕÒµ½Ëõ·Å¶ÔÏó£¬ÒÑÈ¡Ïû±¾´ÎËõ·Å");
                 return false;
             }
 
@@ -5880,7 +6184,7 @@ namespace BJJCZ_BaseDevelop
             double centerX, centerY;
             if (!TryGetEntityCenter(card, targetName, out centerX, out centerY))
             {
-                AddMsg($"å¡{card + 1} è·å–å¯¹è±¡ {targetName} ä¸­å¿ƒå¤±è´¥ï¼Œå·²å–æ¶ˆæœ¬æ¬¡ç¼©æ”¾");
+                AddMsg($"¿¨{card + 1} »ñÈ¡¶ÔÏó {targetName} ÖĞĞÄÊ§°Ü£¬ÒÑÈ¡Ïû±¾´ÎËõ·Å");
                 return false;
             }
             cmd.dParam1 = centerX;
@@ -5941,26 +6245,26 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region åå°å·¥ä½œçº¿ç¨‹
+        #region ºóÌ¨¹¤×÷Ïß³Ì
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e) { }
         #endregion
 
-        #region æ–‡ä»¶èœå•
-        // =============== èœå•äº‹ä»¶å®ç° ===============
+        #region ÎÄ¼ş²Ëµ¥
+        // =============== ²Ëµ¥ÊÂ¼şÊµÏÖ ===============
 
         private void File_LoadEZD_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
                 ofd.Filter = "EZD Files|*.ezd|All Files|*.*";
-                ofd.Title = "é€‰æ‹©EZDæ–‡ä»¶";
+                ofd.Title = "Ñ¡ÔñEZDÎÄ¼ş";
 
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     LCZControlParam param = new LCZControlParam
                     {
                         cardSN = currentCard,
-                        cmdType = 4,  // åŠ è½½æ–‡ä»¶
+                        cmdType = 4,  // ¼ÓÔØÎÄ¼ş
                         strFileName = ofd.FileName,
                         ind3 = 0
                     };
@@ -5972,20 +6276,20 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
             SaveToOriginalPath(card);
-            AddMsg($"å¡{card + 1} å¿«é€Ÿä¿å­˜åˆ°: {currentFilePath[card]}");
+            AddMsg($"¿¨{card + 1} ¿ìËÙ±£´æµ½: {currentFilePath[card]}");
         }
 
         private void File_SaveEZD_Click(object sender, EventArgs e)
         {
             int card = currentCard;
 
-            // å¦‚æœæœ‰åŸæ–‡ä»¶è·¯å¾„ï¼Œå¯ä»¥ç›´æ¥ä¿å­˜ï¼Œä½†ä½¿ç”¨å¦å­˜ä¸ºå¯¹è¯æ¡†è®©ç”¨æˆ·é€‰æ‹©
+            // Èç¹ûÓĞÔ­ÎÄ¼şÂ·¾¶£¬¿ÉÒÔÖ±½Ó±£´æ£¬µ«Ê¹ÓÃÁí´æÎª¶Ô»°¿òÈÃÓÃ»§Ñ¡Ôñ
             using (SaveFileDialog sfd = new SaveFileDialog())
             {
                 sfd.Filter = "EZD Files|*.ezd|All Files|*.*";
-                sfd.Title = "ä¿å­˜EZDæ–‡ä»¶";
+                sfd.Title = "±£´æEZDÎÄ¼ş";
 
-                // å¦‚æœæœ‰åŸè·¯å¾„ï¼Œè®¾ç½®ä¸ºé»˜è®¤æ–‡ä»¶å
+                // Èç¹ûÓĞÔ­Â·¾¶£¬ÉèÖÃÎªÄ¬ÈÏÎÄ¼şÃû
                 if (!string.IsNullOrEmpty(currentFilePath[card]))
                 {
                     sfd.FileName = Path.GetFileName(currentFilePath[card]);
@@ -5999,7 +6303,7 @@ namespace BJJCZ_BaseDevelop
 
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
-                    // æ›´æ–°åŸæ–‡ä»¶è·¯å¾„
+                    // ¸üĞÂÔ­ÎÄ¼şÂ·¾¶
                     currentFilePath[card] = sfd.FileName;
 
                     LCZControlParam param = new LCZControlParam
@@ -6022,8 +6326,8 @@ namespace BJJCZ_BaseDevelop
                 using (SaveFileDialog sfd = new SaveFileDialog())
                 {
                     sfd.Filter = "PNG Image|*.png|JPEG Image|*.jpg|BMP Image|*.bmp";
-                    sfd.Title = "å¯¼å‡ºé¢„è§ˆå›¾åƒ";
-                    sfd.FileName = $"routeExport_{card + 1}_{DateTime.Now:yyyyMMddHHmmss}.png";
+                    sfd.Title = "µ¼³öÔ¤ÀÀÍ¼Ïñ";
+                    sfd.FileName = $"routeExport_{card+1}_{DateTime.Now:yyyyMMddHHmmss}.png";
 
                     if (sfd.ShowDialog() == DialogResult.OK)
                     {
@@ -6047,32 +6351,32 @@ namespace BJJCZ_BaseDevelop
                             }
 
                             pictureBox1.Image.Save(sfd.FileName, format);
-                            AddMsg($"å¯¼å‡ºå›¾åƒæˆåŠŸ -> {sfd.FileName}");
+                            AddMsg($"µ¼³öÍ¼Ïñ³É¹¦ -> {sfd.FileName}");
                         }
                         catch (Exception ex)
                         {
-                            AddMsg($"å¯¼å‡ºå›¾åƒå¤±è´¥: {ex.Message}");
+                            AddMsg($"µ¼³öÍ¼ÏñÊ§°Ü: {ex.Message}");
                         }
                     }
                 }
             }
             else
             {
-                AddMsg("æ²¡æœ‰å¯å¯¼å‡ºçš„å›¾åƒ");
+                AddMsg("Ã»ÓĞ¿Éµ¼³öµÄÍ¼Ïñ");
             }
         }
         #endregion
 
-        #region æ¿å¡åˆ‡æ¢ä¸æ˜¾ç¤ºèœå•
+        #region °å¿¨ÇĞ»»ÓëÏÔÊ¾²Ëµ¥
         private void Card_NO1_Click(object sender, EventArgs e)
         {
             currentCard = 0;
-            AddMsg($"åˆ‡æ¢åˆ°å¡1 (å½“å‰å½“å‰å¡: {currentCard + 1})");
+            AddMsg($"ÇĞ»»µ½¿¨1 (µ±Ç°µ±Ç°¿¨: {currentCard + 1})");
 
-            // æ›´æ–°ç•Œé¢æ˜¾ç¤º
+            // ¸üĞÂ½çÃæÏÔÊ¾
             UpdateEntTable(currentCard);
             UpdateLaserOperationButtonsEnabled();
-            // é«˜äº®æ˜¾ç¤ºå½“å‰å¡ï¼ˆå¯é€‰ï¼šä¿®æ”¹èœå•é¡¹æ ·å¼ï¼‰
+            // ¸ßÁÁÏÔÊ¾µ±Ç°¿¨£¨¿ÉÑ¡£ºĞŞ¸Ä²Ëµ¥ÏîÑùÊ½£©
             Card_NO1.Checked = true;
             Card_NO2.Checked = false;
         }
@@ -6080,19 +6384,19 @@ namespace BJJCZ_BaseDevelop
         private void Card_NO2_Click(object sender, EventArgs e)
         {
             currentCard = 1;
-            AddMsg($"åˆ‡æ¢åˆ°å¡2 (å½“å‰å½“å‰å¡: {currentCard + 1})");
+            AddMsg($"ÇĞ»»µ½¿¨2 (µ±Ç°µ±Ç°¿¨: {currentCard + 1})");
 
-            // æ›´æ–°ç•Œé¢æ˜¾ç¤º
+            // ¸üĞÂ½çÃæÏÔÊ¾
             UpdateEntTable(currentCard);
             UpdateLaserOperationButtonsEnabled();
-            // é«˜äº®æ˜¾ç¤ºå½“å‰å¡
+            // ¸ßÁÁÏÔÊ¾µ±Ç°¿¨
             Card_NO1.Checked = false;
             Card_NO2.Checked = true;
         }
 
         private void Win_Log_Click(object sender, EventArgs e)
         {
-            // åˆ‡æ¢æ—¥å¿—çª—å£æ˜¾ç¤º/éšè—
+            // ÇĞ»»ÈÕÖ¾´°¿ÚÏÔÊ¾/Òş²Ø
             ToolStripMenuItem item = sender as ToolStripMenuItem;
             item.Checked = !item.Checked;
             mainMsgBox.Visible = item.Checked;
@@ -6120,40 +6424,40 @@ namespace BJJCZ_BaseDevelop
         }
         #endregion
 
-        #region å¡«å……è®¾ç½®ã€ç¬”å·è®¾ç½®ä¸å¯¹è±¡è¾…åŠ©
+        #region Ìî³äÉèÖÃ¡¢±ÊºÅÉèÖÃÓë¶ÔÏó¸¨Öú
         /// <summary>
-        /// è®¾ç½®å¡«å……å‚æ•°ï¼ˆå¯¹åº”é€‰ä¸­å¯¹è±¡ï¼‰
+        /// ÉèÖÃÌî³ä²ÎÊı£¨¶ÔÓ¦Ñ¡ÖĞ¶ÔÏó£©
         /// </summary>
         private void btHatchParam_Click(object sender, EventArgs e)
         {
             int card = currentCard;
             if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
             {
-                AddMsg($"å¡{card + 1} æœªé€‰ä¸­ä»»ä½•å¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Î´Ñ¡ÖĞÈÎºÎ¶ÔÏó");
                 return;
             }
 
             string entName = GetSdkEntityNameForOperation(card, iEntIndices[card]);
             if (string.IsNullOrWhiteSpace(entName))
             {
-                AddMsg($"å¡{card + 1} å¡«å……è®¾ç½®å¤±è´¥: æ— æ³•è·å–å¯¹è±¡åç§°");
+                AddMsg($"¿¨{card + 1} Ìî³äÉèÖÃÊ§°Ü: ÎŞ·¨»ñÈ¡¶ÔÏóÃû³Æ");
                 return;
             }
 
-            // æ„é€ ä¸€ä¸ªä¸´æ—¶çš„å‚æ•°å¯¹è±¡ï¼Œå¤ç”¨ CMDAna ä¸­çš„å¡«å……å¤„ç†é€»è¾‘ï¼ˆcase 37ï¼‰
+            // ¹¹ÔìÒ»¸öÁÙÊ±µÄ²ÎÊı¶ÔÏó£¬¸´ÓÃ CMDAna ÖĞµÄÌî³ä´¦ÀíÂß¼­£¨case 37£©
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
                 cmdType = 37,
-                bOpen = true,                // æ‰“å¼€å¯¹è¯æ¡†
+                bOpen = true,                // ´ò¿ª¶Ô»°¿ò
                 strEntyName = entName,
                 strFileName = currentFilePath[card],
-                ind1 = 1,                    // é»˜è®¤å‚æ•°åºå·
+                ind1 = 1,                    // Ä¬ÈÏ²ÎÊıĞòºÅ
                 ind3 = 0
             };
             CMDAna(param);
         }
-
+        
         private string GetSdkEntityNameForOperation(int card, int entityIndex)
         {
             string sdkName = sdkEntNames[card] != null && entityIndex < sdkEntNames[card].Length
@@ -6176,7 +6480,7 @@ namespace BJJCZ_BaseDevelop
                 : null;
             if (string.IsNullOrWhiteSpace(generatedName))
             {
-                generatedName = $"æœªå‘½å{entityIndex + 1}";
+                generatedName = $"Î´ÃüÃû{entityIndex + 1}";
             }
 
             try
@@ -6184,7 +6488,7 @@ namespace BJJCZ_BaseDevelop
                 int ret = JczLmc.lmc1_SetEntityName(phyCardSN[card], entityIndex, generatedName);
                 if (ret != 0)
                 {
-                    AddMsg($"å¡{card + 1} è‡ªåŠ¨å‘½åå¯¹è±¡{entityIndex + 1}å¤±è´¥: {JczLmc.GetErrorText(ret)}");
+                    AddMsg($"¿¨{card + 1} ×Ô¶¯ÃüÃû¶ÔÏó{entityIndex + 1}Ê§°Ü: {JczLmc.GetErrorText(ret)}");
                     return sdkName;
                 }
 
@@ -6208,7 +6512,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} è‡ªåŠ¨å‘½åå¯¹è±¡{entityIndex + 1}å¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ×Ô¶¯ÃüÃû¶ÔÏó{entityIndex + 1}Òì³£: {ex.Message}");
                 return sdkName;
             }
         }
@@ -6231,7 +6535,7 @@ namespace BJJCZ_BaseDevelop
 
             return false;
         }
-
+      
         private string GetSourcePenCacheKey(int card, string sourceEntName)
         {
             return card.ToString() + "|" + (sourceEntName ?? string.Empty).ToLowerInvariant();
@@ -6374,10 +6678,10 @@ namespace BJJCZ_BaseDevelop
                 && entName.EndsWith("_ContourBackup", StringComparison.OrdinalIgnoreCase);
         }
         /// <summary>
-        /// è®¾ç½®æ¿€å…‰ç¬”å‚æ•°ï¼ˆå¯¹åº”å½“å‰é€‰ä¸­å¯¹è±¡çš„ç¬”å·ï¼‰
+        /// ÉèÖÃ¼¤¹â±Ê²ÎÊı£¨¶ÔÓ¦µ±Ç°Ñ¡ÖĞ¶ÔÏóµÄ±ÊºÅ£©
         /// </summary>
         /// 
-
+      
         private void btLaserPenParam_Click(object sender, EventArgs e)
         {
             int card = currentCard;
@@ -6400,7 +6704,7 @@ namespace BJJCZ_BaseDevelop
             FrmLaserPen frm = new FrmLaserPen(currentParam, phyCardSN[card], currentFilePath[card]);
             if (frm.ShowDialog() == DialogResult.OK)
             {
-                AddMsg($"å¡{card + 1} ç¬”å·{frm.SelectedPenNo} å‚æ•°å·²æ›´æ–°");
+                AddMsg($"¿¨{card + 1} ±ÊºÅ{frm.SelectedPenNo} ²ÎÊıÒÑ¸üĞÂ");
                 ReloadEntityInfo(card);
                 RefreshPreview(card);
             }
@@ -6430,7 +6734,7 @@ namespace BJJCZ_BaseDevelop
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} æ¸…ç†é¢„è§ˆå›ºå®šè¾¹ç•Œå¼‚å¸¸: {ex.Message}");
+                AddMsg($"¿¨{card + 1} ÇåÀíÔ¤ÀÀ¹Ì¶¨±ß½çÒì³£: {ex.Message}");
             }
         }
         private void ReloadEntityInfo(int card)
@@ -6442,7 +6746,7 @@ namespace BJJCZ_BaseDevelop
 
             for (int i = 0; i < sdkCount; i++)
             {
-                string sdkName = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                string sdkName = EnsureEntitySdkName(card, i, JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i));
                 if (ShouldShowEntityInTable(sdkName))
                 {
                     displaySdkNames.Add(sdkName);
@@ -6462,6 +6766,31 @@ namespace BJJCZ_BaseDevelop
             }
 
             UpdateEntTable(card);
+        }
+        private string EnsureEntitySdkName(int card, int entityIndex, string sdkName)
+        {
+            if (!string.IsNullOrWhiteSpace(sdkName))
+            {
+                return sdkName;
+            }
+
+            string generatedName = $"Î´ÃüÃû{entityIndex + 1}";
+            try
+            {
+                int ret = JczLmc.lmc1_SetEntityName(phyCardSN[card], entityIndex, generatedName);
+                if (ret == 0)
+                {
+                    return generatedName;
+                }
+
+                AddMsg($"¿¨{card + 1} ×Ô¶¯ÃüÃû¶ÔÏó{entityIndex + 1}Ê§°Ü: {JczLmc.GetErrorText(ret)}");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"¿¨{card + 1} ×Ô¶¯ÃüÃû¶ÔÏó{entityIndex + 1}Òì³£: {ex.Message}");
+            }
+
+            return sdkName;
         }
         private int GetDisplayPenNumber(int card, string sdkName)
         {
@@ -6512,7 +6841,7 @@ namespace BJJCZ_BaseDevelop
             return sdkName;
         }
         private const string PreviewAnchorEntityPrefix = "__PreviewAnchor_";
-        private bool ShouldShowEntityInTable(string sdkName)
+         private bool ShouldShowEntityInTable(string sdkName)
         {
             if (string.IsNullOrWhiteSpace(sdkName))
             {
@@ -6536,18 +6865,18 @@ namespace BJJCZ_BaseDevelop
                 return sdkName;
             }
 
-            return $"æœªå‘½å{entityIndex + 1}";
+            return $"Î´ÃüÃû{entityIndex + 1}";
         }
         #endregion
 
-        #region çº¢å…‰é¢„è§ˆã€æ¿€å…‰åŠ å·¥ä¸å¯¹è±¡é¡ºåºæŒ‰é’®
+        #region ºì¹âÔ¤ÀÀ¡¢¼¤¹â¼Ó¹¤Óë¶ÔÏóË³Ğò°´Å¥
         /// <summary>
-        /// æŒ¯é•œä½ç½®æœç´¢ï¼ˆç§»åŠ¨åˆ°æŒ‡å®šç‚¹ï¼Œä¾‹å¦‚åŸç‚¹ï¼‰
+        /// Õñ¾µÎ»ÖÃËÑË÷£¨ÒÆ¶¯µ½Ö¸¶¨µã£¬ÀıÈçÔ­µã£©
         /// </summary>
         private void btZJPosSearch_Click(object sender, EventArgs e)
         {
             int card = currentCard;
-            // ç§»åŠ¨åˆ°åŸç‚¹ (0,0)ï¼Œå¯è‡ªå®šä¹‰åæ ‡
+            // ÒÆ¶¯µ½Ô­µã (0,0)£¬¿É×Ô¶¨Òå×ø±ê
             double targetX = 0, targetY = 0;
             LCZControlParam param = new LCZControlParam
             {
@@ -6558,28 +6887,28 @@ namespace BJJCZ_BaseDevelop
                 ind3 = 0
             };
             CMDAna(param);
-            AddMsg($"å¡{card + 1} æŒ¯é•œç§»åŠ¨åˆ° ({targetX}, {targetY})");
+            AddMsg($"¿¨{card + 1} Õñ¾µÒÆ¶¯µ½ ({targetX}, {targetY})");
         }
 
         /// <summary>
-        /// çº¢å…‰é¢„è§ˆæ•´ä½“è¾¹ç•Œï¼ˆå¼€å§‹/åœæ­¢ï¼‰
+        /// ºì¹âÔ¤ÀÀÕûÌå±ß½ç£¨¿ªÊ¼/Í£Ö¹£©
         /// </summary>
         private void btRedPreview_Click(object sender, EventArgs e)
         {
             int card = currentCard;
-            // å¦‚æœæŒ‰é’®æ–‡æœ¬ä¸ºâ€œå¼€å§‹â€ï¼Œåˆ™å¼€å§‹ï¼›å¦åˆ™åœæ­¢ã€‚ç®€å•å®ç°ï¼šæŒ‰ä¸€æ¬¡å¼€å§‹ï¼Œå†æŒ‰åœæ­¢ã€‚
-            // é€šå¸¸ä½¿ç”¨ä¸€ä¸ªå…¨å±€æ ‡å¿—ï¼Œè¿™é‡Œå¤ç”¨ bInRed[card]
+            // Èç¹û°´Å¥ÎÄ±¾Îª¡°¿ªÊ¼¡±£¬Ôò¿ªÊ¼£»·ñÔòÍ£Ö¹¡£¼òµ¥ÊµÏÖ£º°´Ò»´Î¿ªÊ¼£¬ÔÙ°´Í£Ö¹¡£
+            // Í¨³£Ê¹ÓÃÒ»¸öÈ«¾Ö±êÖ¾£¬ÕâÀï¸´ÓÃ bInRed[card]
             if (bInRed[card])
             {
-                // åœæ­¢çº¢å…‰
+                // Í£Ö¹ºì¹â
                 JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
-                btRedPreview.Text = "çº¢å…‰é¢„è§ˆè¾¹ç•Œ";
-                AddMsg($"å¡{card + 1} åœæ­¢çº¢å…‰é¢„è§ˆ");
+                btRedPreview.Text = "ºì¹âÔ¤ÀÀ±ß½ç";
+                AddMsg($"¿¨{card + 1} Í£Ö¹ºì¹âÔ¤ÀÀ");
             }
             else
             {
-                // å¼€å§‹çº¢å…‰é¢„è§ˆï¼ˆè¾¹ç•Œï¼‰
+                // ¿ªÊ¼ºì¹âÔ¤ÀÀ£¨±ß½ç£©
                 LCZControlParam param = new LCZControlParam
                 {
                     cardSN = card,
@@ -6588,13 +6917,13 @@ namespace BJJCZ_BaseDevelop
                     ind3 = 0
                 };
                 CMDAna(param);
-                btRedPreview.Text = "åœæ­¢é¢„è§ˆ";
-                AddMsg($"å¡{card + 1} å¼€å§‹çº¢å…‰é¢„è§ˆè¾¹ç•Œ");
+                btRedPreview.Text = "Í£Ö¹Ô¤ÀÀ";
+                AddMsg($"¿¨{card + 1} ¿ªÊ¼ºì¹âÔ¤ÀÀ±ß½ç");
             }
         }
 
         /// <summary>
-        /// çº¢å…‰é¢„è§ˆè½®å»“ï¼ˆæ•´ä½“è½®å»“ï¼Œéå¡«å……ï¼‰
+        /// ºì¹âÔ¤ÀÀÂÖÀª£¨ÕûÌåÂÖÀª£¬·ÇÌî³ä£©
         /// </summary>
         private void btRedPreviewCou_Click(object sender, EventArgs e)
         {
@@ -6603,8 +6932,8 @@ namespace BJJCZ_BaseDevelop
             {
                 JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
-                btRedPreviewCou.Text = "çº¢å…‰é¢„è§ˆè½®å»“";
-                AddMsg($"å¡{card + 1} åœæ­¢çº¢å…‰é¢„è§ˆè½®å»“");
+                btRedPreviewCou.Text = "ºì¹âÔ¤ÀÀÂÖÀª";
+                AddMsg($"¿¨{card + 1} Í£Ö¹ºì¹âÔ¤ÀÀÂÖÀª");
             }
             else
             {
@@ -6616,20 +6945,20 @@ namespace BJJCZ_BaseDevelop
                     ind3 = 0
                 };
                 CMDAna(param);
-                btRedPreviewCou.Text = "åœæ­¢é¢„è§ˆ";
-                AddMsg($"å¡{card + 1} å¼€å§‹çº¢å…‰é¢„è§ˆè½®å»“");
+                btRedPreviewCou.Text = "Í£Ö¹Ô¤ÀÀ";
+                AddMsg($"¿¨{card + 1} ¿ªÊ¼ºì¹âÔ¤ÀÀÂÖÀª");
             }
         }
 
         /// <summary>
-        /// çº¢å…‰é¢„è§ˆå½“å‰é€‰ä¸­å¯¹è±¡
+        /// ºì¹âÔ¤ÀÀµ±Ç°Ñ¡ÖĞ¶ÔÏó
         /// </summary>
         private void btRedPreviewEnt_Click(object sender, EventArgs e)
         {
             int card = currentCard;
             if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
             {
-                AddMsg($"å¡{card + 1} æœªé€‰ä¸­ä»»ä½•å¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Î´Ñ¡ÖĞÈÎºÎ¶ÔÏó");
                 return;
             }
 
@@ -6637,8 +6966,8 @@ namespace BJJCZ_BaseDevelop
             {
                 JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInRed[card] = false;
-                btRedPreviewEnt.Text = "çº¢å…‰é¢„è§ˆå¯¹è±¡";
-                AddMsg($"å¡{card + 1} åœæ­¢çº¢å…‰é¢„è§ˆå¯¹è±¡");
+                btRedPreviewEnt.Text = "ºì¹âÔ¤ÀÀ¶ÔÏó";
+                AddMsg($"¿¨{card + 1} Í£Ö¹ºì¹âÔ¤ÀÀ¶ÔÏó");
             }
             else
             {
@@ -6650,26 +6979,26 @@ namespace BJJCZ_BaseDevelop
                     ind3 = 0
                 };
                 CMDAna(param);
-                btRedPreviewEnt.Text = "åœæ­¢é¢„è§ˆ";
-                AddMsg($"å¡{card + 1} å¼€å§‹çº¢å…‰é¢„è§ˆå¯¹è±¡: {strEntNames[card][iEntIndices[card]]}");
+                btRedPreviewEnt.Text = "Í£Ö¹Ô¤ÀÀ";
+                AddMsg($"¿¨{card + 1} ¿ªÊ¼ºì¹âÔ¤ÀÀ¶ÔÏó: {strEntNames[card][iEntIndices[card]]}");
             }
         }
 
         /// <summary>
-        /// åŠ å·¥å½“å‰é€‰ä¸­å¯¹è±¡
+        /// ¼Ó¹¤µ±Ç°Ñ¡ÖĞ¶ÔÏó
         /// </summary>
         private void btMarkEnt_Click(object sender, EventArgs e)
         {
             int card = currentCard;
             if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
             {
-                AddMsg($"å¡{card + 1} æœªé€‰ä¸­ä»»ä½•å¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Î´Ñ¡ÖĞÈÎºÎ¶ÔÏó");
                 return;
             }
 
             if (bInMark[card])
             {
-                AddMsg($"å¡{card + 1} æ­£åœ¨åŠ å·¥ä¸­ï¼Œè¯·ç¨åå†è¯•");
+                AddMsg($"¿¨{card + 1} ÕıÔÚ¼Ó¹¤ÖĞ£¬ÇëÉÔºóÔÙÊÔ");
                 return;
             }
 
@@ -6680,69 +7009,70 @@ namespace BJJCZ_BaseDevelop
                 ind3 = 0
             };
             CMDAna(param);
-            AddMsg($"å¡{card + 1} å¼€å§‹åŠ å·¥å¯¹è±¡: {strEntNames[card][iEntIndices[card]]}");
+            AddMsg($"¿¨{card + 1} ¿ªÊ¼¼Ó¹¤¶ÔÏó: {strEntNames[card][iEntIndices[card]]}");
         }
 
         /// <summary>
-        /// è¿ç»­æ¨¡å¼å¼€å…³ï¼ˆå½±å“çº¢å…‰é¢„è§ˆçš„å¾ªç¯æ–¹å¼ï¼‰
+        /// Á¬ĞøÄ£Ê½¿ª¹Ø£¨Ó°Ïìºì¹âÔ¤ÀÀµÄÑ­»··½Ê½£©
         /// </summary>
         private void chkContinue_CheckedChanged(object sender, EventArgs e)
         {
-            // è¯¥æ ‡å¿—å¯ç”¨äºæ§åˆ¶çº¢å…‰é¢„è§ˆæ—¶çš„è¿ç»­/å•æ¬¡æ¨¡å¼
-            // ç›®å‰çº¢å…‰é¢„è§ˆå†…éƒ¨ä½¿ç”¨ while(bInRed[card]) å¾ªç¯ï¼Œä¸å—æ­¤æ ‡å¿—ç›´æ¥å½±å“
-            // ä½†å¯ä»¥è®¾ç½®ä¸€ä¸ªå…¨å±€å˜é‡ï¼Œåœ¨ RedLightMark è°ƒç”¨å‰åˆ¤æ–­
+            // ¸Ã±êÖ¾¿ÉÓÃÓÚ¿ØÖÆºì¹âÔ¤ÀÀÊ±µÄÁ¬Ğø/µ¥´ÎÄ£Ê½
+            // Ä¿Ç°ºì¹âÔ¤ÀÀÄÚ²¿Ê¹ÓÃ while(bInRed[card]) Ñ­»·£¬²»ÊÜ´Ë±êÖ¾Ö±½ÓÓ°Ïì
+            // µ«¿ÉÒÔÉèÖÃÒ»¸öÈ«¾Ö±äÁ¿£¬ÔÚ RedLightMark µ÷ÓÃÇ°ÅĞ¶Ï
             bool isContinuous = chkContinue.Checked;
-            AddMsg($"è¿ç»­æ¨¡å¼{(isContinuous ? "å¼€å¯" : "å…³é—­")}");
-            // å¦‚æœéœ€è¦ï¼Œå¯ä»¥ä¿®æ”¹çº¢å…‰é¢„è§ˆå‡½æ•°ä¸­çš„å¾ªç¯æ¡ä»¶ï¼Œä¾‹å¦‚å¢åŠ åˆ¤æ–­ !isContinuous æ—¶åªæ‰§è¡Œä¸€æ¬¡
-            // ä½†ç”±äºç°æœ‰ä»£ç æ˜¯ç‹¬ç«‹çš„åå°çº¿ç¨‹ï¼Œæ­¤å¤„ä»…åšè®°å½•ï¼Œå…·ä½“è¡Œä¸ºå¯åœ¨ RedLightMark è°ƒç”¨å¤„æ‰©å±•
+            AddMsg($"Á¬ĞøÄ£Ê½{(isContinuous ? "¿ªÆô" : "¹Ø±Õ")}");
+            // Èç¹ûĞèÒª£¬¿ÉÒÔĞŞ¸Äºì¹âÔ¤ÀÀº¯ÊıÖĞµÄÑ­»·Ìõ¼ş£¬ÀıÈçÔö¼ÓÅĞ¶Ï !isContinuous Ê±Ö»Ö´ĞĞÒ»´Î
+            // µ«ÓÉÓÚÏÖÓĞ´úÂëÊÇ¶ÀÁ¢µÄºóÌ¨Ïß³Ì£¬´Ë´¦½ö×ö¼ÇÂ¼£¬¾ßÌåĞĞÎª¿ÉÔÚ RedLightMark µ÷ÓÃ´¦À©Õ¹
         }
         #endregion
 
-        #region æ¿å¡åˆå§‹åŒ–ã€æ¿€å…‰å™¨å¼€å…³ä¸è®¾å¤‡é…ç½®
+        #region °å¿¨³õÊ¼»¯¡¢¼¤¹âÆ÷¿ª¹ØÓëÉè±¸ÅäÖÃ
         private void ReinitializeBothCards()
         {
-            // åœæ­¢æ‰€æœ‰å¡çš„åŠ å·¥/çº¢å…‰
+            // Í£Ö¹ËùÓĞ¿¨µÄ¼Ó¹¤/ºì¹â
             for (int card = 0; card < 2; card++)
             {
                 if (bInMark[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
                 if (bInRed[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
                 bInMark[card] = false;
                 bInRed[card] = false;
-                // æ¸…ç†é¢„è§ˆè¾…åŠ©å¯¹è±¡
+                // ÇåÀíÔ¤ÀÀ¸¨Öú¶ÔÏó
                 CleanupPreviewAnchorEntities(card);
-                // å¯é€‰ï¼šæ¸…ç†å˜æ¢ä¸´æ—¶åˆ†ç»„
+                // ¿ÉÑ¡£ºÇåÀí±ä»»ÁÙÊ±·Ö×é
                 CleanupTransformPairEntities(card);
             }
 
-            // è°ƒç”¨ SDK åˆå§‹åŒ–ï¼ˆä¸å¯åŠ¨æ—¶å‚æ•°å®Œå…¨ä¸€è‡´ï¼šè·¯å¾„å°¾éƒ¨å¸¦åæ–œæ ï¼‰
+            // µ÷ÓÃ SDK ³õÊ¼»¯£¨ÓëÆô¶¯Ê±²ÎÊıÍêÈ«Ò»ÖÂ£ºÂ·¾¶Î²²¿´ø·´Ğ±¸Ü£©
             int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
             if (initResult == 0)
             {
+                RefreshPhysicalCardMapping("Ë«¿¨ÖØĞÂ³õÊ¼»¯ºó");
                 for (int card = 0; card < 2; card++)
                 {
                     JczInitErrs[card] = 0;
                     bSimulateMode[card] = false;
-                    // é‡ç½®å„ç±»ç¼“å­˜/çŠ¶æ€
+                    // ÖØÖÃ¸÷Àà»º´æ/×´Ì¬
                     previewAnchorReady[card] = false;
                     visualRotateMoveReady[card] = false;
                     ResetEntityScaleStates(card);
-                    // å¦‚æœä¹‹å‰æœ‰åŠ è½½è¿‡çš„æ–‡ä»¶ï¼Œé‡æ–°åŠ è½½
+                    // Èç¹ûÖ®Ç°ÓĞ¼ÓÔØ¹ıµÄÎÄ¼ş£¬ÖØĞÂ¼ÓÔØ
                     if (!string.IsNullOrEmpty(currentFilePath[card]))
                     {
                         int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], currentFilePath[card]);
                         if (loadErr == 0)
                         {
                             ReloadEntityInfo(card);
-                            ApplyVisualRotateMoveParamIfReady(card, "é‡æ–°åˆå§‹åŒ–åæ¢å¤åç§»");
+                            ApplyVisualRotateMoveParamIfReady(card, "ÖØĞÂ³õÊ¼»¯ºó»Ö¸´Æ«ÒÆ");
                         }
                         else
                         {
-                            AddMsg($"å¡{card + 1} é‡æ–°åŠ è½½æ–‡ä»¶å¤±è´¥ï¼š{JczLmc.GetErrorText(loadErr)}");
+                            AddMsg($"¿¨{card + 1} ÖØĞÂ¼ÓÔØÎÄ¼şÊ§°Ü£º{JczLmc.GetErrorText(loadErr)}");
                         }
                     }
                     else
                     {
-                        // æ¸…ç©ºå¯¹è±¡åˆ—è¡¨ï¼ˆæ²¡æœ‰æ–‡ä»¶ï¼‰
+                        // Çå¿Õ¶ÔÏóÁĞ±í£¨Ã»ÓĞÎÄ¼ş£©
                         nEntNums[card] = 0;
                         strEntNames[card] = null;
                         iPenNos[card] = null;
@@ -6750,22 +7080,22 @@ namespace BJJCZ_BaseDevelop
                         UpdateEntTable(card);
                     }
                     RefreshPreview(card);
-                    cachedTransparentRoute[card] = null; // å¼ºåˆ¶åˆ·æ–°å åŠ å›¾ç¼“å­˜
+                    cachedTransparentRoute[card] = null; // Ç¿ÖÆË¢ĞÂµş¼ÓÍ¼»º´æ
                 }
-                AddMsg("åŒå¡æ¿å¡é‡æ–°åˆå§‹åŒ–æˆåŠŸï¼Œå·²æ¢å¤å·²åŠ è½½æ–‡ä»¶");
+                AddMsg("Ë«¿¨°å¿¨ÖØĞÂ³õÊ¼»¯³É¹¦£¬ÒÑ»Ö¸´ÒÑ¼ÓÔØÎÄ¼ş");
             }
             else
             {
-                // åˆå§‹åŒ–å¤±è´¥ï¼Œè¿›å…¥æ¨¡æ‹Ÿæ¨¡å¼ï¼ˆä¸å¯åŠ¨æ—¶è¡Œä¸ºä¸€è‡´ï¼‰
+                // ³õÊ¼»¯Ê§°Ü£¬½øÈëÄ£ÄâÄ£Ê½£¨ÓëÆô¶¯Ê±ĞĞÎªÒ»ÖÂ£©
                 for (int card = 0; card < 2; card++)
                 {
                     bSimulateMode[card] = true;
                     JczInitErrs[card] = initResult;
                 }
-                AddMsg($"æ¿å¡åˆå§‹åŒ–å¤±è´¥({JczLmc.GetErrorText(initResult)})ï¼Œå·²åˆ‡æ¢è‡³æ¨¡æ‹Ÿæ¨¡å¼");
+                AddMsg($"°å¿¨³õÊ¼»¯Ê§°Ü({JczLmc.GetErrorText(initResult)})£¬ÒÑÇĞ»»ÖÁÄ£ÄâÄ£Ê½");
             }
 
-            // åˆ·æ–°å½“å‰å¡çš„ç•Œé¢ï¼ˆå½“å‰å¡å¯èƒ½å·²å˜ï¼‰
+            // Ë¢ĞÂµ±Ç°¿¨µÄ½çÃæ£¨µ±Ç°¿¨¿ÉÄÜÒÑ±ä£©
             UpdateEntTable(currentCard);
             UpdateLaserOperationButtonsEnabled();
         }
@@ -6778,7 +7108,7 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            // åœæ­¢å½“å‰æ‰€æœ‰æ“ä½œ
+            // Í£Ö¹µ±Ç°ËùÓĞ²Ù×÷
             if (bInMark[card])
             {
                 JczLmc.lmc1_StopMark(phyCardSN[card]);
@@ -6790,16 +7120,16 @@ namespace BJJCZ_BaseDevelop
                 bInRed[card] = false;
             }
 
-            // å…³é—­æ¿å¡
+            // ¹Ø±Õ°å¿¨
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
-                cmdType = 2,  // å…³é—­æ¿å¡
+                cmdType = 2,  // ¹Ø±Õ°å¿¨
                 ind3 = 0
             };
             CMDAna(param);
 
-            // æ¸…ç©ºå¯¹è±¡åˆ—è¡¨
+            // Çå¿Õ¶ÔÏóÁĞ±í
             nEntNums[card] = 0;
             strEntNames[card] = null;
             iPenNos[card] = null;
@@ -6810,94 +7140,94 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            // æ£€æŸ¥æ˜¯å¦æ­£åœ¨åŠ å·¥ä¸­
+            // ¼ì²éÊÇ·ñÕıÔÚ¼Ó¹¤ÖĞ
             if (bInMark[card])
             {
-                AddMsg($"å¡{card + 1} æ­£åœ¨åŠ å·¥ä¸­ï¼Œè¯·å‹¿é‡å¤æ“ä½œ");
+                AddMsg($"¿¨{card + 1} ÕıÔÚ¼Ó¹¤ÖĞ£¬ÇëÎğÖØ¸´²Ù×÷");
                 return;
             }
 
-            // æ£€æŸ¥æ˜¯å¦æœ‰å¯¹è±¡å¯åŠ å·¥
+            // ¼ì²éÊÇ·ñÓĞ¶ÔÏó¿É¼Ó¹¤
             if (nEntNums[card] == 0)
             {
-                AddMsg($"å¡{card + 1} æ²¡æœ‰å¯åŠ å·¥çš„å¯¹è±¡ï¼Œè¯·å…ˆåŠ è½½EZDæ–‡ä»¶æˆ–æ·»åŠ å¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Ã»ÓĞ¿É¼Ó¹¤µÄ¶ÔÏó£¬ÇëÏÈ¼ÓÔØEZDÎÄ¼ş»òÌí¼Ó¶ÔÏó");
                 return;
             }
 
-            // æ£€æŸ¥æ¿å¡æ˜¯å¦å·²åˆå§‹åŒ–
+            // ¼ì²é°å¿¨ÊÇ·ñÒÑ³õÊ¼»¯
             if (JczInitErrs[card] != 0 && !bSimulateMode[card])
             {
-                AddMsg($"å¡{card + 1} æ¿å¡æœªåˆå§‹åŒ–ï¼Œè¯·å…ˆç‚¹å‡»\"åˆå§‹åŒ–æ¿å¡\"");
+                AddMsg($"¿¨{card + 1} °å¿¨Î´³õÊ¼»¯£¬ÇëÏÈµã»÷\"³õÊ¼»¯°å¿¨\"");
                 return;
             }
 
-            // æ¿€å…‰åŠ å·¥ï¼ˆå…¨éƒ¨å¯¹è±¡ï¼‰
+            // ¼¤¹â¼Ó¹¤£¨È«²¿¶ÔÏó£©
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
-                cmdType = 10,  // æ¿€å…‰åŠ å·¥
+                cmdType = 10,  // ¼¤¹â¼Ó¹¤
                 ind3 = 0
             };
             CMDAna(param);
-            AddMsg($"å¡{card + 1} å¼€å§‹æ¿€å…‰åŠ å·¥ï¼Œå…± {nEntNums[card]} ä¸ªå¯¹è±¡");
+            AddMsg($"¿¨{card + 1} ¿ªÊ¼¼¤¹â¼Ó¹¤£¬¹² {nEntNums[card]} ¸ö¶ÔÏó");
         }
 
         private void btnStopMark_Click(object sender, EventArgs e)
         {
             int card = currentCard;
 
-            // åœæ­¢åŠ å·¥
+            // Í£Ö¹¼Ó¹¤
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
-                cmdType = 11,  // åœæ­¢åŠ å·¥
+                cmdType = 11,  // Í£Ö¹¼Ó¹¤
                 ind3 = 0
             };
             CMDAna(param);
 
-            // åœæ­¢çº¢å…‰é¢„è§ˆ
+            // Í£Ö¹ºì¹âÔ¤ÀÀ
             if (bInRed[card])
             {
                 bInRed[card] = false;
                 JczLmc.lmc1_StopMark(phyCardSN[card]);
 
-                // é‡ç½®çº¢å…‰æŒ‰é’®æ–‡æœ¬ï¼ˆåœ¨UIçº¿ç¨‹ä¸­æ‰§è¡Œï¼‰
+                // ÖØÖÃºì¹â°´Å¥ÎÄ±¾£¨ÔÚUIÏß³ÌÖĞÖ´ĞĞ£©
                 this.BeginInvoke(new Action(() =>
                 {
-                    if (btRedPreview.Text == "åœæ­¢é¢„è§ˆ")
-                        btRedPreview.Text = "çº¢å…‰é¢„è§ˆè¾¹ç•Œ";
-                    if (btRedPreviewCou.Text == "åœæ­¢é¢„è§ˆ")
-                        btRedPreviewCou.Text = "çº¢å…‰é¢„è§ˆè½®å»“";
-                    if (btRedPreviewEnt.Text == "åœæ­¢é¢„è§ˆ")
-                        btRedPreviewEnt.Text = "çº¢å…‰é¢„è§ˆå¯¹è±¡";
+                    if (btRedPreview.Text == "Í£Ö¹Ô¤ÀÀ")
+                        btRedPreview.Text = "ºì¹âÔ¤ÀÀ±ß½ç";
+                    if (btRedPreviewCou.Text == "Í£Ö¹Ô¤ÀÀ")
+                        btRedPreviewCou.Text = "ºì¹âÔ¤ÀÀÂÖÀª";
+                    if (btRedPreviewEnt.Text == "Í£Ö¹Ô¤ÀÀ")
+                        btRedPreviewEnt.Text = "ºì¹âÔ¤ÀÀ¶ÔÏó";
                 }));
             }
 
-            AddMsg($"å¡{card + 1} å·²åœæ­¢åŠ å·¥/é¢„è§ˆ");
+            AddMsg($"¿¨{card + 1} ÒÑÍ£Ö¹¼Ó¹¤/Ô¤ÀÀ");
         }
 
         private void btOpenLaser_Click(object sender, EventArgs e)
         {
             int card = currentCard;
 
-            // æ£€æŸ¥æ¿å¡æ˜¯å¦å·²åˆå§‹åŒ–
+            // ¼ì²é°å¿¨ÊÇ·ñÒÑ³õÊ¼»¯
             if (JczInitErrs[card] != 0 && !bSimulateMode[card])
             {
-                AddMsg($"å¡{card + 1} æ¿å¡æœªåˆå§‹åŒ–ï¼Œè¯·å…ˆç‚¹å‡»\"åˆå§‹åŒ–æ¿å¡\"");
+                AddMsg($"¿¨{card + 1} °å¿¨Î´³õÊ¼»¯£¬ÇëÏÈµã»÷\"³õÊ¼»¯°å¿¨\"");
                 return;
             }
 
-            // æ‰“å¼€æ¿€å…‰å™¨
+            // ´ò¿ª¼¤¹âÆ÷
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
-                cmdType = 3,   // å¼€å…³æ¿€å…‰å™¨
-                bOpen = true,  // æ‰“å¼€
+                cmdType = 3,   // ¿ª¹Ø¼¤¹âÆ÷
+                bOpen = true,  // ´ò¿ª
                 ind3 = 0
             };
             CMDAna(param);
 
-            // æ›´æ–°æŒ‰é’®çŠ¶æ€
+            // ¸üĞÂ°´Å¥×´Ì¬
             btOpenLaser.Enabled = false;
             btCloseLaser.Enabled = true;
         }
@@ -6906,17 +7236,17 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            // å…³é—­æ¿€å…‰å™¨
+            // ¹Ø±Õ¼¤¹âÆ÷
             LCZControlParam param = new LCZControlParam
             {
                 cardSN = card,
-                cmdType = 3,   // å¼€å…³æ¿€å…‰å™¨
-                bOpen = false, // å…³é—­
+                cmdType = 3,   // ¿ª¹Ø¼¤¹âÆ÷
+                bOpen = false, // ¹Ø±Õ
                 ind3 = 0
             };
             CMDAna(param);
 
-            // æ›´æ–°æŒ‰é’®çŠ¶æ€
+            // ¸üĞÂ°´Å¥×´Ì¬
             btOpenLaser.Enabled = true;
             btCloseLaser.Enabled = false;
         }
@@ -6925,18 +7255,18 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            // æ£€æŸ¥æ˜¯å¦æœ‰é€‰ä¸­å¯¹è±¡
+            // ¼ì²éÊÇ·ñÓĞÑ¡ÖĞ¶ÔÏó
             if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
             {
-                AddMsg($"å¡{card + 1} æœªé€‰ä¸­ä»»ä½•å¯¹è±¡ï¼Œè¯·å…ˆåœ¨å¯¹è±¡æ¸…å•ä¸­é€‰æ‹©ä¸€ä¸ªå¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Î´Ñ¡ÖĞÈÎºÎ¶ÔÏó£¬ÇëÏÈÔÚ¶ÔÏóÇåµ¥ÖĞÑ¡ÔñÒ»¸ö¶ÔÏó");
                 return;
             }
 
-            // å°†å½“å‰é€‰ä¸­å¯¹è±¡å‘ä¸Šç§»åŠ¨é¡ºåº
+            // ½«µ±Ç°Ñ¡ÖĞ¶ÔÏóÏòÉÏÒÆ¶¯Ë³Ğò
             int currentIndex = iEntIndices[card];
             if (currentIndex > 0)
             {
-                // äº¤æ¢ä¸¤ä¸ªå¯¹è±¡çš„é¡ºåº
+                // ½»»»Á½¸ö¶ÔÏóµÄË³Ğò
                 string tempName = strEntNames[card][currentIndex];
                 int tempPen = iPenNos[card][currentIndex];
 
@@ -6946,25 +7276,25 @@ namespace BJJCZ_BaseDevelop
                 strEntNames[card][currentIndex - 1] = tempName;
                 iPenNos[card][currentIndex - 1] = tempPen;
 
-                // æ›´æ–°è¡¨æ ¼æ˜¾ç¤º
+                // ¸üĞÂ±í¸ñÏÔÊ¾
                 UpdateEntTable(card);
 
-                // æ›´æ–°é€‰ä¸­ç´¢å¼•
+                // ¸üĞÂÑ¡ÖĞË÷Òı
                 iEntIndices[card] = currentIndex - 1;
 
-                // åœ¨è¡¨æ ¼ä¸­é«˜äº®æ˜¾ç¤ºæ–°é€‰ä¸­çš„è¡Œ
+                // ÔÚ±í¸ñÖĞ¸ßÁÁÏÔÊ¾ĞÂÑ¡ÖĞµÄĞĞ
                 dgvEnt.ClearSelection();
                 dgvEnt.Rows[iEntIndices[card]].Selected = true;
                 dgvEnt.FirstDisplayedScrollingRowIndex = iEntIndices[card];
 
-                AddMsg($"å¡{card + 1} å°†å¯¹è±¡ \"{tempName}\" ä¸Šè°ƒé¡ºåºï¼ˆä»ç¬¬{currentIndex + 1}ä½ç§»è‡³ç¬¬{currentIndex}ä½ï¼‰");
+                AddMsg($"¿¨{card + 1} ½«¶ÔÏó \"{tempName}\" ÉÏµ÷Ë³Ğò£¨´ÓµÚ{currentIndex + 1}Î»ÒÆÖÁµÚ{currentIndex}Î»£©");
 
-                // ä¿å­˜é¡ºåºå˜åŒ–åˆ°æ–‡ä»¶ï¼ˆå¦‚æœæœ‰åŸæ–‡ä»¶è·¯å¾„ï¼‰
+                // ±£´æË³Ğò±ä»¯µ½ÎÄ¼ş£¨Èç¹ûÓĞÔ­ÎÄ¼şÂ·¾¶£©
                 SaveToOriginalPath(card);
             }
             else
             {
-                AddMsg($"å¡{card + 1} å½“å‰å¯¹è±¡å·²æ˜¯ç¬¬ä¸€ä¸ªï¼Œæ— æ³•ç»§ç»­ä¸Šè°ƒ");
+                AddMsg($"¿¨{card + 1} µ±Ç°¶ÔÏóÒÑÊÇµÚÒ»¸ö£¬ÎŞ·¨¼ÌĞøÉÏµ÷");
             }
         }
 
@@ -6972,18 +7302,18 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            // æ£€æŸ¥æ˜¯å¦æœ‰é€‰ä¸­å¯¹è±¡
+            // ¼ì²éÊÇ·ñÓĞÑ¡ÖĞ¶ÔÏó
             if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
             {
-                AddMsg($"å¡{card + 1} æœªé€‰ä¸­ä»»ä½•å¯¹è±¡ï¼Œè¯·å…ˆåœ¨å¯¹è±¡æ¸…å•ä¸­é€‰æ‹©ä¸€ä¸ªå¯¹è±¡");
+                AddMsg($"¿¨{card + 1} Î´Ñ¡ÖĞÈÎºÎ¶ÔÏó£¬ÇëÏÈÔÚ¶ÔÏóÇåµ¥ÖĞÑ¡ÔñÒ»¸ö¶ÔÏó");
                 return;
             }
 
-            // å°†å½“å‰é€‰ä¸­å¯¹è±¡å‘ä¸‹ç§»åŠ¨é¡ºåº
+            // ½«µ±Ç°Ñ¡ÖĞ¶ÔÏóÏòÏÂÒÆ¶¯Ë³Ğò
             int currentIndex = iEntIndices[card];
             if (currentIndex < nEntNums[card] - 1)
             {
-                // äº¤æ¢ä¸¤ä¸ªå¯¹è±¡çš„é¡ºåº
+                // ½»»»Á½¸ö¶ÔÏóµÄË³Ğò
                 string tempName = strEntNames[card][currentIndex];
                 int tempPen = iPenNos[card][currentIndex];
 
@@ -6993,25 +7323,25 @@ namespace BJJCZ_BaseDevelop
                 strEntNames[card][currentIndex + 1] = tempName;
                 iPenNos[card][currentIndex + 1] = tempPen;
 
-                // æ›´æ–°è¡¨æ ¼æ˜¾ç¤º
+                // ¸üĞÂ±í¸ñÏÔÊ¾
                 UpdateEntTable(card);
 
-                // æ›´æ–°é€‰ä¸­ç´¢å¼•
+                // ¸üĞÂÑ¡ÖĞË÷Òı
                 iEntIndices[card] = currentIndex + 1;
 
-                // åœ¨è¡¨æ ¼ä¸­é«˜äº®æ˜¾ç¤ºæ–°é€‰ä¸­çš„è¡Œ
+                // ÔÚ±í¸ñÖĞ¸ßÁÁÏÔÊ¾ĞÂÑ¡ÖĞµÄĞĞ
                 dgvEnt.ClearSelection();
                 dgvEnt.Rows[iEntIndices[card]].Selected = true;
                 dgvEnt.FirstDisplayedScrollingRowIndex = iEntIndices[card];
 
-                AddMsg($"å¡{card + 1} å°†å¯¹è±¡ \"{tempName}\" ä¸‹è°ƒé¡ºåºï¼ˆä»ç¬¬{currentIndex + 1}ä½ç§»è‡³ç¬¬{currentIndex + 2}ä½ï¼‰");
+                AddMsg($"¿¨{card + 1} ½«¶ÔÏó \"{tempName}\" ÏÂµ÷Ë³Ğò£¨´ÓµÚ{currentIndex + 1}Î»ÒÆÖÁµÚ{currentIndex + 2}Î»£©");
 
-                // ä¿å­˜é¡ºåºå˜åŒ–åˆ°æ–‡ä»¶ï¼ˆå¦‚æœæœ‰åŸæ–‡ä»¶è·¯å¾„ï¼‰
+                // ±£´æË³Ğò±ä»¯µ½ÎÄ¼ş£¨Èç¹ûÓĞÔ­ÎÄ¼şÂ·¾¶£©
                 SaveToOriginalPath(card);
             }
             else
             {
-                AddMsg($"å¡{card + 1} å½“å‰å¯¹è±¡å·²æ˜¯æœ€åä¸€ä¸ªï¼Œæ— æ³•ç»§ç»­ä¸‹è°ƒ");
+                AddMsg($"¿¨{card + 1} µ±Ç°¶ÔÏóÒÑÊÇ×îºóÒ»¸ö£¬ÎŞ·¨¼ÌĞøÏÂµ÷");
             }
         }
 
@@ -7019,11 +7349,11 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            // æ£€æŸ¥æ¿å¡æ˜¯å¦å·²åˆå§‹åŒ–
+            // ¼ì²é°å¿¨ÊÇ·ñÒÑ³õÊ¼»¯
             if (JczInitErrs[card] != 0 && !bSimulateMode[card])
             {
-                AddMsg($"å¡{card + 1} æ¿å¡æœªåˆå§‹åŒ–ï¼Œè¯·å…ˆç‚¹å‡»\"åˆå§‹åŒ–æ¿å¡\"");
-                MessageBox.Show($"å¡{card + 1} æ¿å¡æœªåˆå§‹åŒ–ï¼Œè¯·å…ˆåˆå§‹åŒ–æ¿å¡", "æç¤º",
+                AddMsg($"¿¨{card + 1} °å¿¨Î´³õÊ¼»¯£¬ÇëÏÈµã»÷\"³õÊ¼»¯°å¿¨\"");
+                MessageBox.Show($"¿¨{card + 1} °å¿¨Î´³õÊ¼»¯£¬ÇëÏÈ³õÊ¼»¯°å¿¨", "ÌáÊ¾",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -7033,17 +7363,17 @@ namespace BJJCZ_BaseDevelop
                 int nErr = OpenDeviceConfig(card);
                 if (nErr == 0)
                 {
-                    AddMsg($"å¡{card + 1} é…ç½®ç•Œé¢å·²å…³é—­");
+                    AddMsg($"¿¨{card + 1} ÅäÖÃ½çÃæÒÑ¹Ø±Õ");
                 }
                 else
                 {
-                    AddMsg($"å¡{card + 1} æ‰“å¼€é…ç½®ç•Œé¢å¤±è´¥: {JczLmc.GetErrorText(nErr)}");
+                    AddMsg($"¿¨{card + 1} ´ò¿ªÅäÖÃ½çÃæÊ§°Ü: {JczLmc.GetErrorText(nErr)}");
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"å¡{card + 1} æ‰“å¼€é…ç½®ç•Œé¢å¼‚å¸¸: {ex.Message}");
-                MessageBox.Show($"æ‰“å¼€é…ç½®ç•Œé¢å¤±è´¥: {ex.Message}", "é”™è¯¯",
+                AddMsg($"¿¨{card + 1} ´ò¿ªÅäÖÃ½çÃæÒì³£: {ex.Message}");
+                MessageBox.Show($"´ò¿ªÅäÖÃ½çÃæÊ§°Ü: {ex.Message}", "´íÎó",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -7080,14 +7410,14 @@ namespace BJJCZ_BaseDevelop
                 return nErr;
             }
 
-            AddMsg($"å¡{card + 1} å½“å‰å·²åŠ è½½æ–‡ä»¶ï¼Œå…ˆä¸´æ—¶æ¸…ç©ºå¯¹è±¡åº“åæ‰“å¼€é…ç½®ç•Œé¢");
+            AddMsg($"¿¨{card + 1} µ±Ç°ÒÑ¼ÓÔØÎÄ¼ş£¬ÏÈÁÙÊ±Çå¿Õ¶ÔÏó¿âºó´ò¿ªÅäÖÃ½çÃæ");
             SaveToOriginalPath(card);
             CleanupPreviewAnchorEntities(card);
 
             int clearErr = JczLmc.lmc1_ClearEntLib(phyCardSN[card]);
             if (clearErr != 0)
             {
-                AddMsg($"å¡{card + 1} ä¸´æ—¶æ¸…ç©ºå¯¹è±¡åº“å¤±è´¥: {JczLmc.GetErrorText(clearErr)}");
+                AddMsg($"¿¨{card + 1} ÁÙÊ±Çå¿Õ¶ÔÏó¿âÊ§°Ü: {JczLmc.GetErrorText(clearErr)}");
                 return nErr;
             }
 
@@ -7096,19 +7426,19 @@ namespace BJJCZ_BaseDevelop
             if (loadErr == 0)
             {
                 currentFilePath[card] = reloadPath;
-                //   ResetPreviewAnchor(card);
+             //   ResetPreviewAnchor(card);
                 ResetEntityScaleStates(card);
                 ReloadEntityInfo(card);
                 RefreshPreview(card);
             }
             else
             {
-                AddMsg($"å¡{card + 1} é…ç½®åé‡æ–°åŠ è½½æ–‡ä»¶å¤±è´¥: {JczLmc.GetErrorText(loadErr)}");
+                AddMsg($"¿¨{card + 1} ÅäÖÃºóÖØĞÂ¼ÓÔØÎÄ¼şÊ§°Ü: {JczLmc.GetErrorText(loadErr)}");
             }
 
             return nErr;
         }
-        private class EntityScaleState
+         private class EntityScaleState
         {
             public double X = 1.0;
             public double Y = 1.0;
@@ -7141,45 +7471,45 @@ namespace BJJCZ_BaseDevelop
             int errByLogical = JczLmc.lmc1_SetDevCfg(card);
             if (errByLogical == 0)
             {
-                AddMsg($"å¡{card + 1} ä½¿ç”¨é€»è¾‘å¡å·æ‰“å¼€é…ç½®ç•Œé¢æˆåŠŸ");
+                AddMsg($"¿¨{card + 1} Ê¹ÓÃÂß¼­¿¨ºÅ´ò¿ªÅäÖÃ½çÃæ³É¹¦");
                 return 0;
             }
 
             int errCfg2Configured = JczLmc.lmc1_SetDevCfg2(phyCardSN[card], true, true);
             if (errCfg2Configured == 0)
             {
-                AddMsg($"å¡{card + 1} ä½¿ç”¨ SetDevCfg2(é…ç½®å¡å·) æ‰“å¼€é…ç½®ç•Œé¢æˆåŠŸ");
+                AddMsg($"¿¨{card + 1} Ê¹ÓÃ SetDevCfg2(ÅäÖÃ¿¨ºÅ) ´ò¿ªÅäÖÃ½çÃæ³É¹¦");
                 return 0;
             }
 
             int errCfg2Logical = JczLmc.lmc1_SetDevCfg2(card, true, true);
             if (errCfg2Logical == 0)
             {
-                AddMsg($"å¡{card + 1} ä½¿ç”¨ SetDevCfg2(é€»è¾‘å¡å·) æ‰“å¼€é…ç½®ç•Œé¢æˆåŠŸ");
+                AddMsg($"¿¨{card + 1} Ê¹ÓÃ SetDevCfg2(Âß¼­¿¨ºÅ) ´ò¿ªÅäÖÃ½çÃæ³É¹¦");
                 return 0;
             }
 
-            AddMsg($"å¡{card + 1} é…ç½®ç•Œé¢å°è¯•å¤±è´¥: é…ç½®å¡å·={JczLmc.GetErrorText(errByConfigured)}, é€»è¾‘å¡å·={JczLmc.GetErrorText(errByLogical)}, SetDevCfg2é…ç½®={JczLmc.GetErrorText(errCfg2Configured)}, SetDevCfg2é€»è¾‘={JczLmc.GetErrorText(errCfg2Logical)}");
+            AddMsg($"¿¨{card + 1} ÅäÖÃ½çÃæ³¢ÊÔÊ§°Ü: ÅäÖÃ¿¨ºÅ={JczLmc.GetErrorText(errByConfigured)}, Âß¼­¿¨ºÅ={JczLmc.GetErrorText(errByLogical)}, SetDevCfg2ÅäÖÃ={JczLmc.GetErrorText(errCfg2Configured)}, SetDevCfg2Âß¼­={JczLmc.GetErrorText(errCfg2Logical)}");
             return errByConfigured;
         }
         #endregion
 
-        #region EZCADå¤–éƒ¨ç¨‹åº
+        #region EZCADÍâ²¿³ÌĞò
         /// <summary>
-        /// æ‰“å¼€ EZcad è½¯ä»¶ï¼ˆé‡‘æ©™å­å®˜æ–¹ç¼–è¾‘å™¨ï¼‰
-        /// ç”±äºé‡‘æ©™å­æ¿å¡åªæ”¯æŒä¸€ä¸ªè½¯ä»¶åŠ è½½ï¼Œéœ€è¦å…ˆå…³é—­å½“å‰çš„æ¿å¡è¿æ¥ï¼Œ
-        /// å¯åŠ¨ EZcadï¼Œå¾… EZcad å…³é—­åè‡ªåŠ¨é‡æ–°åˆå§‹åŒ–æ¿å¡ã€‚
+        /// ´ò¿ª EZcad Èí¼ş£¨½ğ³È×Ó¹Ù·½±à¼­Æ÷£©
+        /// ÓÉÓÚ½ğ³È×Ó°å¿¨Ö»Ö§³ÖÒ»¸öÈí¼ş¼ÓÔØ£¬ĞèÒªÏÈ¹Ø±Õµ±Ç°µÄ°å¿¨Á¬½Ó£¬
+        /// Æô¶¯ EZcad£¬´ı EZcad ¹Ø±Õºó×Ô¶¯ÖØĞÂ³õÊ¼»¯°å¿¨¡£
         /// </summary>
         private void File_OpenEZCad_Click(object sender, EventArgs e)
         {
-            int card = currentCard;  // ä½¿ç”¨å½“å‰é€‰ä¸­çš„æ¿å¡
+            int card = currentCard;  // Ê¹ÓÃµ±Ç°Ñ¡ÖĞµÄ°å¿¨
 
             try
             {
-                // 1. å…ˆå…³é—­å½“å‰æ¿å¡ï¼Œé‡Šæ”¾æ¿å¡èµ„æºï¼ˆä½¿ EZcad èƒ½æ­£å¸¸è¿æ¥ï¼‰
-                AddMsg($"æ­£åœ¨å…³é—­å¡{card + 1}æ¿å¡è¿æ¥ï¼Œä¸ºå¯åŠ¨ EZcad åšå‡†å¤‡...");
+                // 1. ÏÈ¹Ø±Õµ±Ç°°å¿¨£¬ÊÍ·Å°å¿¨×ÊÔ´£¨Ê¹ EZcad ÄÜÕı³£Á¬½Ó£©
+                AddMsg($"ÕıÔÚ¹Ø±Õ¿¨{card + 1}°å¿¨Á¬½Ó£¬ÎªÆô¶¯ EZcad ×ö×¼±¸...");
 
-                // åœæ­¢ä»»ä½•æ­£åœ¨è¿›è¡Œçš„åŠ å·¥æˆ–çº¢å…‰é¢„è§ˆ
+                // Í£Ö¹ÈÎºÎÕıÔÚ½øĞĞµÄ¼Ó¹¤»òºì¹âÔ¤ÀÀ
                 if (bInMark[card])
                 {
                     JczLmc.lmc1_StopMark(phyCardSN[card]);
@@ -7191,60 +7521,60 @@ namespace BJJCZ_BaseDevelop
                     bInRed[card] = false;
                 }
 
-                // è°ƒç”¨ SDK å…³é—­æ¿å¡ï¼ˆæ ¹æ®ç”¨æˆ·åŸæœ‰ä»£ç ï¼Œcase 2 å¯¹åº”å…³é—­ï¼‰
+                // µ÷ÓÃ SDK ¹Ø±Õ°å¿¨£¨¸ù¾İÓÃ»§Ô­ÓĞ´úÂë£¬case 2 ¶ÔÓ¦¹Ø±Õ£©
                 LCZControlParam closeParam = new LCZControlParam
                 {
                     cardSN = card,
-                    cmdType = 2,   // å…³é—­æ¿å¡
+                    cmdType = 2,   // ¹Ø±Õ°å¿¨
                     ind3 = 0
                 };
                 CMDAna(closeParam);
-                AddMsg($"å¡{card + 1}æ¿å¡å·²å…³é—­ï¼Œå‡†å¤‡å¯åŠ¨ EZcad");
+                AddMsg($"¿¨{card + 1}°å¿¨ÒÑ¹Ø±Õ£¬×¼±¸Æô¶¯ EZcad");
 
-                // 2. æŸ¥æ‰¾ EZcad å¯æ‰§è¡Œæ–‡ä»¶è·¯å¾„ï¼ˆæä¾›å¤šç§æŸ¥æ‰¾ç­–ç•¥ï¼‰
+                // 2. ²éÕÒ EZcad ¿ÉÖ´ĞĞÎÄ¼şÂ·¾¶£¨Ìá¹©¶àÖÖ²éÕÒ²ßÂÔ£©
                 string ezcadPath = FindEZcadExecutable();
                 if (string.IsNullOrEmpty(ezcadPath) || !File.Exists(ezcadPath))
                 {
-                    AddMsg("æœªæ‰¾åˆ° EZcad è½¯ä»¶ï¼ˆEzCad2.exeï¼‰ï¼Œè¯·ç¡®è®¤è½¯ä»¶å·²å®‰è£…");
-                    // æœªæ‰¾åˆ°æ—¶è‡ªåŠ¨å°è¯•é‡æ–°åˆå§‹åŒ–æ¿å¡ï¼Œæ¢å¤æœåŠ¡ç«¯çŠ¶æ€
+                    AddMsg("Î´ÕÒµ½ EZcad Èí¼ş£¨EzCad2.exe£©£¬ÇëÈ·ÈÏÈí¼şÒÑ°²×°");
+                    // Î´ÕÒµ½Ê±×Ô¶¯³¢ÊÔÖØĞÂ³õÊ¼»¯°å¿¨£¬»Ö¸´·şÎñ¶Ë×´Ì¬
                     ReinitializeBothCards();
                     return;
                 }
 
-                // 3. å¯åŠ¨ EZcad è¿›ç¨‹ï¼Œå¹¶ç­‰å¾…å…¶å…³é—­
-                AddMsg($"æ­£åœ¨å¯åŠ¨ EZcad: {ezcadPath}");
+                // 3. Æô¶¯ EZcad ½ø³Ì£¬²¢µÈ´ıÆä¹Ø±Õ
+                AddMsg($"ÕıÔÚÆô¶¯ EZcad: {ezcadPath}");
                 Process ezcadProcess = new Process();
                 ezcadProcess.StartInfo.FileName = ezcadPath;
-                ezcadProcess.StartInfo.UseShellExecute = true;   // ç›´æ¥æ‰“å¼€ï¼Œè®© EZcad æ­£å¸¸æ˜¾ç¤ºçª—å£
-                                                                 // å¯é€‰ï¼šè®¾ç½®å·¥ä½œç›®å½•ä¸º EZcad æ‰€åœ¨ç›®å½•ï¼Œé¿å…æŸäº›ç›¸å¯¹è·¯å¾„é—®é¢˜
+                ezcadProcess.StartInfo.UseShellExecute = true;   // Ö±½Ó´ò¿ª£¬ÈÃ EZcad Õı³£ÏÔÊ¾´°¿Ú
+                                                                 // ¿ÉÑ¡£ºÉèÖÃ¹¤×÷Ä¿Â¼Îª EZcad ËùÔÚÄ¿Â¼£¬±ÜÃâÄ³Ğ©Ïà¶ÔÂ·¾¶ÎÊÌâ
                 ezcadProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(ezcadPath);
                 ezcadProcess.Start();
 
-                AddMsg("EZcad å·²å¯åŠ¨ï¼Œè¯·åœ¨ EZcad ä¸­å®Œæˆå›¾å½¢ç¼–è¾‘ã€‚å…³é—­ EZcad åæœåŠ¡ç«¯å°†è‡ªåŠ¨é‡æ–°è¿æ¥æ¿å¡");
+                AddMsg("EZcad ÒÑÆô¶¯£¬ÇëÔÚ EZcad ÖĞÍê³ÉÍ¼ĞÎ±à¼­¡£¹Ø±Õ EZcad ºó·şÎñ¶Ë½«×Ô¶¯ÖØĞÂÁ¬½Ó°å¿¨");
 
-                // 4. åœ¨æ–°çº¿ç¨‹ä¸­ç­‰å¾… EZcad é€€å‡ºï¼Œä»¥å…é˜»å¡ UI çº¿ç¨‹
+                // 4. ÔÚĞÂÏß³ÌÖĞµÈ´ı EZcad ÍË³ö£¬ÒÔÃâ×èÈû UI Ïß³Ì
                 System.Threading.Tasks.Task.Run(() =>
                 {
-                    // ç­‰å¾… EZcad è¿›ç¨‹é€€å‡ºï¼ˆä¼šé˜»å¡å½“å‰çº¿ç¨‹ï¼Œä½†ä¸ä¼šé˜»å¡ UIï¼‰
+                    // µÈ´ı EZcad ½ø³ÌÍË³ö£¨»á×èÈûµ±Ç°Ïß³Ì£¬µ«²»»á×èÈû UI£©
                     ezcadProcess.WaitForExit();
-                    // EZcad é€€å‡ºåï¼Œå›åˆ° UI çº¿ç¨‹é‡æ–°åˆå§‹åŒ–æ¿å¡
+                    // EZcad ÍË³öºó£¬»Øµ½ UI Ïß³ÌÖØĞÂ³õÊ¼»¯°å¿¨
                     this.BeginInvoke(new Action(() => ReinitializeBothCards()));
                 });
             }
             catch (Exception ex)
             {
-                AddMsg($"æ‰“å¼€ EZcad æ—¶å‘ç”Ÿå¼‚å¸¸: {ex.Message}");
-                // å‘ç”Ÿå¼‚å¸¸æ—¶ä¹Ÿè¦å°è¯•æ¢å¤æ¿å¡è¿æ¥ï¼Œä¿è¯æœåŠ¡ç«¯å¯ç”¨
+                AddMsg($"´ò¿ª EZcad Ê±·¢ÉúÒì³£: {ex.Message}");
+                // ·¢ÉúÒì³£Ê±Ò²Òª³¢ÊÔ»Ö¸´°å¿¨Á¬½Ó£¬±£Ö¤·şÎñ¶Ë¿ÉÓÃ
                 ReinitializeBothCards();
             }
         }
 
         /// <summary>
-        /// æŸ¥æ‰¾ EZcad å¯æ‰§è¡Œæ–‡ä»¶è·¯å¾„ï¼ˆEzCad2.exeï¼‰
+        /// ²éÕÒ EZcad ¿ÉÖ´ĞĞÎÄ¼şÂ·¾¶£¨EzCad2.exe£©
         /// </summary>
         private string FindEZcadExecutable()
         {
-            // ç­–ç•¥1ï¼šå¸¸è§é»˜è®¤å®‰è£…è·¯å¾„
+            // ²ßÂÔ1£º³£¼ûÄ¬ÈÏ°²×°Â·¾¶
             string[] commonPaths = new string[]
             {
         @"C:\Program Files\EZCAD2\EzCad2.exe",
@@ -7262,7 +7592,7 @@ namespace BJJCZ_BaseDevelop
                 }
             }
 
-            // ç­–ç•¥2ï¼šæœç´¢å½“å‰ç¨‹åºè¿è¡Œç›®å½•åŠä¸Šçº§ç›®å½•ï¼ˆå¯èƒ½ EZcad è¢«æ”¾ç½®åœ¨é¡¹ç›®é™„è¿‘ï¼‰
+            // ²ßÂÔ2£ºËÑË÷µ±Ç°³ÌĞòÔËĞĞÄ¿Â¼¼°ÉÏ¼¶Ä¿Â¼£¨¿ÉÄÜ EZcad ±»·ÅÖÃÔÚÏîÄ¿¸½½ü£©
             string[] searchDirs = new string[]
             {
         Application.StartupPath,
@@ -7281,7 +7611,7 @@ namespace BJJCZ_BaseDevelop
                 }
             }
 
-            // ç­–ç•¥3ï¼šå°è¯•æŸ¥æ‰¾ç³»ç»Ÿ PATH è·¯å¾„ä¸‹çš„ EzCad2.exe
+            // ²ßÂÔ3£º³¢ÊÔ²éÕÒÏµÍ³ PATH Â·¾¶ÏÂµÄ EzCad2.exe
             string pathEnv = Environment.GetEnvironmentVariable("PATH");
             if (!string.IsNullOrEmpty(pathEnv))
             {
@@ -7297,39 +7627,39 @@ namespace BJJCZ_BaseDevelop
                 }
             }
 
-            return null;  // æœªæ‰¾åˆ°
+            return null;  // Î´ÕÒµ½
         }
 
         /// <summary>
-        /// åœ¨ EZcad å…³é—­åé‡æ–°åˆå§‹åŒ–æ¿å¡ï¼ˆæ¢å¤æœåŠ¡ç«¯åŠŸèƒ½ï¼‰
+        /// ÔÚ EZcad ¹Ø±ÕºóÖØĞÂ³õÊ¼»¯°å¿¨£¨»Ö¸´·şÎñ¶Ë¹¦ÄÜ£©
         /// </summary>
         private void ReinitializeCardAfterEZcadClosed(int card)
         {
             try
             {
-                AddMsg($"EZcad å·²å…³é—­ï¼Œæ­£åœ¨é‡æ–°åˆå§‹åŒ–å¡{card + 1}æ¿å¡...");
+                AddMsg($"EZcad ÒÑ¹Ø±Õ£¬ÕıÔÚÖØĞÂ³õÊ¼»¯¿¨{card + 1}°å¿¨...");
 
-                // é‡æ–°åˆå§‹åŒ–æ¿å¡
+                // ÖØĞÂ³õÊ¼»¯°å¿¨
                 LCZControlParam initParam = new LCZControlParam
                 {
                     cardSN = card,
-                    cmdType = 1,   // åˆå§‹åŒ–æ¿å¡
+                    cmdType = 1,   // ³õÊ¼»¯°å¿¨
                     ind3 = 0
                 };
                 CMDAna(initParam);
 
-                // å¦‚æœåˆå§‹åŒ–æˆåŠŸï¼Œåˆ·æ–°å¯¹è±¡åˆ—è¡¨å’Œé¢„è§ˆ
+                // Èç¹û³õÊ¼»¯³É¹¦£¬Ë¢ĞÂ¶ÔÏóÁĞ±íºÍÔ¤ÀÀ
                 if (JczInitErrs[card] == 0)
                 {
-                    // å¯é€‰ï¼šæ˜¾ç¤ºå¡å·æ˜ å°„ä¿¡æ¯
+                    // ¿ÉÑ¡£ºÏÔÊ¾¿¨ºÅÓ³ÉäĞÅÏ¢
                     int[] snArray = new int[8];
                     int ret = JczLmc.lmc1_GetAllCardSN(snArray);
                     if (ret == 0)
                     {
-                        AddMsg($"å¡{card + 1} å¡å·æ˜ å°„: é€»è¾‘ç´¢å¼• 0->{snArray[0]}");
+                        AddMsg($"¿¨{card + 1} ¿¨ºÅÓ³Éä: Âß¼­Ë÷Òı 0->{snArray[0]}");
                     }
 
-                    // é‡æ–°åŠ è½½ EZD æ–‡ä»¶ï¼ˆå¦‚æœä¹‹å‰æœ‰åŠ è½½è¿‡ï¼Œå°è¯•æ¢å¤ï¼‰
+                    // ÖØĞÂ¼ÓÔØ EZD ÎÄ¼ş£¨Èç¹ûÖ®Ç°ÓĞ¼ÓÔØ¹ı£¬³¢ÊÔ»Ö¸´£©
                     if (!string.IsNullOrEmpty(currentFilePath[card]))
                     {
                         LCZControlParam loadParam = new LCZControlParam
@@ -7342,7 +7672,7 @@ namespace BJJCZ_BaseDevelop
                         CMDAna(loadParam);
                     }
 
-                    // åˆ·æ–°å¯¹è±¡åˆ—è¡¨
+                    // Ë¢ĞÂ¶ÔÏóÁĞ±í
                     nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
                     if (nEntNums[card] > 0)
                     {
@@ -7358,23 +7688,23 @@ namespace BJJCZ_BaseDevelop
                     RefreshPreview(card);
                 }
 
-                AddMsg($"å¡{card + 1} æ¿å¡é‡æ–°åˆå§‹åŒ–å®Œæˆï¼ŒæœåŠ¡ç«¯å·²æ¢å¤");
+                AddMsg($"¿¨{card + 1} °å¿¨ÖØĞÂ³õÊ¼»¯Íê³É£¬·şÎñ¶ËÒÑ»Ö¸´");
             }
             catch (Exception ex)
             {
-                AddMsg($"é‡æ–°åˆå§‹åŒ–æ¿å¡æ—¶å‘ç”Ÿå¼‚å¸¸: {ex.Message}");
+                AddMsg($"ÖØĞÂ³õÊ¼»¯°å¿¨Ê±·¢ÉúÒì³£: {ex.Message}");
             }
         }
         #endregion
 
-        #region å…¶ä»–æ§ä»¶äº‹ä»¶
+        #region ÆäËû¿Ø¼şÊÂ¼ş
         private void pictureBox2_Click(object sender, EventArgs e)
         {
 
         }
 
 
-        // å¯é€‰ï¼šæ·»åŠ ä¸€ä¸ªçª—å£å¸ƒå±€é‡ç½®èœå•é¡¹
+        // ¿ÉÑ¡£ºÌí¼ÓÒ»¸ö´°¿Ú²¼¾ÖÖØÖÃ²Ëµ¥Ïî
         #endregion
 
     }

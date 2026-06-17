@@ -339,7 +339,7 @@ namespace xbDefectDect
         private void Form1_FromClosing(object sender, EventArgs e)
         {
              if(iRunType==1)
-                fo.SaveUserParam(cup);
+                FileOper.SaveUserParam(cup);
              else
             {
                

@@ -323,7 +323,8 @@ namespace VisionApplication
 
                         //2025年8月26日
                         alImParam[0] = new AlignImParam();
-                         vpWin.GetAlignRegion(ref alImParam[0],0);
+                        alImParam[0] = new AlignImParam();
+                        vpWin.GetAlignRegion(ref alImParam[0], 0);
                         alImParam[1] = new AlignImParam();
                         vpWin.GetAlignRegion(ref alImParam[1], 1);
                     }
@@ -2215,8 +2216,87 @@ namespace VisionApplication
 
         //  DateTime dtOperLog = new DateTime();
         private string _lastLogHash = "";  // 记录最后一条日志的哈希值
-
         private void AddLog()
+        {
+            // 1. 如果在非 UI 线程，则同步切换到 UI 线程
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(AddLog));
+                return;
+            }
+
+            // 2. 更新 UI 表格（直接操作，不检查重复）
+            try
+            {
+                // 限制行数最多 20 行（可选）
+                if (dgvLog.RowCount > 20)
+                    dgvLog.Rows.RemoveAt(19);
+
+                int ind = 0;
+                dgvLog.Rows.Insert(0, 1);
+
+                dgvLog.Rows[ind].Cells[0].Value = operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss");
+                dgvLog.Rows[ind].Cells[1].Value = operLog.strOperEvent;
+
+                switch (operLog.iEventStatus)
+                {
+                    case 0:
+                    case 2:
+                    case 9:
+                    case 10:
+                        dgvLog.Rows[ind].Cells[2].Value = "操作正常";
+                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Black;
+                        break;
+                    case -1:
+                        dgvLog.Rows[ind].Cells[2].Value = "操作失败";
+                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                        break;
+                    case -2:
+                        dgvLog.Rows[ind].Cells[2].Value = "操作正常";
+                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                        break;
+                    case 1:
+                        dgvLog.Rows[ind].Cells[2].Value = "操作超时";
+                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                        break;
+                    default:
+                        dgvLog.Rows[ind].Cells[2].Value = "操作异常";
+                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
+                        break;
+                }
+
+                dgvLog.Rows[ind].Cells[4].Value = operLog.strUserName;
+
+                if (operLog.iEventStatus < 0 || operLog.iEventStatus == 1 ||
+                    operLog.iEventStatus == 2 || operLog.iEventStatus == 9)
+                {
+                    dgvLog.Rows[ind].Cells[3].Value = operLog.strFailReason;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 忽略 UI 更新异常，不影响主程序
+                System.Diagnostics.Debug.WriteLine($"更新日志表格失败: {ex.Message}");
+            }
+
+            // 3. 写入文件（简单捕获异常，不因文件写入失败影响日志功能）
+            try
+            {
+                string logDir = cup.p_Paf.strLogPath;
+                if (!string.IsNullOrEmpty(logDir))
+                {
+                    if (!Directory.Exists(logDir))
+                        Directory.CreateDirectory(logDir);
+                    string logFile = Path.Combine(logDir, "Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt");
+                    fo.WriteOperLog(logFile, operLog);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"写日志文件失败: {ex.Message}");
+            }
+        }
+        /*private void AddLog()
         {
             // 生成日志的唯一标识（基于内容和时间）
             string logKey = $"{operLog.dtOperTime.Ticks}_{operLog.strOperEvent}_{operLog.iEventStatus}";
@@ -2226,6 +2306,7 @@ namespace VisionApplication
             {
                 // 只写文件，不更新UI
                // fo.WriteOperLog(cup.p_Paf.strLogPath + "\\Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt", operLog);
+              
                 return;
             }
 
@@ -2305,7 +2386,7 @@ namespace VisionApplication
 
             // 文件写入
            // fo.WriteOperLog(cup.p_Paf.strLogPath + "\\Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt", operLog);
-        }
+        }*/
         #endregion  自定义操作区
 
         #region  状态变化性事件
@@ -2671,7 +2752,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "连接相机";
                 operLog.strFailReason = "用户身份未验证";
                 AddLog();
-
+                   
                 //      MessageBox.Show("用户身份未验证，无法操作");
                 return;
             }
@@ -2885,6 +2966,7 @@ namespace VisionApplication
                             {
                                 int iTmpType = vpWin._iTaskType;
                                 vpWin._iTaskType = 5;
+                                vpWin.bEnableActivate = false;
                                 operLog.iEventStatus = 0;
                                 ((Button)sender).FlatStyle = FlatStyle.Flat;
                                 vpWin.bMainTaskFinished = false;
@@ -2907,6 +2989,7 @@ namespace VisionApplication
                                     }
                                 }
                                 vpWin._iTaskType = iTmpType;
+                                vpWin.bEnableActivate = true;
                                 ((Button)sender).FlatStyle = FlatStyle.Popup;
 
                                 vpWin.bMainTaskFinished = true;
@@ -3394,7 +3477,7 @@ namespace VisionApplication
                 vpWin._cup = cup;
                 serialInd = cup.p_SD.serInd;
                 SaveUserParam();
-                UpdateJobMenuText();
+                ApplyJobSelection(iJobIndex);
 
                 //VPP文件改变，则重新加载VPP
                 if (frs.bVPPChange)
@@ -6568,7 +6651,7 @@ namespace VisionApplication
                 vpWin._iTaskType = 2;
                 if (!bKeep)
                 {
-                    if (!cup.p_VPPRTP.bAcqFromCam && !toolBtSta_LockImage.Checked)  //从文件读取
+                    if (!cup.p_VPPRTP.bAcqFromCam/* && !toolBtSta_LockImage.Checked*/)  //从文件读取
                     {
                         iFileIndex = iNextFileIndex;
 
@@ -7017,7 +7100,7 @@ namespace VisionApplication
             if(cup.p_RTSP.bUpdateIO)  //启用IO输出
             {
                 //只输出OK或者只输出NG
-                if(/*(pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||*/  
+                if(/*(pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||*/   
                     (!pmaRes[jobIndex].bOk && cup.p_IOPP.NGOut!= 0) )
                     ExeIOOut(jobIndex);
             }

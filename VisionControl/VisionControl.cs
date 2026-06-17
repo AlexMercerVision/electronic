@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -534,7 +534,10 @@ namespace VisionControl
             if (job == null) return;
             int idx = Utility.GetJobIndexFromName(mJM, job.Name);
             if (idx >= 0 && idx < maxCameraNum)
+            {
                 bRunOneTimeFinished[idx] = 1;
+                SetJobBusy(idx, true);
+            }
             try
             {
                 //2025年10月8日  该回调中不涉及到GUI更新，尝试去掉委托
@@ -573,16 +576,18 @@ namespace VisionControl
         // mJM_UserResultAvailable 中直接使用返回值
         private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
         {
-            int? jobIdx = HandleUserResults();
-            int idx = jobIdx.Value;  // 从 HandleUserResults 获得
-            if (jobIdx.HasValue)
+            int? jobIdx;
+            while ((jobIdx = HandleUserResults()).HasValue)
             {
-                RunOneTimeFinished(jobIdx.Value);
-                DirectShowImage(jobIdx.Value);
+                int idx = jobIdx.Value;
+
+                RunOneTimeFinished(idx);
+                SetJobBusy(idx, false);
+                DirectShowImage(idx);
                 infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
                 start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
                 cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
-                JobResultReady?.Invoke(jobIdx.Value);
+                JobResultReady?.Invoke(idx);
             }
         }
 
@@ -644,7 +649,8 @@ namespace VisionControl
 
                 bool stoppingLive = mCurrentRunState == RunState.RunningLive;//|| checkBox_LiveDisplay.Checked
 
-                mCurrentRunState = RunState.Stopped;
+                if (!AnyJobBusy())
+                    mCurrentRunState = RunState.Stopped;
 
                 if (stoppingLive)  //实时预览
                 {

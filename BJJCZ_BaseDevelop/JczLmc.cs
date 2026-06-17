@@ -116,8 +116,8 @@ namespace BJJCZ_BaseDevelop
                 return "参数输入错误";
             }
         }
-        
-        
+
+
         #region   系统函数
         [DllImport("gdi32.dll")]
         private static extern bool DeleteObject(IntPtr hObject);
@@ -127,9 +127,9 @@ namespace BJJCZ_BaseDevelop
 
         #region 设备相关 (MultiMarkEzd.dll 函数声明)
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_Initial", CharSet = CharSet.Unicode,CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_Initial", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_Initial(string strEzCadPath, bool bTestMode, IntPtr hOwenWnd);
-       
+
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_Close", CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_Close();
 
@@ -144,7 +144,6 @@ namespace BJJCZ_BaseDevelop
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetRotateMoveParam", CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_SetRotateMoveParam(int cardSN, double dMoveX, double dMoveY, double dCenterX, double dCenterY, double dRotateAng);
-
         #endregion
 
         #region 加工相关
@@ -165,7 +164,12 @@ namespace BJJCZ_BaseDevelop
         public static extern int lmc1_MarkPoint(int cardSN, double X, double Y, double delay, int pen);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_StopMark", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int lmc1_StopMark(int cardSN);
+        private static extern bool lmc1_StopMarkNative(int cardSN);
+
+        public static int lmc1_StopMark(int cardSN)
+        {
+            return lmc1_StopMarkNative(cardSN) ? 0 : 9;
+        }
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_RedLightMark", CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_RedLightMark(int cardSN);
@@ -180,7 +184,12 @@ namespace BJJCZ_BaseDevelop
         public static extern int lmc1_GetCurCoor(int cardSN, ref double x, ref double y);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_IsMarkFinish", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int lmc1_IsMarkFinish(int cardSN);  // 返回1=待机，0=加工中
+        private static extern bool lmc1_IsMarkFinishNative(int cardSN);
+
+        public static int lmc1_IsMarkFinish(int cardSN)
+        {
+            return lmc1_IsMarkFinishNative(cardSN) ? 1 : 0;
+        }
 
         #endregion
 
@@ -193,21 +202,11 @@ namespace BJJCZ_BaseDevelop
         public static extern int lmc1_SaveEntLibToFile(int cardSN, string strFileName);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap2", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-       // [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CallingConvention = CallingConvention.StdCall)]
+        // [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPrevBitmap", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr lmc1_GetPrevBitmap(int cardSN, IntPtr hwnd, int nBmpWidth, int nBmpHeight);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetEzdFilePrevBitmap", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr lmc1_GetEzdFilePrevBitmap(int cardSN, string strEntName);
-      
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetEntAllChildPen", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void lmc1_SetEntAllChildPen(int cardSN, string strEntName, int nPenNo);
-      
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPenNumberFromEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern int lmc1_GetPenNumberFromEnt(int cardSN, string strEntName);
-
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_ChangeEntPenNo", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern int lmc1_ChangeEntPenNo(int cardSN, string strEntName, int nPenNo);
-
 
         #endregion
 
@@ -217,7 +216,7 @@ namespace BJJCZ_BaseDevelop
         public static extern int lmc1_GetEntSize(int cardSN, string pEntName, ref double dMinx, ref double dMiny, ref double dMaxx, ref double dMaxy, ref double dZ);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_MoveEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int lmc1_MoveEnt(int cardSN, string pEntName, ref double dMovex,ref double dMovey);
+        public static extern int lmc1_MoveEnt(int cardSN, string pEntName, ref double dMovex, ref double dMovey);
 
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_ScaleEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_ScaleEnt(int cardSN, string strEntName, double dCenx, double dCeny, double dScaleX, double dScaleY);
@@ -243,6 +242,9 @@ namespace BJJCZ_BaseDevelop
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_ChangeEntName", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_ChangeEntName(int cardSN, string strEntName, string strNewName);
 
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_ChangeEntPenNo", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int lmc1_ChangeEntPenNo(int cardSN, string strEntName, int nPenNo);
+
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GroupEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_GroupEnt(int cardSN, string pEntName1, string pEntName2, string pEntNameNew, int pen);
 
@@ -252,23 +254,10 @@ namespace BJJCZ_BaseDevelop
         [DllImport("MultiMarkEzd", EntryPoint = "lmc1_UnGroupEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_UnGroupEnt(int cardSN, string strGroupEntName);
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchParam2", CallingConvention = CallingConvention.StdCall)]
-        public static extern int lmc1_SetHatchParam2(int nCard, bool bEnableContour,
-     int nParamIndex, int bEnableHatch, int nPenNo, int nHatchType,
-     bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
-     double dHatchAngle, double dHatchLineDist, double dHatchEdgeDist,
-     double dHatchStartOffset, double dHatchEndOffset, double dHatchLineReduction,
-     double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev,
-     bool bHatchAutoRotate, double dHatchRotateAngle);
-
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchParam3", CallingConvention = CallingConvention.StdCall)]
-        public static extern int lmc1_SetHatchParam3(int nCard, bool bEnableContour,
-            int nParamIndex, int bEnableHatch, int nPenNo, int nHatchType,
-            bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
-            double dHatchAngle, double dHatchLineDist, double dHatchEdgeDist,
-            double dHatchStartOffset, double dHatchEndOffset, double dHatchLineReduction,
-            double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev,
-            bool bHatchAutoRotate, double dHatchRotateAngle, bool bHatchCross);
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetEntAllChildPen", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void lmc1_SetEntAllChildPen(int cardSN, string strEntName, int nPenNo);
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPenNumberFromEnt", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int lmc1_GetPenNumberFromEnt(int cardSN, string strEntName);
 
         #endregion
 
@@ -348,7 +337,26 @@ namespace BJJCZ_BaseDevelop
             int bEnableHatch2, int nPenNo2, int nHatchAttrib2, double dHatchEdgeDist2,
             double dHatchLineDist2, double dHatchStartOffset2, double dHatchEndOffset2, double dHatchAngle2);
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchEntParam2", CallingConvention = CallingConvention.Cdecl)]
+
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchParam2", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int lmc1_SetHatchParam2(int nCard, bool bEnableContour,
+            int nParamIndex, int bEnableHatch, int nPenNo, int nHatchType,
+            bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
+            double dHatchAngle, double dHatchLineDist, double dHatchEdgeDist,
+            double dHatchStartOffset, double dHatchEndOffset, double dHatchLineReduction,
+            double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev,
+            bool bHatchAutoRotate, double dHatchRotateAngle);
+
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchParam3", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int lmc1_SetHatchParam3(int nCard, bool bEnableContour,
+            int nParamIndex, int bEnableHatch, int nPenNo, int nHatchType,
+            bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
+            double dHatchAngle, double dHatchLineDist, double dHatchEdgeDist,
+            double dHatchStartOffset, double dHatchEndOffset, double dHatchLineReduction,
+            double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev,
+            bool bHatchAutoRotate, double dHatchRotateAngle, bool bHatchCross);
+
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetHatchEntParam2", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_SetHatchEntParam2(int nCard, string pHatchName,
             bool bEnableContour, int nParamIndex, int bEnableHatch, bool bContourFirst,
             int nPenNo, int nHatchType, bool bHatchAllCalc, bool bHatchEdge, bool bHatchAverageLine,
@@ -357,7 +365,7 @@ namespace BJJCZ_BaseDevelop
             double dHatchLoopDist, int nEdgeLoop, bool nHatchLoopRev, bool bHatchAutoRotate,
             double dHatchRotateAngle, bool bHatchCrossMode, int dCycCount);
 
-        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetHatchEntParam2", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetHatchEntParam2", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         public static extern int lmc1_GetHatchEntParam2(int nCard, string pHatchName,
             ref bool bEnableContour, int nParamIndex, ref int bEnableHatch, ref bool bContourFirst,
             ref int nPenNo, ref int nHatchType, ref bool bHatchAllCalc, ref bool bHatchEdge,
@@ -448,7 +456,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 获取指定卡当前数据库的预览图像（支持逻辑坐标，但多头库仅返回原始大小图像）
         /// </summary>
-         [DllImport("gdi32.dll")]
+        [DllImport("gdi32.dll")]
         private static extern int GetBitmapBits(IntPtr hbitmap, int cbBuffer, byte[] lpvBits);
 
         [DllImport("gdi32.dll")]
@@ -518,30 +526,7 @@ namespace BJJCZ_BaseDevelop
                 DeleteObject(hBmp);
             }
         }
-        public static Image lmc1_GetCurPreviewBitmap1(int cardSN, IntPtr hwnd, int bmpwidth, int bmpheight)
-        {
-            IntPtr hBmp = lmc1_GetPrevBitmap(cardSN, hwnd, bmpwidth, bmpheight);
-            if (hBmp == IntPtr.Zero) return null;
 
-            try
-            {
-                // 先创建 Bitmap，如果成功则复制一份
-                using (Bitmap tempBmp = Bitmap.FromHbitmap(hBmp))
-                {
-                    return new Bitmap(tempBmp);
-                }
-            }
-            catch (Exception ex)
-            {
-                // WriteLine($"FromHbitmap 失败: {ex.Message}");
-                return null;
-            }
-            finally
-            {
-                // 删除原始 HBITMAP
-                DeleteObject(hBmp);
-            }
-        }
         /// <summary>
         /// 获取指定卡指定对象的预览图像
         /// </summary>
@@ -562,10 +547,10 @@ namespace BJJCZ_BaseDevelop
         }
 
         // ==================== 对象名称与数量辅助方法 ====================
-            /* public static int lmc1_GetEntityCount(int cardSN)
-             {
-                 return lmc1_GetEntityCount(cardSN);
-             }*/
+        /* public static int lmc1_GetEntityCount(int cardSN)
+         {
+             return lmc1_GetEntityCount(cardSN);
+         }*/
 
         public static string lmc1_GetEntityNameByIndex(int cardSN, int index)
         {
@@ -574,12 +559,32 @@ namespace BJJCZ_BaseDevelop
             return ret == 0 ? sb.ToString() : "";
         }
 
-       /* public static int lmc1_GetPenNumberFromEnt(int cardSN, string entName)
-        {
-            return lmc1_GetPenNumberFromEnt(cardSN, entName);
-        }*/
+        /* public static int lmc1_GetPenNumberFromEnt(int cardSN, string entName)
+         {
+             return lmc1_GetPenNumberFromEnt(cardSN, entName);
+         }*/
 
         // ==================== 笔号参数辅助方法（带卡号） ====================
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_GetPenParam4", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int lmc1_GetPenParam4Native(int cardSN, int nPenNo, StringBuilder pStrName,
+            ref int clr, ref bool bDisableMark, ref bool bUseDefParam, ref int nMarkLoop,
+            ref double dMarkSpeed, ref double dPowerRatio, ref double dCurrent, ref int nFreq,
+            ref double dQPulseWidth, ref int nStartTC, ref int nLaserOffTC, ref int nEndTC,
+            ref int nPolyTC, ref double dJumpSpeed, ref int nMinJumpDelayTCUs, ref int nMaxJumpDelayTCUs,
+            ref double dJumpLengthLimit, ref double dPointTimeMs, ref bool nSpiSpiContinueMode,
+            ref int nSpiWave, ref int nYagMarkMode, ref bool bPulsePointMode, ref int nPulseNum,
+            ref bool bEnableACCMode, ref double dEndComp, ref double dAccDist, ref double dBreakAngle,
+            ref bool bWobbleMode, ref double bWobbleDiameter, ref double bWobbleDist);
+
+        [DllImport("MultiMarkEzd", EntryPoint = "lmc1_SetPenParam4", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int lmc1_SetPenParam4Native(int cardSN, int nPenNo, string pStrName, int clr,
+            bool bDisableMark, bool bUseDefParam, int nMarkLoop, double dMarkSpeed, double dPowerRatio,
+            double dCurrent, int nFreq, double dQPulseWidth, int nStartTC, int nLaserOffTC,
+            int nEndTC, int nPolyTC, double dJumpSpeed, int nMinJumpDelayTCUs, int nMaxJumpDelayTCUs,
+            double dJumpLengthLimit, double dPointTimeMs, bool nSpiSpiContinueMode, int nSpiWave,
+            int nYagMarkMode, bool bPulsePointMode, int nPulseNum, bool bEnableACCMode,
+            double dEndComp, double dAccDist, double dBreakAngle, bool bWobbleMode,
+            double bWobbleDiameter, double bWobbleDist);
         public static int lmc1_GetPenParam4(int cardSN, int nPenNo, StringBuilder pStrName,
             ref int clr, ref bool bDisableMark, ref bool bUseDefParam, ref int nMarkLoop,
             ref double dMarkSpeed, ref double dPowerRatio, ref double dCurrent, ref int nFreq,
@@ -590,7 +595,7 @@ namespace BJJCZ_BaseDevelop
             ref bool bEnableACCMode, ref double dEndComp, ref double dAccDist, ref double dBreakAngle,
             ref bool bWobbleMode, ref double bWobbleDiameter, ref double bWobbleDist)
         {
-            return lmc1_GetPenParam4(cardSN, nPenNo, pStrName, ref clr, ref bDisableMark,
+            return lmc1_GetPenParam4Native(cardSN, nPenNo, pStrName, ref clr, ref bDisableMark,
                 ref bUseDefParam, ref nMarkLoop, ref dMarkSpeed, ref dPowerRatio, ref dCurrent,
                 ref nFreq, ref dQPulseWidth, ref nStartTC, ref nLaserOffTC, ref nEndTC, ref nPolyTC,
                 ref dJumpSpeed, ref nMinJumpDelayTCUs, ref nMaxJumpDelayTCUs, ref dJumpLengthLimit,
@@ -608,7 +613,7 @@ namespace BJJCZ_BaseDevelop
             double dEndComp, double dAccDist, double dBreakAngle, bool bWobbleMode,
             double bWobbleDiameter, double bWobbleDist)
         {
-            return lmc1_SetPenParam4(cardSN, nPenNo, pStrName, clr, bDisableMark, bUseDefParam,
+            return lmc1_SetPenParam4Native(cardSN, nPenNo, pStrName, clr, bDisableMark, bUseDefParam,
                 nMarkLoop, dMarkSpeed, dPowerRatio, dCurrent, nFreq, dQPulseWidth, nStartTC,
                 nLaserOffTC, nEndTC, nPolyTC, dJumpSpeed, nMinJumpDelayTCUs, nMaxJumpDelayTCUs,
                 dJumpLengthLimit, dPointTimeMs, nSpiSpiContinueMode, nSpiWave, nYagMarkMode,
@@ -635,7 +640,7 @@ namespace BJJCZ_BaseDevelop
         [Obsolete("请使用带卡序号的重载")]
         public static int RedMark() => lmc1_RedLightMark(0);
         [Obsolete("请使用带卡序号的重载")]
-        public static int RedMarkContour() => lmc1_RedLightMarkContourByEnt(0, null);
+        public static int RedMarkContour() => lmc1_RedLightMark(0);
         [Obsolete("请使用带卡序号的重载")]
         public static int RedLightMarkByEnt(string EntName, bool bContour) => lmc1_RedLightMarkContourByEnt(0, EntName);
         [Obsolete("请使用带卡序号的重载")]
@@ -656,7 +661,7 @@ namespace BJJCZ_BaseDevelop
         [Obsolete("请使用带卡序号的重载")]
         public static int ChangeEntName(string strEntName, string strNewEntName) => lmc1_ChangeEntName(0, strEntName, strNewEntName);
         [Obsolete("请使用带卡序号的重载")]
-        public static int MoveEnt(string strEntName, double dMovex, double dMovey) => lmc1_MoveEnt(0, strEntName, ref dMovex,ref  dMovey);
+        public static int MoveEnt(string strEntName, double dMovex, double dMovey) => lmc1_MoveEnt(0, strEntName, ref dMovex, ref dMovey);
         [Obsolete("请使用带卡序号的重载")]
         public static int ScaleEnt(string strEntName, double dCenx, double dCeny, double dScaleX, double dScaleY) => lmc1_ScaleEnt(0, strEntName, dCenx, dCeny, dScaleX, dScaleY);
         [Obsolete("请使用带卡序号的重载")]
@@ -732,3 +737,4 @@ namespace BJJCZ_BaseDevelop
     }
 
 }
+

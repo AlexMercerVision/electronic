@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -275,6 +275,25 @@ namespace VisionApplication
 
             return true;
         }
+
+        private bool ValidateBoardAssignParam()
+        {
+            if (cmbBoardA.SelectedIndex < 0 || cmbBoardB.SelectedIndex < 0)
+            {
+                MessageBox.Show("请先完成A面和B面的板卡分配。", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (cmbBoardA.SelectedIndex == cmbBoardB.SelectedIndex)
+            {
+                MessageBox.Show("A面和B面不能分配到同一张板卡。", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            return true;
+        }
         private void Frm_RuntimeSet_Load(object sender, EventArgs e)
         {
             bMaskChanged = true;
@@ -291,6 +310,9 @@ namespace VisionApplication
 
         private void btOK_Click(object sender, EventArgs e)
         {
+            if (!ValidateBoardAssignParam())
+                return;
+
             getParam();
 
             if(iType==1)
@@ -789,6 +811,10 @@ namespace VisionApplication
                 cup.p_SD.parity = (int)Enum.Parse(typeof(Parity), cbxParity1.Text);
                 cup.p_SD.stopBits = (int)Enum.Parse(typeof(StopBits), cbxStopBits1.Text);
                 cup.p_SD.WriteTimeout = int.Parse(txtTimeOut.Text);
+                if (cup.p_SD.stationCardMap == null || cup.p_SD.stationCardMap.Length < 2)
+                    cup.p_SD.stationCardMap = new int[2];
+                cup.p_SD.stationCardMap[0] = cmbBoardA.SelectedIndex;
+                cup.p_SD.stationCardMap[1] = cmbBoardB.SelectedIndex;
             }
             catch (Exception ex)
             {
@@ -1384,6 +1410,25 @@ namespace VisionApplication
                 cbxParity1.Text = Enum.GetName(typeof(Parity), cup.p_SD.parity);
                 cbxStopBits1.Text = Enum.GetName(typeof(StopBits), cup.p_SD.stopBits);
                 txtTimeOut.Text = cup.p_SD.WriteTimeout.ToString();
+                if (cup.p_SD.stationCardMap == null || cup.p_SD.stationCardMap.Length < 2)
+                {
+                    cmbBoardA.SelectedIndex = 0;
+                    cmbBoardB.SelectedIndex = 1;
+                }
+                else
+                {
+                    int boardA = cup.p_SD.stationCardMap[0];
+                    int boardB = cup.p_SD.stationCardMap[1];
+                    if (boardA < 0 || boardA > 1) boardA = 0;
+                    if (boardB < 0 || boardB > 1) boardB = 1;
+                    if (boardA == boardB)
+                    {
+                        boardA = 0;
+                        boardB = 1;
+                    }
+                    cmbBoardA.SelectedIndex = boardA;
+                    cmbBoardB.SelectedIndex = boardB;
+                }
             }
             catch (Exception ex)
             {

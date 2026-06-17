@@ -1,4 +1,4 @@
-﻿﻿using Cognex.VisionPro.Blob;
+﻿﻿﻿using Cognex.VisionPro.Blob;
 using Cognex.VisionPro.PMAlign;
 using PipeChanel;
 using System;
@@ -187,9 +187,12 @@ namespace VisionApplication
         internal int iJobIndex
         {
             get { return currentJobIndex; }
-            set { currentJobIndex = value; }
+            set
+            {
+                currentJobIndex = value;
+                SyncCurrentCardSelection(false);
+            }
         }
-
         #endregion
 
         #region // 多 Job 运行状态字段
@@ -467,7 +470,9 @@ namespace VisionApplication
         private Process GetJCZServerProcess()
         {
             Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
-            if (processes.Length > 0) return processes[0];
+          
+            //2026年6月14日 耗时较长
+            /*if (processes.Length > 0) return processes[0];
 
             foreach (Process p in Process.GetProcesses())
             {
@@ -479,7 +484,7 @@ namespace VisionApplication
                 catch { }
             }
 
-            processes = Process.GetProcessesByName("BJJCZ_Server.exe");
+            processes = Process.GetProcessesByName("BJJCZ_Server.exe");*/
             return processes.Length > 0 ? processes[0] : null;
         }
         /// <summary>
@@ -500,7 +505,7 @@ namespace VisionApplication
                 rts.initStatus.bJCZ = -2;
                 return;
             }
-
+            //查询已有的JCZ_Server进程
             Process proc = GetJCZServerProcess();
             bool needRestart = false;
 
@@ -688,15 +693,22 @@ namespace VisionApplication
 
             for (int card = 0; card < MaxLaserCards; card++)
             {
-                if (bInitJCZ[card] == 0) // 板卡初始化成功
+             //   if (bInitJCZ[card] == 0) // 板卡初始化成功
                 {
-                   LoadDefaultEzdForCard(card);
+                    bInitJCZ[card] = 0;
+                    _ = InitializeJczCardAfterConnect(card);
                 }
             }
                 /* operLog.iEventStatus = 0;
                  operLog.strOperEvent = "服务端与双管道初始化完成";
                  AddLog();*/
             }
+
+        private async Task InitializeJczCardAfterConnect(int card)
+        {
+            await SendAlignParamToJCZServer(card);
+            await LoadDefaultEzdForCard(card);
+        }
 
         private string GetLaserTemplateFileName(int card)
         {
@@ -737,7 +749,7 @@ namespace VisionApplication
             CommonCls.FileOper.SaveUserParam(cup);
         }
 
-        private async void LoadDefaultEzdForCard(int card)
+        private async Task LoadDefaultEzdForCard(int card)
         {
             var dispatcher = laserDispatchers[card];
             if (dispatcher == null) return;
@@ -762,7 +774,6 @@ namespace VisionApplication
 
             try
             {
-                await SendAlignParamToJCZServer(card);
                 await dispatcher.SendCommandAsync(param);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = $"加载激光模板(卡{card + 1})成功";
@@ -1016,7 +1027,7 @@ namespace VisionApplication
                     operLog.strOperEvent = "查询板卡状态";
                     if (received.nErr != 0)
                     {
-                        rts.initStatus.bJCZ = -2;
+                    //    rts.initStatus.bJCZ = -2;
                         toolBtSta_LockImage.Checked = false;
                         toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
                     }
@@ -1349,11 +1360,25 @@ namespace VisionApplication
             return Math.Max(0, Math.Min(jobIndex, MaxLaserCards - 1));
         }
 
+        /// <summary>
+        /// 根据当前工位号同步当前板卡号。
+        /// 仅对 A/B 面（0/1）生效，保留其它工位模式下的现有板卡选择。
+        /// </summary>
+        private void SyncCurrentCardSelection(bool refreshUI)
+        {
+            if (currentJobIndex >= 0 && currentJobIndex < 2)
+                currentCardSN = GetCardSNByJob(currentJobIndex);
+
+            if (refreshUI)
+                UpdateLaserButtonStates();
+        }
+
         private bool IsFaceLaserBusy(int faceIndex)
         {
             int cardSN = GetCardSNByJob(faceIndex);
             return cardSN >= 0 && cardSN < iLaserWorkingTypes.Length && iLaserWorkingTypes[cardSN] != 0;
         }
+
 
         private Label GetFaceTriggerLabel(int faceIndex)
         {
@@ -1542,7 +1567,7 @@ namespace VisionApplication
 
         private void ApplyJobSelection(int jobIndex)
         {
-            currentJobIndex = jobIndex;
+            iJobIndex = jobIndex;
 
             if (vpWin != null && jobIndex >= 0)
                 vpWin._iJobIndex = jobIndex;
@@ -1551,6 +1576,8 @@ namespace VisionApplication
                 SwitchCard(GetCardSNByJob(jobIndex));
             else
                 UpdateLaserButtonStates();
+
+            InitParamUI();
         }
 
         private int CaptureVisionExecutionJobIndex()
@@ -1606,11 +1633,8 @@ namespace VisionApplication
 
         private void UpdateJobMenuText()
         {
-            int cardA = GetCardSNByJob(0);
-            int cardB = GetCardSNByJob(1);
-
-            menuWS_Job1.Text = $"A面（板卡{cardA + 1}）";
-            menuWS_Job2.Text = $"B面（板卡{cardB + 1}）";
+            menuWS_Job1.Text = "A面";
+            menuWS_Job2.Text = "B面";
         }
 
         /// <summary>
@@ -1811,9 +1835,6 @@ namespace VisionApplication
             if (card < 0 || card >= MaxLaserCards)
                 return;
 
-            if (!HasValidAlignParam(card) && vpWin != null)
-                vpWin.GetAlignRegion(ref alImParam[card], card);
-
             if (!HasValidAlignParam(card))
             {
                 string detail = GetAlignParamState(card);
@@ -1864,6 +1885,30 @@ namespace VisionApplication
                 operLog.strFailReason = "命令超时";
                 AddLog();
             }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"发送对齐参数(卡{card + 1})";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
+
+        private async Task RefreshAndSendAlignParamToJCZServer(int card)
+        {
+            if (card < 0 || card >= MaxLaserCards || vpWin == null)
+                return;
+
+            vpWin.GetAlignRegion(ref alImParam[card], card);
+            await SendAlignParamToJCZServer(card);
+        }
+
+        private async Task RefreshAndSendAlignParamForJobAsync(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= MaxLaserCards)
+                return;
+
+            await RefreshAndSendAlignParamToJCZServer(jobIndex);
         }
 
         /// <summary>
@@ -2046,7 +2091,6 @@ namespace VisionApplication
                     strFileName = templatePath,
                     ind3 = 0
                 };
-                await SendAlignParamToJCZServer(card);
                 await dispatcher.SendCommandAsync(loadParam);
 
                 // 执行激光标刻
@@ -2230,6 +2274,16 @@ namespace VisionApplication
 
                 // 获取现有服务端窗口句柄并嵌入
                 await Task.Run(() => ConnectToExistingJCZServer());
+
+                for (int card = 0; card < MaxLaserCards; card++)
+                {
+                  //  if (bInitJCZ[card] == 0) // 板卡初始化成功
+                    {
+                        await Task.Run(() => InitializeJczCardAfterConnect(card));
+                        bInitJCZ[card] = 0;
+                        //  _ = InitializeJczCardAfterConnect(card);
+                    }
+                }
             }
             else
             {
@@ -2239,6 +2293,14 @@ namespace VisionApplication
                 AddLog();
 
                 await Task.Run(() => InitJCZ());
+            /*    for (int card = 0; card < MaxLaserCards; card++)
+                {
+                 //   if (bInitJCZ[card] == 0) // 板卡初始化成功
+                    {
+                        await Task.Run(() => InitializeJczCardAfterConnect(card));
+                        //  _ = InitializeJczCardAfterConnect(card);
+                    }
+                }*/
             }
         }
 
@@ -3018,7 +3080,7 @@ namespace VisionApplication
             vpWin.SetPMAParam(pmaParam, iJobIndex);
         }
 
-        private void btPMAlignParam_Click(object sender, EventArgs e)
+        private async void btPMAlignParam_Click(object sender, EventArgs e)
         {
             {
                 if (vpWin._iTaskType != 5 && !vpWin.bMainTaskFinished)
@@ -3058,13 +3120,14 @@ namespace VisionApplication
                     bVPPParamChanged = true;
 
                     vpWin._iTaskType = 5;
+                    vpWin.bEnableActivate = false;
                     operLog.iEventStatus = 0;
                     ((Button)sender).FlatStyle = FlatStyle.Flat;
                     vpWin.bMainTaskFinished = false;
                 }
                 else
                 {
-                    vpWin.setPMA(pmaV2.Subject);
+                    bool bSetPMA = vpWin.setPMA(pmaV2.Subject);
                     splitContainer2.Panel1.Controls.Remove(pmaV2);
                     pmaV2.Dispose();
 
@@ -3073,9 +3136,34 @@ namespace VisionApplication
                     vpWin.bMainTaskFinished = true;
 
                     vpWin.Visible = true;
+                    if (!bSetPMA)
+                    {
+                        string pmaFailReason = "PMA模板写回未确认，继续发送对齐参数";
+                        if (vpWin.strErrInfo != null &&
+                            iJobIndex >= 0 &&
+                            iJobIndex < vpWin.strErrInfo.Length &&
+                            !string.IsNullOrWhiteSpace(vpWin.strErrInfo[iJobIndex]))
+                        {
+                            pmaFailReason += ": " + vpWin.strErrInfo[iJobIndex];
+                        }
+
+                        operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "模板定位";
+                        operLog.strFailReason = pmaFailReason;
+                        AddLog();
+                    }
+
+                    int jobIndex = iJobIndex;
+                    if (jobIndex >= 0 && jobIndex < MaxLaserCards)
+                    {
+                        int card = GetCardSNByJob(jobIndex);
+                        vpWin.GetAlignRegion(ref alImParam[card], card);
+                        await SendAlignParamToJCZServer(card);
+                    }
                 }
             }
         }
+
 
         private void chkPMAAutoEdgeThre_CheckedChanged(object sender, EventArgs e)
         {
@@ -3184,9 +3272,9 @@ namespace VisionApplication
         {
             cmbPolarity.SelectedIndex = cbp.bPolarity ? 0 : 1;
             cmbThreModel.SelectedIndex = cbp.iSegType;
-            numUDThre.Value = cbp.iThre;
-            numUDAreaMin.Value = cbp.iAreaMin;
-            numUDAreaMax.Value = cbp.iAreaMax;
+            numUDThre.Value = Math.Max(cbp.iThre,1);
+            numUDAreaMin.Value = Math.Max(cbp.iAreaMin, 2000);
+            numUDAreaMax.Value = Math.Max(cbp.iAreaMax,2000);
         }
 
         private void UpdateCalibBlobParam2VarFromUI()
@@ -3218,6 +3306,7 @@ namespace VisionApplication
         }
         private void numUDThre_ValueChanged(object sender, EventArgs e)
         {
+            
             trackBarThre.Value = (int)numUDThre.Value;
         }
         private void numUDAreaMin_ValueChanged(object sender, EventArgs e) { }
@@ -3278,6 +3367,11 @@ namespace VisionApplication
 
         private void UpdateCalibPointTable()
         {
+            if((dCalibPointLaser[0]== dCalibPointLaser[2]) &&
+                (dCalibPointLaser[1] == dCalibPointLaser[3]))
+            {
+                CalcuLaserCoord();
+            } 
             dgvMarkCood.Rows.Clear();
             for (int i = 0; i < featurePointNum; i++)
             {
@@ -3314,6 +3408,7 @@ namespace VisionApplication
                 bVPPParamChanged = true;
 
                 vpWin._iTaskType = 5;
+                vpWin.bEnableActivate = false;
                 operLog.iEventStatus = 0;
                 ((Button)sender).FlatStyle = FlatStyle.Flat;
                 vpWin.bMainTaskFinished = false;
@@ -3325,6 +3420,7 @@ namespace VisionApplication
                 blobV2.Dispose();
 
                 vpWin._iTaskType = iTmpType;
+                vpWin.bEnableActivate = true;
                 ((Button)sender).FlatStyle = FlatStyle.Popup;
                 vpWin.bMainTaskFinished = true;
 
@@ -3574,9 +3670,33 @@ namespace VisionApplication
                 return false;
             }
         }
+
+
+        private void CalcuLaserCoord()
+        {
+            int featureCount = cup.calTP.iRow * cup.calTP.iCol;
+            featurePointNum = featureCount;
+            dCalibPointLaser = new double[featureCount * 2];
+            int ind = 0;
+            for (double i = -(cup.calTP.iRow - 1) / 2; i <= (cup.calTP.iRow - 1) / 2; i++)
+            {
+                for (double j = -(cup.calTP.iCol - 1) / 2; j <= (cup.calTP.iCol - 1) / 2; j++)
+                {
+                    dCalibPointLaser[ind * 2] = j * cup.calTP.dDisX;
+                    dCalibPointLaser[ind * 2 + 1] = i * cup.calTP.dDisY;
+
+                    // 根据相机镜像设置调整坐标方向
+                 /*   if (cup.p_Cam[icamSelectInd].iFlipType == 1)
+                        dCalibPointLaser[ind * 2] = -j * cup.calTP.dDisX;
+                    if (cup.p_Cam[icamSelectInd].iFlipType == 2)
+                        dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;*/
+                    ind++;
+                }
+            }
+        }
         /// <summary>
-        /// 创建9点标定模板（动态生成方形阵列填充圆）
-        /// </summary>
+         /// 创建9点标定模板（动态生成方形阵列填充圆）
+         /// </summary>
         private async Task<bool> CreateCalibTemplateAsync()
         {
             int card = currentCardSN;
@@ -3630,8 +3750,7 @@ namespace VisionApplication
                 // 1. 从UI更新模板参数
                 UpdateCalibTemplate2VarFromUI();
 
-                int featureCount = cup.calTP.iRow * cup.calTP.iCol;
-                featurePointNum = featureCount;
+              
 
                 // 2. 先加载空白模板，确保基础文件保留不变，并清空当前实体库。
                 var loadBaseResult = await LoadCalibTemplateAsync(dispatcher, card, baseTemplateFullPath);
@@ -3644,6 +3763,9 @@ namespace VisionApplication
                 }
 
                 // 3. 重新计算激光坐标点
+                CalcuLaserCoord();
+                int featureCount = cup.calTP.iRow * cup.calTP.iCol;
+              /*  featurePointNum = featureCount;
                 dCalibPointLaser = new double[featureCount * 2];
                 int ind = 0;
                 for (double i = -(cup.calTP.iRow - 1) / 2; i <= (cup.calTP.iRow - 1) / 2; i++)
@@ -3660,7 +3782,7 @@ namespace VisionApplication
                             dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;
                         ind++;
                     }
-                }
+                }*/
 
                 // 4. 依次创建每个填充圆对象
 
@@ -3955,7 +4077,7 @@ namespace VisionApplication
                 await Task.Delay(200);
 
                 // 7. 采集图像并分析（Blob 提取特征点坐标）
-                bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync(card);
+                bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync(iJobIndex);
 
                 if (blobSuccess)
                 {
@@ -4031,7 +4153,7 @@ namespace VisionApplication
         /// <summary>
         /// 采集并分析标定图像（异步版本）
         /// </summary>
-        private async Task<bool> CaptureAndAnalyzeCalibImageAsync(int card)
+        private async Task<bool> CaptureAndAnalyzeCalibImageAsync(int iJobIndex)
         {
             var tcs = new TaskCompletionSource<bool>();
 
@@ -4043,7 +4165,7 @@ namespace VisionApplication
                     CaptureCalibImage();
 
                     // 进行Blob分析
-                    bool success = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, card);
+                    bool success = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
 
                     if (success)
                     {
@@ -4506,6 +4628,7 @@ namespace VisionApplication
             }
             UpdateCamParam2UI();
             ViewLayout();
+            SyncCurrentCardSelection(true);
         }
 
         #endregion
@@ -4712,7 +4835,7 @@ namespace VisionApplication
                 }
 
                 // 加载激光模板
-                string templatePath = GetLaserTemplatePath(card);
+               /* string templatePath = GetLaserTemplatePath(card);
                 var loadParam = new LCZControlParam
                 {
                     cmdType = 4,
@@ -4720,8 +4843,7 @@ namespace VisionApplication
                     strFileName = templatePath,
                     ind3 = 0
                 };
-              //  await SendAlignParamToJCZServer(card);  20260614
-                await dispatcher.SendCommandAsync(loadParam);
+                await dispatcher.SendCommandAsync(loadParam);*/
 
                 // 开始标刻
                 var markParam = new LCZControlParam

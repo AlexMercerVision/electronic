@@ -236,9 +236,11 @@ namespace VisionControl
                 _aliveTimer = null;
             }
         }
-
+        public bool bEnableActivate = true;
         private void OnAliveTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
+            if (!bEnableActivate)
+                return;
             if (this.InvokeRequired)
                 this.BeginInvoke(new Action(() => ActivateRun()));
             else
@@ -635,7 +637,7 @@ namespace VisionControl
         {            
             try
             {  
-                if (iJobIndex >= 0)     
+                if (iJobIndex >= 0)
                 {
                     
                     //2026年4月12日 修改了采集图像函数
@@ -797,11 +799,12 @@ namespace VisionControl
 
         //设置VP的输入图像
         public void SetVPPImage(int iJobIndex)
-        { 
-            if(cup.p_Cam[iJobIndex].iMonoType==0 && acqFIFO.ci8gAcq[iJobIndex]!=null)
-                ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci8gAcq[iJobIndex];
+        {
+            int iCamIndex = cup.p_CD.camInd[iJobIndex];
+            if (cup.p_Cam[iJobIndex].iMonoType==0 && acqFIFO.ci8gAcq[iCamIndex] !=null)
+                ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci8gAcq[iCamIndex];
             else
-                ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci24ColorAcq[iJobIndex];
+                ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci24ColorAcq[iCamIndex];
         }
 
 
@@ -1471,11 +1474,31 @@ namespace VisionControl
         {
             try
             {
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] = pma;
+                CogToolGroup toolGroup = mJM.Job(iJobIndex).VisionTool as CogToolGroup;
+                if (toolGroup == null)
+                {
+                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                        strErrInfo[iJobIndex] = "PMA写回失败: 当前Job不是CogToolGroup";
+                    return false;
+                }
+                if (pma == null)
+                {
+                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                        strErrInfo[iJobIndex] = "PMA写回失败: CogPMAlignMultiTool为空";
+                    return false;
+                }
+
+                CogPMAlignMultiTool current = toolGroup.Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool;
+                if (object.ReferenceEquals(current, pma))
+                    return true;
+
+                toolGroup.Tools["CogPMAlignMultiTool1"] = pma;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                    strErrInfo[iJobIndex] = "PMA写回异常: " + ex.Message;
                 return false;
             }
         }
@@ -1483,14 +1506,35 @@ namespace VisionControl
         {
             try
             {
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] = pma;
+                CogToolGroup toolGroup = mJM.Job(iJobIndex).VisionTool as CogToolGroup;
+                if (toolGroup == null)
+                {
+                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                        strErrInfo[iJobIndex] = "PMA写回失败: 当前Job不是CogToolGroup";
+                    return false;
+                }
+                if (pma == null)
+                {
+                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                        strErrInfo[iJobIndex] = "PMA写回失败: CogPMAlignTool为空";
+                    return false;
+                }
+
+                CogPMAlignTool current = toolGroup.Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                if (object.ReferenceEquals(current, pma))
+                    return true;
+
+                toolGroup.Tools["CogPMAlignTool1"] = pma;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                    strErrInfo[iJobIndex] = "PMA写回异常: " + ex.Message;
                 return false;
             }
         }
+
 
 
         public void SetPMAParam(PMAlignParam pmaParam)
@@ -3583,11 +3627,11 @@ namespace VisionControl
         public void DirectShowImage(int iJobIndex)
         {
             ICogImage cogImg=null;
-
-            if (cup.p_Cam[iJobIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iJobIndex] != null)
-                cogImg = acqFIFO.ci8gAcq[iJobIndex];
-            else if(acqFIFO.ci24ColorAcq[iJobIndex] != null)
-                cogImg = acqFIFO.ci24ColorAcq[iJobIndex];
+            int iCamIndex = cup.p_CD.camInd[iJobIndex];
+            if (cup.p_Cam[iJobIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
+                cogImg = acqFIFO.ci8gAcq[iCamIndex];
+            else if(acqFIFO.ci24ColorAcq[iCamIndex] != null)
+                cogImg = acqFIFO.ci24ColorAcq[iCamIndex];
 
             {
                  

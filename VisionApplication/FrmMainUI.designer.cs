@@ -636,14 +636,14 @@ namespace VisionApplication
             // 
             this.menuWS_Job1.Name = "menuWS_Job1";
             this.menuWS_Job1.Size = new System.Drawing.Size(151, 22);
-            this.menuWS_Job1.Text = "A面（板卡1）";
+            this.menuWS_Job1.Text = "A面";
             this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job2
             // 
             this.menuWS_Job2.Name = "menuWS_Job2";
             this.menuWS_Job2.Size = new System.Drawing.Size(151, 22);
-            this.menuWS_Job2.Text = "B面（板卡2）";
+            this.menuWS_Job2.Text = "B面";
             this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job3
@@ -3717,7 +3717,7 @@ namespace VisionApplication
             0,
             0,
             0});
-            this.numUDAreaMax.Location = new System.Drawing.Point(159, 63);
+            this.numUDAreaMax.Location = new System.Drawing.Point(159, 62);
             this.numUDAreaMax.Maximum = new decimal(new int[] {
             100000,
             0,
@@ -3900,6 +3900,7 @@ namespace VisionApplication
             // 
             // numUDRow
             // 
+            this.numUDRow.Enabled = false;
             this.numUDRow.Location = new System.Drawing.Point(42, 5);
             this.numUDRow.Maximum = new decimal(new int[] {
             9,
@@ -3932,6 +3933,7 @@ namespace VisionApplication
             // 
             // numUDCol
             // 
+            this.numUDCol.Enabled = false;
             this.numUDCol.Location = new System.Drawing.Point(146, 5);
             this.numUDCol.Maximum = new decimal(new int[] {
             9,

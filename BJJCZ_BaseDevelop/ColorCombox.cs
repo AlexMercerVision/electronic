@@ -28,9 +28,7 @@ namespace BJJCZ_BaseDevelop
         {
             this.DrawMode = DrawMode.OwnerDrawFixed;
             this.DropDownStyle = ComboBoxStyle.DropDownList;
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
-          //  this.SizeMode = PictureBoxSizeMode.Normal;
-            this.ResizeRedraw = true;
+
             // 添加常用颜色
             ResetPenColors();
 

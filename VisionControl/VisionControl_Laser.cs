@@ -354,17 +354,21 @@ namespace VisionControl
         {
             try
             {
-                CogAffineTransformTool cogTrans = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
+                CogToolBlock ctb = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock;
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(ctb);
+
+                CogAffineTransformTool cogTrans =ctb.Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
                 alImParam.dCenX = cogTrans.Region.CenterX;
                 alImParam.dCenY = cogTrans.Region.CenterY;
                 alImParam.dWidth = cogTrans.Region.SideXLength;
                 alImParam.dHeight = cogTrans.Region.SideYLength;
 
                 cogTrans.Run();
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(ctb);
                 CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
+                string strImageFile = @".\data\" + ((jobIndex==0)? "sourceBGImgA.jpg":"sourceBGImgB.jpg");
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
                 mImageFile.Append(cogIm);
                 mImageFile.Close();

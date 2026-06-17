@@ -75,8 +75,16 @@ namespace VisionApplication
             this.label2 = new System.Windows.Forms.Label();
             this.label78 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.tabBoard = new System.Windows.Forms.TabPage();
+            this.groupBox15 = new System.Windows.Forms.GroupBox();
+            this.cmbBoardB = new System.Windows.Forms.ComboBox();
+            this.cmbBoardA = new System.Windows.Forms.ComboBox();
+            this.label101 = new System.Windows.Forms.Label();
+            this.label100 = new System.Windows.Forms.Label();
             this.tabSer = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.lblSerStationB = new System.Windows.Forms.Label();
+            this.lblSerStationA = new System.Windows.Forms.Label();
             this.label35 = new System.Windows.Forms.Label();
             this.label26 = new System.Windows.Forms.Label();
             this.chkSerUsed4 = new System.Windows.Forms.CheckBox();
@@ -377,6 +385,7 @@ namespace VisionApplication
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.Controls.Add(this.tabLine);
             this.tabControl1.Controls.Add(this.tabCam);
+            this.tabControl1.Controls.Add(this.tabBoard);
             this.tabControl1.Controls.Add(this.tabSer);
             this.tabControl1.Controls.Add(this.tabPath);
             this.tabControl1.Controls.Add(this.tabImItem);
@@ -385,7 +394,6 @@ namespace VisionApplication
             this.tabControl1.Controls.Add(this.tabDL);
             this.tabControl1.Controls.Add(this.tabDiagnose);
             this.tabControl1.Controls.Add(this.tabFX);
-            this.tabControl1.Controls.Add(this.tabBlow);
             this.tabControl1.Location = new System.Drawing.Point(12, 2);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -592,7 +600,7 @@ namespace VisionApplication
             // 
             // txtSub4Prefix
             // 
-            this.txtSub4Prefix.Location = new System.Drawing.Point(256, 205);
+            this.txtSub4Prefix.Location = new System.Drawing.Point(256, 350);
             this.txtSub4Prefix.Name = "txtSub4Prefix";
             this.txtSub4Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub4Prefix.TabIndex = 18;
@@ -600,7 +608,7 @@ namespace VisionApplication
             // 
             // txtSub3Prefix
             // 
-            this.txtSub3Prefix.Location = new System.Drawing.Point(256, 167);
+            this.txtSub3Prefix.Location = new System.Drawing.Point(256, 275);
             this.txtSub3Prefix.Name = "txtSub3Prefix";
             this.txtSub3Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub3Prefix.TabIndex = 18;
@@ -608,7 +616,7 @@ namespace VisionApplication
             // 
             // txtSub2Prefix
             // 
-            this.txtSub2Prefix.Location = new System.Drawing.Point(256, 124);
+            this.txtSub2Prefix.Location = new System.Drawing.Point(256, 200);
             this.txtSub2Prefix.Name = "txtSub2Prefix";
             this.txtSub2Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub2Prefix.TabIndex = 18;
@@ -616,24 +624,24 @@ namespace VisionApplication
             // 
             // txtSub1Prefix
             // 
-            this.txtSub1Prefix.Location = new System.Drawing.Point(256, 84);
+            this.txtSub1Prefix.Location = new System.Drawing.Point(256, 125);
             this.txtSub1Prefix.Name = "txtSub1Prefix";
             this.txtSub1Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub1Prefix.TabIndex = 18;
-            this.txtSub1Prefix.Text = "Sub1";
+            this.txtSub1Prefix.Text = "PB";
             // 
             // txtMainPrefix
             // 
-            this.txtMainPrefix.Location = new System.Drawing.Point(256, 43);
+            this.txtMainPrefix.Location = new System.Drawing.Point(256, 50);
             this.txtMainPrefix.Name = "txtMainPrefix";
             this.txtMainPrefix.Size = new System.Drawing.Size(100, 21);
             this.txtMainPrefix.TabIndex = 18;
-            this.txtMainPrefix.Text = "Main";
+            this.txtMainPrefix.Text = "PA";
             // 
             // chkCam5Used
             // 
             this.chkCam5Used.AutoSize = true;
-            this.chkCam5Used.Location = new System.Drawing.Point(421, 204);
+            this.chkCam5Used.Location = new System.Drawing.Point(421, 350);
             this.chkCam5Used.Name = "chkCam5Used";
             this.chkCam5Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam5Used.TabIndex = 17;
@@ -644,7 +652,7 @@ namespace VisionApplication
             // chkCam4Used
             // 
             this.chkCam4Used.AutoSize = true;
-            this.chkCam4Used.Location = new System.Drawing.Point(421, 164);
+            this.chkCam4Used.Location = new System.Drawing.Point(421, 275);
             this.chkCam4Used.Name = "chkCam4Used";
             this.chkCam4Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam4Used.TabIndex = 17;
@@ -655,7 +663,7 @@ namespace VisionApplication
             // chkCam3Used
             // 
             this.chkCam3Used.AutoSize = true;
-            this.chkCam3Used.Location = new System.Drawing.Point(421, 124);
+            this.chkCam3Used.Location = new System.Drawing.Point(421, 200);
             this.chkCam3Used.Name = "chkCam3Used";
             this.chkCam3Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam3Used.TabIndex = 17;
@@ -666,7 +674,7 @@ namespace VisionApplication
             // chkCam2Used
             // 
             this.chkCam2Used.AutoSize = true;
-            this.chkCam2Used.Location = new System.Drawing.Point(421, 84);
+            this.chkCam2Used.Location = new System.Drawing.Point(421, 125);
             this.chkCam2Used.Name = "chkCam2Used";
             this.chkCam2Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam2Used.TabIndex = 17;
@@ -677,7 +685,7 @@ namespace VisionApplication
             // chkCam1Used
             // 
             this.chkCam1Used.AutoSize = true;
-            this.chkCam1Used.Location = new System.Drawing.Point(421, 44);
+            this.chkCam1Used.Location = new System.Drawing.Point(421, 50);
             this.chkCam1Used.Name = "chkCam1Used";
             this.chkCam1Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam1Used.TabIndex = 17;
@@ -689,7 +697,7 @@ namespace VisionApplication
             // 
             this.chbTriggleOpen.AutoSize = true;
             this.chbTriggleOpen.Enabled = false;
-            this.chbTriggleOpen.Location = new System.Drawing.Point(515, 267);
+            this.chbTriggleOpen.Location = new System.Drawing.Point(256, 421);
             this.chbTriggleOpen.Name = "chbTriggleOpen";
             this.chbTriggleOpen.Size = new System.Drawing.Size(72, 16);
             this.chbTriggleOpen.TabIndex = 16;
@@ -706,7 +714,7 @@ namespace VisionApplication
             "高电平触发",
             "低电平触发",
             "软件触发"});
-            this.cmbTriggleModel.Location = new System.Drawing.Point(92, 258);
+            this.cmbTriggleModel.Location = new System.Drawing.Point(96, 420);
             this.cmbTriggleModel.Name = "cmbTriggleModel";
             this.cmbTriggleModel.Size = new System.Drawing.Size(121, 20);
             this.cmbTriggleModel.TabIndex = 15;
@@ -717,7 +725,7 @@ namespace VisionApplication
             this.label17.Enabled = false;
             this.label17.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label17.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label17.Location = new System.Drawing.Point(14, 259);
+            this.label17.Location = new System.Drawing.Point(20, 421);
             this.label17.Name = "label17";
             this.label17.Size = new System.Drawing.Size(70, 14);
             this.label17.TabIndex = 14;
@@ -727,60 +735,60 @@ namespace VisionApplication
             // 
             this.rd5.AutoSize = true;
             this.rd5.Enabled = false;
-            this.rd5.Location = new System.Drawing.Point(515, 208);
+            this.rd5.Location = new System.Drawing.Point(515, 350);
             this.rd5.Name = "rd5";
             this.rd5.Size = new System.Drawing.Size(107, 16);
             this.rd5.TabIndex = 2;
             this.rd5.TabStop = true;
-            this.rd5.Text = "指定为外触发源";
+            this.rd5.Text = "使用外部触发";
             this.rd5.UseVisualStyleBackColor = true;
             // 
             // rd3
             // 
             this.rd3.AutoSize = true;
             this.rd3.Enabled = false;
-            this.rd3.Location = new System.Drawing.Point(515, 128);
+            this.rd3.Location = new System.Drawing.Point(515, 200);
             this.rd3.Name = "rd3";
             this.rd3.Size = new System.Drawing.Size(107, 16);
             this.rd3.TabIndex = 2;
             this.rd3.TabStop = true;
-            this.rd3.Text = "指定为外触发源";
+            this.rd3.Text = "使用外部触发";
             this.rd3.UseVisualStyleBackColor = true;
             // 
             // rd4
             // 
             this.rd4.AutoSize = true;
             this.rd4.Enabled = false;
-            this.rd4.Location = new System.Drawing.Point(515, 168);
+            this.rd4.Location = new System.Drawing.Point(515, 275);
             this.rd4.Name = "rd4";
             this.rd4.Size = new System.Drawing.Size(107, 16);
             this.rd4.TabIndex = 2;
             this.rd4.TabStop = true;
-            this.rd4.Text = "指定为外触发源";
+            this.rd4.Text = "使用外部触发";
             this.rd4.UseVisualStyleBackColor = true;
             // 
             // rd2
             // 
             this.rd2.AutoSize = true;
             this.rd2.Enabled = false;
-            this.rd2.Location = new System.Drawing.Point(515, 88);
+            this.rd2.Location = new System.Drawing.Point(515, 125);
             this.rd2.Name = "rd2";
             this.rd2.Size = new System.Drawing.Size(107, 16);
             this.rd2.TabIndex = 2;
             this.rd2.TabStop = true;
-            this.rd2.Text = "指定为外触发源";
+            this.rd2.Text = "使用外部触发";
             this.rd2.UseVisualStyleBackColor = true;
             // 
             // rd1
             // 
             this.rd1.AutoSize = true;
             this.rd1.Enabled = false;
-            this.rd1.Location = new System.Drawing.Point(515, 48);
+            this.rd1.Location = new System.Drawing.Point(515, 50);
             this.rd1.Name = "rd1";
             this.rd1.Size = new System.Drawing.Size(107, 16);
             this.rd1.TabIndex = 2;
             this.rd1.TabStop = true;
-            this.rd1.Text = "指定为外触发源";
+            this.rd1.Text = "使用外部触发";
             this.rd1.UseVisualStyleBackColor = true;
             // 
             // cmbCamInd5
@@ -792,7 +800,7 @@ namespace VisionApplication
             "相机3",
             "相机4",
             "相机5"});
-            this.cmbCamInd5.Location = new System.Drawing.Point(96, 205);
+            this.cmbCamInd5.Location = new System.Drawing.Point(96, 350);
             this.cmbCamInd5.Name = "cmbCamInd5";
             this.cmbCamInd5.Size = new System.Drawing.Size(121, 20);
             this.cmbCamInd5.TabIndex = 1;
@@ -806,7 +814,7 @@ namespace VisionApplication
             "相机3",
             "相机4",
             "相机5"});
-            this.cmbCamInd3.Location = new System.Drawing.Point(96, 125);
+            this.cmbCamInd3.Location = new System.Drawing.Point(96, 200);
             this.cmbCamInd3.Name = "cmbCamInd3";
             this.cmbCamInd3.Size = new System.Drawing.Size(121, 20);
             this.cmbCamInd3.TabIndex = 1;
@@ -820,7 +828,7 @@ namespace VisionApplication
             "相机3",
             "相机4",
             "相机5"});
-            this.cmbCamInd4.Location = new System.Drawing.Point(96, 165);
+            this.cmbCamInd4.Location = new System.Drawing.Point(96, 275);
             this.cmbCamInd4.Name = "cmbCamInd4";
             this.cmbCamInd4.Size = new System.Drawing.Size(121, 20);
             this.cmbCamInd4.TabIndex = 1;
@@ -834,7 +842,7 @@ namespace VisionApplication
             "相机3",
             "相机4",
             "相机5"});
-            this.cmbCamInd2.Location = new System.Drawing.Point(96, 85);
+            this.cmbCamInd2.Location = new System.Drawing.Point(96, 125);
             this.cmbCamInd2.Name = "cmbCamInd2";
             this.cmbCamInd2.Size = new System.Drawing.Size(121, 20);
             this.cmbCamInd2.TabIndex = 1;
@@ -848,7 +856,7 @@ namespace VisionApplication
             "相机3",
             "相机4",
             "相机5"});
-            this.cmbCamInd1.Location = new System.Drawing.Point(96, 45);
+            this.cmbCamInd1.Location = new System.Drawing.Point(96, 50);
             this.cmbCamInd1.Name = "cmbCamInd1";
             this.cmbCamInd1.Size = new System.Drawing.Size(121, 20);
             this.cmbCamInd1.TabIndex = 1;
@@ -856,56 +864,128 @@ namespace VisionApplication
             // label21
             // 
             this.label21.AutoSize = true;
-            this.label21.Location = new System.Drawing.Point(19, 208);
+            this.label21.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label21.Location = new System.Drawing.Point(18, 325);
             this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(53, 12);
+            this.label21.Size = new System.Drawing.Size(63, 14);
             this.label21.TabIndex = 0;
-            this.label21.Text = "检测位5:";
+            this.label21.Text = "检测位5";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(19, 128);
+            this.label3.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label3.Location = new System.Drawing.Point(18, 175);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(53, 12);
+            this.label3.Size = new System.Drawing.Size(63, 14);
             this.label3.TabIndex = 0;
-            this.label3.Text = "检测位3:";
+            this.label3.Text = "检测位3";
             // 
             // label20
             // 
             this.label20.AutoSize = true;
-            this.label20.Location = new System.Drawing.Point(19, 168);
+            this.label20.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label20.Location = new System.Drawing.Point(18, 250);
             this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(53, 12);
+            this.label20.Size = new System.Drawing.Size(63, 14);
             this.label20.TabIndex = 0;
-            this.label20.Text = "检测位4:";
+            this.label20.Text = "检测位4";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(19, 88);
+            this.label2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label2.Location = new System.Drawing.Point(18, 100);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(53, 12);
+            this.label2.Size = new System.Drawing.Size(77, 14);
             this.label2.TabIndex = 0;
-            this.label2.Text = "检测位2:";
+            this.label2.Text = "B面工位";
             // 
             // label78
             // 
             this.label78.AutoSize = true;
-            this.label78.Location = new System.Drawing.Point(264, 16);
+            this.label78.Location = new System.Drawing.Point(252, 20);
             this.label78.Name = "label78";
-            this.label78.Size = new System.Drawing.Size(77, 12);
+            this.label78.Size = new System.Drawing.Size(89, 12);
             this.label78.TabIndex = 0;
             this.label78.Text = "文件命名前缀";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(19, 48);
+            this.label1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label1.Location = new System.Drawing.Point(18, 25);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(53, 12);
+            this.label1.Size = new System.Drawing.Size(77, 14);
             this.label1.TabIndex = 0;
-            this.label1.Text = "检测位1:";
+            this.label1.Text = "A面工位";
+            // 
+            // tabBoard
+            // 
+            this.tabBoard.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
+            this.tabBoard.Controls.Add(this.groupBox15);
+            this.tabBoard.Location = new System.Drawing.Point(4, 22);
+            this.tabBoard.Name = "tabBoard";
+            this.tabBoard.Size = new System.Drawing.Size(795, 494);
+            this.tabBoard.TabIndex = 10;
+            this.tabBoard.Text = "板卡分配";
+            // 
+            // groupBox15
+            // 
+            this.groupBox15.Controls.Add(this.cmbBoardB);
+            this.groupBox15.Controls.Add(this.cmbBoardA);
+            this.groupBox15.Controls.Add(this.label101);
+            this.groupBox15.Controls.Add(this.label100);
+            this.groupBox15.Location = new System.Drawing.Point(24, 29);
+            this.groupBox15.Name = "groupBox15";
+            this.groupBox15.Size = new System.Drawing.Size(400, 120);
+            this.groupBox15.TabIndex = 0;
+            this.groupBox15.TabStop = false;
+            this.groupBox15.Text = "板卡分配";
+            // 
+            // cmbBoardB
+            // 
+            this.cmbBoardB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbBoardB.FormattingEnabled = true;
+            this.cmbBoardB.Items.AddRange(new object[] {
+            "板卡1",
+            "板卡2"});
+            this.cmbBoardB.Location = new System.Drawing.Point(116, 72);
+            this.cmbBoardB.Name = "cmbBoardB";
+            this.cmbBoardB.SelectedIndex = 1;
+            this.cmbBoardB.Size = new System.Drawing.Size(150, 20);
+            this.cmbBoardB.TabIndex = 3;
+            // 
+            // cmbBoardA
+            // 
+            this.cmbBoardA.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbBoardA.FormattingEnabled = true;
+            this.cmbBoardA.Items.AddRange(new object[] {
+            "板卡1",
+            "板卡2"});
+            this.cmbBoardA.Location = new System.Drawing.Point(116, 32);
+            this.cmbBoardA.Name = "cmbBoardA";
+            this.cmbBoardA.SelectedIndex = 0;
+            this.cmbBoardA.Size = new System.Drawing.Size(150, 20);
+            this.cmbBoardA.TabIndex = 2;
+            // 
+            // label101
+            // 
+            this.label101.AutoSize = true;
+            this.label101.Location = new System.Drawing.Point(18, 75);
+            this.label101.Name = "label101";
+            this.label101.Size = new System.Drawing.Size(77, 12);
+            this.label101.TabIndex = 1;
+            this.label101.Text = "B面工位板卡:";
+            // 
+            // label100
+            // 
+            this.label100.AutoSize = true;
+            this.label100.Location = new System.Drawing.Point(18, 35);
+            this.label100.Name = "label100";
+            this.label100.Size = new System.Drawing.Size(77, 12);
+            this.label100.TabIndex = 0;
+            this.label100.Text = "A面工位板卡:";
             // 
             // tabSer
             // 
@@ -920,6 +1000,8 @@ namespace VisionApplication
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.lblSerStationB);
+            this.groupBox4.Controls.Add(this.lblSerStationA);
             this.groupBox4.Controls.Add(this.label35);
             this.groupBox4.Controls.Add(this.label26);
             this.groupBox4.Controls.Add(this.chkSerUsed4);
@@ -932,39 +1014,61 @@ namespace VisionApplication
             this.groupBox4.Controls.Add(this.cbxPortName2);
             this.groupBox4.Controls.Add(this.cbxPortName4);
             this.groupBox4.Controls.Add(this.cbxPortName3);
-            this.groupBox4.Location = new System.Drawing.Point(25, 52);
+            this.groupBox4.Location = new System.Drawing.Point(25, 40);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(322, 185);
+            this.groupBox4.Size = new System.Drawing.Size(342, 235);
             this.groupBox4.TabIndex = 60;
             this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "串口分配";
+            this.groupBox4.Text = "工位串口分配";
+            // 
+            // lblSerStationB
+            // 
+            this.lblSerStationB.AutoSize = true;
+            this.lblSerStationB.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblSerStationB.Location = new System.Drawing.Point(8, 128);
+            this.lblSerStationB.Name = "lblSerStationB";
+            this.lblSerStationB.Size = new System.Drawing.Size(63, 14);
+            this.lblSerStationB.TabIndex = 22;
+            this.lblSerStationB.Text = "B面工位";
+            this.lblSerStationB.Visible = false;
+            // 
+            // lblSerStationA
+            // 
+            this.lblSerStationA.AutoSize = true;
+            this.lblSerStationA.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblSerStationA.Location = new System.Drawing.Point(8, 25);
+            this.lblSerStationA.Name = "lblSerStationA";
+            this.lblSerStationA.Size = new System.Drawing.Size(63, 14);
+            this.lblSerStationA.TabIndex = 22;
+            this.lblSerStationA.Text = "A面工位";
+            this.lblSerStationA.Visible = false;
             // 
             // label35
             // 
             this.label35.AutoSize = true;
             this.label35.BackColor = System.Drawing.Color.Transparent;
             this.label35.ForeColor = System.Drawing.Color.Black;
-            this.label35.Location = new System.Drawing.Point(6, 33);
+            this.label35.Location = new System.Drawing.Point(18, 56);
             this.label35.Name = "label35";
-            this.label35.Size = new System.Drawing.Size(53, 12);
+            this.label35.Size = new System.Drawing.Size(71, 12);
             this.label35.TabIndex = 7;
-            this.label35.Text = "主光源：";
+            this.label35.Text = "A面光源口：";
             // 
             // label26
             // 
             this.label26.AutoSize = true;
             this.label26.BackColor = System.Drawing.Color.Transparent;
             this.label26.ForeColor = System.Drawing.Color.Black;
-            this.label26.Location = new System.Drawing.Point(6, 70);
+            this.label26.Location = new System.Drawing.Point(18, 93);
             this.label26.Name = "label26";
-            this.label26.Size = new System.Drawing.Size(83, 12);
+            this.label26.Size = new System.Drawing.Size(71, 12);
             this.label26.TabIndex = 7;
-            this.label26.Text = "侧面光源组1：";
+            this.label26.Text = "B面光源口：";
             // 
             // chkSerUsed4
             // 
             this.chkSerUsed4.AutoSize = true;
-            this.chkSerUsed4.Location = new System.Drawing.Point(261, 146);
+            this.chkSerUsed4.Location = new System.Drawing.Point(271, 195);
             this.chkSerUsed4.Name = "chkSerUsed4";
             this.chkSerUsed4.Size = new System.Drawing.Size(48, 16);
             this.chkSerUsed4.TabIndex = 18;
@@ -976,16 +1080,16 @@ namespace VisionApplication
             this.label36.AutoSize = true;
             this.label36.BackColor = System.Drawing.Color.Transparent;
             this.label36.ForeColor = System.Drawing.Color.Black;
-            this.label36.Location = new System.Drawing.Point(6, 111);
+            this.label36.Location = new System.Drawing.Point(18, 158);
             this.label36.Name = "label36";
-            this.label36.Size = new System.Drawing.Size(83, 12);
+            this.label36.Size = new System.Drawing.Size(47, 12);
             this.label36.TabIndex = 7;
-            this.label36.Text = "侧面光源组2：";
+            this.label36.Text = "备用口：";
             // 
             // chkSerUsed3
             // 
             this.chkSerUsed3.AutoSize = true;
-            this.chkSerUsed3.Location = new System.Drawing.Point(261, 106);
+            this.chkSerUsed3.Location = new System.Drawing.Point(271, 155);
             this.chkSerUsed3.Name = "chkSerUsed3";
             this.chkSerUsed3.Size = new System.Drawing.Size(48, 16);
             this.chkSerUsed3.TabIndex = 19;
@@ -997,16 +1101,16 @@ namespace VisionApplication
             this.label37.AutoSize = true;
             this.label37.BackColor = System.Drawing.Color.Transparent;
             this.label37.ForeColor = System.Drawing.Color.Black;
-            this.label37.Location = new System.Drawing.Point(6, 151);
+            this.label37.Location = new System.Drawing.Point(18, 198);
             this.label37.Name = "label37";
-            this.label37.Size = new System.Drawing.Size(53, 12);
+            this.label37.Size = new System.Drawing.Size(89, 12);
             this.label37.TabIndex = 7;
-            this.label37.Text = "IO模块：";
+            this.label37.Text = "IO口(双工位)：";
             // 
             // chkSerUsed2
             // 
             this.chkSerUsed2.AutoSize = true;
-            this.chkSerUsed2.Location = new System.Drawing.Point(261, 68);
+            this.chkSerUsed2.Location = new System.Drawing.Point(271, 90);
             this.chkSerUsed2.Name = "chkSerUsed2";
             this.chkSerUsed2.Size = new System.Drawing.Size(48, 16);
             this.chkSerUsed2.TabIndex = 20;
@@ -1016,7 +1120,7 @@ namespace VisionApplication
             // cbxPortName1
             // 
             this.cbxPortName1.FormattingEnabled = true;
-            this.cbxPortName1.Location = new System.Drawing.Point(125, 30);
+            this.cbxPortName1.Location = new System.Drawing.Point(135, 53);
             this.cbxPortName1.Name = "cbxPortName1";
             this.cbxPortName1.Size = new System.Drawing.Size(97, 20);
             this.cbxPortName1.TabIndex = 6;
@@ -1026,7 +1130,7 @@ namespace VisionApplication
             // chkSerUsed1
             // 
             this.chkSerUsed1.AutoSize = true;
-            this.chkSerUsed1.Location = new System.Drawing.Point(261, 34);
+            this.chkSerUsed1.Location = new System.Drawing.Point(271, 55);
             this.chkSerUsed1.Name = "chkSerUsed1";
             this.chkSerUsed1.Size = new System.Drawing.Size(48, 16);
             this.chkSerUsed1.TabIndex = 21;
@@ -1036,7 +1140,7 @@ namespace VisionApplication
             // cbxPortName2
             // 
             this.cbxPortName2.FormattingEnabled = true;
-            this.cbxPortName2.Location = new System.Drawing.Point(125, 67);
+            this.cbxPortName2.Location = new System.Drawing.Point(135, 90);
             this.cbxPortName2.Name = "cbxPortName2";
             this.cbxPortName2.Size = new System.Drawing.Size(97, 20);
             this.cbxPortName2.TabIndex = 6;
@@ -1045,7 +1149,7 @@ namespace VisionApplication
             // cbxPortName4
             // 
             this.cbxPortName4.FormattingEnabled = true;
-            this.cbxPortName4.Location = new System.Drawing.Point(125, 148);
+            this.cbxPortName4.Location = new System.Drawing.Point(135, 195);
             this.cbxPortName4.Name = "cbxPortName4";
             this.cbxPortName4.Size = new System.Drawing.Size(97, 20);
             this.cbxPortName4.TabIndex = 6;
@@ -1054,7 +1158,7 @@ namespace VisionApplication
             // cbxPortName3
             // 
             this.cbxPortName3.FormattingEnabled = true;
-            this.cbxPortName3.Location = new System.Drawing.Point(125, 108);
+            this.cbxPortName3.Location = new System.Drawing.Point(135, 155);
             this.cbxPortName3.Name = "cbxPortName3";
             this.cbxPortName3.Size = new System.Drawing.Size(97, 20);
             this.cbxPortName3.TabIndex = 6;
@@ -1076,12 +1180,12 @@ namespace VisionApplication
             this.groupBox3.Controls.Add(this.label40);
             this.groupBox3.Controls.Add(this.label42);
             this.groupBox3.Controls.Add(this.label41);
-            this.groupBox3.Location = new System.Drawing.Point(419, 52);
+            this.groupBox3.Location = new System.Drawing.Point(419, 40);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(174, 203);
             this.groupBox3.TabIndex = 59;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "串口设置";
+            this.groupBox3.Text = "公共串口参数";
             // 
             // txtTimeOut
             // 
@@ -4124,11 +4228,19 @@ namespace VisionApplication
         private System.Windows.Forms.Label label22;
         private System.Windows.Forms.CheckBox chkAcqFromIDB;
         private System.Windows.Forms.CheckBox chkUseWeakCrack;
+        private System.Windows.Forms.TabPage tabBoard;
+        private System.Windows.Forms.GroupBox groupBox15;
+        private System.Windows.Forms.ComboBox cmbBoardB;
+        private System.Windows.Forms.ComboBox cmbBoardA;
+        private System.Windows.Forms.Label label101;
+        private System.Windows.Forms.Label label100;
         private System.Windows.Forms.TabPage tabSer;
         private System.Windows.Forms.ComboBox cbxPortName4;
         private System.Windows.Forms.ComboBox cbxPortName3;
         private System.Windows.Forms.ComboBox cbxPortName2;
         private System.Windows.Forms.ComboBox cbxPortName1;
+        private System.Windows.Forms.Label lblSerStationB;
+        private System.Windows.Forms.Label lblSerStationA;
         private System.Windows.Forms.Label label37;
         private System.Windows.Forms.Label label36;
         private System.Windows.Forms.Label label26;
