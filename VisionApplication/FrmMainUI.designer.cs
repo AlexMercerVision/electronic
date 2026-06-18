@@ -334,7 +334,7 @@ namespace VisionApplication
             this.numUDThre = new System.Windows.Forms.NumericUpDown();
             this.panelCalibModel = new System.Windows.Forms.Panel();
             this.label26 = new System.Windows.Forms.Label();
-            this.btMarkParam = new System.Windows.Forms.Button();
+            this.bt9PointParam = new System.Windows.Forms.Button();
             this.numUDRow = new System.Windows.Forms.NumericUpDown();
             this.label28 = new System.Windows.Forms.Label();
             this.numUDCol = new System.Windows.Forms.NumericUpDown();
@@ -635,21 +635,21 @@ namespace VisionApplication
             // menuWS_Job1
             // 
             this.menuWS_Job1.Name = "menuWS_Job1";
-            this.menuWS_Job1.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_Job1.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job1.Text = "A面";
             this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job2
             // 
             this.menuWS_Job2.Name = "menuWS_Job2";
-            this.menuWS_Job2.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_Job2.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job2.Text = "B面";
             this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job3
             // 
             this.menuWS_Job3.Name = "menuWS_Job3";
-            this.menuWS_Job3.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_Job3.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job3.Text = "C面";
             this.menuWS_Job3.Visible = false;
             this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
@@ -657,7 +657,7 @@ namespace VisionApplication
             // menuWS_JobS
             // 
             this.menuWS_JobS.Name = "menuWS_JobS";
-            this.menuWS_JobS.Size = new System.Drawing.Size(151, 22);
+            this.menuWS_JobS.Size = new System.Drawing.Size(180, 22);
             this.menuWS_JobS.Text = "同步";
             // 
             // menuLaser
@@ -2156,8 +2156,8 @@ namespace VisionApplication
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPageCam);
-            this.tabControl1.Controls.Add(this.tabPageBase);
             this.tabControl1.Controls.Add(this.tabPageCalib);
+            this.tabControl1.Controls.Add(this.tabPageBase);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
@@ -3675,11 +3675,11 @@ namespace VisionApplication
             this.btCalibBlobParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btCalibBlobParam.ForeColor = System.Drawing.Color.Red;
             this.btCalibBlobParam.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btCalibBlobParam.Location = new System.Drawing.Point(240, 27);
+            this.btCalibBlobParam.Location = new System.Drawing.Point(259, 27);
             this.btCalibBlobParam.Name = "btCalibBlobParam";
             this.btCalibBlobParam.Size = new System.Drawing.Size(69, 69);
             this.btCalibBlobParam.TabIndex = 10;
-            this.btCalibBlobParam.Text = "高级设置";
+            this.btCalibBlobParam.Text = "分割工具";
             this.btCalibBlobParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btCalibBlobParam.UseVisualStyleBackColor = true;
             this.btCalibBlobParam.Click += new System.EventHandler(this.btCalibBlobParam_Click);
@@ -3855,7 +3855,7 @@ namespace VisionApplication
             // 
             this.panelCalibModel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panelCalibModel.Controls.Add(this.label26);
-            this.panelCalibModel.Controls.Add(this.btMarkParam);
+            this.panelCalibModel.Controls.Add(this.bt9PointParam);
             this.panelCalibModel.Controls.Add(this.numUDRow);
             this.panelCalibModel.Controls.Add(this.label28);
             this.panelCalibModel.Controls.Add(this.numUDCol);
@@ -3871,7 +3871,7 @@ namespace VisionApplication
             this.panelCalibModel.Controls.Add(this.numUDRad);
             this.panelCalibModel.Location = new System.Drawing.Point(6, 156);
             this.panelCalibModel.Name = "panelCalibModel";
-            this.panelCalibModel.Size = new System.Drawing.Size(318, 92);
+            this.panelCalibModel.Size = new System.Drawing.Size(334, 92);
             this.panelCalibModel.TabIndex = 93;
             // 
             // label26
@@ -3883,20 +3883,20 @@ namespace VisionApplication
             this.label26.TabIndex = 91;
             this.label26.Text = "行数";
             // 
-            // btMarkParam
+            // bt9PointParam
             // 
-            this.btMarkParam.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMarkParam.BackgroundImage")));
-            this.btMarkParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMarkParam.ForeColor = System.Drawing.Color.Red;
-            this.btMarkParam.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btMarkParam.Location = new System.Drawing.Point(216, 19);
-            this.btMarkParam.Name = "btMarkParam";
-            this.btMarkParam.Size = new System.Drawing.Size(71, 72);
-            this.btMarkParam.TabIndex = 10;
-            this.btMarkParam.Text = "标刻参数";
-            this.btMarkParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btMarkParam.UseVisualStyleBackColor = true;
-            this.btMarkParam.Click += new System.EventHandler(this.btCalib_Click);
+            this.bt9PointParam.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("bt9PointParam.BackgroundImage")));
+            this.bt9PointParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.bt9PointParam.ForeColor = System.Drawing.Color.Red;
+            this.bt9PointParam.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.bt9PointParam.Location = new System.Drawing.Point(255, 5);
+            this.bt9PointParam.Name = "bt9PointParam";
+            this.bt9PointParam.Size = new System.Drawing.Size(71, 79);
+            this.bt9PointParam.TabIndex = 10;
+            this.bt9PointParam.Text = "九点工具";
+            this.bt9PointParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.bt9PointParam.UseVisualStyleBackColor = true;
+            this.bt9PointParam.Click += new System.EventHandler(this.bt9PointParam_Click);
             // 
             // numUDRow
             // 
@@ -3925,7 +3925,7 @@ namespace VisionApplication
             // label28
             // 
             this.label28.AutoSize = true;
-            this.label28.Location = new System.Drawing.Point(211, 5);
+            this.label28.Location = new System.Drawing.Point(194, 5);
             this.label28.Name = "label28";
             this.label28.Size = new System.Drawing.Size(44, 12);
             this.label28.TabIndex = 91;
@@ -4090,7 +4090,7 @@ namespace VisionApplication
             0,
             0,
             65536});
-            this.numUDRad.Location = new System.Drawing.Point(260, 1);
+            this.numUDRad.Location = new System.Drawing.Point(196, 29);
             this.numUDRad.Maximum = new decimal(new int[] {
             5,
             0,
@@ -4102,7 +4102,7 @@ namespace VisionApplication
             0,
             0});
             this.numUDRad.Name = "numUDRad";
-            this.numUDRad.Size = new System.Drawing.Size(42, 21);
+            this.numUDRad.Size = new System.Drawing.Size(51, 21);
             this.numUDRad.TabIndex = 90;
             this.numUDRad.Value = new decimal(new int[] {
             25,
@@ -5050,7 +5050,7 @@ namespace VisionApplication
         private System.Windows.Forms.NumericUpDown numUDCenX;
         private System.Windows.Forms.NumericUpDown numUDCol;
         private System.Windows.Forms.NumericUpDown numUDRow;
-        private System.Windows.Forms.Button btMarkParam;
+        private System.Windows.Forms.Button bt9PointParam;
         private System.Windows.Forms.Panel panelCalibModel;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.SplitContainer splitContainer6;

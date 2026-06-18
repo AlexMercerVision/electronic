@@ -304,8 +304,8 @@ namespace VisionApplication
 
             setParam();
             bMaskChanged = false;
-            for (int i = 0; i <4; i++)
-                tabControl1.TabPages.Remove(tabControl1.TabPages[7]);
+            for (int i = 0; i <3; i++)
+                tabControl1.TabPages.Remove(tabControl1.TabPages[8]);
         }
 
         private void btOK_Click(object sender, EventArgs e)

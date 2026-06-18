@@ -593,22 +593,24 @@ namespace VisionApplication
             }
             acqFIFO._rtType = cup.p_Cam[icamSelectInd].iFlipType * 4 + cup.p_Cam[icamSelectInd].iRotateType;
         }
+
+        //2026年6月17日
         //图像镜像
         private void rdMirror_Click(object sender, EventArgs e)
         {
             switch (((RadioButton)sender).Name)
             {
                 case "rdNoneFlip":
-                    cup.p_Cam[icamSelectInd].iFlipType = 0;
+                    cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType = 0;
                     break;
                 case "rdFlipHor":
-                    cup.p_Cam[icamSelectInd].iFlipType = 1;
+                    cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType = 1;
                     break;
                 case "rdFlipVer":
-                    cup.p_Cam[icamSelectInd].iFlipType = 2;
+                    cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType = 2;
                     break;
             }
-            acqFIFO._rtType = cup.p_Cam[icamSelectInd].iFlipType * 4 + cup.p_Cam[icamSelectInd].iRotateType;
+            acqFIFO._rtType = cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType * 4 + cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iRotateType;
         }
         //相机选择
         private void cbDeviceList_SelectedIndexChanged(object sender, EventArgs e)

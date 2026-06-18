@@ -1458,6 +1458,33 @@ namespace VisionControl
             get { return (((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Tools["CogBlobTool1"] as CogBlobTool); }
 
         }
+        
+        public CogCalibNPointToNPointTool _NpointCalibTool
+        {
+            get
+            {
+                // 假设 9 点标定工具位于 Job 0 的 CogToolBlock 中
+                  return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool); 
+
+            }
+        }
+        public bool setNpointCalibTool(CogCalibNPointToNPointTool NPointTool)
+        {
+
+            try
+            {
+                CogCalibNPointToNPointTool current = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                if (object.ReferenceEquals(current, NPointTool))
+                    return true;
+                //     var clonedTool = CogSerializer.(NPointTool) as CogCalibNPointToNPointTool;
+                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] = NPointTool;
+                return true;
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+        }
         public bool setBlob(CogBlobTool blobT)
         {
             try

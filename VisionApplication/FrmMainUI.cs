@@ -1,6 +1,7 @@
 using Cognex.VisionPro.Blob;
 //using PipeChanel;
 using Cognex.VisionPro.PMAlign;
+using Cognex.VisionPro.CalibFix;
 using CommonCls;
 using HalconDotNet;
 /*using System.IO.Pipes;
@@ -2071,35 +2072,54 @@ namespace VisionApplication
             
             AddLog();
         }
-       /* private void AnaEvent()
-        {
-            pmaRes[currentCardSN] = vpWin._PMARes[currentCardSN];
-            if (!pmaRes[currentCardSN].bOk)
-            {
-                operLog.iEventStatus = -2;
-                operLog.strOperEvent = "完成一次运行";
-                operLog.strFailReason = "检测结果：NG";
-                AddLog();
-            }
-            else
-            {
-                operLog.iEventStatus = 2;
-                operLog.strOperEvent = "完成一次运行";
-                operLog.strFailReason = "检测结果：OK";
-                AddLog();
-            } 
-        }*/
+        /* private void AnaEvent()
+         {
+             pmaRes[currentCardSN] = vpWin._PMARes[currentCardSN];
+             if (!pmaRes[currentCardSN].bOk)
+             {
+                 operLog.iEventStatus = -2;
+                 operLog.strOperEvent = "完成一次运行";
+                 operLog.strFailReason = "检测结果：NG";
+                 AddLog();
+             }
+             else
+             {
+                 operLog.iEventStatus = 2;
+                 operLog.strOperEvent = "完成一次运行";
+                 operLog.strFailReason = "检测结果：OK";
+                 AddLog();
+             } 
+         }*/
         //2025年10月7日  执行一次运算输出IO信号
-        private void ExeIOOut(int iJobIndex)
+        private async void ExeIOOut(int iJobIndex)
+     //   private void ExeIOOut(int iJobIndex)
         {
-            if (csd.SendResultToIO(sPortCy, iJobIndex==0, cup.p_IOPP))
+            /* if (csd.SendResultToIO(sPortCy, iJobIndex==0, cup.p_IOPP))
+             {
+                 if (iJobIndex == 0)
+                     lblOut1.ForeColor = Color.Red;
+                 else if (iJobIndex == 1)
+                     lblOut2.ForeColor = Color.Red;
+                 if (!timerIOOut.Enabled)
+                     timerIOOut.Start();
+             }*/
+            // 发送 IO 信号（假设此方法不会阻塞）
+            if (csd.SendResultToIO(sPortCy, iJobIndex == 0, cup.p_IOPP))
             {
-                if (iJobIndex >= 0 && iJobIndex < pmaRes.Length && pmaRes[iJobIndex].bOk)
+                // 1. 变红
+                if (iJobIndex == 0)
                     lblOut1.ForeColor = Color.Red;
-                else
+                else if (iJobIndex == 1)
                     lblOut2.ForeColor = Color.Red;
-                if (!timerIOOut.Enabled)
-                    timerIOOut.Start();
+
+                // 2. 异步等待 1 秒，不阻塞 UI
+                await Task.Delay(1000);
+
+                // 3. 变绿
+                if (iJobIndex == 0)
+                    lblOut1.ForeColor = Color.Green;
+                else if (iJobIndex == 1)
+                    lblOut2.ForeColor = Color.Green;
             }
         }
         private void ExeIOOut()
@@ -6060,7 +6080,9 @@ namespace VisionApplication
                 if (OrderType != 0)
                 {
                     Thread.Sleep(5);
+
                     ExeIOTrig(OrderType);  //执行触发任务
+
                     if (!timerIOIn.Enabled)
                         timerIOIn.Start();
                 }
@@ -6142,6 +6164,13 @@ namespace VisionApplication
                 AddLog();
                 MessageBox.Show("用户身份未验证，无法操作");
                 return;
+            }
+            else
+            {
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "触发检测";
+                operLog.strFailReason = "";
+                AddLog();
             }
 
             switch (TrigType)
@@ -6925,7 +6954,83 @@ namespace VisionApplication
             timerIOOut.Stop();
         }
 
-   
+        bool b9PointEdit = false;
+          CogCalibNPointToNPointEditV2 calibEditV2;  // 9点标定编辑控件
+       // CogCalibNPointToNPointTool  NPointV2;
+        private void bt9PointParam_Click(object sender, EventArgs e)
+        {
+            // 1. 检查任务状态
+            if (vpWin._iTaskType != 5 && !vpWin.bMainTaskFinished)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "9点标定高级设置";
+                operLog.strFailReason = "当前任务没有结束";
+                AddLog();
+                return;
+            }
+
+            // 2. 切换编辑模式
+            b9PointEdit = !b9PointEdit;
+
+            if (b9PointEdit)
+            {
+                // ---- 进入编辑模式 ----
+                iTmpType = vpWin._iTaskType;
+
+                // 创建 9 点标定编辑控件
+                calibEditV2 = new CogCalibNPointToNPointEditV2();
+                calibEditV2.Subject = vpWin._NpointCalibTool;   // 假设 vpWin 中公开了 9 点标定工具
+
+                // 添加到容器
+                splitContainer2.Panel1.Controls.Add(calibEditV2);
+                calibEditV2.Dock = DockStyle.Fill;
+
+                // 隐藏 VP 视图
+                vpWin.Visible = false;
+                bVPPParamChanged = true;
+
+                // 更新状态
+                vpWin._iTaskType = 5;
+                vpWin.bEnableActivate = false;
+                vpWin.bMainTaskFinished = false;
+
+                ((Button)sender).FlatStyle = FlatStyle.Flat;
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "进入9点标定编辑模式";
+                AddLog();
+            }
+            else
+            {
+                // ---- 退出编辑模式 ----
+                // 将修改写回 VP
+                if (vpWin.setNpointCalibTool(calibEditV2.Subject))  // 假设 vpWin 有 setCalibTool 方法
+                {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "9点标定参数已更新";
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "9点标定参数写回失败";
+                    operLog.strFailReason = vpWin.strErrInfo?[0] ?? "未知错误";
+                }
+
+                // 移除编辑控件
+                splitContainer2.Panel1.Controls.Remove(calibEditV2);
+                calibEditV2.Dispose();
+
+                // 恢复状态
+                vpWin._iTaskType = iTmpType;
+                vpWin.bEnableActivate = true;
+                vpWin.bMainTaskFinished = true;
+                vpWin.Visible = true;
+
+                ((Button)sender).FlatStyle = FlatStyle.Popup;
+
+                AddLog();
+            }
+        }
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
@@ -7097,13 +7202,12 @@ namespace VisionApplication
                // AnaEventForJob(iJobIndex);
                 //AddEventLog(iEventStatus);  //已取消颜色显示
             }
-            if(cup.p_RTSP.bUpdateIO)  //启用IO输出
+           /* if(cup.p_RTSP.bUpdateIO)  //启用IO输出
             {
                 //只输出OK或者只输出NG
-                if(/*(pmaRes.bOk && cup.p_IOPP.OkOut!=0) ||*/   
-                    (!pmaRes[jobIndex].bOk && cup.p_IOPP.NGOut!= 0) )
+                if(pmaRes[jobIndex].bLocated )
                     ExeIOOut(jobIndex);
-            }
+            }*/
         }
   
         public void RunContinuousThread()

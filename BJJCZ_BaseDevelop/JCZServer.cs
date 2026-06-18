@@ -67,7 +67,7 @@ namespace BJJCZ_BaseDevelop
         private static readonly RectangleF EzcadCanvasBounds = new RectangleF(-75f, -75f, 150f, 150f);
         private static readonly RectangleF RoutePreviewWorldBounds = new RectangleF(-150f, -150f, 300f, 300f);
         private static readonly RectangleF DefaultBackgroundBounds = new RectangleF(-25f, -25f, 50f, 50f);
-        private const int PreviewRouteBitmapScale = 3;
+        private const int PreviewRouteBitmapScale = 4;
         private const int PreviewRouteBitmapBaseSide = 520;
 
         // =============== 嵌入模式相关 ===============
@@ -88,6 +88,7 @@ namespace BJJCZ_BaseDevelop
         private bool[] pendingDeferredSave = new bool[2];      // 延迟保存标志
         private bool _isSavingEzd = false;                     // 防止自动保存重入
         private System.Windows.Forms.Timer _deferredSaveTimer; // 延迟保存定时器
+        private Button btTransformSave;                       // 移动/旋转/缩放后手动保存
 
         // ===== 填充参数缓存（持久化 + 内存）=====
         private Dictionary<string, HatchParam> hatchParamCache = new Dictionary<string, HatchParam>();
@@ -105,6 +106,7 @@ namespace BJJCZ_BaseDevelop
 
         // ===== 对象缩放状态记忆（用于绝对缩放）=====
         private Dictionary<string, EntityScaleState> entityScaleStates = new Dictionary<string, EntityScaleState>();
+        private bool syncingEntGroupState;//区分同步UI和用户手动点击
 
         // ===== 辅助常量 =====
         private const string TransformPairEntityPrefix = "__TransformPair_";  // 临时分组前缀（用于填充对象联合变换）
@@ -529,11 +531,28 @@ namespace BJJCZ_BaseDevelop
             mainMsgBox.WordWrap = false;
             panel1.AutoScroll = false;
             panel3.AutoScroll = false;
+            EnsureTransformSaveButton();
             this.Resize += (s, e) => LayoutMainPanels();
             FitWindowToWorkingArea();
             LayoutMainPanels();
         }
 
+        private void EnsureTransformSaveButton()
+        {
+            if (btTransformSave != null)
+            {
+                return;
+            }
+
+            btTransformSave = new Button();
+            btTransformSave.Name = "btTransformSave";
+            btTransformSave.Text = "保存";
+            btTransformSave.Font = btLaserPenParam.Font;
+            btTransformSave.ForeColor = Color.Red;
+            btTransformSave.UseVisualStyleBackColor = true;
+            btTransformSave.Click += btTransformSave_Click;
+            panel1.Controls.Add(btTransformSave);
+        }
         private void FitWindowToWorkingArea()
         {
             this.WindowState = FormWindowState.Normal;
@@ -670,6 +689,10 @@ namespace BJJCZ_BaseDevelop
             picMvRight.SetBounds(moveCx + 48, moveTop + 52, icon, icon);
             picMvDown.SetBounds(moveCx, moveTop + 94, icon, icon);
             label4.SetBounds(moveCx + 4, moveTop + 134, label4.Width, label4.Height);
+            if (btTransformSave != null)
+            {
+                btTransformSave.SetBounds(moveLeft + 8, moveTop + 164, 56, 34);
+            }
 
             int transX = 205;
             label6.SetBounds(transX + 4, 4, label6.Width, label6.Height);
@@ -4050,8 +4073,8 @@ namespace BJJCZ_BaseDevelop
         }
         private int SaveEntLibToFileWithoutPreviewAnchor(int card, string fileName)
         {
-            CleanupPreviewAnchorEntities(card);
-            CleanupTransformPairEntities(card);
+            //CleanupPreviewAnchorEntities(card);
+            //CleanupTransformPairEntities(card);
 
             if (string.IsNullOrWhiteSpace(fileName))
             {
@@ -4059,7 +4082,7 @@ namespace BJJCZ_BaseDevelop
                 return 20;
             }
 
-            string tempPath = null;
+            //string tempPath = null;
             try
             {
                 string fullPath = Path.GetFullPath(fileName);
@@ -4071,7 +4094,16 @@ namespace BJJCZ_BaseDevelop
                 }
 
                 Directory.CreateDirectory(dir);
-                tempPath = Path.Combine(
+                return SaveEntLibDirectWithBackup(card, fullPath);
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1}保存EZD异常：{ex.Message}");
+                return 12;
+            }
+        }
+
+                /*tempPath = Path.Combine(
                     dir,
                     Path.GetFileNameWithoutExtension(fullPath) + ".saving_" +
                     DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".ezd");
@@ -4124,7 +4156,8 @@ namespace BJJCZ_BaseDevelop
             {
                 TryDeleteFile(tempPath);
             }
-        }
+        }*/
+                
 
         private int SaveEntLibToFileWithRetry(int card, string fileName)
         {
@@ -4150,7 +4183,7 @@ namespace BJJCZ_BaseDevelop
                 }
 
                 Thread.Sleep(120);
-                Application.DoEvents();
+                //Application.DoEvents();
             }
 
             return lastErr;
@@ -4395,18 +4428,23 @@ namespace BJJCZ_BaseDevelop
                     return;
                 }
 
-                LCZControlParam param = new LCZControlParam
+                /*LCZControlParam param = new LCZControlParam
                 {
                     cardSN = card,
                     cmdType = 5,
                     strFileName = currentFilePath[card],  // 使用原路径
                     ind3 = 0
-                };
+                };*/
 
                 try
                 {
                     _isSavingEzd = true;
-                    CMDAna(param);
+                    int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, currentFilePath[card]);
+                    AddMsg($"卡{card + 1} 保存文件 -> {JczLmc.GetErrorText(saveErr)}");
+                    if (saveErr == 0)
+                    {
+                        SyncOtherCardsLoadedFromSameFile(card, currentFilePath[card]);
+                    }
                 }
                 finally
                 {
@@ -5201,6 +5239,10 @@ namespace BJJCZ_BaseDevelop
         }
         private void RefreshPreview(int card)
         {
+            if(_isSavingEzd)
+            {
+                return;
+            }
             // 如果正在模拟模式，可以跳过（按需保留）
             // if (bSimulateMode[card]) return;
             CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
@@ -5219,7 +5261,11 @@ namespace BJJCZ_BaseDevelop
 
                     if (File.Exists(bgFile))
                     {
-                        originalImage[card] = new Bitmap(bgFile);
+                        using (FileStream fs = new FileStream(bgFile, FileMode.Open, FileAccess.Read))
+                        {
+                            originalImage[card] = new Bitmap(fs);
+                        }
+                     //  originalImage[card] = new Bitmap(bgFile);
                         AddMsg($"卡{card + 1} 背景图加载成功: {bgFile}");
                     }
                     else
@@ -5228,7 +5274,7 @@ namespace BJJCZ_BaseDevelop
                     }
                 }
 
-                // Background defines the visible window; route preview keeps a larger EZCAD-like laser range.
+                // 背景图决定预览框当前显示哪一块视野；红框路径预览保留一个更大的、类似 EZCAD 画布的激光范围。
                 RectangleF bgBounds = GetBackgroundWorldBounds(card);
                 RectangleF displayBounds = BuildPreviewViewBoundsFromBackground(bgBounds);
                 RectangleF routeBounds = GetRoutePreviewWorldBounds(card);
@@ -5980,15 +6026,49 @@ namespace BJJCZ_BaseDevelop
             SaveToOriginalPath(card);
         }
 
+        /*private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
+         {
+             int card = currentCard;
+             LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = chkEntGroup.Checked };
+             CMDAna(cmd);
+             ReloadEntityInfo(card);
+             InvalidateRoutePreviewCache(card);
+             RefreshPreview(card);
+         }*/   //原代码不管SDK是否有grpEnt，只要复选框变化直接就发case 28 命令    
+
         private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
         {
+            if (syncingEntGroupState)
+            {
+                return;
+            }
+
             int card = currentCard;
-            LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = chkEntGroup.Checked };
-            CMDAna(cmd);
+
+            if (chkEntGroup.Checked)
+            {
+                if (!EntityExists(card, "grpEnt"))
+                {
+                    LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = true };
+                    CMDAna(cmd);
+                }
+            }
+            else
+            {
+                if (EntityExists(card, "grpEnt"))
+                {
+                    LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = false };
+                    CMDAna(cmd);
+                }
+            }
+
             ReloadEntityInfo(card);
             InvalidateRoutePreviewCache(card);
             RefreshPreview(card);
-        }
+        }  //自动同步复选框时直接return，不执行 SDK 操作
+           //用户勾选时，只有当前没有 grpEnt 才群组，避免重复群组。
+           //用户取消时，只有当前有 grpEnt 才解组。
+           //解组后刷新对象表，grpEnt 会变回原对象。
 
         private void EntMvRoSc_Click(object sender, EventArgs e)
         {
@@ -6035,10 +6115,69 @@ namespace BJJCZ_BaseDevelop
                 case "picScaleY": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
             }
             CMDAna(cmd);
-
-            // 高频操作延迟保存，避免每点一次都同步写EZD导致界面卡顿。
-            ScheduleSaveToOriginalPath(card);
         }
+
+        /*private void btTransformSave_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            pendingDeferredSave[card] = false;
+            SaveToOriginalPath(card);
+        }*/
+        private void btTransformSave_Click(object sender, EventArgs e) //保存前先停止红光、停止延迟保存、清掉预览缓存、避免保存时SDK状态不稳定
+        {
+            int card = currentCard;
+            if (!PrepareForManualSave(card))
+            {
+                return;
+            }
+
+            SaveToOriginalPath(card);
+            InvalidateRoutePreviewCache(card);
+            RefreshPreview(card);
+        }
+        private bool PrepareForManualSave(int card)//与上面操作相对应
+        {
+            try
+            {
+                if (bInMark[card])
+                {
+                    AddMsg($"卡{card + 1} 正在加工，暂不能保存EZD");
+                    return false;
+                }
+
+                if (bInRed[card])
+                {
+                    JczLmc.lmc1_StopMark(phyCardSN[card]);
+                    bInRed[card] = false;
+                    Thread.Sleep(80);
+                }
+
+                pendingDeferredSave[card] = false;
+                if (_deferredSaveTimer != null)
+                {
+                    _deferredSaveTimer.Stop();
+                }
+
+                CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+                if (targetBox != null)
+                {
+                    targetBox.SetOverlayImage(null, null);
+                    targetBox.SetPreviewWorldEntities(null);
+                }
+
+                InvalidateRoutePreviewCache(card);
+                CleanupTransformPairEntities(card);
+                Thread.Sleep(80);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 保存前清理预览状态异常: {ex.Message}");
+                return true;
+            }
+        }
+
+
         private void ScheduleSaveToOriginalPath(int card)
         {
             if (string.IsNullOrEmpty(currentFilePath[card]))
@@ -6737,6 +6876,29 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 清理预览固定边界异常: {ex.Message}");
             }
         }
+
+        private void SyncEntGroupCheckboxFromEntities(int card)
+        {
+            if (card != currentCard || chkEntGroup == null)
+            {
+                return;
+            }
+
+            bool hasGroupEnt = EntityExists(card, "grpEnt");
+
+            syncingEntGroupState = true;
+            try
+            {
+                chkEntGroup.Checked = hasGroupEnt;
+            }
+            finally
+            {
+                syncingEntGroupState = false;
+            }
+        } //打开EZD后，如果文件本身就是grpEnt，原代码不会自动勾选“群组”。
+          //这个函数就是每次刷新对象列表时检查：EntityExists(card, "grpEnt")
+          //如果存在，就把右边“群组”复选框自动勾上；不存在就取消勾选。
+
         private void ReloadEntityInfo(int card)
         {
             CleanupPreviewAnchorEntities(card);
@@ -6766,6 +6928,7 @@ namespace BJJCZ_BaseDevelop
             }
 
             UpdateEntTable(card);
+            SyncEntGroupCheckboxFromEntities(card);//同步复选框，保证界面状态和SDK真实对象状态一致
         }
         private string EnsureEntitySdkName(int card, int entityIndex, string sdkName)
         {

@@ -1577,9 +1577,26 @@ namespace VisionApplication
             else
                 UpdateLaserButtonStates();
 
-            InitParamUI();
+            InitParamUIWithCardSwitch();
         }
+        private void InitParamUIWithCardSwitch()
+        {
+            if (cbDeviceList.Items.Count > 0)
+                cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
 
+            cmbPMATrainAlg.SelectedIndex = 2;
+            cmbPMARunAlg.SelectedIndex = 2;
+
+            if (rts.initStatus.bVPPInit)
+            {
+                UpdateLaserVisionCalibTemplate2UIFromVar();
+                UpdateLaserVisionCalibParam2UIFromVP();
+                vpWin.GetPMAParam(ref pmaParam, iJobIndex);
+                UpdateUIFromPMAParam();
+            }
+        //    UpdateCamParam2UI();
+         //   ViewLayout();
+        }
         private int CaptureVisionExecutionJobIndex()
         {
             if (vpWin == null)
@@ -3228,13 +3245,13 @@ namespace VisionApplication
             UpdateCalibResult2UIFromVar();
         }
 
-        private bool UpdateLaserVisionCalibParam2VPFromUI()
+        private bool UpdateLaserVisionCalibParam2VPFromUI(int iJobIndex)
         {
             bool bNormal = true;
             bNormal &= Update9PointCalibPoint2VarFromUI();
-            vpWin.SetCalibPoint(dCalibPoint);
+            vpWin.SetCalibPoint(dCalibPoint, iJobIndex);
             UpdateCalibBlobParam2VarFromUI();
-            vpWin.SetCalibBlobParam(cbp);
+            vpWin.SetCalibBlobParam(cbp, iJobIndex);
             return bNormal;
         }
 
@@ -3365,10 +3382,11 @@ namespace VisionApplication
         private void numUDDisY_ValueChanged(object sender, EventArgs e) { UpdateCalibTemplate2VarFromUI(); }
         #endregion
 
+        //2026年6月17日 
         private void UpdateCalibPointTable()
         {
-            if((dCalibPointLaser[0]== dCalibPointLaser[2]) &&
-                (dCalibPointLaser[1] == dCalibPointLaser[3]))
+       //     if((dCalibPointLaser[0]== dCalibPointLaser[2]) &&
+         //       (dCalibPointLaser[1] == dCalibPointLaser[3]))
             {
                 CalcuLaserCoord();
             } 
@@ -3671,7 +3689,7 @@ namespace VisionApplication
             }
         }
 
-
+        //2026年6月17日
         private void CalcuLaserCoord()
         {
             int featureCount = cup.calTP.iRow * cup.calTP.iCol;
@@ -3686,10 +3704,10 @@ namespace VisionApplication
                     dCalibPointLaser[ind * 2 + 1] = i * cup.calTP.dDisY;
 
                     // 根据相机镜像设置调整坐标方向
-                 /*   if (cup.p_Cam[icamSelectInd].iFlipType == 1)
+                    if (cup.p_Cam[iJobIndex].iFlipType == 1)
                         dCalibPointLaser[ind * 2] = -j * cup.calTP.dDisX;
-                    if (cup.p_Cam[icamSelectInd].iFlipType == 2)
-                        dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;*/
+                    if (cup.p_Cam[iJobIndex].iFlipType == 2)
+                        dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;
                     ind++;
                 }
             }
@@ -4073,8 +4091,8 @@ namespace VisionApplication
                     }
                 });
 
-                // 6. 标刻完成后，等待激光稳定
-                await Task.Delay(200);
+                // 6. 标刻完成后，等待激光稳定时间适当长点，否则有亮光
+                await Task.Delay(500);
 
                 // 7. 采集图像并分析（Blob 提取特征点坐标）
                 bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync(iJobIndex);
@@ -4199,7 +4217,8 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            CaptureCalibImage();
+            if(rts.onLS.bLock)
+             CaptureCalibImage();
             vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
             UpdateCalibPointTable();
         }
@@ -4214,7 +4233,7 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            bool bNormal = UpdateLaserVisionCalibParam2VPFromUI();
+            bool bNormal = UpdateLaserVisionCalibParam2VPFromUI(iJobIndex);
             if (bNormal)
             {
                 cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
@@ -4603,7 +4622,7 @@ namespace VisionApplication
             }
             else
             {
-                bRet = vpWin.PreViewOneCalibImageFromFile(cup.p_VPPRTP.iXBType);
+                bRet = vpWin.PreViewOneCalibImageFromFile(iJobIndex);
                 operLog.strFailReason = "回放异常错误";
             }
         }
@@ -4614,7 +4633,7 @@ namespace VisionApplication
         private void InitParamUI()
         {
             if (cbDeviceList.Items.Count > 0)
-                cbDeviceList.SelectedIndex = 0;
+                cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
 
             cmbPMATrainAlg.SelectedIndex = 2;
             cmbPMARunAlg.SelectedIndex = 2;
@@ -4690,7 +4709,7 @@ namespace VisionApplication
                 }
             }
 
-            ExeIOOut();
+       //     ExeIOOut();
 
             vpWin.bMainTaskFinished = true;
             btFunRunOneTime.FlatStyle = FlatStyle.Popup;
@@ -4773,9 +4792,23 @@ namespace VisionApplication
                 // 如果视觉检测需要激光标刻（例如结果 OK 且锁标刻开启）
                 if (visionOk && rts.onLS.bLock && rts.initStatus.bJCZ == 0)
                 {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}标刻中";
+                    operLog.strFailReason = "";
+                    AddLog();
                     await LaserMarkAfterVisionDetAsync(faceIndex);
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}结束";
+                    operLog.strFailReason = vpWin.strErrInfo[faceIndex];
+                    AddLog();
                 }
-                ExeIOOut(faceIndex);
+                if (cup.p_RTSP.bUpdateIO)  //启用IO输出
+                {
+                    //只输出OK或者只输出NG
+                    if (pmaRes[faceIndex].bLocated)
+                        ExeIOOut(faceIndex);
+                }
+           //     ExeIOOut(faceIndex);
 
             }
             catch (Exception ex)

@@ -124,6 +124,7 @@ namespace VisionControl
                 MessageBox.Show(ex.Message.ToString());
             }
         }
+        //2026年6月17日
         public bool Get9PointCalibRes(ref CalibRes calibRes, int jobIndex = 0)
         {
             CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
@@ -133,13 +134,15 @@ namespace VisionControl
                 calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
                 calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
                 CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
-
-                calibRes.dTR = calibrationTransform.Rotation;
-                calibRes.dTX = calibrationTransform.TranslationX;
-                calibRes.dTY = calibrationTransform.TranslationY;
-                calibRes.dXYRatio = calibrationTransform.Aspect;
-                calibRes.dScale = calibrationTransform.Scaling;
-                calibRes.dSkew = calibrationTransform.Skew;
+                if (calibrationTransform != null)
+                {
+                    calibRes.dTR = calibrationTransform.Rotation;
+                    calibRes.dTX = calibrationTransform.TranslationX;
+                    calibRes.dTY = calibrationTransform.TranslationY;
+                    calibRes.dXYRatio = calibrationTransform.Aspect;
+                    calibRes.dScale = calibrationTransform.Scaling;
+                    calibRes.dSkew = calibrationTransform.Skew;
+                }
                 return true;
             }
             catch (Exception ex)
@@ -363,9 +366,11 @@ namespace VisionControl
                 alImParam.dWidth = cogTrans.Region.SideXLength;
                 alImParam.dHeight = cogTrans.Region.SideYLength;
 
-                cogTrans.Run();
+                ctb.Run();
                 (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(ctb);
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
+                CogImage8Grey cogIm = (ctb.Tools[1] as CogIPOneImageTool).OutputImage as CogImage8Grey;
+
+               //     ogTrans.OutputImage as CogImage8Grey;
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
                 string strImageFile = @".\data\" + ((jobIndex==0)? "sourceBGImgA.jpg":"sourceBGImgB.jpg");
