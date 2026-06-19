@@ -511,7 +511,30 @@ namespace VisionControl
             }
             return true;
         }
+        public ICogImage PreViewOnePMATrainImageFromFile(int wsInd)
+        {
+            try
+            {
+               
+                // 1. 构建模板训练图像文件路径（与 PreViewCalibImage 中保存的路径一致）
+                string fileName = cup.p_Paf.strResSavePath + "\\PMATrain_" + wsInd.ToString() + ".jpg";
+                // 2. 检查文件是否存在
+                if (!System.IO.File.Exists(fileName))
+                {
+                    strErrInfo[wsInd] = $"标定图像文件不存在: {fileName}";
+                    return null;
+                }
+                return acqFIFO.GrabOneFrameCogFromFilePMA(fileName);
+                
 
+            }
+            catch (Exception ex)
+            {
+                strErrInfo[wsInd] = $"读取训练图像异常: {ex.Message}";
+                return null;
+            }
+           
+        }
 
     }
 }

@@ -2965,9 +2965,10 @@ namespace VisionApplication
         #region  模板匹配参数设置
 
         /// <summary>
-        /// 从UI界面更新参数到VP中PMA（当前iJobIndex对应板卡）
+        /// 从UI界面更新训练参数到VP中PMA（当前iJobIndex对应板卡）
         /// </summary>
-        private void UpdatePMAParamFromUI()
+       
+        private void UpdatePMATrainParamFromUI()
         {
             //训练参数
             pmaParam.TrainAlg = cmbPMATrainAlg.SelectedIndex;
@@ -2977,7 +2978,12 @@ namespace VisionApplication
             pmaParam.TrainCoarse = (double)nudPMACoarse.Value;
             pmaParam.TrainFine = (double)nudPMAFine.Value;
             pmaParam.TrainAutoGrun = chkPMAAutoGran.Checked;
-
+        }
+        /// <summary>
+        /// 从UI界面更新运行参数到VP中PMA（当前iJobIndex对应板卡）
+        /// </summary>
+        private void UpdatePMARunParamFromUI()
+        {
             //运行参数
             pmaParam.RunAlg = cmbPMARunAlg.SelectedIndex;
             pmaParam.RunArt = chkPMAArt.Checked;
@@ -2991,10 +2997,16 @@ namespace VisionApplication
             pmaParam.RunAngleU = (double)nudPMARunAngleU.Value;
         }
 
-        /// <summary>
-        /// 从VP中PMA更新参数到UI界面
-        /// </summary>
-        private void UpdateUIFromPMAParam()
+        private void UpdatePMAParamFromUI()
+        {
+            //训练参数
+            UpdatePMATrainParamFromUI();
+
+            //运行参数
+            UpdatePMARunParamFromUI();
+        }
+
+        private void UpdatePMATrainParam2UIFromPAMParam()
         {
             try
             {
@@ -3013,8 +3025,16 @@ namespace VisionApplication
                     nudPMATrainEdgeThre.Value = (decimal)pmaParam.TrainEdgeThre;
                 chkPMAAutoEdgeThre.Checked = pmaParam.TrainAutoEdgeThre;
                 nudPMACoarse.Value = (decimal)pmaParam.TrainCoarse;
-                nudPMAFine.Value = (decimal)pmaParam.TrainFine;
-
+                nudPMAFine.Value = (decimal)pmaParam.TrainFine; 
+            }
+            catch
+            {
+            }
+        }
+        private void UpdatePMARunParam2UIFromPAMParam()
+        {
+            try
+            {                
                 //运行参数
                 if (pmaParam.RunAlg >= 0 && pmaParam.RunAlg <= cmbPMARunAlg.Items.Count)
                     cmbPMARunAlg.SelectedIndex = pmaParam.RunAlg;
@@ -3069,6 +3089,14 @@ namespace VisionApplication
             catch
             {
             }
+        }
+        /// <summary>
+        /// 从VP中PMA更新参数到UI界面
+        /// </summary>
+        private void UpdateUIFromPMAParam()
+        {
+            UpdatePMATrainParam2UIFromPAMParam();
+            UpdatePMARunParam2UIFromPAMParam();
         }
 
         private void btGetPMAParam_Click(object sender, EventArgs e)
@@ -3133,6 +3161,7 @@ namespace VisionApplication
                     iTmpType = vpWin._iTaskType;
                     pmaV2 = new CogPMAlignEditV2();
                     pmaV2.Subject = vpWin._pmaMT;
+                    
                     splitContainer2.Panel1.Controls.Add(pmaV2);
                     pmaV2.Dock = DockStyle.Fill;
                     vpWin.Visible = false;
@@ -3183,6 +3212,34 @@ namespace VisionApplication
             }
         }
 
+        //重新训练PMA模板 
+        private void btTrainPMA_Click(object sender, EventArgs e)
+        {
+            //从界面更新参数到pmaParam
+            UpdatePMATrainParamFromUI();
+            //从pmaParam更新参数到VP中的PMA工具
+            vpWin.SetPMATrainParam(pmaParam, iJobIndex);
+            //从新训练PMA模板
+            vpWin.ReTrainPMA(iJobIndex);
+        }
+        private void btPMARun_Click(object sender, EventArgs e)
+        {
+            //从界面更新参数到pmaParam
+            UpdatePMARunParamFromUI();
+            //从pmaParam更新参数到VP中的PMA工具
+            vpWin.SetPMARunParam(pmaParam, iJobIndex);
+            //从新训练PMA模板
+            vpWin.ReRunPMA(iJobIndex);
+        }
+        private void btPMASearchRegion_Click(object sender, EventArgs e)
+        {
+            vpWin.SetPMASearchRegion(iJobIndex);
+        }
+
+        private void btPMAMaskDesign_Click(object sender, EventArgs e)
+        {
+
+        }
 
         private void chkPMAAutoEdgeThre_CheckedChanged(object sender, EventArgs e)
         {
@@ -4148,12 +4205,7 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            bool bNormal = UpdateLaserVisionCalibParam2VPFromUI(iJobIndex);
-            if (bNormal)
-            {
-                cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
-                UpdateCalibResult2UIFromVar(cr);
-            }
+            ExeNPointCalib();
         }
         private bool ExeNPointCalib()
         {
@@ -4163,6 +4215,8 @@ namespace VisionApplication
             {
                 cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
                 UpdateCalibResult2UIFromVar(cr);
+
+                vpWin.ReTrainPMAWithUpdateCS(iJobIndex);
             }
             return bNormal;
         }

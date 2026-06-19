@@ -924,8 +924,7 @@ namespace CommonCls
 
         /// <summary>从标定文件读取图像，索引混乱要修改 2026年5月10日</summary> 
         public CogImage8Grey[] GrabOneFrameCogFromFileCalib(int wsInd,int iCamIndex,string strFile)
-        {
-            
+        { 
             try
             {
 
@@ -942,7 +941,20 @@ namespace CommonCls
             }
             return ci8gAcq;
         }
+        public ICogImage GrabOneFrameCogFromFilePMA(string strFile)
+        {
+            try
+            {
+                ICogImage ci = ReadCogImage(strFile);  //文件存储是根据工位编号存储 
+                return ci;
 
+            }
+            catch
+            {
+                return null;
+            }
+           
+        }
         #endregion
 
         #region 图像旋转镜像（Cognex）

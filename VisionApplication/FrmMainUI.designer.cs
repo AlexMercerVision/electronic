@@ -324,6 +324,8 @@ namespace VisionApplication
             this.label50 = new System.Windows.Forms.Label();
             this.label42 = new System.Windows.Forms.Label();
             this.panel5 = new System.Windows.Forms.Panel();
+            this.btPMASearchRegion = new System.Windows.Forms.Button();
+            this.btPMARun = new System.Windows.Forms.Button();
             this.nudPMARunEdgeThre = new System.Windows.Forms.NumericUpDown();
             this.nudPMAConstractThre = new System.Windows.Forms.NumericUpDown();
             this.nudPMAScoreThre = new System.Windows.Forms.NumericUpDown();
@@ -339,10 +341,11 @@ namespace VisionApplication
             this.label53 = new System.Windows.Forms.Label();
             this.label51 = new System.Windows.Forms.Label();
             this.label47 = new System.Windows.Forms.Label();
-            this.label48 = new System.Windows.Forms.Label();
             this.label49 = new System.Windows.Forms.Label();
             this.cmbPMARunAlg = new System.Windows.Forms.ComboBox();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.btPMAMaskDesign = new System.Windows.Forms.Button();
+            this.btTrainPMA = new System.Windows.Forms.Button();
             this.nudPMATrainEdgeThre = new System.Windows.Forms.NumericUpDown();
             this.nudPMAFine = new System.Windows.Forms.NumericUpDown();
             this.nudPMACoarse = new System.Windows.Forms.NumericUpDown();
@@ -404,7 +407,6 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
-            this.btTrainPMA = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -484,12 +486,10 @@ namespace VisionApplication
             this.menuStrip1.BackColor = System.Drawing.Color.White;
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuXBType,
             this.menuCam,
             this.menuLaserFile,
             this.menuFile,
-            this.menuXBType,
-            this.menuLaser,
-            this.menuParam,
             this.menuManage,
             this.menuWin,
             this.menuUnion,
@@ -497,6 +497,8 @@ namespace VisionApplication
             this.menuTask,
             this.menuHelp,
             this.menuLight,
+            this.menuParam,
+            this.menuLaser,
             this.menuTool});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -672,6 +674,7 @@ namespace VisionApplication
             this.menuLaser.Name = "menuLaser";
             this.menuLaser.Size = new System.Drawing.Size(44, 22);
             this.menuLaser.Text = "激光";
+            this.menuLaser.Visible = false;
             // 
             // menuLaser_RedBoundary
             // 
@@ -718,6 +721,7 @@ namespace VisionApplication
             this.menuParam.Name = "menuParam";
             this.menuParam.Size = new System.Drawing.Size(68, 22);
             this.menuParam.Text = "激光对象";
+            this.menuParam.Visible = false;
             // 
             // menuEnt_ShowEntList
             // 
@@ -930,6 +934,7 @@ namespace VisionApplication
             this.menuUnion.Name = "menuUnion";
             this.menuUnion.Size = new System.Drawing.Size(68, 22);
             this.menuUnion.Text = "通信控制";
+            this.menuUnion.Visible = false;
             // 
             // menuTask_FeedBack
             // 
@@ -1942,11 +1947,11 @@ namespace VisionApplication
             this.splitContainer1.Panel1.Controls.Add(this.btFunParam);
             this.splitContainer1.Panel1.Controls.Add(this.btFunMark);
             this.splitContainer1.Panel1.Controls.Add(this.btRedLight_Preview);
+            this.splitContainer1.Panel1.Controls.Add(this.btFunRunCont);
             this.splitContainer1.Panel1.Controls.Add(this.picLogo);
             this.splitContainer1.Panel1.Controls.Add(this.btFunSet);
             this.splitContainer1.Panel1.Controls.Add(this.btFun_Preview);
             this.splitContainer1.Panel1.Controls.Add(this.btFunAcqOneImage);
-            this.splitContainer1.Panel1.Controls.Add(this.btFunRunCont);
             this.splitContainer1.Panel1.Controls.Add(this.btFunRunOneTime);
             // 
             // splitContainer1.Panel2
@@ -1964,13 +1969,14 @@ namespace VisionApplication
             this.btFunParam.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunParam.ForeColor = System.Drawing.Color.Red;
             this.btFunParam.Image = ((System.Drawing.Image)(resources.GetObject("btFunParam.Image")));
-            this.btFunParam.Location = new System.Drawing.Point(3, 559);
+            this.btFunParam.Location = new System.Drawing.Point(3, 628);
             this.btFunParam.Name = "btFunParam";
             this.btFunParam.Size = new System.Drawing.Size(100, 90);
             this.btFunParam.TabIndex = 7;
             this.btFunParam.Text = "参数设置";
             this.btFunParam.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btFunParam.UseVisualStyleBackColor = true;
+            this.btFunParam.Visible = false;
             this.btFunParam.Click += new System.EventHandler(this.btFunParam_Click);
             // 
             // btFunMark
@@ -1981,7 +1987,7 @@ namespace VisionApplication
             this.btFunMark.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunMark.ForeColor = System.Drawing.Color.Red;
             this.btFunMark.Image = ((System.Drawing.Image)(resources.GetObject("btFunMark.Image")));
-            this.btFunMark.Location = new System.Drawing.Point(6, 465);
+            this.btFunMark.Location = new System.Drawing.Point(0, 283);
             this.btFunMark.Name = "btFunMark";
             this.btFunMark.Size = new System.Drawing.Size(100, 90);
             this.btFunMark.TabIndex = 5;
@@ -1999,13 +2005,14 @@ namespace VisionApplication
             this.btRedLight_Preview.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedLight_Preview.ForeColor = System.Drawing.Color.Red;
             this.btRedLight_Preview.Image = ((System.Drawing.Image)(resources.GetObject("btRedLight_Preview.Image")));
-            this.btRedLight_Preview.Location = new System.Drawing.Point(6, 377);
+            this.btRedLight_Preview.Location = new System.Drawing.Point(3, 561);
             this.btRedLight_Preview.Name = "btRedLight_Preview";
             this.btRedLight_Preview.Size = new System.Drawing.Size(100, 90);
             this.btRedLight_Preview.TabIndex = 6;
             this.btRedLight_Preview.Text = "红光预览";
             this.btRedLight_Preview.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btRedLight_Preview.UseVisualStyleBackColor = false;
+            this.btRedLight_Preview.Visible = false;
             this.btRedLight_Preview.Click += new System.EventHandler(this.btRedLight_Preview_Click);
             // 
             // picLogo
@@ -2028,7 +2035,7 @@ namespace VisionApplication
             this.btFunSet.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunSet.ForeColor = System.Drawing.Color.Red;
             this.btFunSet.Image = ((System.Drawing.Image)(resources.GetObject("btFunSet.Image")));
-            this.btFunSet.Location = new System.Drawing.Point(3, 651);
+            this.btFunSet.Location = new System.Drawing.Point(2, 376);
             this.btFunSet.Name = "btFunSet";
             this.btFunSet.Size = new System.Drawing.Size(100, 90);
             this.btFunSet.TabIndex = 0;
@@ -2047,7 +2054,7 @@ namespace VisionApplication
             this.btFun_Preview.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFun_Preview.ForeColor = System.Drawing.Color.Red;
             this.btFun_Preview.Image = ((System.Drawing.Image)(resources.GetObject("btFun_Preview.Image")));
-            this.btFun_Preview.Location = new System.Drawing.Point(5, 286);
+            this.btFun_Preview.Location = new System.Drawing.Point(0, 190);
             this.btFun_Preview.Name = "btFun_Preview";
             this.btFun_Preview.Size = new System.Drawing.Size(100, 90);
             this.btFun_Preview.TabIndex = 0;
@@ -2066,7 +2073,7 @@ namespace VisionApplication
             this.btFunAcqOneImage.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunAcqOneImage.ForeColor = System.Drawing.Color.Red;
             this.btFunAcqOneImage.Image = ((System.Drawing.Image)(resources.GetObject("btFunAcqOneImage.Image")));
-            this.btFunAcqOneImage.Location = new System.Drawing.Point(4, 193);
+            this.btFunAcqOneImage.Location = new System.Drawing.Point(0, 97);
             this.btFunAcqOneImage.Name = "btFunAcqOneImage";
             this.btFunAcqOneImage.Size = new System.Drawing.Size(100, 90);
             this.btFunAcqOneImage.TabIndex = 0;
@@ -2084,13 +2091,14 @@ namespace VisionApplication
             this.btFunRunCont.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btFunRunCont.ForeColor = System.Drawing.Color.Red;
             this.btFunRunCont.Image = global::VisionApplication.Properties.Resources.LoopRun2;
-            this.btFunRunCont.Location = new System.Drawing.Point(3, 100);
+            this.btFunRunCont.Location = new System.Drawing.Point(3, 468);
             this.btFunRunCont.Name = "btFunRunCont";
             this.btFunRunCont.Size = new System.Drawing.Size(100, 90);
             this.btFunRunCont.TabIndex = 0;
             this.btFunRunCont.Text = "连续运行";
             this.btFunRunCont.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btFunRunCont.UseVisualStyleBackColor = false;
+            this.btFunRunCont.Visible = false;
             this.btFunRunCont.Click += new System.EventHandler(this.btFun_Click);
             // 
             // btFunRunOneTime
@@ -2106,7 +2114,7 @@ namespace VisionApplication
             this.btFunRunOneTime.ForeColor = System.Drawing.Color.Red;
             this.btFunRunOneTime.Image = ((System.Drawing.Image)(resources.GetObject("btFunRunOneTime.Image")));
             this.btFunRunOneTime.ImageAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btFunRunOneTime.Location = new System.Drawing.Point(3, 7);
+            this.btFunRunOneTime.Location = new System.Drawing.Point(3, 5);
             this.btFunRunOneTime.Name = "btFunRunOneTime";
             this.btFunRunOneTime.Size = new System.Drawing.Size(100, 90);
             this.btFunRunOneTime.TabIndex = 0;
@@ -3676,7 +3684,7 @@ namespace VisionApplication
             // 
             // btGetPMAParam
             // 
-            this.btGetPMAParam.Location = new System.Drawing.Point(74, 4);
+            this.btGetPMAParam.Location = new System.Drawing.Point(113, 443);
             this.btGetPMAParam.Name = "btGetPMAParam";
             this.btGetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btGetPMAParam.TabIndex = 96;
@@ -3687,7 +3695,7 @@ namespace VisionApplication
             // 
             // btSetPMAParam
             // 
-            this.btSetPMAParam.Location = new System.Drawing.Point(156, 6);
+            this.btSetPMAParam.Location = new System.Drawing.Point(195, 445);
             this.btSetPMAParam.Name = "btSetPMAParam";
             this.btSetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btSetPMAParam.TabIndex = 96;
@@ -3719,6 +3727,8 @@ namespace VisionApplication
             // panel5
             // 
             this.panel5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel5.Controls.Add(this.btPMASearchRegion);
+            this.panel5.Controls.Add(this.btPMARun);
             this.panel5.Controls.Add(this.nudPMARunEdgeThre);
             this.panel5.Controls.Add(this.nudPMAConstractThre);
             this.panel5.Controls.Add(this.nudPMAScoreThre);
@@ -3734,13 +3744,34 @@ namespace VisionApplication
             this.panel5.Controls.Add(this.label53);
             this.panel5.Controls.Add(this.label51);
             this.panel5.Controls.Add(this.label47);
-            this.panel5.Controls.Add(this.label48);
             this.panel5.Controls.Add(this.label49);
             this.panel5.Controls.Add(this.cmbPMARunAlg);
             this.panel5.Location = new System.Drawing.Point(8, 199);
             this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(335, 185);
+            this.panel5.Size = new System.Drawing.Size(335, 213);
             this.panel5.TabIndex = 95;
+            // 
+            // btPMASearchRegion
+            // 
+            this.btPMASearchRegion.ForeColor = System.Drawing.Color.Red;
+            this.btPMASearchRegion.Location = new System.Drawing.Point(230, 138);
+            this.btPMASearchRegion.Name = "btPMASearchRegion";
+            this.btPMASearchRegion.Size = new System.Drawing.Size(76, 32);
+            this.btPMASearchRegion.TabIndex = 96;
+            this.btPMASearchRegion.Text = "匹配区域";
+            this.btPMASearchRegion.UseVisualStyleBackColor = true;
+            this.btPMASearchRegion.Click += new System.EventHandler(this.btPMASearchRegion_Click);
+            // 
+            // btPMARun
+            // 
+            this.btPMARun.ForeColor = System.Drawing.Color.Red;
+            this.btPMARun.Location = new System.Drawing.Point(230, 176);
+            this.btPMARun.Name = "btPMARun";
+            this.btPMARun.Size = new System.Drawing.Size(76, 32);
+            this.btPMARun.TabIndex = 96;
+            this.btPMARun.Text = "定位测试";
+            this.btPMARun.UseVisualStyleBackColor = true;
+            this.btPMARun.Click += new System.EventHandler(this.btPMARun_Click);
             // 
             // nudPMARunEdgeThre
             // 
@@ -3842,11 +3873,11 @@ namespace VisionApplication
             // chkPMARunWithAngle
             // 
             this.chkPMARunWithAngle.AutoSize = true;
-            this.chkPMARunWithAngle.Location = new System.Drawing.Point(278, 159);
+            this.chkPMARunWithAngle.Location = new System.Drawing.Point(15, 139);
             this.chkPMARunWithAngle.Name = "chkPMARunWithAngle";
-            this.chkPMARunWithAngle.Size = new System.Drawing.Size(50, 16);
+            this.chkPMARunWithAngle.Size = new System.Drawing.Size(76, 16);
             this.chkPMARunWithAngle.TabIndex = 95;
-            this.chkPMARunWithAngle.Text = "使能";
+            this.chkPMARunWithAngle.Text = "使能角度";
             this.chkPMARunWithAngle.UseVisualStyleBackColor = true;
             this.chkPMARunWithAngle.CheckedChanged += new System.EventHandler(this.chkPMARunWithAngle_CheckedChanged);
             // 
@@ -3972,16 +4003,6 @@ namespace VisionApplication
             this.label47.TabIndex = 93;
             this.label47.Text = "下限";
             // 
-            // label48
-            // 
-            this.label48.AutoSize = true;
-            this.label48.ForeColor = System.Drawing.Color.Blue;
-            this.label48.Location = new System.Drawing.Point(56, 140);
-            this.label48.Name = "label48";
-            this.label48.Size = new System.Drawing.Size(31, 12);
-            this.label48.TabIndex = 93;
-            this.label48.Text = "角度";
-            // 
             // label49
             // 
             this.label49.AutoSize = true;
@@ -3993,6 +4014,7 @@ namespace VisionApplication
             // 
             // cmbPMARunAlg
             // 
+            this.cmbPMARunAlg.Enabled = false;
             this.cmbPMARunAlg.FormattingEnabled = true;
             this.cmbPMARunAlg.Items.AddRange(new object[] {
             "PatMax",
@@ -4006,6 +4028,7 @@ namespace VisionApplication
             // panel4
             // 
             this.panel4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel4.Controls.Add(this.btPMAMaskDesign);
             this.panel4.Controls.Add(this.btTrainPMA);
             this.panel4.Controls.Add(this.nudPMATrainEdgeThre);
             this.panel4.Controls.Add(this.nudPMAFine);
@@ -4023,6 +4046,28 @@ namespace VisionApplication
             this.panel4.Name = "panel4";
             this.panel4.Size = new System.Drawing.Size(335, 154);
             this.panel4.TabIndex = 95;
+            // 
+            // btPMAMaskDesign
+            // 
+            this.btPMAMaskDesign.ForeColor = System.Drawing.Color.Red;
+            this.btPMAMaskDesign.Location = new System.Drawing.Point(226, 78);
+            this.btPMAMaskDesign.Name = "btPMAMaskDesign";
+            this.btPMAMaskDesign.Size = new System.Drawing.Size(96, 30);
+            this.btPMAMaskDesign.TabIndex = 96;
+            this.btPMAMaskDesign.Text = "模板掩膜器";
+            this.btPMAMaskDesign.UseVisualStyleBackColor = true;
+            this.btPMAMaskDesign.Click += new System.EventHandler(this.btPMAMaskDesign_Click);
+            // 
+            // btTrainPMA
+            // 
+            this.btTrainPMA.ForeColor = System.Drawing.Color.Red;
+            this.btTrainPMA.Location = new System.Drawing.Point(226, 114);
+            this.btTrainPMA.Name = "btTrainPMA";
+            this.btTrainPMA.Size = new System.Drawing.Size(96, 30);
+            this.btTrainPMA.TabIndex = 96;
+            this.btTrainPMA.Text = "训练模板";
+            this.btTrainPMA.UseVisualStyleBackColor = true;
+            this.btTrainPMA.Click += new System.EventHandler(this.btTrainPMA_Click);
             // 
             // nudPMATrainEdgeThre
             // 
@@ -4202,7 +4247,7 @@ namespace VisionApplication
             this.btPMAlignParam.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btPMAlignParam.ForeColor = System.Drawing.Color.Red;
             this.btPMAlignParam.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btPMAlignParam.Location = new System.Drawing.Point(264, 418);
+            this.btPMAlignParam.Location = new System.Drawing.Point(20, 418);
             this.btPMAlignParam.Name = "btPMAlignParam";
             this.btPMAlignParam.Size = new System.Drawing.Size(69, 77);
             this.btPMAlignParam.TabIndex = 11;
@@ -4716,17 +4761,6 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
-            // btTrainPMA
-            // 
-            this.btTrainPMA.ForeColor = System.Drawing.Color.Red;
-            this.btTrainPMA.Location = new System.Drawing.Point(233, 71);
-            this.btTrainPMA.Name = "btTrainPMA";
-            this.btTrainPMA.Size = new System.Drawing.Size(76, 67);
-            this.btTrainPMA.TabIndex = 96;
-            this.btTrainPMA.Text = "训练模板";
-            this.btTrainPMA.UseVisualStyleBackColor = true;
-            this.btTrainPMA.Click += new System.EventHandler(this.btGetPMAParam_Click);
-            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -5131,7 +5165,6 @@ namespace VisionApplication
         private System.Windows.Forms.Label label46;
         private System.Windows.Forms.Label label51;
         private System.Windows.Forms.Label label47;
-        private System.Windows.Forms.Label label48;
         private System.Windows.Forms.Label label49;
         private System.Windows.Forms.ComboBox cmbPMARunAlg;
         private System.Windows.Forms.NumericUpDown nudPMAFine;
@@ -5214,5 +5247,8 @@ namespace VisionApplication
         private System.Windows.Forms.CheckBox chkGamma_Enable;
         private System.Windows.Forms.CheckBox chkGamma_UserMode;
         private System.Windows.Forms.Button btTrainPMA;
+        private System.Windows.Forms.Button btPMARun;
+        private System.Windows.Forms.Button btPMAMaskDesign;
+        private System.Windows.Forms.Button btPMASearchRegion;
     }
 }

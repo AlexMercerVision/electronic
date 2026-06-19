@@ -7032,10 +7032,7 @@ namespace VisionApplication
             }
         }
 
-        private void btGetPMAParam_Click(object sender, EventArgs e)
-        {
-
-        }
+         
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
