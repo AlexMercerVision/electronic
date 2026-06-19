@@ -65,7 +65,7 @@ namespace VisionControl
             // calib_NP2NP.Calibration.
         }
         //设置VP9点标定工具中的坐标数据
-        public void SetCalibPoint(double[] dCoor, int jobIndex = 0)
+        public void SetCalibPoint2NPointTool(double[] dCoor, int jobIndex = 0)
         {
             try
             {
@@ -218,7 +218,7 @@ namespace VisionControl
             return calibRes;
         }
 
-        //设置图像并执行blob分析
+        //设置图像
         public void SetCalibBlobImage(CogImage8Grey calibIm, int jobIndex = 0)
         {
             try
@@ -228,12 +228,13 @@ namespace VisionControl
                 cbt.InputImage = calibIm;
                 //  ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindCircleTool1"] as CogFindCircleTool).InputImage = calibIm;
 
-                ctb.Run();
-                Thread.Sleep(500);
+             //2026年6月19日  此处不需要执行
+             //   ctb.Run();
+             //   Thread.Sleep(500);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+              //  MessageBox.Show(ex.Message.ToString());
             }
             //  calibIm.Run();
         }
@@ -244,9 +245,35 @@ namespace VisionControl
         {
             try
             {
-
                 CogBlobTool cbt = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Tools["CogBlobTool1"] as CogBlobTool;
+
+                ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock1"] as CogToolBlock).Run();
+              
+                 int iCamIndex=cup.p_CD.camInd[jobIndex];
+                switch (jobIndex)
+                {
+                    case 0:
+                        if (iModelRole == 10)
+                        {
+                            cogRDMain.Display.Image = ci8gAcq[iCamIndex];  //cbt.CreateLastRunRecord().SubRecords["InputImage"].
+                            cogRDMain.Display.Fit(true);
+                        }
+                        else
+                        {
+                          // cogRDMainUser.Image = ci8gAcq[iCamIndex];
+                           cogRDMainUser.Record = cbt.CreateLastRunRecord().SubRecords["InputImage"];
+                            cogRDMainUser.Fit(true);
+                        }
+                        break;
+                    case 1:
+                       cogRDSub1.Record = cbt.CreateLastRunRecord().SubRecords["InputImage"];
+                      //  cogRDSub1.Image = ci8gAcq[iCamIndex];
+                        cogRDSub1.Fit(true);
+                        break;
+                }
                 int pointNum = row * col;
+                if (cbt.Results == null)
+                    return false;
                 int count = cbt.Results.GetBlobs().Count;
                 if (count != pointNum)
                     return false;
@@ -268,33 +295,44 @@ namespace VisionControl
                         //  dCoor[i * 2+1] = cbt.Results.GetBlobs()[i].CenterOfMassY;
                     }
 
-                    _2DCoordSort(row, col, dCoor);  //二维数组排序
+                    _2DCoordSort(row, col, dCoor, jobIndex);  //二维数组排序
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+              //  MessageBox.Show(ex.Message.ToString());
                 return false;
             }
         }
         //二维数组排序
-        private void _2DCoordSort(int row, int col, double[] dCoor)
+        private void _2DCoordSort(int row, int col, double[] dCoor,int iJobIndex)
         {
+            /*     if (cup.p_Cam[icamSelectInd].iFlipType == 1)
+                     dCalibPointLaser[ind * 2] = -j * cup.calTP.dDisX;
+                 if (cup.p_Cam[icamSelectInd].iFlipType == 2)
+                     dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;*/
+            int flipType = cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType;
+            bool bFlipX = (flipType == 1);   // 水平镜像
+            bool bFlipY = (flipType == 2);   // 垂直镜像
             int count = row * col;
             //先按照Y坐标排序
             for (int i = 0; i < count; i++)
             {
                 for (int j = i + 1; j < count; j++)
                 {
-                    if (dCoor[2 * j + 1]> dCoor[2 * i + 1])
+                    bool needSwap;
+                    if (bFlipY)
+                        needSwap = dCoor[2 * j + 1] < dCoor[2 * i + 1]; // 升序（从上到下）
+                    else
+                        needSwap = dCoor[2 * j + 1] > dCoor[2 * i + 1]; // 降序（从下到上）
+
+                    if (needSwap)
                     {
                         double tmpX = dCoor[2 * i];
                         double tmpY = dCoor[2 * i + 1];
-
                         dCoor[2 * i] = dCoor[2 * j];
                         dCoor[2 * i + 1] = dCoor[2 * j + 1];
-
                         dCoor[2 * j] = tmpX;
                         dCoor[2 * j + 1] = tmpY;
                     }
@@ -308,14 +346,18 @@ namespace VisionControl
                 {
                     for (int j = i + 1; j < col * (r + 1); j++)
                     {
-                        if (dCoor[2 * j] < dCoor[2 * i])
+                        bool needSwap;
+                        if (bFlipX)
+                            needSwap = dCoor[2 * j] > dCoor[2 * i]; // 降序（从右到左）
+                        else
+                            needSwap = dCoor[2 * j] < dCoor[2 * i]; // 升序（从左到右）
+
+                        if (needSwap)
                         {
                             double tmpX = dCoor[2 * i];
                             double tmpY = dCoor[2 * i + 1];
-
                             dCoor[2 * i] = dCoor[2 * j];
                             dCoor[2 * i + 1] = dCoor[2 * j + 1];
-
                             dCoor[2 * j] = tmpX;
                             dCoor[2 * j + 1] = tmpY;
                         }
@@ -327,31 +369,7 @@ namespace VisionControl
         #endregion
 
         // 获取合金电阻图像区域
-        public void GetAlignRegion(ref AlignImParam alImParam)
-        {
-            try
-            {
-                CogAffineTransformTool cogTrans = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogToolBlock2"] as CogToolBlock).Tools["CogAffineTransformTool1"] as CogAffineTransformTool;
-                alImParam.dCenX = cogTrans.Region.CenterX;
-                alImParam.dCenY = cogTrans.Region.CenterY;
-                alImParam.dWidth = cogTrans.Region.SideXLength;
-                alImParam.dHeight = cogTrans.Region.SideYLength;
-
-                cogTrans.Run();
-                CogImage8Grey cogIm = cogTrans.OutputImage as CogImage8Grey;
-                alImParam.width = cogIm.Width;
-                alImParam.height = cogIm.Height;
-                string strImageFile = @".\data\" + "sourceBGImg.jpg";
-                mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile.Append(cogIm);
-                mImageFile.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
-
-        }
+      
 
         public void GetAlignRegion(ref AlignImParam alImParam, int jobIndex)
         {
@@ -400,30 +418,9 @@ namespace VisionControl
                     ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex);
                 }
 
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
-                {
-                    switch(wsInd)
-                    {
-                        case 0:
-                            if (iModelRole == 10)
-                            {
-                                cogRDMain.Display.Image = ci8gAcq[iCamIndex];
-                                cogRDMain.Display.Fit(true);
-                            }
-                            else
-                            {
-                                cogRDMainUser.Image = ci8gAcq[iCamIndex];
-                                cogRDMainUser.Fit(true);
-                            }
-                            break;
-                        case 1:
-                            cogRDSub1.Image= ci8gAcq[iCamIndex];
-                            cogRDSub1.Fit(true);
-                            break;
-                    }
-                    
-                    SetCalibBlobImage(ci8gAcq[iCamIndex], wsInd);
-
+             if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
+                {  
+                    SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd); 
                 }
                 //存储 
                 if (bRecord)
@@ -431,7 +428,7 @@ namespace VisionControl
                     //  cup.p_LI.strPrefix[i]
                     //  for (int i=0;i<maxCameraNum;i++)
                     {
-                        strImageFileS[wsInd] = cup.p_Paf.strResSavePath + "\\calib_" + wsInd.ToString()+"_"+ strTime + ".jpg";
+                        strImageFileS[wsInd] = cup.p_Paf.strResSavePath + "\\calib_" + wsInd.ToString()+  ".jpg";
                     }
 
                     //   for (int i = 0; i < maxCameraNum; i++)
@@ -491,31 +488,25 @@ namespace VisionControl
             try
             {
                 int iCamIndex = cup.p_CD.camInd[wsInd];
-                ci8gAcq = acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex);
-                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq != null && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
+                // 1. 构建标定图像文件路径（与 PreViewCalibImage 中保存的路径一致）
+                string fileName = cup.p_Paf.strResSavePath + "\\calib_" + wsInd.ToString() + ".jpg";
+                // 2. 检查文件是否存在
+                if (!System.IO.File.Exists(fileName))
                 {
-                    switch(wsInd)
-                    {
-                        case 0:
-                            if (iModelRole == 10)
-                            {
-                                cogRDMain.Display.Image = ci8gAcq[iCamIndex];
-                            }
-                            else
-                            {
-                                cogRDMainUser.Image = ci8gAcq[iCamIndex];
-                            }
-                            break;
-                        case 1:
-                            cogRDSub1.Image = ci8gAcq[iCamIndex];
-                            break;
-                    }
-                    
+                    strErrInfo[wsInd] = $"标定图像文件不存在: {fileName}";
+                    return false;
+                }
+                  acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex, fileName);
+                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq != null && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
+                {
+                    SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd);
+             
                 }
 
             }
-            catch
+            catch (Exception ex)
             {
+                strErrInfo[wsInd] = $"读取标定图像异常: {ex.Message}";
                 return false;
             }
             return true;

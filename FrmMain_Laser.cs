@@ -2838,8 +2838,8 @@ namespace VisionApplication
             bool bNormal = true;
             bNormal &= Update9PointCalibPoint2VarFromUI();
             vpWin.SetCalibPoint(dCalibPoint);
-            UpdateCalibBlobParam2VarFromUI();
-            vpWin.SetCalibBlobParam(cbp);
+        //    UpdateCalibBlobParam2VarFromUI();
+         //   vpWin.SetCalibBlobParam(cbp);
             return bNormal;
         }
 
@@ -3528,7 +3528,7 @@ namespace VisionApplication
 
             return await tcs.Task;
         }
-        private void btUpdateCalibDate_Click(object sender, EventArgs e)
+        private void btUpdateCalibData_Click(object sender, EventArgs e)
         {
             CaptureCalibImage();
             vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
@@ -3537,14 +3537,20 @@ namespace VisionApplication
 
         private void btCalib_Click(object sender, EventArgs e)
         {
-            bool bNormal = UpdateLaserVisionCalibParam2VPFromUI();
-            if (bNormal)
-            {
-                cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
-                UpdateCalibResult2UIFromVar();
-            }
-        }
+            //执行N点标定
+            ExeNPointCalib();
 
+		}
+        private void ExeNPointCalib()
+        {
+			//更新数据到NPoint工具
+			bool bNormal = UpdateLaserVisionCalibParam2VPFromUI();
+			if (bNormal)
+			{
+				cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
+				UpdateCalibResult2UIFromVar();
+			}
+		}
         /// <summary>
         /// 标刻十字并采集图像
         /// </summary>
@@ -3927,7 +3933,7 @@ namespace VisionApplication
             }
             else
             {
-                bRet = vpWin.PreViewOneCalibImageFromFile(cup.p_VPPRTP.iXBType);
+                bRet = vpWin.PreViewOneCalibImageFromFile(iJobIndex);
                 operLog.strFailReason = "回放异常错误";
             }
         }

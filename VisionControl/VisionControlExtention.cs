@@ -1468,7 +1468,7 @@ namespace VisionControl
 
             }
         }
-        public bool setNpointCalibTool(CogCalibNPointToNPointTool NPointTool)
+        public bool setNpointCalibTool(CogCalibNPointToNPointTool NPointTool, int iJobIndex)
         {
 
             try
@@ -1485,7 +1485,7 @@ namespace VisionControl
                 return false;
             }
         }
-        public bool setBlob(CogBlobTool blobT)
+        public bool setBlob(CogBlobTool blobT,int iJobIndex)
         {
             try
             {
@@ -1497,39 +1497,8 @@ namespace VisionControl
                 return false;
             }
         }
-        public bool setPMA(CogPMAlignMultiTool pma)
-        {
-            try
-            {
-                CogToolGroup toolGroup = mJM.Job(iJobIndex).VisionTool as CogToolGroup;
-                if (toolGroup == null)
-                {
-                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
-                        strErrInfo[iJobIndex] = "PMA写回失败: 当前Job不是CogToolGroup";
-                    return false;
-                }
-                if (pma == null)
-                {
-                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
-                        strErrInfo[iJobIndex] = "PMA写回失败: CogPMAlignMultiTool为空";
-                    return false;
-                }
-
-                CogPMAlignMultiTool current = toolGroup.Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool;
-                if (object.ReferenceEquals(current, pma))
-                    return true;
-
-                toolGroup.Tools["CogPMAlignMultiTool1"] = pma;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
-                    strErrInfo[iJobIndex] = "PMA写回异常: " + ex.Message;
-                return false;
-            }
-        }
-        public bool setPMA(CogPMAlignTool pma)
+         
+        public bool setPMA(CogPMAlignTool pma,int iJobIndex)
         {
             try
             {
@@ -1561,10 +1530,9 @@ namespace VisionControl
                 return false;
             }
         }
-
-
-
-        public void SetPMAParam(PMAlignParam pmaParam)
+         
+ 
+        public void SetPMAParam(PMAlignParam pmaParam, int iJobIndex)
         {
             try
             {
@@ -1624,65 +1592,18 @@ namespace VisionControl
                 MessageBox.Show(ex.Message.ToString());
             }
         }
-        public void SetPMAParam(PMAlignParam pmaParam, int jobIndex)
-        {
-            try
-            {
-                //设置训练参数
-                CogPMAlignTool pma = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                pma.Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
-                pma.Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
-                pma.Pattern.GrainLimitFine = pmaParam.TrainFine;
-                pma.Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
-                pma.Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
-                pma.Pattern.IgnorePolarity = pmaParam.TrainPolarity;
-                switch (pmaParam.TrainAlg)
-                {
-                    case 0:
-                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
-                        break;
-                    case 1:
-                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
-                        break;
-                    case 2:
-                        pma.Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
-                        break;
-                }
-                //设置运行参数
 
-                switch (pmaParam.RunAlg)
-                {
-                    case 0:
-                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
-                        break;
-                    case 1:
-                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
-                        break;
-                    case 2:
-                        pma.RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
-                        break;
-                }
-                pma.RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
-                pma.RunParams.ScoreUsingClutter = pmaParam.RunArt;
-                pma.RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
-                pma.RunParams.ContrastThreshold = pmaParam.RunConstractThre;
-                pma.RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
-                pma.RunParams.AcceptThreshold = pmaParam.RunScoreThre;
-                if (pmaParam.RunEnableAngle)
-                {
-                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
-                }
-                else
-                {
-                    pma.RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
-                }
-                pma.RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
-                pma.RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message.ToString());
-            }
+        //2026年6月19日 更新九点标定坐标系后重新模式训练
+        public void ReTrainPMAWithUpdateCS(int iJobIndex)
+        {
+            CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            pma.Pattern.Train();
+        }
+
+        public void ReTrainPMA(int iJobIndex)
+        {
+            CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            pma.Pattern.Train();
         }
 
 

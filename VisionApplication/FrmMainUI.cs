@@ -7004,7 +7004,7 @@ namespace VisionApplication
             {
                 // ---- 退出编辑模式 ----
                 // 将修改写回 VP
-                if (vpWin.setNpointCalibTool(calibEditV2.Subject))  // 假设 vpWin 有 setCalibTool 方法
+                if (vpWin.setNpointCalibTool(calibEditV2.Subject,iJobIndex))  // 假设 vpWin 有 setCalibTool 方法
                 {
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = "9点标定参数已更新";
@@ -7030,6 +7030,11 @@ namespace VisionApplication
 
                 AddLog();
             }
+        }
+
+        private void btGetPMAParam_Click(object sender, EventArgs e)
+        {
+
         }
 
         private void timerIOIn_Tick(object sender, EventArgs e)

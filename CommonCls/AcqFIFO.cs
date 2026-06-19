@@ -923,14 +923,13 @@ namespace CommonCls
         }
 
         /// <summary>从标定文件读取图像，索引混乱要修改 2026年5月10日</summary> 
-        public CogImage8Grey[] GrabOneFrameCogFromFileCalib(int wsInd,int iCamIndex)
+        public CogImage8Grey[] GrabOneFrameCogFromFileCalib(int wsInd,int iCamIndex,string strFile)
         {
-            int tWait = 5;
-            HObject objTmp;
+            
             try
             {
 
-                ICogImage ci = ReadCogImage(cup.p_Paf.strExportPath);  //文件存储是根据工位编号存储 
+                ICogImage ci = ReadCogImage(strFile);  //文件存储是根据工位编号存储 
                 {
                     ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
                     cup.p_Cam[iCamIndex].iMonoType = 0;

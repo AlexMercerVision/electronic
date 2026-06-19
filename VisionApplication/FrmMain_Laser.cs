@@ -1,5 +1,6 @@
 ﻿﻿﻿using Cognex.VisionPro.Blob;
 using Cognex.VisionPro.PMAlign;
+using CommonCls;
 using PipeChanel;
 using System;
 using System.Collections.Concurrent;
@@ -1115,7 +1116,8 @@ namespace VisionApplication
                     if (received.ind3 == 1)  // 标刻模板（用于9点标定）
                     {
                         vpWin.bMainTaskFinished = true;
-                        vpWin.SetCalibBlobParam(cbp);
+                        //2026年6月19日，此处是否需要设置参数，采集图像
+                        vpWin.SetCalibBlobParam(cbp,iJobIndex);
                         CaptureCalibImage();
                     }
                     if (received.ind3 == 2)   // 标刻十字（用于十字标定）
@@ -1581,7 +1583,7 @@ namespace VisionApplication
         }
         private void InitParamUIWithCardSwitch()
         {
-            if (cbDeviceList.Items.Count > 0)
+            if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
                 cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
 
             cmbPMATrainAlg.SelectedIndex = 2;
@@ -3144,7 +3146,7 @@ namespace VisionApplication
                 }
                 else
                 {
-                    bool bSetPMA = vpWin.setPMA(pmaV2.Subject);
+                    bool bSetPMA = vpWin.setPMA(pmaV2.Subject,iJobIndex);
                     splitContainer2.Panel1.Controls.Remove(pmaV2);
                     pmaV2.Dispose();
 
@@ -3242,14 +3244,19 @@ namespace VisionApplication
             vpWin.GetCalibBlobParam(ref cbp, iJobIndex);
             Update9PointBlobParam2UIFromVar();
             vpWin.Get9PointCalibRes(ref cr, iJobIndex);
-            UpdateCalibResult2UIFromVar();
+            UpdateCalibResult2UIFromVar(cr);
         }
 
+        private void UpdateBlobParam2VPFromUI(int iJobIndex)
+        {
+            UpdateCalibBlobParam2VarFromUI();
+            vpWin.SetCalibBlobParam(cbp, iJobIndex);
+        }
         private bool UpdateLaserVisionCalibParam2VPFromUI(int iJobIndex)
         {
             bool bNormal = true;
-            bNormal &= Update9PointCalibPoint2VarFromUI();
-            vpWin.SetCalibPoint(dCalibPoint, iJobIndex);
+            bNormal &= Update9PointCalibPoint2VarFromUI(); //从界面获取9点标定数据
+            vpWin.SetCalibPoint2NPointTool(dCalibPoint, iJobIndex); //将标定数据更新到NPoint标定工具
             UpdateCalibBlobParam2VarFromUI();
             vpWin.SetCalibBlobParam(cbp, iJobIndex);
             return bNormal;
@@ -3303,7 +3310,7 @@ namespace VisionApplication
             cbp.iAreaMax = (int)numUDAreaMax.Value;
         }
 
-        private void UpdateCalibResult2UIFromVar()
+        private void UpdateCalibResult2UIFromVar(CalibRes cr)
         {
             tbCalibCentX.Text = cr.dTX.ToString("0.00");
             tbCalibCentY.Text = cr.dTY.ToString("0.00");
@@ -3315,19 +3322,28 @@ namespace VisionApplication
         }
 
         #region blob 参数修改
-        private void cmbPolarity_SelectedIndexChanged(object sender, EventArgs e) { }
-        private void cmbThreModel_SelectedIndexChanged(object sender, EventArgs e) { }
+        private void cmbPolarity_SelectedIndexChanged(object sender, EventArgs e) { 
+            UpdateBlobParam2VPFromUI(iJobIndex);
+        }
+        private void cmbThreModel_SelectedIndexChanged(object sender, EventArgs e) {
+            UpdateBlobParam2VPFromUI(iJobIndex);
+        }
         private void trackBarThre_ValueChanged(object sender, EventArgs e)
         {
             numUDThre.Value = trackBarThre.Value;
+            UpdateBlobParam2VPFromUI(iJobIndex);
         }
         private void numUDThre_ValueChanged(object sender, EventArgs e)
-        {
-            
+        {            
             trackBarThre.Value = (int)numUDThre.Value;
+            UpdateBlobParam2VPFromUI(iJobIndex);
         }
-        private void numUDAreaMin_ValueChanged(object sender, EventArgs e) { }
-        private void numUDAreaMax_ValueChanged(object sender, EventArgs e) { }
+        private void numUDAreaMin_ValueChanged(object sender, EventArgs e) {
+            UpdateBlobParam2VPFromUI(iJobIndex);
+        }
+        private void numUDAreaMax_ValueChanged(object sender, EventArgs e) {
+            UpdateBlobParam2VPFromUI(iJobIndex);
+        }
         #endregion
 
         private void UpdateCalibTemplate2VarFromUI()
@@ -3383,7 +3399,7 @@ namespace VisionApplication
         #endregion
 
         //2026年6月17日 
-        private void UpdateCalibPointTable()
+        private void UpdateCalibPointTableFromVar()
         {
        //     if((dCalibPointLaser[0]== dCalibPointLaser[2]) &&
          //       (dCalibPointLaser[1] == dCalibPointLaser[3]))
@@ -3433,7 +3449,7 @@ namespace VisionApplication
             }
             else
             {
-                vpWin.setBlob(blobV2.Subject);
+                vpWin.setBlob(blobV2.Subject, iJobIndex);
                 splitContainer3.Panel1.Controls.Remove(blobV2);
                 blobV2.Dispose();
 
@@ -3704,10 +3720,10 @@ namespace VisionApplication
                     dCalibPointLaser[ind * 2 + 1] = i * cup.calTP.dDisY;
 
                     // 根据相机镜像设置调整坐标方向
-                    if (cup.p_Cam[iJobIndex].iFlipType == 1)
+                /*    if (cup.p_Cam[iJobIndex].iFlipType == 1)
                         dCalibPointLaser[ind * 2] = -j * cup.calTP.dDisX;
                     if (cup.p_Cam[iJobIndex].iFlipType == 2)
-                        dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;
+                        dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;*/
                     ind++;
                 }
             }
@@ -3898,122 +3914,7 @@ namespace VisionApplication
         /// <summary>
         /// 标刻9点标定模板（方形阵列圆点）
         /// </summary>
-        /* private async void btMarkCalib_Click(object sender, EventArgs e)
-         {
-             // 1. 激光条件检查
-             if (!LaserCondiction(1))
-             {
-                 operLog.iEventStatus = -1;
-                 operLog.strOperEvent = "标刻标定模板";
-                 operLog.strFailReason = "激光不满足标刻条件";
-                 AddLog();
-                 return;
-             }
-
-             int card = currentCardSN;
-             var dispatcher = laserDispatchers[card];
-             if (dispatcher == null)
-             {
-                 operLog.iEventStatus = -1;
-                 operLog.strOperEvent = "标刻标定模板";
-                 operLog.strFailReason = "激光调度器未初始化";
-                 AddLog();
-                 return;
-             }
-
-             // 2. 设置激光工作状态
-             iLaserWorkingTypes[card] = 1;
-             UpdateButtonStyle(btFunMark, true);
-
-             try
-             {
-                 // 3. 先根据当前界面参数生成新的标定模板文件
-                 bool createOk = await CreateCalibTemplateAsync();
-                 if (!createOk)
-                 {
-                     return;
-                 }
-
-                 // 4. 获取模板路径
-                 string templatePath = GetCalibTemplatePath();
-                 if (!File.Exists(templatePath))
-                 {
-                     operLog.iEventStatus = -1;
-                     operLog.strOperEvent = "标刻标定模板";
-                     operLog.strFailReason = $"标定模板文件不存在: {templatePath}";
-                     AddLog();
-                     return;
-                 }
-
-                 // 5. 加载模板文件
-                 var loadResult = await LoadCalibTemplateAsync(dispatcher, card, templatePath);
-                 if (loadResult.nErr != 0)
-                 {
-                     operLog.iEventStatus = -1;
-                     operLog.strOperEvent = "标刻标定模板";
-                     operLog.strFailReason = $"加载模板失败: {GetErrorText(loadResult.nErr)}";
-                     AddLog();
-                     return;
-                 }
-
-                 // 6. 执行标刻并等待完成（响应会通过 dispatcher 返回）
-                 //    显示等待窗体
-                 await ShowLoadingFormAsync(async () =>
-                 {
-                     var markParam = new LCZControlParam
-                     {
-                         cmdType = 110,              // 激光标刻（先清除旋转平移）
-                         cardSN = card,
-                         ind3 = 1
-                     };
-
-                     // ✅ 关键：等待标刻完成的响应，而不是固定延时
-                     var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
-
-                     if (markResult.nErr != 0)
-                     {
-                         throw new Exception($"标刻失败: {GetErrorText(markResult.nErr)}");
-                     }
-                 });
-
-
-                 // 7. 标刻完成后，等待激光稳定（短时间内置延时是合理的）
-                 await Task.Delay(200);
-
-                 // 8. 采集图像并分析
-                 bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync(card);
-
-                 if (blobSuccess)
-                 {
-                     operLog.iEventStatus = 0;
-                     operLog.strOperEvent = "标刻标定模板";
-                     operLog.strFailReason = $"成功获取 {dCalibPointIm.Length / 2} 个标定点";
-                     AddLog();
-                 }
-             }
-             catch (TimeoutException ex)
-             {
-                 operLog.iEventStatus = -1;
-                 operLog.strOperEvent = "标刻标定模板";
-                 operLog.strFailReason = $"标刻超时: {ex.Message}";
-                 AddLog();
-             }
-             catch (Exception ex)
-             {
-                 operLog.iEventStatus = -1;
-                 operLog.strOperEvent = "标刻标定模板";
-                 operLog.strFailReason = ex.Message;
-                 AddLog();
-             }
-             finally
-             {
-                 SafeCloseLoadingForm();
-                 iLaserWorkingTypes[card] = 0;
-                 UpdateButtonStyle(btFunMark, false);
-                 // ✅ 标刻完成后重新加载标准模板
-                 await ReloadCurrentRouteTemplateAsync();
-             }
-         }*/
+        
         /// <summary>
         /// 标刻9点标定模板（动态生成阵列填充圆并标刻）
         /// 对应 JCZServer 中的命令 44
@@ -4083,7 +3984,7 @@ namespace VisionApplication
                 // 5. 发送命令并等待完成（服务端会生成模板并标刻）
                 await ShowLoadingFormAsync(async () =>
                 {
-                    var result = await dispatcher.SendCommandAsync(param, 60000);
+                    var result = await dispatcher.SendCommandAsync(param, 20000);
 
                     if (result.nErr != 0)
                     {
@@ -4128,6 +4029,7 @@ namespace VisionApplication
             }
             finally
             {
+                vpWin.bMainTaskFinished = true;
                 SafeCloseLoadingForm();
                 iLaserWorkingTypes[card] = 0;
                 UpdateButtonStyle(btFunMark, false);
@@ -4181,21 +4083,10 @@ namespace VisionApplication
                 {
                     // 采集图像
                     CaptureCalibImage();
-
-                    // 进行Blob分析
-                    bool success = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
-
-                    if (success)
-                    {
-                        UpdateCalibPointTable();
-                    }
-                    else
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = "标刻标定模板";
-                        operLog.strFailReason = "Blob分析失败，未检测到足够的标定点";
-                        AddLog();
-                    }
+                    //更新图像坐标
+                    bool success = UpdateCalibData();
+                    if(success)
+                        success &= ExeNPointCalib();
 
                     tcs.SetResult(success);
                 }
@@ -4207,8 +4098,27 @@ namespace VisionApplication
 
             return await tcs.Task;
         }
-        private void btUpdateCalibDate_Click(object sender, EventArgs e)
+        private bool UpdateCalibData()
         {
+            bool success = vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
+
+            if (success)
+            {
+                //更新图像和激光坐标到Table中
+                UpdateCalibPointTableFromVar();
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "标刻标定模板";
+                operLog.strFailReason = "Blob分析失败，未检测到足够的标定点";
+                AddLog();
+            }
+            return success;
+        }
+        private void btUpdateCalibData_Click(object sender, EventArgs e)
+        {
+            var tcs = new TaskCompletionSource<bool>();
             if (!vpWin.bMainTaskFinished)
             {
                 operLog.iEventStatus = -1;
@@ -4217,10 +4127,15 @@ namespace VisionApplication
                 AddLog();
                 return;
             }
-            if(rts.onLS.bLock)
-             CaptureCalibImage();
-            vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
-            UpdateCalibPointTable();
+            if(rts.onLS.bLock)  //是否重新采集图像，提取坐标
+                CaptureCalibImage();
+
+            bool success = UpdateCalibData();
+            if (success)
+                success &= ExeNPointCalib();
+            tcs.SetResult(success);
+            /* vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
+             UpdateCalibPointTable();*/
         }
 
         private void btCalib_Click(object sender, EventArgs e)
@@ -4237,8 +4152,26 @@ namespace VisionApplication
             if (bNormal)
             {
                 cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
-                UpdateCalibResult2UIFromVar();
+                UpdateCalibResult2UIFromVar(cr);
             }
+        }
+        private bool ExeNPointCalib()
+        {
+            //更新数据到NPoint工具
+            bool bNormal = UpdateLaserVisionCalibParam2VPFromUI();
+            if (bNormal)
+            {
+                cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
+                UpdateCalibResult2UIFromVar(cr);
+            }
+            return bNormal;
+        }
+        private bool UpdateLaserVisionCalibParam2VPFromUI()
+        {
+            bool bNormal = true;
+            bNormal &= Update9PointCalibPoint2VarFromUI();
+            vpWin.SetCalibPoint2NPointTool(dCalibPoint,iJobIndex);           
+            return bNormal;
         }
 
         /// <summary>
@@ -4582,11 +4515,12 @@ namespace VisionApplication
             }
         }
         /// <summary>
-        /// 采集9点标定图像
+        /// 采集9点标定图像，输入给blob工具
         /// </summary>
         private void CaptureCalibImage()
         {
-            operLog.strOperEvent = "采集9点标定图像";
+            operLog.strOperEvent = "采集标定图像";
+            operLog.iEventStatus = 0;
             if (!vpWin.bMainTaskFinished)
             {
                 operLog.iEventStatus = -1;
@@ -4616,15 +4550,30 @@ namespace VisionApplication
             vpWin.bMainTaskFinished = false;
             if (cup.p_VPPRTP.bAcqFromCam)
             {
+                //采集标定板图像，并输入给blob工具，并执行一直运行
                 bRet = vpWin.PreViewCalibImage(iJobIndex,cup.p_CD.camInd[iJobIndex]);
-                if (!bRet) { }
+                if (!bRet) 
+                {
+                    //  operLog.strOperEvent = "采集标定图像";
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = "采集异常错误";
+                }
                 vpWin.bMainTaskFinished = true;
             }
             else
             {
                 bRet = vpWin.PreViewOneCalibImageFromFile(iJobIndex);
-                operLog.strFailReason = "回放异常错误";
+                vpWin.bMainTaskFinished = true;
+                if (!bRet) {
+                    //  operLog.strOperEvent = "回放标定图像";
+                    operLog.iEventStatus = -1;
+                    operLog.strFailReason = "回放异常错误";
+
+                }
+               
             }
+            AddLog();
+
         }
 
         /// <summary>
