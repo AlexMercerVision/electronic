@@ -89,6 +89,8 @@ namespace BJJCZ_BaseDevelop
         private Point _dragStartMousePos;
         private RectangleF _dragStartViewBounds;
         #endregion
+        public bool IsAutoFitEnabled => _autoFitEnabled;
+
 
         #region 构造函数
         public CoordPictureBox()
@@ -97,6 +99,7 @@ namespace BJJCZ_BaseDevelop
             this.SizeMode = PictureBoxSizeMode.Normal;
             this.ResizeRedraw = true;
             this.TabStop = true;   // 使控件可以接收焦点，确保滚轮事件触发
+           
          //   this.MouseWheel += CoordPictureBox_MouseWheel; // 后备事件绑定
         }
         #endregion

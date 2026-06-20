@@ -2361,12 +2361,13 @@ namespace VisionControl
         private uint[] _previewBufferSizes = new uint[maxCameraNum];
         private MyCamera.MV_FRAME_OUT_INFO_EX[] _lastFrameInfos = new MyCamera.MV_FRAME_OUT_INFO_EX[maxCameraNum];
         private object[] _previewLocks = new object[maxCameraNum];
+        private IntPtr[] _previewHwnds = new IntPtr[maxCameraNum];
         private void InitPreviewLocks()
         {
             for (int i = 0; i < maxCameraNum; i++)
                 _previewLocks[i] = new object();
         }
-        public void previewOnlive(bool bOpen,int iJobIndex)
+        /*public void previewOnlive(bool bOpen,int iJobIndex)
         {
             int iJobIdx = iJobIndex;
             int iCamIdx = cup.p_CD.camInd[iJobIdx];
@@ -2406,6 +2407,81 @@ namespace VisionControl
                 // 如果还要清空其他子窗口，按需添加
             }
         }
+*/// 启动/停止单路预览
+        public void previewOnlive(bool bOpen, int wsInd)
+        {
+            if (wsInd < 0 || wsInd >= maxCameraNum) return;
+
+           
+            int iCamIdx = cup.p_CD.camInd[wsInd];
+            MyCamera camera = acqFIFO._HikCam?[iCamIdx];
+            if (camera == null) return;
+
+            if (bOpen)
+            {
+                if (_previewRunning[wsInd]) return;
+                switch (wsInd)
+                {
+                    case 0:
+                        cogRDMainUser.Visible = false;
+                        picSub1.Visible = true;
+                        picSub1.Location = cogRDMainUser.Location;
+                        picSub1.Size = cogRDMainUser.Size;
+                        break;
+                    case 1:
+                        cogRDSub1.Visible = false;
+                        picSub2.Visible = true;
+                        picSub2.Location = cogRDSub1.Location;
+                        picSub2.Size = cogRDSub1.Size;
+                        break;
+                }
+                // 获取对应的 PictureBox 句柄（根据工位选择）
+                Control displayControl = GetPreviewControl(wsInd);
+                if (displayControl == null || !displayControl.IsHandleCreated)
+                {
+                    // 如果句柄未创建，先创建
+                    displayControl?.CreateControl();
+                }
+                _previewHwnds[wsInd] = displayControl?.Handle ?? IntPtr.Zero;
+                if (_previewHwnds[wsInd] == IntPtr.Zero) return;
+
+                _previewRunning[wsInd] = true;
+                _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd));
+                _previewThreads[wsInd].IsBackground = true;
+                _previewThreads[wsInd].Start();
+            }
+            else
+            {
+                switch (wsInd)
+                {
+                    case 0:
+
+                        picSub1.Visible = false;
+                        cogRDMainUser.Visible = true;
+                        /*picSub1.Location = cogRDMainUser.Location;
+                        picSub1.Size = cogRDMainUser.Size;*/
+                        break;
+                    case 1:
+                        picSub2.Visible = false;
+                        cogRDSub1.Visible = true;
+                        /*picSub2.Location = cogRDSub1.Location;
+                        picSub2.Size = cogRDSub1.Size;*/
+                        break;
+                }
+                _previewRunning[wsInd] = false;
+                if (_previewThreads[wsInd] != null && _previewThreads[wsInd].IsAlive)
+                    _previewThreads[wsInd].Join(1000);
+                _previewThreads[wsInd] = null;
+
+                // 清空 PictureBox 显示
+                Control displayControl = GetPreviewControl(wsInd);
+                if (displayControl is PictureBox pb)
+                    pb.Image = null;
+                else if (displayControl is CogRecordDisplay cogDisp)
+                    cogDisp.Image = null;
+            }
+        }
+
 
         public void previewOnliveAll(bool bOpen)
         {
@@ -2511,7 +2587,7 @@ namespace VisionControl
                                 if (displayControl is CogRecordDisplay cogDisp)
                                 {
                                     cogDisp.Image = cogImage;
-                                //    cogDisp.Fit(true);
+                                    //    cogDisp.Fit(true);
                                 }
                                 else if (displayControl is PictureBox picBox)
                                 {
@@ -2533,6 +2609,66 @@ namespace VisionControl
             // 停止采集
        //     camera.MV_CC_StopGrabbing_NET();
         }
+
+        // 预览线程函数
+        private void PreviewThreadProc(MyCamera camera, int wsInd)
+        {
+            MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
+            MyCamera.MV_DISPLAY_FRAME_INFO stDisplayInfo = new MyCamera.MV_DISPLAY_FRAME_INFO();
+
+            // 确保相机已开始采集（外部调用前需 StartGrabbing）
+            while (_previewRunning[wsInd])
+            {
+                int nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
+                if (nRet == MyCamera.MV_OK)
+                {
+                    // 直接显示
+                    stDisplayInfo.hWnd = _previewHwnds[wsInd];
+                    stDisplayInfo.pData = stFrameInfo.pBufAddr;
+                    stDisplayInfo.nDataLen = stFrameInfo.stFrameInfo.nFrameLen;
+                    stDisplayInfo.nWidth = stFrameInfo.stFrameInfo.nWidth;
+                    stDisplayInfo.nHeight = stFrameInfo.stFrameInfo.nHeight;
+                    stDisplayInfo.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
+                    camera.MV_CC_DisplayOneFrame_NET(ref stDisplayInfo);
+
+                    camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
+                }
+                else
+                {
+                    Thread.Sleep(5);
+                }
+            }
+        }
+        // 根据工位返回对应的显示控件（可根据布局调整）
+        private Control GetPreviewControl(int wsInd)
+        {
+            switch (wsInd)
+            {
+                case 0: return picSub1;    // A面
+                case 1: return picSub2;    // B面
+                default: return null;
+            }
+        }
+        // 启动所有工位预览
+       /* public void previewOnliveAll(bool bOpen)
+        {
+            for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+            {
+                if (cup.p_CD.bListProcess[wsInd])
+                    previewOnlive(bOpen, wsInd);
+            }
+        }*/
+
+        // 停止所有预览（关闭时调用）
+        public void StopAllPreview()
+        {
+            for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+            {
+                if (_previewRunning[wsInd])
+                    previewOnlive(false, wsInd);
+            }
+        }
+
         private Control GetDisplayControlForJob(int jobIndex)
         {
             switch (jobIndex)

@@ -248,6 +248,56 @@ namespace VisionApplication
         /// 两个板卡共享同一个 JCZServer 进程窗口。
         /// </summary>
         /// <returns>是否成功启动或找到进程</returns>
+        /* private bool StartJCZ()
+         {
+             Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
+
+             if (processes.Length == 0)
+             {
+                 try
+                 {
+                     string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                     string exePath = Path.Combine(basePath, "JCZ", "BJJCZ_Server.exe");
+                     embeddedHwnd = StartProcessAndGetHandle(exePath, "JCZServer");
+                     if (embeddedHwnd != IntPtr.Zero)
+                     {
+                         _jczServerHwnd = embeddedHwnd;
+                         // 直接嵌入到容器
+                         this.BeginInvoke(new Action(() =>
+                         {
+                             PerformEmbedToPanel();
+                         }));
+                     }
+                     else
+                     {
+                         return false;
+                     }
+                 }
+                 catch (Exception e)
+                 {
+                     MessageBox.Show(e.ToString());
+                     return false;
+                 }
+             }
+             else
+             {
+                 embeddedHwnd = FindWindow(null, "JCZServer");
+                 if (embeddedHwnd == IntPtr.Zero && processes[0].MainWindowHandle != IntPtr.Zero)
+                 {
+                     embeddedHwnd = processes[0].MainWindowHandle;
+                 }
+
+                 if (embeddedHwnd != IntPtr.Zero)
+                 {
+                     _jczServerHwnd = embeddedHwnd;
+                     this.BeginInvoke(new Action(() =>
+                     {
+                         PerformEmbedToPanel();
+                     }));
+                 }
+             }
+             return true;
+         }*/
         private bool StartJCZ()
         {
             Process[] processes = Process.GetProcessesByName("BJJCZ_Server");
@@ -258,20 +308,10 @@ namespace VisionApplication
                 {
                     string basePath = AppDomain.CurrentDomain.BaseDirectory;
                     string exePath = Path.Combine(basePath, "JCZ", "BJJCZ_Server.exe");
-                    embeddedHwnd = StartProcessAndGetHandle(exePath, "JCZServer");
-                    if (embeddedHwnd != IntPtr.Zero)
-                    {
-                        _jczServerHwnd = embeddedHwnd;
-                        // 直接嵌入到容器
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            PerformEmbedToPanel();
-                        }));
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    // 直接启动，不获取句柄嵌入
+                    Process.Start(exePath);
+                    // 不再调用 StartProcessAndGetHandle 和 PerformEmbedToPanel
+                    return true;
                 }
                 catch (Exception e)
                 {
@@ -281,22 +321,9 @@ namespace VisionApplication
             }
             else
             {
-                embeddedHwnd = FindWindow(null, "JCZServer");
-                if (embeddedHwnd == IntPtr.Zero && processes[0].MainWindowHandle != IntPtr.Zero)
-                {
-                    embeddedHwnd = processes[0].MainWindowHandle;
-                }
-
-                if (embeddedHwnd != IntPtr.Zero)
-                {
-                    _jczServerHwnd = embeddedHwnd;
-                    this.BeginInvoke(new Action(() =>
-                    {
-                        PerformEmbedToPanel();
-                    }));
-                }
+                // 进程已存在，不用做任何操作，让服务端保持独立窗口
+                return true;
             }
-            return true;
         }
         private const int WS_SYSMENU = 0x00080000;
         private const int WS_MINIMIZEBOX = 0x00020000;
@@ -341,8 +368,8 @@ namespace VisionApplication
                 ShowWindow(_jczServerHwnd, SW_SHOW);
 
                 // 监听容器大小变化
-                splitContainer6.Panel2.SizeChanged -= OnPanelSizeChanged;
-                splitContainer6.Panel2.SizeChanged += OnPanelSizeChanged;
+           //     splitContainer6.Panel2.SizeChanged -= OnPanelSizeChanged;
+          //      splitContainer6.Panel2.SizeChanged += OnPanelSizeChanged;
 
                 _isJCZServerEmbedded = true;
 
@@ -677,7 +704,7 @@ namespace VisionApplication
                 }
 
                 // 发送容器句柄给服务端
-                SendContainerHandleToServer();
+            //    SendContainerHandleToServer();
             }
             catch (Exception ex)
             {
@@ -694,16 +721,14 @@ namespace VisionApplication
 
             for (int card = 0; card < MaxLaserCards; card++)
             {
-             //   if (bInitJCZ[card] == 0) // 板卡初始化成功
+                //   if (bInitJCZ[card] == 0) // 板卡初始化成功
                 {
                     bInitJCZ[card] = 0;
                     _ = InitializeJczCardAfterConnect(card);
                 }
             }
-                /* operLog.iEventStatus = 0;
-                 operLog.strOperEvent = "服务端与双管道初始化完成";
-                 AddLog();*/
-            }
+            
+        }
 
         private async Task InitializeJczCardAfterConnect(int card)
         {
@@ -956,7 +981,7 @@ namespace VisionApplication
 
                 // 处理分离请求
                 // 处理嵌入请求 (cmdType = 200)
-                if (param.cmdType == CMD_NOTIFY_EMBED)
+               /* if (param.cmdType == CMD_NOTIFY_EMBED)
                 {
                     // 服务端请求嵌入
                     _jczServerHwnd = (IntPtr)param.dParam1;
@@ -986,7 +1011,7 @@ namespace VisionApplication
                         DetachJCZServer();
                     }));
                     return;
-                }
+                }*/
 
                 // 将消息传递给调度器
                 laserDispatchers[card]?.HandleResponse(param);
@@ -2292,11 +2317,11 @@ namespace VisionApplication
                 AddLog();
 
                 // 获取现有服务端窗口句柄并嵌入
-                await Task.Run(() => ConnectToExistingJCZServer());
+              //  await Task.Run(() => ConnectToExistingJCZServer());
 
                 for (int card = 0; card < MaxLaserCards; card++)
                 {
-                  //  if (bInitJCZ[card] == 0) // 板卡初始化成功
+                    //  if (bInitJCZ[card] == 0) // 板卡初始化成功
                     {
                         await Task.Run(() => InitializeJczCardAfterConnect(card));
                         bInitJCZ[card] = 0;
@@ -2312,17 +2337,34 @@ namespace VisionApplication
                 AddLog();
 
                 await Task.Run(() => InitJCZ());
-            /*    for (int card = 0; card < MaxLaserCards; card++)
+                for (int card = 0; card < MaxLaserCards; card++)
                 {
-                 //   if (bInitJCZ[card] == 0) // 板卡初始化成功
+                    //   if (bInitJCZ[card] == 0) // 板卡初始化成功
                     {
                         await Task.Run(() => InitializeJczCardAfterConnect(card));
                         //  _ = InitializeJczCardAfterConnect(card);
                     }
-                }*/
+                }
             }
         }
+        /* private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
+         {
+             // 如果调度器未就绪，或者服务端进程未运行，则初始化
+             if (!_laserDispatchersReady || !IsJCZServerRunning())
+             {
+                 operLog.iEventStatus = 0;
+                 operLog.strOperEvent = "启动/连接JCZ服务端";
+                 AddLog();
 
+                 await Task.Run(() => InitJCZ());
+             }
+             else
+             {
+                 operLog.iEventStatus = 0;
+                 operLog.strOperEvent = "JCZ服务端已运行，无需重复连接";
+                 AddLog();
+             }
+         }*/
         /// <summary>
         /// 检查JCZ服务端进程是否正在运行
         /// </summary>
