@@ -271,6 +271,7 @@ namespace VisionControl
                         cogRDSub1.Fit(true);
                         break;
                 }
+                bRecordWithInteractiveGraphics[iJobIndex] = true;
                 int pointNum = row * col;
                 if (cbt.Results == null)
                     return false;

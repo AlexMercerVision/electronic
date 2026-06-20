@@ -3213,7 +3213,7 @@ namespace VisionApplication
         }
 
         //重新训练PMA模板 
-        private void btTrainPMA_Click(object sender, EventArgs e)
+        private async void btTrainPMA_Click(object sender, EventArgs e)
         {
             //从界面更新参数到pmaParam
             UpdatePMATrainParamFromUI();
@@ -3221,6 +3221,14 @@ namespace VisionApplication
             vpWin.SetPMATrainParam(pmaParam, iJobIndex);
             //从新训练PMA模板
             vpWin.ReTrainPMA(iJobIndex);
+
+            int jobIndex = iJobIndex;
+            if (jobIndex >= 0 && jobIndex < MaxLaserCards)
+            {
+                int card = GetCardSNByJob(jobIndex);
+                vpWin.GetAlignRegion(ref alImParam[card], card);
+                await SendAlignParamToJCZServer(card);
+            }
         }
         private void btPMARun_Click(object sender, EventArgs e)
         {
@@ -3238,7 +3246,16 @@ namespace VisionApplication
 
         private void btPMAMaskDesign_Click(object sender, EventArgs e)
         {
-
+           // vpWin.EditPMAMaskRegion(iJobIndex);
+         //  CogPmalign
+            CogPMAlignPatternEditorV2 pmpeV2 = new CogPMAlignPatternEditorV2();
+            pmaV2 = new CogPMAlignEditV2();
+            pmaV2.Subject = vpWin._pmaMT;
+         //   pmaV2.
+            //   pmpeV2.
+            //  pmpeV2. = vpWin._pmaMT.Pattern;
+         //   splitContainer2.Panel1.Controls.Add(pmpeV2);
+             pmpeV2.Show();
         }
 
         private void chkPMAAutoEdgeThre_CheckedChanged(object sender, EventArgs e)
@@ -4734,6 +4751,7 @@ namespace VisionApplication
             int previousVisionJobIndex = CaptureVisionExecutionJobIndex();
             try
             {
+                vpWin.ClearRDRecord(faceIndex);
                 // 自动触发只设置视觉执行上下文，不改界面当前工位。
                 ApplyFaceVisionExecutionContext(faceIndex);
 
@@ -4741,6 +4759,7 @@ namespace VisionApplication
                 bool visionOk = false;
                 try
                 {
+                    
                     vpWin._iTaskType = 2;
                     EnterFaceVisionRun(faceIndex);
                     visionBusyEntered = true;

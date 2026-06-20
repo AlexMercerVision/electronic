@@ -2817,8 +2817,7 @@ namespace VisionApplication
                 {
                     case "btFunAcqOneImage":    //采集单帧图像
                         {
-                            if (vpWin._iTaskType != 0)
-                                vpWin.ClearCogDispaly();
+                          
                             operLog.strOperEvent = "采集图像";
                             PeviewOneImage();
                             break;
@@ -5630,7 +5629,7 @@ namespace VisionApplication
              textBox_JobN_MinThroughput.Text = strStatus[10];
              textBox_JobN_MaxThroughput.Text = strStatus[11];*/
 
-            toolStripStatus_inferTime.Text = "推理时间：" + vpWin.cost_milliseconds;
+          //  toolStripStatus_inferTime.Text = "推理时间：" + vpWin.cost_milliseconds;
 
             rts.detS.iTotal  = detStat.iTotal+ Int32.Parse(strStatus[0]);
 

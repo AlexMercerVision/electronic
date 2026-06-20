@@ -1452,6 +1452,7 @@ namespace VisionControl
             get { return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool); }
 
         }
+
         public CogBlobTool _blobCalib
         {
             //  set { ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogPMAlignMultiTool1"] as CogPMAlignMultiTool) = value; }
@@ -1653,6 +1654,7 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
         private void SaveTrainImage(int iJobIndex, CogPMAlignTool pma)
         {
@@ -1682,6 +1684,17 @@ namespace VisionControl
 
             ShowPMACurrentInputImage(pma, iJobIndex);
         }
+
+        public void EditPMAMaskRegion(int iJobIndex)
+        {
+         //   CogPMAlignPatternEditorV2 pmpe = new CogPMAlignPatternEditorV2();
+          //  pmpe.
+           /* CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            
+            for (int i = 0; i < pma.Container.Components.Count; i++)
+            { string strComp = pma.Container.Components[i].ToString(); } */                                                                                                           
+        }
+
         private void ShowPMARunImage(CogPMAlignTool pma, int iJobIndex)
         {
             int iCamIndex = cup.p_CD.camInd[iJobIndex];
@@ -1699,6 +1712,7 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
         private void ShowPMACurrentInputImage(CogPMAlignTool pma, int iJobIndex)
         {
@@ -1717,6 +1731,7 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
         //功能尚未实现，2026年6月19日
         public void SetPMAMaskRegion(int iJobIndex)
@@ -1767,6 +1782,31 @@ namespace VisionControl
                 MessageBox.Show(ex.Message.ToString());
             }
         }
+
+        //清楚记录显示
+        bool[] bRecordWithInteractiveGraphics = new bool[maxCameraNum];
+        public void ClearRDRecord(int iJobIndex)
+        {
+            if(bRecordWithInteractiveGraphics[iJobIndex])
+            {
+                switch (iJobIndex)
+                {
+                    case 0:
+                        {
+                            cogRDMainUser.InteractiveGraphics.Clear();
+                        //    cogRDMainUser.Fit(true);
+                        }
+                        break;
+                    case 1:
+                        cogRDSub1.InteractiveGraphics.Clear();
+                        //  cogRDSub1.Image = ci8gAcq[iCamIndex];
+                       // cogRDSub1.Fit(true);
+                        break;
+                }
+                bRecordWithInteractiveGraphics[iJobIndex] = false;
+            }
+        }
+        
         #endregion
 
         #region  相机触发采集，以及由触发采集执行运算
@@ -2689,6 +2729,7 @@ namespace VisionControl
         {
             try
             {
+                ClearRDRecord(wsInd);
                 int iCamInd = cup.p_CD.camInd[wsInd];
                 int iImageType= acqFIFO.GrabOneFrameCogFromFile(iFileInd, cup.p_CD.bListProcess, wsInd, iCamInd);
                 ICogImage ci=null;
@@ -2804,6 +2845,7 @@ namespace VisionControl
                 // 将海康数据类型转为Mat
                 if (cup.p_CD.bListProcess[wsInd])
                 {
+                    ClearRDRecord(wsInd);
                     //黑白
                     if (cup.p_Cam[iCamIndex].iMonoType == 0)
                     {
