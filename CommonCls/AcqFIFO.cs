@@ -1006,7 +1006,7 @@ namespace CommonCls
         }
 
         /// <summary>对CogImage8Grey应用旋转/镜像</summary>
-        private ICogImage CogFlipRotateIm(ICogImage inputIm)
+        public ICogImage CogFlipRotateIm(ICogImage inputIm)
         {
             switch (_rotateFlipType)
             {

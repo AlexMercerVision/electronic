@@ -1052,25 +1052,25 @@ namespace VisionControl
             {
                 ci8gAcq[i] = new CogImage8Grey();
             }
-            for (int i = 0; i < maxCameraNum; i++)
+          /*  for (int i = 0; i < maxCameraNum; i++)
             {
                 ci8gFX[i] = new CogImage8Grey();
-            }
+            }*/
            /* for (int i = 0; i < 6; i++)
             {
                 hObjFX[i] = new HObject();
             }*/
             acqFIFO._ci8gAcq = ci8gAcq;
            // acqFIFO._hObj = hObjFX;
-            for (int i = 0; i < maxCameraNum; i++)
+         /*   for (int i = 0; i < maxCameraNum; i++)
             {
                 DL_result[i].AL_Rect = new List<CogRectangleAffine>();
                 DL_result[i].AL_score = new List<float>();
                 DL_result[i].AL_Type = new List<int>();
                 DL_result[i].Al_bDiff = new List<bool>();
                 ;
-            }
-
+            }*/
+            InitPreviewLocks();   // 初始化预览锁数组
             vpRes.iResCode = new int[maxCameraNum];
             //vpRes.TF = new CogTransform2DLinear[maxCameraNum];
         }
@@ -1517,6 +1517,8 @@ namespace VisionControl
                 }
 
                 CogPMAlignTool current = toolGroup.Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                
+               
                 if (object.ReferenceEquals(current, pma))
                     return true;
 
@@ -1716,11 +1718,12 @@ namespace VisionControl
                     break;
             }
         }
+        //功能尚未实现，2026年6月19日
         public void SetPMAMaskRegion(int iJobIndex)
         {
             CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
             //  pma.Pattern.GetTrainedPatternImageMask
-            CogPMAlignEditV2
+        //    CogPMAlignEditV2
 
             ShowPMACurrentInputImage(pma, iJobIndex);
         }
@@ -2311,6 +2314,251 @@ namespace VisionControl
 
         #region  图像采集相关
 
+        // 在类内部添加： 
+        private Thread[] _previewThreads = new Thread[maxCameraNum];
+        private bool[] _previewRunning = new bool[maxCameraNum];
+        private IntPtr[] _previewBuffers = new IntPtr[maxCameraNum];
+        private uint[] _previewBufferSizes = new uint[maxCameraNum];
+        private MyCamera.MV_FRAME_OUT_INFO_EX[] _lastFrameInfos = new MyCamera.MV_FRAME_OUT_INFO_EX[maxCameraNum];
+        private object[] _previewLocks = new object[maxCameraNum];
+        private void InitPreviewLocks()
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+                _previewLocks[i] = new object();
+        }
+        public void previewOnlive(bool bOpen,int iJobIndex)
+        {
+            int iJobIdx = iJobIndex;
+            int iCamIdx = cup.p_CD.camInd[iJobIdx];
+            MyCamera camera = acqFIFO._HikCam?[iCamIdx];
+            if (camera == null) return;
+
+            if (bOpen)
+            {
+                if (_previewRunning[iJobIndex]) return;
+
+                // 启动取流线程
+                _previewRunning[iJobIndex] = true;
+                _previewThreads[iJobIndex] = new Thread(() => PreviewThreadProcess(iJobIndex,camera, iCamIdx));
+                _previewThreads[iJobIndex].IsBackground = true;
+                _previewThreads[iJobIndex].Start();
+            }
+            else
+            {
+                _previewRunning[iJobIndex] = false;
+                if (_previewThreads[iJobIndex] != null && _previewThreads[iJobIndex].IsAlive)
+                    _previewThreads[iJobIndex].Join(1000);
+                _previewThreads[iJobIndex] = null;
+
+                // 释放缓冲区
+                lock (_previewLocks[iJobIndex])
+                {
+                    if (_previewBuffers[iJobIndex] != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(_previewBuffers[iJobIndex]);
+                        _previewBuffers[iJobIndex] = IntPtr.Zero;
+                        _previewBufferSizes[iJobIndex] = 0;
+                    }
+                }
+
+                // 清空显示
+            //    cogRDMainUser.Image = null;
+                // 如果还要清空其他子窗口，按需添加
+            }
+        }
+
+        public void previewOnliveAll(bool bOpen)
+        {
+            if (bOpen)
+            {
+                // 遍历所有工位，启动已启用的工位预览
+                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                {
+                    if (!cup.p_CD.bListProcess[wsInd]) continue;
+
+                    int camIdx = cup.p_CD.camInd[wsInd];
+                    MyCamera camera = acqFIFO._HikCam?[camIdx];
+                    if (camera == null || _previewRunning[wsInd]) continue;
+
+                    // 启动该工位的预览线程
+                    _previewRunning[wsInd] = true;
+                    _previewThreads[wsInd] = new Thread(() => PreviewThreadProcess(wsInd, camera, camIdx));
+                    _previewThreads[wsInd].IsBackground = true;
+                    _previewThreads[wsInd].Start();
+                }
+            }
+            else
+            {
+                // 停止所有工位的预览
+                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                {
+                    if (!_previewRunning[wsInd]) continue;
+                    _previewRunning[wsInd] = false;
+                    if (_previewThreads[wsInd] != null && _previewThreads[wsInd].IsAlive)
+                        _previewThreads[wsInd].Join(1000);
+                    _previewThreads[wsInd] = null;
+
+                    // 释放缓冲区
+                    lock (_previewLocks[wsInd])
+                    {
+                        if (_previewBuffers[wsInd] != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(_previewBuffers[wsInd]);
+                            _previewBuffers[wsInd] = IntPtr.Zero;
+                            _previewBufferSizes[wsInd] = 0;
+                        }
+                    }
+
+                    // 清空对应显示控件
+                    Control displayControl = GetDisplayControlForJob(wsInd);
+                    if (displayControl != null)
+                    {
+                        if (displayControl is CogRecordDisplay cogDisp)
+                            cogDisp.Image = null;
+                        else if (displayControl is PictureBox picBox)
+                            picBox.Image = null;
+                    }
+                }
+            }
+        }
+        private void PreviewThreadProcess(int wsInd, MyCamera camera, int camIdx)
+        {
+            MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
+            int nRet;
+
+            // 开始采集
+          /*  nRet = camera.MV_CC_StartGrabbing_NET();
+            if (nRet != MyCamera.MV_OK)
+            {
+                System.Diagnostics.Debug.WriteLine($"工位{wsInd + 1} StartGrabbing failed: 0x{nRet:X}");
+                _previewRunning[wsInd] = false;
+                return;
+            }*/
+
+            while (_previewRunning[wsInd])
+            {
+                nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
+                if (nRet == MyCamera.MV_OK)
+                {
+                    // 复制图像数据到该工位的私有缓冲区
+                    lock (_previewLocks[wsInd])
+                    {
+                        uint frameLen = stFrameInfo.stFrameInfo.nFrameLen;
+                        if (_previewBuffers[wsInd] == IntPtr.Zero || frameLen > _previewBufferSizes[wsInd])
+                        {
+                            if (_previewBuffers[wsInd] != IntPtr.Zero)
+                                Marshal.FreeHGlobal(_previewBuffers[wsInd]);
+                            _previewBuffers[wsInd] = Marshal.AllocHGlobal((int)frameLen);
+                            _previewBufferSizes[wsInd] = frameLen;
+                        }
+                        CopyMemory(_previewBuffers[wsInd], stFrameInfo.pBufAddr, frameLen);
+                        _lastFrameInfos[wsInd] = stFrameInfo.stFrameInfo;
+                    }
+
+                    // 转换为 CogImage
+                    ICogImage cogImage = ConvertFrameToCogImage(_previewBuffers[wsInd], ref _lastFrameInfos[wsInd]);
+                    if (cogImage != null)
+                    {
+                        // 应用旋转/镜像
+                        cogImage = acqFIFO.CogFlipRotateIm(cogImage);
+
+                        // 更新对应的显示控件
+                        Control displayControl = GetDisplayControlForJob(wsInd);
+                        if (displayControl != null && displayControl.IsHandleCreated)
+                        {
+                            displayControl.BeginInvoke(new Action(() =>
+                            {
+                                if (displayControl is CogRecordDisplay cogDisp)
+                                {
+                                    cogDisp.Image = cogImage;
+                                //    cogDisp.Fit(true);
+                                }
+                                else if (displayControl is PictureBox picBox)
+                                {
+                                    picBox.Image = cogImage.ToBitmap();
+                                }
+                            }));
+                        }
+                    }
+
+                    // 释放 SDK 缓冲区
+                    camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
+                }
+                else
+                {
+                    Thread.Sleep(10); // 无帧时短暂休眠
+                }
+            }
+
+            // 停止采集
+       //     camera.MV_CC_StopGrabbing_NET();
+        }
+        private Control GetDisplayControlForJob(int jobIndex)
+        {
+            switch (jobIndex)
+            {
+                case 0:  // A面
+                    return iModelRole == 10 ? (Control)cogRDMain : cogRDMainUser;
+                case 1:  // B面
+                    return cogRDSub1;
+                // 如有更多工位，继续添加
+                default:
+                    return null;
+            }
+        }
+        private ICogImage ConvertFrameToCogImage(IntPtr pData, ref MyCamera.MV_FRAME_OUT_INFO_EX frameInfo)
+        {
+            // 仅处理 Mono8 格式（彩色可扩展）
+            if (IsMonoData(frameInfo.enPixelType))
+            {
+                CogImage8Root root = new CogImage8Root();
+                root.Initialize((int)frameInfo.nWidth, (int)frameInfo.nHeight, pData, (int)frameInfo.nWidth, null);
+                CogImage8Grey grey = new CogImage8Grey();
+                grey.SetRoot(root);
+                return grey;
+            }
+            else if (IsColorData(frameInfo.enPixelType))
+            {
+                // 彩色图像转换（参考您现有的 GrabOneFrameCogColor 逻辑）
+                // 此处简化，可调用 acqFIFO 中的方法或强制 Mono8
+                return null;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private bool IsMonoData(MyCamera.MvGvspPixelType enPixelType)
+        {
+            switch (enPixelType)
+            {
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono10:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono10_Packed:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono12:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono12_Packed:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool IsColorData(MyCamera.MvGvspPixelType enPixelType)
+        {
+            // 参照 BasicDemo 中的实现
+            switch (enPixelType)
+            {
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGR8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerRG8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGB8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerBG8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed:
+                    return true;
+                default:
+                    return false;
+            }
+        }
         public void OpenOrCloseCam(bool bOpen)
         {
             if (bOpen)
@@ -4024,7 +4272,8 @@ namespace VisionControl
              ConvertService.ConvertServiceClient client = new ConvertService.ConvertServiceClient(grpcChannel);
 
              set inputThreshold = new set { Threshold = det_threshold };
-             client.init(inputThreshold);
+             client.
+        inputThreshold);
          }*/
         public static List<FileInfo> getFile(string path, string extName, List<FileInfo> lst)
         {

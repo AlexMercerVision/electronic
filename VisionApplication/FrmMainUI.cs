@@ -1767,8 +1767,9 @@ namespace VisionApplication
                 try
                 {
                     hikCanGrab = false;   // 标志位设为false
-                    vpWin.OpenOrCloseCam(false);  //停止预览线程，并未关闭相机的采集
-                                                  //    hIKVisionCamera.StopGrabbing();
+                  //  vpWin.OpenOrCloseCam(false);  //停止预览线程，并未关闭相机的采集
+                    vpWin.previewOnlive(false, iJobIndex);
+                    //    hIKVisionCamera.StopGrabbing();
                 }
                 catch
                 {
@@ -1996,7 +1997,8 @@ namespace VisionApplication
                     {
                         // 用线程更新显示
 
-                        vpWin.OpenOrCloseCam(true);
+                        // vpWin.OpenOrCloseCam(true);
+                        vpWin.previewOnlive(true,iJobIndex);
                         hikCanGrab = true;
                         operLog.iEventStatus = 0;
                         menuCam_Connect.Text = "关闭图像预览";
