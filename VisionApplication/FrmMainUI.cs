@@ -1767,8 +1767,13 @@ namespace VisionApplication
                 try
                 {
                     hikCanGrab = false;   // 标志位设为false
-                  //  vpWin.OpenOrCloseCam(false);  //停止预览线程，并未关闭相机的采集
-                    vpWin.previewOnlive(false, iJobIndex);
+                                          //   vpWin.OpenOrCloseCam(false);  //停止预览线程，并未关闭相机的采集
+                    for (int i = 0; i < maxCameraNum; i++)
+                    {
+                        vpWin.previewOnlive(false, i);
+                    }
+
+                  //  vpWin.previewOnlive(false, iJobIndex);
                     //    hIKVisionCamera.StopGrabbing();
                 }
                 catch
@@ -1998,7 +2003,10 @@ namespace VisionApplication
                         // 用线程更新显示
 
                         // vpWin.OpenOrCloseCam(true);
-                        vpWin.previewOnlive(true,iJobIndex);
+                        for (int i = 0; i < maxCameraNum; i++)
+                        {
+                            vpWin.previewOnlive(true, i);
+                        }
                         hikCanGrab = true;
                         operLog.iEventStatus = 0;
                         menuCam_Connect.Text = "关闭图像预览";
@@ -3592,7 +3600,7 @@ namespace VisionApplication
             else if (vpWin._iTaskType == 0)      //采集图像，只能显示灰度图和光度图
             {
                 if (iShowType == 0)
-                    vpWin.PreViewOneImageFromFile(iFileIndex, false, cup.p_VPPRTP.iXBType);
+                    vpWin.PreViewOneImageFromFile(iFileIndex, false, iJobIndex);
                 else if (iShowType == 2)
                     vpWin.PreViewOneImageFromFileFX(iFileIndex, false);
             }
@@ -7020,7 +7028,7 @@ namespace VisionApplication
                 // 移除编辑控件
                 splitContainer2.Panel1.Controls.Remove(calibEditV2);
                 calibEditV2.Dispose();
-
+                bVPPParamChanged = true;
                 // 恢复状态
                 vpWin._iTaskType = iTmpType;
                 vpWin.bEnableActivate = true;
@@ -7033,7 +7041,7 @@ namespace VisionApplication
             }
         }
 
-         
+       
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {

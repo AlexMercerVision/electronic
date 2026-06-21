@@ -1,33 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-
-using System.Data;
-using System.Text;
-using System.Windows.Forms;
-using System.Collections;
-using System.Threading;
-using System.IO;
-using System.Runtime.InteropServices;
-
-
 using Cognex.VisionPro;
+using Cognex.VisionPro.Blob;
+using Cognex.VisionPro.CalibFix;
+using Cognex.VisionPro.Caliper;
+using Cognex.VisionPro.ImageFile;
+using Cognex.VisionPro.ImageProcessing;
+using Cognex.VisionPro.Implementation;
+using Cognex.VisionPro.PMAlign;
 using Cognex.VisionPro.QuickBuild;
 using Cognex.VisionPro.QuickBuild.Implementation.Internal;
-using Cognex.VisionPro.ToolGroup;
 using Cognex.VisionPro.ToolBlock;
-using Cognex.VisionPro.Implementation;
-using Cognex.VisionPro.ImageFile;
-using Cognex.VisionPro.Blob;
-using Cognex.VisionPro.Caliper;
-using Cognex.VisionPro.PMAlign;
-using Cognex.VisionPro.ImageProcessing;
-using Cognex.VisionPro.CalibFix;
+using Cognex.VisionPro.ToolGroup;
+using CommonCls;
 using HalconDotNet;
 using MvCamCtrl.NET;  // 海康相机
-using CommonCls;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
+using System.Threading;
+using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 //using gRPC_ClientAPP;
 //using convertService;
 //List<CogPolygon> gpgs
@@ -606,9 +604,10 @@ namespace VisionControl
             bRunOneTimeFinished[iJobIndex] = 0;
             SetJobBusy(iJobIndex, true);
 
-            infer_start_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks); //计时开始
+            //2026年6月20日
+       //     infer_start_time[iJobIndex] = new TimeSpan(DateTime.Now.Ticks); //计时开始
             //各通道时间统一
-            acqFIFO.strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+       //     acqFIFO.strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
 
             //2026年4月12日 设置线程运行  
             if (!RunOneTime(iJobIndex))
@@ -1637,6 +1636,42 @@ namespace VisionControl
             ShowPMATrainImage(pma,iJobIndex); 
         }
 
+        public void ExtraTrainImage(int iJobIndex,bool bLock)
+        {
+            CogCalibNPointToNPointTool nPointTool = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+
+            if (bLock)
+                nPointTool.InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+            else                 
+                nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
+             
+
+            nPointTool.Run();
+
+            CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            pma.Pattern.TrainImage = nPointTool.OutputImage;
+            ShowPMAInputImage(pma, iJobIndex);
+        }
+        private void ShowPMAInputImage(CogPMAlignTool pma, int iJobIndex)
+        {
+            int iCamIndex = cup.p_CD.camInd[iJobIndex];
+            switch (iJobIndex)
+            {
+                case 0:
+                    {
+                        cogRDMainUser.Record = pma.CreateCurrentRecord().SubRecords["InputImage"]; ;
+                        cogRDMainUser.Fit(true);
+                    }
+                    break;
+                case 1:
+                    cogRDSub1.Record = pma.CreateCurrentRecord().SubRecords["InputImage"];
+                    //  cogRDSub1.Image = ci8gAcq[iCamIndex];
+                    cogRDSub1.Fit(true);
+                    break;
+            }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
+        }
+
         private void ShowPMATrainImage(CogPMAlignTool pma,int iJobIndex)
         {
             int iCamIndex = cup.p_CD.camInd[iJobIndex];
@@ -1656,6 +1691,9 @@ namespace VisionControl
             }
             bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
+
+
+
         private void SaveTrainImage(int iJobIndex, CogPMAlignTool pma)
         {
           //  if (bRecord)
@@ -1663,8 +1701,8 @@ namespace VisionControl
                 string strFile = cup.p_Paf.strResSavePath + "\\PMATrain_" + iJobIndex.ToString() + ".jpg";
                 if (cup.p_CD.bListProcess[iJobIndex] && pma.Pattern.TrainImage != null)
                 {
-                    mImageFile.Open(strFile, CogImageFileModeConstants.Write);
-                    mImageFile.Append(pma.Pattern.TrainImage);
+                    mImageFile.Open(strFile, CogImageFileModeConstants.Write);                   
+                    mImageFile.Append(acqFIFO.CogFlipRotateIm(pma.Pattern.TrainImage,iJobIndex));
                     mImageFile.Close();
                 }
             }
@@ -2418,7 +2456,19 @@ namespace VisionControl
             if (camera == null) return;
 
             if (bOpen)
-            {
+            { // 1. 根据配置设置镜像（在开始预览前）
+                int flipType = cup.p_Cam[iCamIdx].iFlipType;
+                if (flipType != 0)
+                {
+                    uint payloadSize = acqFIFO.GetPayloadSize(iCamIdx);
+                    if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < payloadSize)
+                    {
+                        if (_flipBuffers[wsInd] != IntPtr.Zero)
+                            Marshal.FreeHGlobal(_flipBuffers[wsInd]);
+                        _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)payloadSize);
+                        _flipBufferSizes[wsInd] = payloadSize;
+                    }
+                }
                 if (_previewRunning[wsInd]) return;
                 switch (wsInd)
                 {
@@ -2426,13 +2476,16 @@ namespace VisionControl
                         cogRDMainUser.Visible = false;
                         picSub1.Visible = true;
                         picSub1.Location = cogRDMainUser.Location;
-                        picSub1.Size = cogRDMainUser.Size;
+                        
+                        AdjustPictureBoxSize(picSub1, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
+                        // picSub1.Size = cogRDMainUser.Size;
                         break;
                     case 1:
                         cogRDSub1.Visible = false;
                         picSub2.Visible = true;
                         picSub2.Location = cogRDSub1.Location;
-                        picSub2.Size = cogRDSub1.Size;
+                        AdjustPictureBoxSize(picSub2, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
+                        // picSub2.Size = cogRDSub1.Size;
                         break;
                 }
                 // 获取对应的 PictureBox 句柄（根据工位选择）
@@ -2451,7 +2504,13 @@ namespace VisionControl
                 _previewThreads[wsInd].Start();
             }
             else
-            {
+            {   // 停止预览，释放翻转缓冲区
+                if (_flipBuffers[wsInd] != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(_flipBuffers[wsInd]);
+                    _flipBuffers[wsInd] = IntPtr.Zero;
+                    _flipBufferSizes[wsInd] = 0;
+                }
                 switch (wsInd)
                 {
                     case 0:
@@ -2482,7 +2541,43 @@ namespace VisionControl
             }
         }
 
+        private void AdjustPictureBoxSize(PictureBox pic, int imgW, int imgH,int iJobIndex)
+        {
+            if (pic == null || pic.Parent == null) return;
 
+            double aspect = (double)imgW / imgH;
+            Control parent = pic.Parent;
+            int parentW = parent.ClientSize.Width/2-1;
+            int parentH = parent.ClientSize.Height;
+
+            // 计算保持比例的显示尺寸
+            int newW, newH;
+            if ((double)parentW / parentH > aspect)
+            {
+                newH = parentH;
+                newW = (int)(newH * aspect);
+            }
+            else
+            {
+                newW = parentW;
+                newH = (int)(newW / aspect);
+            }
+
+            // 确保最小尺寸（防止过小）
+            newW = Math.Max(newW, 1);
+            newH = Math.Max(newH, 1);
+
+            // 居中放置
+            pic.SuspendLayout();
+            pic.Width = newW;
+            pic.Height = newH;
+
+            pic.Left = (parentW - newW) / 2;
+            pic.Top = (parentH - newH) / 2;
+            pic.ResumeLayout();
+            if (iJobIndex == 1)
+                pic.Left += parentW ;
+        }
         public void previewOnliveAll(bool bOpen)
         {
             if (bOpen)
@@ -2576,7 +2671,7 @@ namespace VisionControl
                     if (cogImage != null)
                     {
                         // 应用旋转/镜像
-                        cogImage = acqFIFO.CogFlipRotateIm(cogImage);
+                        cogImage = acqFIFO.CogFlipRotateIm(cogImage,wsInd);
 
                         // 更新对应的显示控件
                         Control displayControl = GetDisplayControlForJob(wsInd);
@@ -2610,8 +2705,86 @@ namespace VisionControl
        //     camera.MV_CC_StopGrabbing_NET();
         }
 
+        // 用于软件翻转/旋转的缓冲区（每个工位独立）
+        private IntPtr[] _flipBuffers = new IntPtr[maxCameraNum];
+        private uint[] _flipBufferSizes = new uint[maxCameraNum];
         // 预览线程函数
         private void PreviewThreadProc(MyCamera camera, int wsInd)
+        {
+            MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
+            MyCamera.MV_DISPLAY_FRAME_INFO stDisplayInfo = new MyCamera.MV_DISPLAY_FRAME_INFO();
+
+            int iCamIdx = cup.p_CD.camInd[wsInd];
+            int flipType = cup.p_Cam[iCamIdx].iFlipType;
+
+            // 准备翻转参数（如果使用）
+            MyCamera.MV_CC_FLIP_IMAGE_PARAM flipParam = new MyCamera.MV_CC_FLIP_IMAGE_PARAM();
+            // 也可以预分配好，但每个线程独立
+
+            while (_previewRunning[wsInd])
+            {
+                int nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
+                if (nRet == MyCamera.MV_OK)
+                {
+                    IntPtr displayPtr = stFrameInfo.pBufAddr; // 默认显示原始数据
+
+                    // 如果需要软件翻转
+                    if (flipType != 0 && _flipBuffers[wsInd] != IntPtr.Zero)
+                    {
+                        // 复制原始数据到翻转缓冲区（因为 SDK 翻转需要源和目标不同）
+                        uint frameLen = stFrameInfo.stFrameInfo.nFrameLen;
+                        if (frameLen <= _flipBufferSizes[wsInd])
+                        {
+                            // 拷贝原始数据到翻转缓冲区（作为源）
+                            // 注意：MV_CC_FlipImage_NET 要求源和目标可以相同（就地），但为了安全，我们分开
+                            // 这里将原始数据复制到 _flipBuffers[wsInd] 作为源，翻转结果也写到该缓冲区（就地）
+                            CopyMemory(_flipBuffers[wsInd], stFrameInfo.pBufAddr, frameLen);
+
+                            // 配置翻转参数
+                            flipParam.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
+                            flipParam.nWidth = stFrameInfo.stFrameInfo.nWidth;
+                            flipParam.nHeight = stFrameInfo.stFrameInfo.nHeight;
+                            flipParam.pSrcData = _flipBuffers[wsInd];   // 源
+                            flipParam.nSrcDataLen = frameLen;
+                            flipParam.pDstBuf = _flipBuffers[wsInd];    // 目标（就地）
+                            flipParam.nDstBufLen = frameLen;
+                            flipParam.nDstBufSize = frameLen;
+                            // 根据 flipType 设置翻转类型：1=水平，2=垂直
+                            flipParam.enFlipType = (MyCamera.MV_IMG_FLIP_TYPE)flipType;
+                            flipParam.nRes = new uint[8];
+
+                            // 执行翻转
+                            int retFlip = camera.MV_CC_FlipImage_NET(ref flipParam);
+                            if (retFlip == MyCamera.MV_OK)
+                            {
+                                displayPtr = _flipBuffers[wsInd]; // 显示翻转后的数据
+                            }
+                            else
+                            {
+                                // 翻转失败则显示原始数据
+                                displayPtr = stFrameInfo.pBufAddr;
+                            }
+                        }
+                    }
+
+                    // 显示
+                    stDisplayInfo.hWnd = _previewHwnds[wsInd];
+                    stDisplayInfo.pData = displayPtr;
+                    stDisplayInfo.nDataLen = stFrameInfo.stFrameInfo.nFrameLen;
+                    stDisplayInfo.nWidth = stFrameInfo.stFrameInfo.nWidth;
+                    stDisplayInfo.nHeight = stFrameInfo.stFrameInfo.nHeight;
+                    stDisplayInfo.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
+                    camera.MV_CC_DisplayOneFrame_NET(ref stDisplayInfo);
+
+                    camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
+                }
+                else
+                {
+                    Thread.Sleep(5);
+                }
+            }
+        }
+        /*private void PreviewThreadProc(MyCamera camera, int wsInd)
         {
             MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
             MyCamera.MV_DISPLAY_FRAME_INFO stDisplayInfo = new MyCamera.MV_DISPLAY_FRAME_INFO();
@@ -2620,6 +2793,10 @@ namespace VisionControl
             while (_previewRunning[wsInd])
             {
                 int nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
+           //     int nRet = camera.MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS, nPayloadSizeS, ref stFrameInfo, 10000);
+            
+                //acqFIFO.RotateAndFlipIm(stFrameInfo, ref m_BufForDriverS, rotateType, flipType);
+
                 if (nRet == MyCamera.MV_OK)
                 {
                     // 直接显示
@@ -2638,7 +2815,9 @@ namespace VisionControl
                     Thread.Sleep(5);
                 }
             }
-        }
+        }*/
+
+
         // 根据工位返回对应的显示控件（可根据布局调整）
         private Control GetPreviewControl(int wsInd)
         {
@@ -2823,7 +3002,7 @@ namespace VisionControl
                             }
                             else  //彩色
                             {
-                                acqFIFO.GrabOneFrameCogColor(iCamIndex);
+                                acqFIFO.GrabOneFrameCogColor(iCamIndex,wsInd);
                                 Thread.Sleep(2);
                                 if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
                                 {
@@ -3010,7 +3189,7 @@ namespace VisionControl
                     }
                     else  //彩色
                     {
-                        acqFIFO.GrabOneFrameCogColor(iCamIndex);
+                        acqFIFO.GrabOneFrameCogColor(iCamIndex,wsInd);
                         Thread.Sleep(2);
                         if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
                         {

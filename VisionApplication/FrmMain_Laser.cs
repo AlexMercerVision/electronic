@@ -3166,7 +3166,8 @@ namespace VisionApplication
                 return;
             }
             UpdatePMAParamFromUI();
-            vpWin.SetPMAParam(pmaParam, iJobIndex);
+            vpWin.SetPMAParam(pmaParam, iJobIndex); 
+            bVPPParamChanged = true;
         }
 
         private async void btPMAlignParam_Click(object sender, EventArgs e)
@@ -3207,13 +3208,13 @@ namespace VisionApplication
                     splitContainer2.Panel1.Controls.Add(pmaV2);
                     pmaV2.Dock = DockStyle.Fill;
                     vpWin.Visible = false;
-                    bVPPParamChanged = true;
-
                     vpWin._iTaskType = 5;
                     vpWin.bEnableActivate = false;
                     operLog.iEventStatus = 0;
                     ((Button)sender).FlatStyle = FlatStyle.Flat;
                     vpWin.bMainTaskFinished = false;
+
+                    bVPPParamChanged = true;
                 }
                 else
                 {
@@ -3250,6 +3251,7 @@ namespace VisionApplication
                         vpWin.GetAlignRegion(ref alImParam[card], card);
                         await SendAlignParamToJCZServer(card);
                     }
+
                 }
             }
         }
@@ -3257,48 +3259,57 @@ namespace VisionApplication
         //重新训练PMA模板 
         private async void btTrainPMA_Click(object sender, EventArgs e)
         {
-            //从界面更新参数到pmaParam
-            UpdatePMATrainParamFromUI();
-            //从pmaParam更新参数到VP中的PMA工具
-            vpWin.SetPMATrainParam(pmaParam, iJobIndex);
-            //从新训练PMA模板
-            vpWin.ReTrainPMA(iJobIndex);
-
-            int jobIndex = iJobIndex;
-            if (jobIndex >= 0 && jobIndex < MaxLaserCards)
+            try
             {
-                int card = GetCardSNByJob(jobIndex);
-                vpWin.GetAlignRegion(ref alImParam[card], card);
-                await SendAlignParamToJCZServer(card);
+                //从界面更新参数到pmaParam
+                UpdatePMATrainParamFromUI();
+                //从pmaParam更新参数到VP中的PMA工具
+                vpWin.SetPMATrainParam(pmaParam, iJobIndex);
+                //从新训练PMA模板
+                vpWin.ReTrainPMA(iJobIndex);
+
+                int jobIndex = iJobIndex;
+                if (jobIndex >= 0 && jobIndex < MaxLaserCards)
+                {
+                    int card = GetCardSNByJob(jobIndex);
+                    vpWin.GetAlignRegion(ref alImParam[card], card);
+                    await SendAlignParamToJCZServer(card);
+                }
+                bVPPParamChanged = true;
             }
+            catch { }
         }
         private void btPMARun_Click(object sender, EventArgs e)
         {
-            //从界面更新参数到pmaParam
-            UpdatePMARunParamFromUI();
-            //从pmaParam更新参数到VP中的PMA工具
-            vpWin.SetPMARunParam(pmaParam, iJobIndex);
-            //从新训练PMA模板
-            vpWin.ReRunPMA(iJobIndex);
+            try
+            {
+                //从界面更新参数到pmaParam
+                UpdatePMARunParamFromUI();
+                //从pmaParam更新参数到VP中的PMA工具
+                vpWin.SetPMARunParam(pmaParam, iJobIndex);
+                //从新训练PMA模板
+                vpWin.ReRunPMA(iJobIndex);
+                bVPPParamChanged = true;
+            }
+            catch { }
         }
         private void btPMASearchRegion_Click(object sender, EventArgs e)
         {
+            try { 
             vpWin.SetPMASearchRegion(iJobIndex);
+            bVPPParamChanged = true;
+            }
+            catch { }
         }
-
-        private void btPMAMaskDesign_Click(object sender, EventArgs e)
+        private void btPMAExtractTrainImage_Click(object sender, EventArgs e)
         {
-           // vpWin.EditPMAMaskRegion(iJobIndex);
-         //  CogPmalign
-            CogPMAlignPatternEditorV2 pmpeV2 = new CogPMAlignPatternEditorV2();
-            pmaV2 = new CogPMAlignEditV2();
-            pmaV2.Subject = vpWin._pmaMT;
-         //   pmaV2.
-            //   pmpeV2.
-            //  pmpeV2. = vpWin._pmaMT.Pattern;
-         //   splitContainer2.Panel1.Controls.Add(pmpeV2);
-             pmpeV2.Show();
-        }
+            try
+            {
+                bVPPParamChanged = true;
+                vpWin.ExtraTrainImage(iJobIndex, rts.onLS.bLock);
+            }
+            catch { }
+        } 
 
         private void chkPMAAutoEdgeThre_CheckedChanged(object sender, EventArgs e)
         {
@@ -3334,13 +3345,13 @@ namespace VisionApplication
         {
             if (chkPMARunWithAngle.Checked)
             {
-                nudPMARunAngleD.Enabled = false;
-                nudPMARunAngleU.Enabled = false;
+                nudPMARunAngleD.Enabled = true;
+                nudPMARunAngleU.Enabled = true;
             }
             else
             {
-                nudPMARunAngleD.Enabled = true;
-                nudPMARunAngleU.Enabled = true;
+                nudPMARunAngleD.Enabled = false;
+                nudPMARunAngleU.Enabled = false;
             }
         }
 
@@ -4199,6 +4210,7 @@ namespace VisionApplication
                 {
                     // 采集图像
                     CaptureCalibImage();
+
                     //更新图像坐标
                     bool success = UpdateCalibData();
                     if(success)
@@ -4222,6 +4234,7 @@ namespace VisionApplication
             {
                 //更新图像和激光坐标到Table中
                 UpdateCalibPointTableFromVar();
+                bVPPParamChanged = true; 
             }
             else
             {
@@ -4272,6 +4285,7 @@ namespace VisionApplication
             bool bNormal = UpdateLaserVisionCalibParam2VPFromUI();
             if (bNormal)
             {
+                bVPPParamChanged = true;
                 cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
                 UpdateCalibResult2UIFromVar(cr);
 
@@ -4667,10 +4681,13 @@ namespace VisionApplication
                 bRet = vpWin.PreViewCalibImage(iJobIndex,cup.p_CD.camInd[iJobIndex]);
                 if (!bRet) 
                 {
+                    
                     //  operLog.strOperEvent = "采集标定图像";
                     operLog.iEventStatus = -1;
                     operLog.strFailReason = "采集异常错误";
                 }
+                else
+                { bVPPParamChanged = true; }
                 vpWin.bMainTaskFinished = true;
             }
             else
@@ -4683,7 +4700,9 @@ namespace VisionApplication
                     operLog.strFailReason = "回放异常错误";
 
                 }
-               
+                else
+                { bVPPParamChanged = true; }
+
             }
             AddLog();
 
@@ -4710,6 +4729,7 @@ namespace VisionApplication
             UpdateCamParam2UI();
             ViewLayout();
             SyncCurrentCardSelection(true);
+            toolBtSta_MarkAfterLocated.Checked= rts.onLS.bLock;
         }
 
         #endregion

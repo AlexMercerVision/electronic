@@ -393,8 +393,9 @@ namespace VisionControl
                 alImParam.width = cogIm.Width;
                 alImParam.height = cogIm.Height;
                 string strImageFile = @".\data\" + ((jobIndex==0)? "sourceBGImgA.jpg":"sourceBGImgB.jpg");
+               
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile.Append(cogIm);
+                mImageFile.Append(acqFIFO.CogFlipRotateIm(cogIm,iJobIndex));
                 mImageFile.Close();
             }
             catch (Exception ex)
@@ -416,7 +417,7 @@ namespace VisionControl
                 if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
                 {
                     bTaskFinish[wsInd] = false;
-                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex);
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex, wsInd);
                 }
 
              if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
@@ -464,7 +465,7 @@ namespace VisionControl
                 if (cup.p_CD.bListProcess[wsInd])
                 {
                     bTaskFinish[wsInd] = false;
-                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex);
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex, wsInd);
                 }
 
                 // 显示图像
@@ -525,7 +526,7 @@ namespace VisionControl
                     strErrInfo[wsInd] = $"标定图像文件不存在: {fileName}";
                     return null;
                 }
-                return acqFIFO.GrabOneFrameCogFromFilePMA(fileName);
+                return acqFIFO.GrabOneFrameCogFromFilePMA(fileName, wsInd);
                 
 
             }

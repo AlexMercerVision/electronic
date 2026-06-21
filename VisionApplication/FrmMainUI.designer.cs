@@ -165,9 +165,9 @@ namespace VisionApplication
             this.toolBt_RuntimeSet = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator17 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripSeparator16 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolBtSta_MarkAfterLocated = new System.Windows.Forms.ToolStripButton();
             this.toolBtSta_LockImage = new System.Windows.Forms.ToolStripButton();
             this.toolBt_LaserPreview = new System.Windows.Forms.ToolStripButton();
-            this.toolBtSta_MarkAfterLocated = new System.Windows.Forms.ToolStripButton();
             this.toolBtSta_SaveRes = new System.Windows.Forms.ToolStripButton();
             this.toolBtSta_ErrMark = new System.Windows.Forms.ToolStripButton();
             this.toolBtSta_Export = new System.Windows.Forms.ToolStripButton();
@@ -344,7 +344,7 @@ namespace VisionApplication
             this.label49 = new System.Windows.Forms.Label();
             this.cmbPMARunAlg = new System.Windows.Forms.ComboBox();
             this.panel4 = new System.Windows.Forms.Panel();
-            this.btPMAMaskDesign = new System.Windows.Forms.Button();
+            this.btPMAExtractTrainImage = new System.Windows.Forms.Button();
             this.btTrainPMA = new System.Windows.Forms.Button();
             this.nudPMATrainEdgeThre = new System.Windows.Forms.NumericUpDown();
             this.nudPMAFine = new System.Windows.Forms.NumericUpDown();
@@ -1459,9 +1459,9 @@ namespace VisionApplication
             this.toolBt_RuntimeSet,
             this.toolStripSeparator17,
             this.toolStripSeparator16,
+            this.toolBtSta_MarkAfterLocated,
             this.toolBtSta_LockImage,
             this.toolBt_LaserPreview,
-            this.toolBtSta_MarkAfterLocated,
             this.toolBtSta_SaveRes,
             this.toolBtSta_ErrMark,
             this.toolBtSta_Export,
@@ -1626,6 +1626,18 @@ namespace VisionApplication
             this.toolStripSeparator16.Name = "toolStripSeparator16";
             this.toolStripSeparator16.Size = new System.Drawing.Size(6, 45);
             // 
+            // toolBtSta_MarkAfterLocated
+            // 
+            this.toolBtSta_MarkAfterLocated.Checked = true;
+            this.toolBtSta_MarkAfterLocated.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.toolBtSta_MarkAfterLocated.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithMark;
+            this.toolBtSta_MarkAfterLocated.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolBtSta_MarkAfterLocated.Name = "toolBtSta_MarkAfterLocated";
+            this.toolBtSta_MarkAfterLocated.Size = new System.Drawing.Size(36, 42);
+            this.toolBtSta_MarkAfterLocated.ToolTipText = "定位后进行标刻";
+            this.toolBtSta_MarkAfterLocated.Click += new System.EventHandler(this.toolBtSta_MarkAfterLocated_Click);
+            // 
             // toolBtSta_LockImage
             // 
             this.toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
@@ -1648,18 +1660,6 @@ namespace VisionApplication
             this.toolBt_LaserPreview.ToolTipText = "唤醒";
             this.toolBt_LaserPreview.Visible = false;
             this.toolBt_LaserPreview.Click += new System.EventHandler(this.toolBt_LaserPreview_Click);
-            // 
-            // toolBtSta_MarkAfterLocated
-            // 
-            this.toolBtSta_MarkAfterLocated.Checked = true;
-            this.toolBtSta_MarkAfterLocated.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.toolBtSta_MarkAfterLocated.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithMark;
-            this.toolBtSta_MarkAfterLocated.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolBtSta_MarkAfterLocated.Name = "toolBtSta_MarkAfterLocated";
-            this.toolBtSta_MarkAfterLocated.Size = new System.Drawing.Size(36, 42);
-            this.toolBtSta_MarkAfterLocated.ToolTipText = "定位后进行标刻";
-            this.toolBtSta_MarkAfterLocated.Click += new System.EventHandler(this.toolBtSta_MarkAfterLocated_Click);
             // 
             // toolBtSta_SaveRes
             // 
@@ -4031,7 +4031,7 @@ namespace VisionApplication
             // panel4
             // 
             this.panel4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel4.Controls.Add(this.btPMAMaskDesign);
+            this.panel4.Controls.Add(this.btPMAExtractTrainImage);
             this.panel4.Controls.Add(this.btTrainPMA);
             this.panel4.Controls.Add(this.nudPMATrainEdgeThre);
             this.panel4.Controls.Add(this.nudPMAFine);
@@ -4050,16 +4050,16 @@ namespace VisionApplication
             this.panel4.Size = new System.Drawing.Size(335, 154);
             this.panel4.TabIndex = 95;
             // 
-            // btPMAMaskDesign
+            // btPMAExtractTrainImage
             // 
-            this.btPMAMaskDesign.ForeColor = System.Drawing.Color.Red;
-            this.btPMAMaskDesign.Location = new System.Drawing.Point(226, 78);
-            this.btPMAMaskDesign.Name = "btPMAMaskDesign";
-            this.btPMAMaskDesign.Size = new System.Drawing.Size(96, 30);
-            this.btPMAMaskDesign.TabIndex = 96;
-            this.btPMAMaskDesign.Text = "模板掩膜器";
-            this.btPMAMaskDesign.UseVisualStyleBackColor = true;
-            this.btPMAMaskDesign.Click += new System.EventHandler(this.btPMAMaskDesign_Click);
+            this.btPMAExtractTrainImage.ForeColor = System.Drawing.Color.Red;
+            this.btPMAExtractTrainImage.Location = new System.Drawing.Point(226, 78);
+            this.btPMAExtractTrainImage.Name = "btPMAExtractTrainImage";
+            this.btPMAExtractTrainImage.Size = new System.Drawing.Size(96, 30);
+            this.btPMAExtractTrainImage.TabIndex = 96;
+            this.btPMAExtractTrainImage.Text = "抓取训练图像";
+            this.btPMAExtractTrainImage.UseVisualStyleBackColor = true;
+            this.btPMAExtractTrainImage.Click += new System.EventHandler(this.btPMAExtractTrainImage_Click);
             // 
             // btTrainPMA
             // 
@@ -4291,7 +4291,7 @@ namespace VisionApplication
             // 
             this.splitContainer4.Panel2.Controls.Add(this.splitContainer6);
             this.splitContainer4.Size = new System.Drawing.Size(874, 175);
-            this.splitContainer4.SplitterDistance = 102;
+            this.splitContainer4.SplitterDistance = 122;
             this.splitContainer4.TabIndex = 0;
             // 
             // lblOut2
@@ -4490,8 +4490,8 @@ namespace VisionApplication
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
-            this.splitContainer6.Size = new System.Drawing.Size(768, 175);
-            this.splitContainer6.SplitterDistance = 317;
+            this.splitContainer6.Size = new System.Drawing.Size(748, 175);
+            this.splitContainer6.SplitterDistance = 524;
             this.splitContainer6.TabIndex = 0;
             // 
             // dgvLog
@@ -4511,7 +4511,7 @@ namespace VisionApplication
             this.dgvLog.RowHeadersWidth = 62;
             this.dgvLog.RowTemplate.Height = 23;
             this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dgvLog.Size = new System.Drawing.Size(317, 175);
+            this.dgvLog.Size = new System.Drawing.Size(524, 175);
             this.dgvLog.TabIndex = 0;
             // 
             // ClmnTime
@@ -5251,7 +5251,7 @@ namespace VisionApplication
         private System.Windows.Forms.CheckBox chkGamma_UserMode;
         private System.Windows.Forms.Button btTrainPMA;
         private System.Windows.Forms.Button btPMARun;
-        private System.Windows.Forms.Button btPMAMaskDesign;
+        private System.Windows.Forms.Button btPMAExtractTrainImage;
         private System.Windows.Forms.Button btPMASearchRegion;
     }
 }

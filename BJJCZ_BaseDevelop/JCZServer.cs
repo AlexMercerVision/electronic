@@ -2741,6 +2741,7 @@ namespace BJJCZ_BaseDevelop
 
             if (!string.IsNullOrWhiteSpace(param.strFileName))
             {
+                SaveEntLibToFileWithRetry(card, param.strFileName);
                 // 九点标定模板不再保存EZD文件；每次由主程序下发参数后重新生成，并直接使用当前内存对象加工。
                 AddMsg($"卡{card + 1} 九点标定模板不保存EZD，仅使用当前内存对象直接加工: {param.strFileName}");
             }
@@ -4704,6 +4705,7 @@ namespace BJJCZ_BaseDevelop
                         using (FileStream fs = new FileStream(bgFile, FileMode.Open, FileAccess.Read))
                         {
                             originalImage[card] = new Bitmap(fs);
+                            originalImage[card].RotateFlip(RotateFlipType.RotateNoneFlipX);
                         }
                      //  originalImage[card] = new Bitmap(bgFile);
                         AddMsg($"卡{card + 1} 背景图加载成功: {bgFile}");
