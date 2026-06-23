@@ -4874,7 +4874,7 @@ namespace VisionApplication
                 }
 
                 // 如果视觉检测需要激光标刻（例如结果 OK 且锁标刻开启）
-                if (visionOk && rts.onLS.bLock && rts.initStatus.bJCZ == 0)
+                if (visionOk && rts.onLS.bLock /*&& rts.initStatus.bJCZ == 0*/)
                 {
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = $"工位{faceIndex + 1}标刻中";
@@ -4889,7 +4889,7 @@ namespace VisionApplication
                 if (cup.p_RTSP.bUpdateIO)  //启用IO输出
                 {
                     //只输出OK或者只输出NG
-                    if (pmaRes[faceIndex].bLocated)
+                //    if (pmaRes[faceIndex].bLocated)
                         ExeIOOut(faceIndex);
                 }
            //     ExeIOOut(faceIndex);

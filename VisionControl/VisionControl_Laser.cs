@@ -417,7 +417,7 @@ namespace VisionControl
                 if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
                 {
                     bTaskFinish[wsInd] = false;
-                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex, wsInd);
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(wsInd,iCamIndex);
                 }
 
              if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
@@ -465,7 +465,7 @@ namespace VisionControl
                 if (cup.p_CD.bListProcess[wsInd])
                 {
                     bTaskFinish[wsInd] = false;
-                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(iCamIndex, wsInd);
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(wsInd,iCamIndex);
                 }
 
                 // 显示图像

@@ -498,7 +498,7 @@ namespace CommonCls
             return ci8gAcq[iCamIndex];
         }
         /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用     
-        public CogImage24PlanarColor GrabOneFrameCogColor(int iCamIndex,int iJobIndex)
+        public CogImage24PlanarColor GrabOneFrameCogColor(int iJobIndex,int iCamIndex)
         {
             CameraStatus currentStatus = GetCurrentCameraStatus();
             if (currentStatus.iStatus[iCamIndex] < 2)

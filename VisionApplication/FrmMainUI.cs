@@ -6008,14 +6008,19 @@ namespace VisionApplication
         //接受数据
         private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
         {
+           
             // 获取接收缓冲区长度
-            Thread.Sleep(10);
+            Thread.Sleep(30);
             int Readlen = sPortCy.BytesToRead;
             // 新建一个 byte[] 数组 用来存放接收的数据
             byte[] inf = new byte[Readlen];
             // 接收数据到by里面
             sPortCy.Read(inf, 0, Readlen);
-
+         /*   string receivedText = Encoding.ASCII.GetString(inf);
+            operLog.iEventStatus = -1;
+            operLog.strOperEvent = "收到触发信号"+ Readlen.ToString();
+            operLog.strFailReason = receivedText;
+            AddLog();*/
             //设置Y口输出命令后的反馈
             if ((Readlen == 8 || Readlen == 16) && inf[0] == 0x01 && inf[1] == 0x0f)
             {
@@ -6048,6 +6053,10 @@ namespace VisionApplication
             else if (Readlen%10==0 && inf[0] == 0x01 && inf[1] == 0x45
                 && inf[2] == 0x05 && inf[3] == 0x01)
             {
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "收到有效触发信号";
+                operLog.strFailReason = "-";
+                AddLog();
                 // 根据设置的触发条件，判断IO输入
                 Byte bOrder = 0;
                 int OrderType = 0;

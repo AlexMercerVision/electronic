@@ -7156,6 +7156,9 @@ namespace BJJCZ_BaseDevelop
                 ezcadProcess.StartInfo.UseShellExecute = true;   // 直接打开，让 EZcad 正常显示窗口
                                                                  // 可选：设置工作目录为 EZcad 所在目录，避免某些相对路径问题
                 ezcadProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(ezcadPath);
+                string fileToOpen = @"C:\WorkSpace\项目\Github\VisionBasedLaser\bin\EzdModel\route1.ezd";
+                ezcadProcess.StartInfo.Arguments = $"\"{fileToOpen}\"";
+                
                 ezcadProcess.Start();
 
                 AddMsg("EZcad 已启动，请在 EZcad 中完成图形编辑。关闭 EZcad 后服务端将自动重新连接板卡");

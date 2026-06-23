@@ -2977,7 +2977,7 @@ namespace VisionControl
                             //黑白
                             if (cup.p_Cam[iCamIndex].iMonoType == 0)
                             {
-                                acqFIFO.GrabOneFrameCog(iCamIndex);
+                                acqFIFO.GrabOneFrameCog(wsInd);
                                 Thread.Sleep(2);
                                 if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
                                 {
@@ -3002,7 +3002,7 @@ namespace VisionControl
                             }
                             else  //彩色
                             {
-                                acqFIFO.GrabOneFrameCogColor(iCamIndex,wsInd);
+                                acqFIFO.GrabOneFrameCogColor(wsInd, iCamIndex);
                                 Thread.Sleep(2);
                                 if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
                                 {
@@ -3164,7 +3164,7 @@ namespace VisionControl
                     //黑白
                     if (cup.p_Cam[iCamIndex].iMonoType == 0)
                     {
-                        acqFIFO.GrabOneFrameCog(iCamIndex);
+                        acqFIFO.GrabOneFrameCog(wsInd);
                         Thread.Sleep(2);
                         if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
                         {
@@ -3189,7 +3189,7 @@ namespace VisionControl
                     }
                     else  //彩色
                     {
-                        acqFIFO.GrabOneFrameCogColor(iCamIndex,wsInd);
+                        acqFIFO.GrabOneFrameCogColor(wsInd, iCamIndex);
                         Thread.Sleep(2);
                         if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
                         {

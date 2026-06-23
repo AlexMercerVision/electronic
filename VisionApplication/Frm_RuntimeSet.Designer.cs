@@ -343,6 +343,8 @@ namespace VisionApplication
             this.tabLine.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).BeginInit();
             this.tabCam.SuspendLayout();
+            this.tabBoard.SuspendLayout();
+            this.groupBox15.SuspendLayout();
             this.tabSer.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -737,7 +739,7 @@ namespace VisionApplication
             this.rd5.Enabled = false;
             this.rd5.Location = new System.Drawing.Point(515, 350);
             this.rd5.Name = "rd5";
-            this.rd5.Size = new System.Drawing.Size(107, 16);
+            this.rd5.Size = new System.Drawing.Size(95, 16);
             this.rd5.TabIndex = 2;
             this.rd5.TabStop = true;
             this.rd5.Text = "使用外部触发";
@@ -749,7 +751,7 @@ namespace VisionApplication
             this.rd3.Enabled = false;
             this.rd3.Location = new System.Drawing.Point(515, 200);
             this.rd3.Name = "rd3";
-            this.rd3.Size = new System.Drawing.Size(107, 16);
+            this.rd3.Size = new System.Drawing.Size(95, 16);
             this.rd3.TabIndex = 2;
             this.rd3.TabStop = true;
             this.rd3.Text = "使用外部触发";
@@ -761,7 +763,7 @@ namespace VisionApplication
             this.rd4.Enabled = false;
             this.rd4.Location = new System.Drawing.Point(515, 275);
             this.rd4.Name = "rd4";
-            this.rd4.Size = new System.Drawing.Size(107, 16);
+            this.rd4.Size = new System.Drawing.Size(95, 16);
             this.rd4.TabIndex = 2;
             this.rd4.TabStop = true;
             this.rd4.Text = "使用外部触发";
@@ -773,7 +775,7 @@ namespace VisionApplication
             this.rd2.Enabled = false;
             this.rd2.Location = new System.Drawing.Point(515, 125);
             this.rd2.Name = "rd2";
-            this.rd2.Size = new System.Drawing.Size(107, 16);
+            this.rd2.Size = new System.Drawing.Size(95, 16);
             this.rd2.TabIndex = 2;
             this.rd2.TabStop = true;
             this.rd2.Text = "使用外部触发";
@@ -785,7 +787,7 @@ namespace VisionApplication
             this.rd1.Enabled = false;
             this.rd1.Location = new System.Drawing.Point(515, 50);
             this.rd1.Name = "rd1";
-            this.rd1.Size = new System.Drawing.Size(107, 16);
+            this.rd1.Size = new System.Drawing.Size(95, 16);
             this.rd1.TabIndex = 2;
             this.rd1.TabStop = true;
             this.rd1.Text = "使用外部触发";
@@ -867,7 +869,7 @@ namespace VisionApplication
             this.label21.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label21.Location = new System.Drawing.Point(18, 325);
             this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(63, 14);
+            this.label21.Size = new System.Drawing.Size(60, 14);
             this.label21.TabIndex = 0;
             this.label21.Text = "检测位5";
             // 
@@ -877,7 +879,7 @@ namespace VisionApplication
             this.label3.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label3.Location = new System.Drawing.Point(18, 175);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(63, 14);
+            this.label3.Size = new System.Drawing.Size(60, 14);
             this.label3.TabIndex = 0;
             this.label3.Text = "检测位3";
             // 
@@ -887,7 +889,7 @@ namespace VisionApplication
             this.label20.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label20.Location = new System.Drawing.Point(18, 250);
             this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(63, 14);
+            this.label20.Size = new System.Drawing.Size(60, 14);
             this.label20.TabIndex = 0;
             this.label20.Text = "检测位4";
             // 
@@ -897,7 +899,7 @@ namespace VisionApplication
             this.label2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label2.Location = new System.Drawing.Point(18, 100);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(77, 14);
+            this.label2.Size = new System.Drawing.Size(60, 14);
             this.label2.TabIndex = 0;
             this.label2.Text = "B面工位";
             // 
@@ -906,7 +908,7 @@ namespace VisionApplication
             this.label78.AutoSize = true;
             this.label78.Location = new System.Drawing.Point(252, 20);
             this.label78.Name = "label78";
-            this.label78.Size = new System.Drawing.Size(89, 12);
+            this.label78.Size = new System.Drawing.Size(77, 12);
             this.label78.TabIndex = 0;
             this.label78.Text = "文件命名前缀";
             // 
@@ -916,7 +918,7 @@ namespace VisionApplication
             this.label1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label1.Location = new System.Drawing.Point(18, 25);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(77, 14);
+            this.label1.Size = new System.Drawing.Size(60, 14);
             this.label1.TabIndex = 0;
             this.label1.Text = "A面工位";
             // 
@@ -952,7 +954,6 @@ namespace VisionApplication
             "板卡2"});
             this.cmbBoardB.Location = new System.Drawing.Point(116, 72);
             this.cmbBoardB.Name = "cmbBoardB";
-            this.cmbBoardB.SelectedIndex = 1;
             this.cmbBoardB.Size = new System.Drawing.Size(150, 20);
             this.cmbBoardB.TabIndex = 3;
             // 
@@ -965,7 +966,6 @@ namespace VisionApplication
             "板卡2"});
             this.cmbBoardA.Location = new System.Drawing.Point(116, 32);
             this.cmbBoardA.Name = "cmbBoardA";
-            this.cmbBoardA.SelectedIndex = 0;
             this.cmbBoardA.Size = new System.Drawing.Size(150, 20);
             this.cmbBoardA.TabIndex = 2;
             // 
@@ -1027,7 +1027,7 @@ namespace VisionApplication
             this.lblSerStationB.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblSerStationB.Location = new System.Drawing.Point(8, 128);
             this.lblSerStationB.Name = "lblSerStationB";
-            this.lblSerStationB.Size = new System.Drawing.Size(63, 14);
+            this.lblSerStationB.Size = new System.Drawing.Size(60, 14);
             this.lblSerStationB.TabIndex = 22;
             this.lblSerStationB.Text = "B面工位";
             this.lblSerStationB.Visible = false;
@@ -1038,7 +1038,7 @@ namespace VisionApplication
             this.lblSerStationA.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblSerStationA.Location = new System.Drawing.Point(8, 25);
             this.lblSerStationA.Name = "lblSerStationA";
-            this.lblSerStationA.Size = new System.Drawing.Size(63, 14);
+            this.lblSerStationA.Size = new System.Drawing.Size(60, 14);
             this.lblSerStationA.TabIndex = 22;
             this.lblSerStationA.Text = "A面工位";
             this.lblSerStationA.Visible = false;
@@ -1082,7 +1082,7 @@ namespace VisionApplication
             this.label36.ForeColor = System.Drawing.Color.Black;
             this.label36.Location = new System.Drawing.Point(18, 158);
             this.label36.Name = "label36";
-            this.label36.Size = new System.Drawing.Size(47, 12);
+            this.label36.Size = new System.Drawing.Size(53, 12);
             this.label36.TabIndex = 7;
             this.label36.Text = "备用口：";
             // 
@@ -1926,7 +1926,7 @@ namespace VisionApplication
             this.label19.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label19.Location = new System.Drawing.Point(3, 12);
             this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(104, 16);
+            this.label19.Size = new System.Drawing.Size(103, 16);
             this.label19.TabIndex = 2;
             this.label19.Text = "所有记录清单";
             // 
@@ -1936,7 +1936,7 @@ namespace VisionApplication
             this.label18.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label18.Location = new System.Drawing.Point(426, 29);
             this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(104, 16);
+            this.label18.Size = new System.Drawing.Size(103, 16);
             this.label18.TabIndex = 2;
             this.label18.Text = "选择显示记录";
             // 
@@ -2255,27 +2255,31 @@ namespace VisionApplication
             "250",
             "300",
             "350",
-            "400"});
-            this.cmbIOTimeDelay.Location = new System.Drawing.Point(414, 139);
+            "400",
+            "500",
+            "600",
+            "700",
+            "800",
+            "900",
+            "1000"});
+            this.cmbIOTimeDelay.Location = new System.Drawing.Point(83, 137);
             this.cmbIOTimeDelay.Name = "cmbIOTimeDelay";
             this.cmbIOTimeDelay.Size = new System.Drawing.Size(98, 20);
             this.cmbIOTimeDelay.TabIndex = 4;
-            this.cmbIOTimeDelay.Visible = false;
             // 
             // label95
             // 
             this.label95.AutoSize = true;
-            this.label95.Location = new System.Drawing.Point(518, 142);
+            this.label95.Location = new System.Drawing.Point(187, 140);
             this.label95.Name = "label95";
             this.label95.Size = new System.Drawing.Size(17, 12);
             this.label95.TabIndex = 3;
             this.label95.Text = "ms";
-            this.label95.Visible = false;
             // 
             // chkNgOut
             // 
             this.chkNgOut.AutoSize = true;
-            this.chkNgOut.Location = new System.Drawing.Point(586, 89);
+            this.chkNgOut.Location = new System.Drawing.Point(464, 141);
             this.chkNgOut.Name = "chkNgOut";
             this.chkNgOut.Size = new System.Drawing.Size(72, 16);
             this.chkNgOut.TabIndex = 2;
@@ -2286,7 +2290,7 @@ namespace VisionApplication
             // chkOkOut
             // 
             this.chkOkOut.AutoSize = true;
-            this.chkOkOut.Location = new System.Drawing.Point(586, 41);
+            this.chkOkOut.Location = new System.Drawing.Point(349, 141);
             this.chkOkOut.Name = "chkOkOut";
             this.chkOkOut.Size = new System.Drawing.Size(72, 16);
             this.chkOkOut.TabIndex = 2;
@@ -2343,7 +2347,7 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbEndBPlane.Location = new System.Drawing.Point(83, 188);
+            this.cmbEndBPlane.Location = new System.Drawing.Point(415, 201);
             this.cmbEndBPlane.Name = "cmbEndBPlane";
             this.cmbEndBPlane.Size = new System.Drawing.Size(121, 20);
             this.cmbEndBPlane.TabIndex = 1;
@@ -2362,7 +2366,7 @@ namespace VisionApplication
             "In6",
             "In7",
             "In8"});
-            this.cmbEndAPlane.Location = new System.Drawing.Point(83, 139);
+            this.cmbEndAPlane.Location = new System.Drawing.Point(89, 194);
             this.cmbEndAPlane.Name = "cmbEndAPlane";
             this.cmbEndAPlane.Size = new System.Drawing.Size(121, 20);
             this.cmbEndAPlane.TabIndex = 1;
@@ -2408,7 +2412,7 @@ namespace VisionApplication
             // 
             this.label92.AutoSize = true;
             this.label92.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label92.Location = new System.Drawing.Point(24, 191);
+            this.label92.Location = new System.Drawing.Point(356, 204);
             this.label92.Name = "label92";
             this.label92.Size = new System.Drawing.Size(53, 12);
             this.label92.TabIndex = 0;
@@ -2419,12 +2423,11 @@ namespace VisionApplication
             // 
             this.label96.AutoSize = true;
             this.label96.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label96.Location = new System.Drawing.Point(331, 142);
+            this.label96.Location = new System.Drawing.Point(18, 140);
             this.label96.Name = "label96";
             this.label96.Size = new System.Drawing.Size(53, 12);
             this.label96.TabIndex = 0;
             this.label96.Text = "脉冲时长";
-            this.label96.Visible = false;
             // 
             // label94
             // 
@@ -2450,7 +2453,7 @@ namespace VisionApplication
             // 
             this.label91.AutoSize = true;
             this.label91.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label91.Location = new System.Drawing.Point(24, 142);
+            this.label91.Location = new System.Drawing.Point(30, 197);
             this.label91.Name = "label91";
             this.label91.Size = new System.Drawing.Size(53, 12);
             this.label91.TabIndex = 0;
@@ -4052,6 +4055,9 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).EndInit();
             this.tabCam.ResumeLayout(false);
             this.tabCam.PerformLayout();
+            this.tabBoard.ResumeLayout(false);
+            this.groupBox15.ResumeLayout(false);
+            this.groupBox15.PerformLayout();
             this.tabSer.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
