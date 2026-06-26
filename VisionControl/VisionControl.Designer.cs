@@ -159,7 +159,7 @@ namespace VisionControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.DodgerBlue;
+            this.BackColor = System.Drawing.Color.Black;
             this.Controls.Add(this.cogRDMainUser);
             this.Controls.Add(this.cogRDSub1);
             this.Controls.Add(this.cogRDSub2);

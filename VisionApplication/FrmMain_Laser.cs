@@ -3225,7 +3225,7 @@ namespace VisionApplication
                     vpWin._iTaskType = iTmpType;
                     ((Button)sender).FlatStyle = FlatStyle.Popup;
                     vpWin.bMainTaskFinished = true;
-
+                    vpWin.bEnableActivate = true;
                     vpWin.Visible = true;
                     if (!bSetPMA)
                     {

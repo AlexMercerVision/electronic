@@ -81,6 +81,13 @@ namespace VisionControl
         int iSubSlectIndex = 1;
         public bool bChkSubrecord = true;  //是否进行清单筛选
         int iTaskType = -1;
+        // 主要切换位置
+     /*   vpWin._iTaskType = 0;   // 采集图像（PeviewOneImage）
+            vpWin._iTaskType = 1;   // 实时预览（PreviewImage）
+            vpWin._iTaskType = 2;   // 单次运行（runonetime）
+            vpWin._iTaskType = 3;   // 连续运行（RunCont）
+            vpWin._iTaskType = 5;   // 配置/编辑（VPConfig / 编辑控件）
+            vpWin._iTaskType = 6;   // 软触发（软件触发模式）*/
         bool[] bTaskFinish = new bool[maxCameraNum];
 
         public bool bMainTaskFinished = true;
@@ -298,6 +305,11 @@ namespace VisionControl
                 try
                 {
                     bActivateRun = true;
+                    // 2026年6月23日
+                    if (tool.Name == "CogPMAlignTool1")
+                    {
+                        PMATrainedwWithJudge(actualJob);
+                    }                     
                     tool.Run();      // 执行工具（同步，但通常很快）
                 }
                 catch (Exception ex)
@@ -1821,6 +1833,21 @@ namespace VisionControl
             }
         }
 
+        //2026年6月23日
+        //检测PMA工具是否已经训练
+        private bool JudgePMATrained(int iJobIndex)
+        {
+            CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            return pma.Pattern.Trained;
+        }
+        //检测PMA工具是否已经训练,如果未训练，则直接训练
+        private void  PMATrainedwWithJudge(int iJobIndex)
+        {
+            CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            if (!pma.Pattern.Trained)
+                pma.Pattern.Train();
+        }
+
         //清楚记录显示
         bool[] bRecordWithInteractiveGraphics = new bool[maxCameraNum];
         public void ClearRDRecord(int iJobIndex)
@@ -2498,6 +2525,7 @@ namespace VisionControl
                 _previewHwnds[wsInd] = displayControl?.Handle ?? IntPtr.Zero;
                 if (_previewHwnds[wsInd] == IntPtr.Zero) return;
 
+               
                 _previewRunning[wsInd] = true;
                 _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd));
                 _previewThreads[wsInd].IsBackground = true;
@@ -2731,29 +2759,21 @@ namespace VisionControl
                     // 如果需要软件翻转
                     if (flipType != 0 && _flipBuffers[wsInd] != IntPtr.Zero)
                     {
-                        // 复制原始数据到翻转缓冲区（因为 SDK 翻转需要源和目标不同）
                         uint frameLen = stFrameInfo.stFrameInfo.nFrameLen;
                         if (frameLen <= _flipBufferSizes[wsInd])
                         {
-                            // 拷贝原始数据到翻转缓冲区（作为源）
-                            // 注意：MV_CC_FlipImage_NET 要求源和目标可以相同（就地），但为了安全，我们分开
-                            // 这里将原始数据复制到 _flipBuffers[wsInd] 作为源，翻转结果也写到该缓冲区（就地）
-                            CopyMemory(_flipBuffers[wsInd], stFrameInfo.pBufAddr, frameLen);
-
-                            // 配置翻转参数
+                            // 配置翻转参数：源为原始图像数据，目标为翻转缓冲区
                             flipParam.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
                             flipParam.nWidth = stFrameInfo.stFrameInfo.nWidth;
                             flipParam.nHeight = stFrameInfo.stFrameInfo.nHeight;
-                            flipParam.pSrcData = _flipBuffers[wsInd];   // 源
+                            flipParam.pSrcData = stFrameInfo.pBufAddr;   // 直接使用原始数据
                             flipParam.nSrcDataLen = frameLen;
-                            flipParam.pDstBuf = _flipBuffers[wsInd];    // 目标（就地）
+                            flipParam.pDstBuf = _flipBuffers[wsInd];     // 写入翻转缓冲区
                             flipParam.nDstBufLen = frameLen;
                             flipParam.nDstBufSize = frameLen;
-                            // 根据 flipType 设置翻转类型：1=水平，2=垂直
                             flipParam.enFlipType = (MyCamera.MV_IMG_FLIP_TYPE)flipType;
                             flipParam.nRes = new uint[8];
 
-                            // 执行翻转
                             int retFlip = camera.MV_CC_FlipImage_NET(ref flipParam);
                             if (retFlip == MyCamera.MV_OK)
                             {
@@ -2761,7 +2781,7 @@ namespace VisionControl
                             }
                             else
                             {
-                                // 翻转失败则显示原始数据
+                                // 翻转失败则显示原始
                                 displayPtr = stFrameInfo.pBufAddr;
                             }
                         }
@@ -2823,8 +2843,12 @@ namespace VisionControl
         {
             switch (wsInd)
             {
-                case 0: return picSub1;    // A面
-                case 1: return picSub2;    // B面
+                 case 0: return picSub1;    // A面
+                 case 1: return picSub2;    // B面
+               //2026年6月23日
+               //  case 0: return cogRDMainUser;    // A面
+              //    case 1: return cogRDSub1;    // B面
+
                 default: return null;
             }
         }
