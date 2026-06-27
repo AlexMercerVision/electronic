@@ -81,13 +81,6 @@ namespace VisionControl
         int iSubSlectIndex = 1;
         public bool bChkSubrecord = true;  //是否进行清单筛选
         int iTaskType = -1;
-        // 主要切换位置
-     /*   vpWin._iTaskType = 0;   // 采集图像（PeviewOneImage）
-            vpWin._iTaskType = 1;   // 实时预览（PreviewImage）
-            vpWin._iTaskType = 2;   // 单次运行（runonetime）
-            vpWin._iTaskType = 3;   // 连续运行（RunCont）
-            vpWin._iTaskType = 5;   // 配置/编辑（VPConfig / 编辑控件）
-            vpWin._iTaskType = 6;   // 软触发（软件触发模式）*/
         bool[] bTaskFinish = new bool[maxCameraNum];
 
         public bool bMainTaskFinished = true;
