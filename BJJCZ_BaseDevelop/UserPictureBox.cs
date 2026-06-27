@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
+
 namespace BJJCZ_BaseDevelop
 {
     public struct PreviewWorldEntity
@@ -276,7 +277,7 @@ namespace BJJCZ_BaseDevelop
                 InterpolationMode oldInterpolation = g.InterpolationMode;
                 SmoothingMode oldSmoothing = g.SmoothingMode;
                 PixelOffsetMode oldPixelOffset = g.PixelOffsetMode;
-                if (crisp)
+                /*if (crisp)
                 {
                     g.InterpolationMode = InterpolationMode.NearestNeighbor;
                     g.SmoothingMode = SmoothingMode.None;
@@ -287,10 +288,39 @@ namespace BJJCZ_BaseDevelop
                 else
                 {
                     g.DrawImage(img, destRect);
+                }*/
+                try
+                {
+                    if (crisp)
+                    {
+                        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                        g.SmoothingMode = SmoothingMode.None;
+                        g.PixelOffsetMode = PixelOffsetMode.Half;
+                        Rectangle pixelRect = Rectangle.Round(destRect);
+
+                        if (pixelRect.Width > 0 && pixelRect.Height > 0)
+                        {
+                            g.DrawImage(img, pixelRect);
+                        }
+                    }
+                    else
+                    {
+                        if (destRect.Width > 0 && destRect.Height > 0)
+                        {
+                            g.DrawImage(img, destRect);
+                        }
+                    }
                 }
-                g.InterpolationMode = oldInterpolation;
-                g.SmoothingMode = oldSmoothing;
-                g.PixelOffsetMode = oldPixelOffset;
+                catch (ArgumentException)
+                {
+                    //return;
+                }
+                finally
+                {
+                    g.InterpolationMode = oldInterpolation;
+                    g.SmoothingMode = oldSmoothing;
+                    g.PixelOffsetMode = oldPixelOffset;
+                }
             }
         }
 

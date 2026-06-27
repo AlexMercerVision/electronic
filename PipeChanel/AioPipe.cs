@@ -56,6 +56,8 @@ namespace PipeChanel
                     // 传递正确的 sender
                     msgParamReceived?.Invoke(currentInstance, new PipeMsg.PipeMsgParamEventArgs(lczParam));
                     waitforConnectParam();
+                    /*waitforConnectParam();
+                    msgParamReceived?.Invoke(currentInstance, new PipeMsg.PipeMsgParamEventArgs(lczParam));*/ //先监听后分发业务
                 }, pipeStream);
             }
             catch (ObjectDisposedException)
@@ -73,7 +75,8 @@ namespace PipeChanel
             {
                 try
                 {
-                    pipeStreamClient.Connect(10);
+                    //pipeStreamClient.Connect(10);
+                    pipeStreamClient.Connect(1000);
                     WritePipeStream(lczparam, pipeStreamClient);
                 }
                 catch (Exception ex)

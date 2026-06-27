@@ -118,6 +118,7 @@ namespace VisionApplication
         /// 异步命令调度器数组（替换原有的 bCmdEnds 轮询机制）
         /// </summary>
         private LaserCommandDispatcher[] laserDispatchers = new LaserCommandDispatcher[MaxLaserCards];
+        private bool _jczCardInitRunning = false; //避免JCZServer被多轮加载文件导致未响应
 
         /// <summary>
         /// 调度器是否已初始化完成，用于界面使能控制
@@ -612,7 +613,7 @@ namespace VisionApplication
         /// <summary>
         /// 通过管道快速检测 JCZServer 是否正常响应
         /// </summary>
-        private bool CheckJCZServerHealth()
+        /*private bool CheckJCZServerHealth()
         {
             const string pipeName = "PipeClient0";
             try
@@ -627,6 +628,11 @@ namespace VisionApplication
             {
                 return false;
             }
+        }*/
+        private bool CheckJCZServerHealth()
+        {
+            Process proc = GetJCZServerProcess();
+            return proc != null && !proc.HasExited;
         }
 
         private static byte[] Object2Bytes(object obj)
@@ -724,10 +730,13 @@ namespace VisionApplication
                 //   if (bInitJCZ[card] == 0) // 板卡初始化成功
                 {
                     bInitJCZ[card] = 0;
-                    _ = InitializeJczCardAfterConnect(card);
+                    //_ = InitializeJczCardAfterConnect(card);
                 }
             }
-            
+            this.BeginInvoke(new Action(() => //延迟500ms发送
+            {
+                ScheduleInitializeJczCards(800);
+            }));
         }
 
         private async Task InitializeJczCardAfterConnect(int card)
@@ -735,6 +744,28 @@ namespace VisionApplication
             await SendAlignParamToJCZServer(card);
             await LoadDefaultEzdForCard(card);
         }
+        private async void ScheduleInitializeJczCards(int delayMs = 800)//统一管理发送卡1/卡2对齐参数和加载文件
+        {
+            if (_jczCardInitRunning)
+                return;
+
+            _jczCardInitRunning = true;
+            try
+            {
+                await Task.Delay(delayMs);
+
+                for (int card = 0; card < MaxLaserCards; card++)
+                {
+                    await InitializeJczCardAfterConnect(card);
+                    await Task.Delay(300);
+                }
+            }
+            finally
+            {
+                _jczCardInitRunning = false;
+            }
+        }//结束
+
 
         private string GetLaserTemplateFileName(int card)
         {
@@ -800,7 +831,8 @@ namespace VisionApplication
 
             try
             {
-                await dispatcher.SendCommandAsync(param);
+                //await dispatcher.SendCommandAsync(param);
+                await dispatcher.SendCommandAsync(param,20000);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = $"加载激光模板(卡{card + 1})成功";
                 AddLog();
@@ -1506,12 +1538,22 @@ namespace VisionApplication
             bool nonAutoVisionTaskBusy = !vpWin.bMainTaskFinished &&
                                          !AnyFaceVisionActive() &&
                                          (vpWin._iTaskType != 3 || !cup.p_VPPRTP.bAcqFromCam);
+            if (nonAutoVisionTaskBusy && IsLivePreviewRunning())
+            {
+                if (!StopLivePreviewForTrigger(operEvent))
+                    return false;
+
+                nonAutoVisionTaskBusy = !vpWin.bMainTaskFinished &&
+                                        !AnyFaceVisionActive() &&
+                                        (vpWin._iTaskType != 3 || !cup.p_VPPRTP.bAcqFromCam);
+            }
             if (nonAutoVisionTaskBusy)
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = operEvent;
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return false;
             }
 
@@ -2214,6 +2256,7 @@ namespace VisionApplication
                     operLog.iEventStatus = -1;
                     operLog.strFailReason = "当前任务没有结束";
                     AddLog();
+                    ShowCurrentTaskNotFinishedWarning();
                     return false;
                 }
                 // 当前板卡不能有其他激光操作正在进行
@@ -2249,6 +2292,7 @@ namespace VisionApplication
                     operLog.iEventStatus = -1;
                     operLog.strFailReason = "当前任务没有结束";
                     AddLog();
+                    ShowCurrentTaskNotFinishedWarning();
                     return false;
                 }
             }
@@ -2306,7 +2350,7 @@ namespace VisionApplication
         /// <summary>
         /// 连接JCZ服务端（初始化管道和板卡）
         /// </summary>
-        private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
+        /*private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e) //6.23验证屏蔽
         {
             // 先检查服务端进程是否存在
             if (IsJCZServerRunning())
@@ -2345,6 +2389,21 @@ namespace VisionApplication
                         //  _ = InitializeJczCardAfterConnect(card);
                     }
                 }
+            }
+        }*/
+        private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
+        {
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "启动/连接JCZ服务端";
+            AddLog();
+
+            if (!_laserDispatchersReady || !IsJCZServerRunning())
+            {
+                await Task.Run(() => InitJCZ());
+            }
+            else
+            {
+                ScheduleInitializeJczCards(200);
             }
         }
         /* private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
@@ -2825,6 +2884,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "工位切换";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
 
@@ -3149,6 +3209,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "获取PMA参数";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             vpWin.GetPMAParam(ref pmaParam, iJobIndex);
@@ -3163,6 +3224,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "设置PMA参数";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             UpdatePMAParamFromUI();
@@ -3179,6 +3241,7 @@ namespace VisionApplication
                     operLog.strOperEvent = "模板定位";
                     operLog.strFailReason = "当前任务未结束";
                     AddLog();
+                    ShowCurrentTaskNotFinishedWarning();
                     return;
                 }
                 if (rts.iModelRole < 3)
@@ -3222,10 +3285,12 @@ namespace VisionApplication
                     splitContainer2.Panel1.Controls.Remove(pmaV2);
                     pmaV2.Dispose();
 
+
                     vpWin._iTaskType = iTmpType;
+                    vpWin.bEnableActivate = true;
                     ((Button)sender).FlatStyle = FlatStyle.Popup;
                     vpWin.bMainTaskFinished = true;
-                    vpWin.bEnableActivate = true;
+
                     vpWin.Visible = true;
                     if (!bSetPMA)
                     {
@@ -3255,7 +3320,23 @@ namespace VisionApplication
                 }
             }
         }
+        private bool CheckPMATrainedWithPrompt(int jobIndex)
+        {
+            if (vpWin.CheckPMATrained(jobIndex))
+                return true;
 
+            string errInfo = "PMA pattern is not trained. Retrain and save VPP";
+            if (vpWin.strErrInfo != null &&
+                jobIndex >= 0 &&
+                jobIndex < vpWin.strErrInfo.Length &&
+                !string.IsNullOrWhiteSpace(vpWin.strErrInfo[jobIndex]))
+            {
+                errInfo = vpWin.strErrInfo[jobIndex];
+            }
+
+            MessageBox.Show(errInfo, "PMA Not Trained", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
         //重新训练PMA模板 
         private async void btTrainPMA_Click(object sender, EventArgs e)
         {
@@ -3267,7 +3348,8 @@ namespace VisionApplication
                 vpWin.SetPMATrainParam(pmaParam, iJobIndex);
                 //从新训练PMA模板
                 vpWin.ReTrainPMA(iJobIndex);
-
+                if (!CheckPMATrainedWithPrompt(iJobIndex))
+                    return;
                 int jobIndex = iJobIndex;
                 if (jobIndex >= 0 && jobIndex < MaxLaserCards)
                 {
@@ -3287,6 +3369,11 @@ namespace VisionApplication
                 UpdatePMARunParamFromUI();
                 //从pmaParam更新参数到VP中的PMA工具
                 vpWin.SetPMARunParam(pmaParam, iJobIndex);
+                if (!CheckPMATrainedWithPrompt(iJobIndex))
+                {
+                    bVPPParamChanged = true;
+                    return;
+                }
                 //从新训练PMA模板
                 vpWin.ReRunPMA(iJobIndex);
                 bVPPParamChanged = true;
@@ -3554,6 +3641,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "高级设置";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
 
@@ -4254,6 +4342,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "更新标定数据";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             if(rts.onLS.bLock)  //是否重新采集图像，提取坐标
@@ -4275,6 +4364,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "标定";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             ExeNPointCalib();
@@ -4604,6 +4694,7 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
 
@@ -4653,6 +4744,7 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             if (cup.p_VPPRTP.bAcqFromCam && !rts.initStatus.bCamInit)

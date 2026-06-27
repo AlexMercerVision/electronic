@@ -39,6 +39,8 @@
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
             this.panelImage = new System.Windows.Forms.Panel();
+            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
+            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.panel3 = new System.Windows.Forms.Panel();
             this.dgvEnt = new System.Windows.Forms.DataGridView();
             this.Column1 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
@@ -48,7 +50,8 @@
             this.btHatchParam = new System.Windows.Forms.Button();
             this.txtEntName = new System.Windows.Forms.TextBox();
             this.btMoveEntAfter = new System.Windows.Forms.Button();
-            this.chkEntGroup = new System.Windows.Forms.CheckBox();
+            this.btGroupEnt = new System.Windows.Forms.Button();
+            this.btUnGroupEnt = new System.Windows.Forms.Button();
             this.btLaserPenParam = new System.Windows.Forms.Button();
             this.btMoveEntBefore = new System.Windows.Forms.Button();
             this.btRenameEnt = new System.Windows.Forms.Button();
@@ -94,11 +97,11 @@
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
-            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
-            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.panelImage.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).BeginInit();
             this.panel1.SuspendLayout();
@@ -110,8 +113,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // JCZServerIcon
@@ -148,7 +149,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(4, 1, 0, 1);
-            this.menuStrip1.Size = new System.Drawing.Size(1022, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(963, 24);
             this.menuStrip1.TabIndex = 2;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -298,8 +299,28 @@
             this.panelImage.Controls.Add(this.pictureBox1);
             this.panelImage.Location = new System.Drawing.Point(325, 27);
             this.panelImage.Name = "panelImage";
-            this.panelImage.Size = new System.Drawing.Size(887, 219);
+            this.panelImage.Size = new System.Drawing.Size(828, 219);
             this.panelImage.TabIndex = 120;
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox2.Location = new System.Drawing.Point(261, 3);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(250, 213);
+            this.pictureBox2.TabIndex = 8;
+            this.pictureBox2.TabStop = false;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Location = new System.Drawing.Point(5, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(250, 214);
+            this.pictureBox1.TabIndex = 7;
+            this.pictureBox1.TabStop = false;
             // 
             // panel3
             // 
@@ -309,14 +330,15 @@
             this.panel3.Controls.Add(this.btHatchParam);
             this.panel3.Controls.Add(this.txtEntName);
             this.panel3.Controls.Add(this.btMoveEntAfter);
-            this.panel3.Controls.Add(this.chkEntGroup);
+            this.panel3.Controls.Add(this.btGroupEnt);
+            this.panel3.Controls.Add(this.btUnGroupEnt);
             this.panel3.Controls.Add(this.btLaserPenParam);
             this.panel3.Controls.Add(this.btMoveEntBefore);
             this.panel3.Controls.Add(this.btRenameEnt);
             this.panel3.Controls.Add(this.label10);
             this.panel3.Location = new System.Drawing.Point(12, 254);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(358, 250);
+            this.panel3.Size = new System.Drawing.Size(358, 281);
             this.panel3.TabIndex = 169;
             // 
             // dgvEnt
@@ -394,16 +416,25 @@
             this.btMoveEntAfter.UseVisualStyleBackColor = true;
             this.btMoveEntAfter.Click += new System.EventHandler(this.btMoveEntAfter_Click);
             // 
-            // chkEntGroup
+            // btGroupEnt
             // 
-            this.chkEntGroup.AutoSize = true;
-            this.chkEntGroup.Location = new System.Drawing.Point(303, 125);
-            this.chkEntGroup.Name = "chkEntGroup";
-            this.chkEntGroup.Size = new System.Drawing.Size(48, 16);
-            this.chkEntGroup.TabIndex = 139;
-            this.chkEntGroup.Text = "组群";
-            this.chkEntGroup.UseVisualStyleBackColor = true;
-            this.chkEntGroup.CheckedChanged += new System.EventHandler(this.chkEntGroup_CheckedChanged);
+            this.btGroupEnt.Location = new System.Drawing.Point(299, 117);
+            this.btGroupEnt.Name = "btGroupEnt";
+            this.btGroupEnt.Size = new System.Drawing.Size(44, 34);
+            this.btGroupEnt.TabIndex = 139;
+            this.btGroupEnt.Text = "组群";
+            this.btGroupEnt.UseVisualStyleBackColor = true;
+            this.btGroupEnt.Click += new System.EventHandler(this.btGroupEnt_Click);
+            // 
+            // btUnGroupEnt
+            // 
+            this.btUnGroupEnt.Location = new System.Drawing.Point(299, 156);
+            this.btUnGroupEnt.Name = "btUnGroupEnt";
+            this.btUnGroupEnt.Size = new System.Drawing.Size(44, 34);
+            this.btUnGroupEnt.TabIndex = 140;
+            this.btUnGroupEnt.Text = "解组";
+            this.btUnGroupEnt.UseVisualStyleBackColor = true;
+            this.btUnGroupEnt.Click += new System.EventHandler(this.btUnGroupEnt_Click);
             // 
             // btLaserPenParam
             // 
@@ -499,7 +530,7 @@
             this.panel1.Controls.Add(this.txtMv_Value);
             this.panel1.Location = new System.Drawing.Point(376, 254);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(888, 306);
+            this.panel1.Size = new System.Drawing.Size(575, 337);
             this.panel1.TabIndex = 120;
             // 
             // btParam
@@ -600,7 +631,7 @@
             // chkContinue
             // 
             this.chkContinue.AutoSize = true;
-            this.chkContinue.Location = new System.Drawing.Point(552, 257);
+            this.chkContinue.Location = new System.Drawing.Point(474, 247);
             this.chkContinue.Name = "chkContinue";
             this.chkContinue.Size = new System.Drawing.Size(48, 16);
             this.chkContinue.TabIndex = 164;
@@ -933,32 +964,12 @@
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
             // 
-            // pictureBox2
-            // 
-            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox2.Location = new System.Drawing.Point(261, 3);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(250, 213);
-            this.pictureBox2.TabIndex = 8;
-            this.pictureBox2.TabStop = false;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(5, 3);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(250, 214);
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
-            // 
             // JCZServer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(1022, 544);
+            this.ClientSize = new System.Drawing.Size(963, 575);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.panel3);
             this.Controls.Add(this.panelImage);
@@ -975,6 +986,8 @@
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.panelImage.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel3.ResumeLayout(false);
             this.panel3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).EndInit();
@@ -988,8 +1001,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1029,7 +1040,9 @@
         private System.Windows.Forms.Button btHatchParam;
         private System.Windows.Forms.TextBox txtEntName;
         private System.Windows.Forms.Button btMoveEntAfter;
-        private System.Windows.Forms.CheckBox chkEntGroup;
+        //private System.Windows.Forms.CheckBox chkEntGroup;
+        private System.Windows.Forms.Button btGroupEnt;
+        private System.Windows.Forms.Button btUnGroupEnt;
         private System.Windows.Forms.Button btLaserPenParam;
         private System.Windows.Forms.Button btMoveEntBefore;
         private System.Windows.Forms.Button btRenameEnt;

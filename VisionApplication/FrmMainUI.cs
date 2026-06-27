@@ -144,7 +144,9 @@ namespace VisionApplication
         private int iAcquisitionsTimes = 0;                     // 图像采集总次数
         private int iErrAcquisitionsTimes = 0;                  // 采集失败次数
         private int iErrExecuteTimes = 0;                       // 检测执行失败次数
-                                                                // 当前选择的作业索引
+        private readonly object warningMessageSync = new object();
+        private DateTime lastTaskBusyWarningTime = DateTime.MinValue;
+                                                                // 当前选择的作业索引                                                        // 当前选择的作业索引
 
         // 12. 字段 - 标定相关
         private PMARes[] pmaRes = new PMARes[maxCameraNum];     // PMAlign模板匹配结果
@@ -412,6 +414,7 @@ namespace VisionApplication
                 vpWin.SetGUIShow(0);
                 vpWin._cameraNum = cameraNum;
                 vpWin.SetAcqFIFO(acqFIFO);
+                vpWin.JobResultReady -= OnJobResultReady;
                 vpWin.JobResultReady += OnJobResultReady;
                 vpWin.InitBG();
                 operLog.iEventStatus = 0;
@@ -2005,6 +2008,7 @@ namespace VisionApplication
                         // vpWin.OpenOrCloseCam(true);
                         for (int i = 0; i < maxCameraNum; i++)
                         {
+                            if (!cup.p_CD.bListProcess[i]) continue;
                             vpWin.previewOnlive(true, i);
                         }
                         hikCanGrab = true;
@@ -2593,6 +2597,7 @@ namespace VisionApplication
 
                 EnsureJCZServerRunning();          // 确保 JCZServer 进程正常
                 jczPipThread = new Thread(InitJCZ);
+                jczPipThread.IsBackground = true;
                 jczPipThread.Start();
 
 
@@ -2707,7 +2712,8 @@ namespace VisionApplication
         {
 
             SaveUserParam();
-
+          //  _parentCheckTimer?.Stop();
+        //    _parentCheckTimer?.Dispose();
             string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
             fo.SaveRunTimeStatus(strPath, rts);
 
@@ -2761,6 +2767,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "启动图像预览";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 //     MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -2792,6 +2799,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "连接相机";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
 
                 //     MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
@@ -2969,6 +2977,7 @@ namespace VisionApplication
                             operLog.strOperEvent = "流程设置";
                             operLog.strFailReason = "当前任务未结束";
                             AddLog();
+                            ShowCurrentTaskNotFinishedWarning();
                             return;
                         }
 
@@ -3048,6 +3057,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "相机参数设置";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             CamSet();
@@ -3087,7 +3097,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "启动图像预览";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
-
+                ShowCurrentTaskNotFinishedWarning();
                 //    MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -3122,7 +3132,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "连接串口";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
-
+                ShowCurrentTaskNotFinishedWarning();
                 //    MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -3401,6 +3411,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "连接相机";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 //   MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -3450,11 +3461,18 @@ namespace VisionApplication
                 operLog.strOperEvent = "光源调试";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 //   MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
             frm_Serial fs = new frm_Serial(csd);
             fs.ShowDialog();
+            csd.p_LS = fs.p_LS;
+            csd.p_LS2 = fs.p_LS2;
+            cup.p_LS = fs.p_LS;
+            cup.p_LS2 = fs.p_LS2;
+            SaveUserParam();
+
 
         }
 
@@ -3466,7 +3484,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "断开相机";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
-
+                ShowCurrentTaskNotFinishedWarning();
                 //   MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -3494,6 +3512,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "用户参数设置";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
             Frm_RuntimeSet frs = new Frm_RuntimeSet(cup);
@@ -3743,7 +3762,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "时序打光";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
-
+                ShowCurrentTaskNotFinishedWarning();
                 //    MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -5397,6 +5416,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "串口调试";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
 
@@ -5515,6 +5535,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "打光流程设置";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 //   MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
@@ -6431,6 +6452,65 @@ namespace VisionApplication
                 }
             }
         }
+        private bool IsLivePreviewRunning()
+        {
+            return vpWin != null && vpWin._iTaskType == 1 && !vpWin.bMainTaskFinished;
+        }
+
+        private void ShowWarningOnUiThread(string message, string caption)
+        {
+            Action show = () => MessageBox.Show(this, message, caption, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (InvokeRequired)
+                BeginInvoke(show);
+            else
+                show();
+        }
+
+        private void ShowCurrentTaskNotFinishedWarning()
+        {
+            lock (warningMessageSync)
+            {
+                if ((DateTime.Now - lastTaskBusyWarningTime).TotalSeconds < 2)
+                    return;
+
+                lastTaskBusyWarningTime = DateTime.Now;
+            }
+
+            ShowWarningOnUiThread("\u5f53\u524d\u4efb\u52a1\u6ca1\u6709\u7ed3\u675f\uff0c\u8bf7\u5148\u505c\u6b62\u6216\u7b49\u5f85\u5f53\u524d\u4efb\u52a1\u5b8c\u6210\u540e\u518d\u64cd\u4f5c\u3002", "\u4efb\u52a1\u672a\u7ed3\u675f");
+        }
+
+        private bool StopLivePreviewForTrigger(string operEvent)
+        {
+            if (!IsLivePreviewRunning())
+                return true;
+
+            bool stopped = false;
+            Action stopPreview = () =>
+            {
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = operEvent;
+                operLog.strFailReason = "\u89e6\u53d1\u68c0\u6d4b\u524d\u81ea\u52a8\u5173\u95ed\u5b9e\u65f6\u9884\u89c8";
+                AddLog();
+                StopPreview();
+                stopped = !IsLivePreviewRunning();
+            };
+
+            if (InvokeRequired)
+                Invoke(stopPreview);
+            else
+                stopPreview();
+
+            if (!stopped)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operEvent;
+                operLog.strFailReason = "\u5b9e\u65f6\u9884\u89c8\u672a\u80fd\u81ea\u52a8\u5173\u95ed";
+                AddLog();
+                ShowWarningOnUiThread("\u5b9e\u65f6\u9884\u89c8\u672a\u80fd\u81ea\u52a8\u5173\u95ed\uff0c\u8bf7\u624b\u52a8\u5173\u95ed\u9884\u89c8\u540e\u518d\u68c0\u6d4b\u3002", "\u9884\u89c8\u672a\u5173\u95ed");
+            }
+
+            return stopped;
+        }
         private void PreviewImage(int StartOrStop)
         {
             if (!rts.initStatus.bCamInit)
@@ -6634,17 +6714,21 @@ namespace VisionApplication
                     operLog.iEventStatus = -1;
                     operLog.strFailReason = "当前任务没有结束";
                     AddLog();
+                    ShowCurrentTaskNotFinishedWarning();
                     return false;
                 }
             }
             if (iType == 1)  //手动运行一次
             {
+                if (IsLivePreviewRunning() && !StopLivePreviewForTrigger("\u8fd0\u884c\u4e00\u6b21"))
+                    return false;
                 if (!vpWin.bMainTaskFinished)   //如果当前有任务在执行，即不能重复运行
                 {
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "运行一次";
                     operLog.strFailReason = "当前任务没有结束";
                     AddLog();
+                    ShowCurrentTaskNotFinishedWarning();
                     return false;
                 }
                 int targetJobIndex = (jobIndex >= 0) ? jobIndex : iJobIndex;
@@ -6652,13 +6736,16 @@ namespace VisionApplication
                     return false;
             }
             else if (iType == 10)   //触发运行一次
-            {               
+            {
+                if (IsLivePreviewRunning() && !StopLivePreviewForTrigger("\u89e6\u53d1\u8fd0\u884c"))
+                    return false;
                 if (!vpWin.bMainTaskFinished && (vpWin._iTaskType != 3 || !cup.p_VPPRTP.bAcqFromCam))
                 {
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "运行一次";
                     operLog.strFailReason = "当前任务没有结束";
                     AddLog();
+                    ShowCurrentTaskNotFinishedWarning();
                     return false;
                 }
                 int targetJobIndex = (jobIndex >= 0) ? jobIndex : iJobIndex;
@@ -6679,6 +6766,7 @@ namespace VisionApplication
                         operLog.strOperEvent = "连续运行";
                         operLog.strFailReason = "当前任务没有结束";
                         AddLog();
+                        ShowCurrentTaskNotFinishedWarning();
                         return false;
                     }
                 } 
@@ -6984,6 +7072,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "9点标定高级设置";
                 operLog.strFailReason = "当前任务没有结束";
                 AddLog();
+                ShowCurrentTaskNotFinishedWarning();
                 return;
             }
 

@@ -103,7 +103,7 @@ namespace VisionControl
             this.cogRDSub2.ColorMapUpperRoiLimit = 1D;
             this.cogRDSub2.DoubleTapZoomCycleLength = 2;
             this.cogRDSub2.DoubleTapZoomSensitivity = 2.5D;
-            this.cogRDSub2.Location = new System.Drawing.Point(548, 217);
+            this.cogRDSub2.Location = new System.Drawing.Point(570, 216);
             this.cogRDSub2.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
             this.cogRDSub2.MouseWheelSensitivity = 1D;
             this.cogRDSub2.Name = "cogRDSub2";
@@ -159,7 +159,7 @@ namespace VisionControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Black;
+            this.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.Controls.Add(this.cogRDMainUser);
             this.Controls.Add(this.cogRDSub1);
             this.Controls.Add(this.cogRDSub2);

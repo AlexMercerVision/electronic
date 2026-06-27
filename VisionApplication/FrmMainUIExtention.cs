@@ -598,19 +598,31 @@ namespace VisionApplication
         //图像镜像
         private void rdMirror_Click(object sender, EventArgs e)
         {
+            if (cup.p_CD.camInd == null || iJobIndex < 0 || iJobIndex >= cup.p_CD.camInd.Length)
+                return;
+
+            int cameraIndex = cup.p_CD.camInd[iJobIndex];
+            if (cup.p_Cam == null || cameraIndex < 0 || cameraIndex >= cup.p_Cam.Length)
+                return;
+
             switch (((RadioButton)sender).Name)
             {
                 case "rdNoneFlip":
-                    cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType = 0;
+                    cup.p_Cam[cameraIndex].iFlipType = 0;
                     break;
                 case "rdFlipHor":
-                    cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType = 1;
+                    cup.p_Cam[cameraIndex].iFlipType = 1;
                     break;
                 case "rdFlipVer":
-                    cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType = 2;
+                    cup.p_Cam[cameraIndex].iFlipType = 2;
                     break;
             }
-            acqFIFO._rtType = cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType * 4 + cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iRotateType;
+            acqFIFO._rtType = cup.p_Cam[cameraIndex].iFlipType * 4 + cup.p_Cam[cameraIndex].iRotateType;
+            if (vpWin != null)
+            {
+                vpWin._cup = cup;
+                vpWin.SetPreviewFlipType(cameraIndex, cup.p_Cam[cameraIndex].iFlipType);
+            }
         }
         //相机选择
         private void cbDeviceList_SelectedIndexChanged(object sender, EventArgs e)

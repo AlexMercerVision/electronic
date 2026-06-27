@@ -69,6 +69,8 @@ namespace BJJCZ_BaseDevelop
         private static readonly RectangleF DefaultBackgroundBounds = new RectangleF(-25f, -25f, 50f, 50f);
         private const int PreviewRouteBitmapScale = 4;
         private const int PreviewRouteBitmapBaseSide = 520;
+        private const bool PreviewDebugImageSaveEnabled = false;
+        private const int RoutePreviewRefreshDelayMs = 600;
 
         // =============== 嵌入模式相关 ===============
         private bool _isEmbedded = false;          // 独立启动默认显示完整界面，收到主程序嵌入命令后再切换
@@ -87,8 +89,24 @@ namespace BJJCZ_BaseDevelop
         private bool[] laserMarkEnabled = new bool[2] { true, true };  // 激光器使能状态
         private bool[] pendingDeferredSave = new bool[2];      // 延迟保存标志
         private bool _isSavingEzd = false;                     // 防止自动保存重入
+        private readonly object _previewSaveLock = new object(); // 预览刷新和保存不能同时操作JCZ SDK
+        private bool[] _isReplayingFallbackAdjustments = new bool[2]; // 重放兜底参数时避免重复记录
+        private readonly object _fallbackAdjustmentLock = new object();
+        private Dictionary<string, EzdFallbackAdjustmentFile> _fallbackAdjustmentCache = new Dictionary<string, EzdFallbackAdjustmentFile>(StringComparer.OrdinalIgnoreCase);
+        private bool[] _pendingRoutePreviewRefresh = new bool[2];
+        private Bitmap[] _fastPreviewOverlay = new Bitmap[2];
+        private RectangleF?[] _fastPreviewOverlayBounds = new RectangleF?[2];
+        private System.Windows.Forms.Timer _routePreviewRefreshTimer;
         private System.Windows.Forms.Timer _deferredSaveTimer; // 延迟保存定时器
+        private System.Windows.Forms.Timer _logCleanupTimer;   // 日志框定时清理 6.23新加
+        private const int LogCleanupIntervalMs = 3 * 60 * 1000;
+        private const int MaxLogLineCount = 100;               //日志超过100行，只保留近50行
+        private const int KeepLogLineCount = 50;
         private Button btTransformSave;                       // 移动/旋转/缩放后手动保存
+        private Button btCopyEnt;                             // 复制当前对象
+        private Button btDeleteEnt;                           // 删除当前对象
+        private Button btUndoDeleteEnt;                       // 撤回上一次删除
+        private DeletedEntityUndo[] lastDeletedEntity = new DeletedEntityUndo[2];
 
         // ===== 填充参数缓存（持久化 + 内存）=====
         private Dictionary<string, HatchParam> hatchParamCache = new Dictionary<string, HatchParam>();
@@ -106,11 +124,54 @@ namespace BJJCZ_BaseDevelop
 
         // ===== 对象缩放状态记忆（用于绝对缩放）=====
         private Dictionary<string, EntityScaleState> entityScaleStates = new Dictionary<string, EntityScaleState>();
-        private bool syncingEntGroupState;//区分同步UI和用户手动点击
+        //private bool syncingEntGroupState;//区分同步UI和用户手动点击
 
         // ===== 辅助常量 =====
         private const string TransformPairEntityPrefix = "__TransformPair_";  // 临时分组前缀（用于填充对象联合变换）
+        private const string DeletedEntityBackupPrefix = "__DeletedBackup_"; // 删除撤回临时备份前缀
+        private const double CopyDetachMoveDistance = 0.001;   // 删除前极小位移再移回，让SDK把旧重叠复制体独立出来
+        private const double CopyInitialOffsetDistance = 1.0;  // 复制后新对象默认向右、向上各偏移1mm，避免和原对象完全重叠
 
+        private class DeletedEntityUndo
+        {
+            public int Card { get; set; }
+            public int PreviousIndex { get; set; }
+            public string DisplayName { get; set; }
+            public string[] OriginalNames { get; set; }
+            public string[] BackupNames { get; set; }
+            public int[] OriginalPenNos { get; set; }
+            public HatchParam[] OriginalHatchParams { get; set; }
+            public bool[] HasOriginalHatchParams { get; set; }
+        }
+
+        public class EzdFallbackAdjustmentFile
+        {
+            public string EzdFilePath { get; set; }
+            public int CardIndex { get; set; }
+            public bool NeedsReplay { get; set; }
+            public DateTime LastUpdatedTime { get; set; }
+            public DateTime LastSavedTime { get; set; }
+            public List<EzdFallbackAdjustmentOperation> Operations { get; set; }
+            public List<EzdFallbackAdjustmentOperation> SavedOperations { get; set; }
+
+            public EzdFallbackAdjustmentFile()
+            {
+                Operations = new List<EzdFallbackAdjustmentOperation>();
+                SavedOperations = new List<EzdFallbackAdjustmentOperation>();
+            }
+        }
+        public class EzdFallbackAdjustmentOperation
+        {
+            public int CmdType { get; set; }
+            public string EntityName { get; set; }
+            public int EntityIndex { get; set; }
+            public double DParam1 { get; set; }
+            public double DParam2 { get; set; }
+            public double DParam3 { get; set; }
+            public double DParam4 { get; set; }
+            public double DParam5 { get; set; }
+            public DateTime CreatedTime { get; set; }
+        }
         // =============== Windows API 声明 ===============
         [DllImport("user32.dll")]
         private static extern IntPtr GetParent(IntPtr hWnd);
@@ -186,6 +247,7 @@ namespace BJJCZ_BaseDevelop
 
             // 新增：初始化延迟保存定时器（也可以在首次使用时创建）
             EnsureDeferredSaveTimer();
+            EnsureLogCleanupTimer();
         }
         private void EnsureDeferredSaveTimer()
         {
@@ -197,6 +259,24 @@ namespace BJJCZ_BaseDevelop
             _deferredSaveTimer = new System.Windows.Forms.Timer();
             _deferredSaveTimer.Interval = 1000;
             _deferredSaveTimer.Tick += DeferredSaveTimer_Tick;
+        }
+
+        private void EnsureLogCleanupTimer()   //新增 6.23
+        {
+            if (_logCleanupTimer != null)
+            {
+                return;
+            }
+
+            _logCleanupTimer = new System.Windows.Forms.Timer();
+            _logCleanupTimer.Interval = LogCleanupIntervalMs;
+            _logCleanupTimer.Tick += LogCleanupTimer_Tick;
+            _logCleanupTimer.Start();
+        }
+
+        private void LogCleanupTimer_Tick(object sender, EventArgs e) //新增 6.23 延迟保存
+        {
+            TrimMainMessageBox(false);
         }
 
         private void DeferredSaveTimer_Tick(object sender, EventArgs e)
@@ -461,7 +541,6 @@ namespace BJJCZ_BaseDevelop
                 //  AddMsg($"分离失败: {ex.Message}");
             }
         }
-
         /// <summary>
         /// 立即设置默认布局（不触发额外重绘）
         /// </summary>
@@ -527,15 +606,23 @@ namespace BJJCZ_BaseDevelop
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MaximizeBox = true;
+            mainMsgBox.BackColor = Color.White;
+            mainMsgBox.ForeColor = Color.Black;
+            mainMsgBox.Font = new Font("宋体", 9F);
+            mainMsgBox.ReadOnly = true;
+            mainMsgBox.BorderStyle = BorderStyle.FixedSingle;
+            mainMsgBox.HideSelection = false;
             mainMsgBox.ScrollBars = RichTextBoxScrollBars.ForcedVertical;
             mainMsgBox.WordWrap = false;
             panel1.AutoScroll = false;
             panel3.AutoScroll = false;
             EnsureTransformSaveButton();
+            EnsureEntityEditButtons();
             this.Resize += (s, e) => LayoutMainPanels();
             FitWindowToWorkingArea();
             LayoutMainPanels();
         }
+
 
         private void EnsureTransformSaveButton()
         {
@@ -552,6 +639,36 @@ namespace BJJCZ_BaseDevelop
             btTransformSave.UseVisualStyleBackColor = true;
             btTransformSave.Click += btTransformSave_Click;
             panel1.Controls.Add(btTransformSave);
+        }
+
+        private void EnsureEntityEditButtons()
+        {
+            if (btCopyEnt != null)
+            {
+                return;
+            }
+
+            btCopyEnt = CreateEntityEditButton("btCopyEnt", "复制", btCopyEnt_Click);
+            btDeleteEnt = CreateEntityEditButton("btDeleteEnt", "删除", btDeleteEnt_Click);
+            btUndoDeleteEnt = CreateEntityEditButton("btUndoDeleteEnt", "撤回", btUndoDeleteEnt_Click);
+            btCopyEnt.Font = btLaserPenParam.Font;
+            btDeleteEnt.Font = btLaserPenParam.Font;
+            btUndoDeleteEnt.Font = btDeleteEnt.Font;
+            btUndoDeleteEnt.ForeColor = btDeleteEnt.ForeColor;
+            btUndoDeleteEnt.Enabled = false;
+        }
+
+        private Button CreateEntityEditButton(string name, string text, EventHandler handler)
+        {
+            Button button = new Button();
+            button.Name = name;
+            button.Text = text;
+            button.Font = btRenameEnt.Font;
+            button.ForeColor = Color.Red;
+            button.UseVisualStyleBackColor = true;
+            button.Click += handler;
+            panel3.Controls.Add(button);
+            return button;
         }
         private void FitWindowToWorkingArea()
         {
@@ -587,7 +704,7 @@ namespace BJJCZ_BaseDevelop
             int rightWidth = Math.Max(420, clientWidth - rightX - margin);
 
             bool showBottomPanels = panel3.Visible || panel1.Visible;
-            int desiredBottomHeight = 220;
+            int desiredBottomHeight = 250;
             int topHeight = showBottomPanels
                 ? clientHeight - top - rowGap - desiredBottomHeight - bottomMargin
                 : clientHeight - top - bottomMargin;
@@ -604,7 +721,7 @@ namespace BJJCZ_BaseDevelop
 
             int bottomY = top + topHeight + rowGap;
             int bottomHeight = showBottomPanels
-                ? Math.Max(210, clientHeight - bottomY - bottomMargin)
+                ? Math.Max(250, clientHeight - bottomY - bottomMargin)
                 : 0;
 
             mainMsgBox.Bounds = new Rectangle(margin, top, leftWidth, topHeight);
@@ -629,9 +746,10 @@ namespace BJJCZ_BaseDevelop
 
             int panelWidth = Math.Max(1, panel3.ClientSize.Width);
             int panelHeight = Math.Max(1, panel3.ClientSize.Height);
-            int actionX = Math.Max(270, panelWidth - 130);
+            int actionAreaWidth = 166;
+            int actionX = Math.Max(214, panelWidth - actionAreaWidth);
 
-            dgvEnt.SetBounds(4, 4, Math.Max(255, actionX - 10), Math.Max(160, panelHeight - 32));
+            dgvEnt.SetBounds(4, 4, Math.Max(190, actionX - 10), Math.Max(160, panelHeight - 32));
             dgvEnt.RowHeadersWidth = 28;
             dgvEnt.ScrollBars = ScrollBars.Vertical;
             Column1.Width = 35;
@@ -639,19 +757,37 @@ namespace BJJCZ_BaseDevelop
             Column3.Width = 65;
             Column4.Width = 55;
 
-            txtEntName.Left = actionX;
-            txtEntName.Top = 4;
-            btRenameEnt.Left = actionX;
-            btRenameEnt.Top = 38;
-            btMoveEntBefore.Left = actionX;
-            btMoveEntAfter.Left = actionX;
-            label10.Left = actionX;
-            chkEntGroup.Left = actionX + 58;
-            int actionButtonTop = Math.Min(Math.Max(4, panelHeight - 50), 178);
-            btLaserPenParam.SetBounds(Math.Min(actionX, Math.Max(4, panelWidth - 124)), actionButtonTop, 56, 34);
-            btHatchParam.SetBounds(Math.Min(btLaserPenParam.Left + btLaserPenParam.Width + 10, Math.Max(4, panelWidth - 62)), btLaserPenParam.Top, 56, 34);
-        }
+            int editBtnW = 46;
+            int editBtnH = 34;
+            int editGap = 10;
+            int undoGap = 6;
+            int undoBtnW = editBtnW;
+            int rightButtonX = actionX + editBtnW + editGap;
+            int undoButtonX = rightButtonX + editBtnW + undoGap;
+            int nameWidth = Math.Min(actionAreaWidth - 6, panelWidth - actionX - 6);
 
+            txtEntName.SetBounds(actionX, 4, nameWidth, txtEntName.Height);
+            btRenameEnt.SetBounds(actionX, 34, nameWidth, 28);
+
+            btMoveEntBefore.SetBounds(actionX, 96, 35, 34);
+            btMoveEntAfter.SetBounds(actionX, 134, 35, 34);
+            label10.Left = actionX;
+
+            btGroupEnt.SetBounds(rightButtonX, 96, editBtnW, editBtnH);
+            btUnGroupEnt.SetBounds(rightButtonX, 134, editBtnW, editBtnH);
+
+            int actionButtonTop = Math.Min(Math.Max(4, panelHeight - 74), 176);
+            int editButtonTop = actionButtonTop + editBtnH + 4;
+            btLaserPenParam.SetBounds(actionX, actionButtonTop, editBtnW, editBtnH);
+            btHatchParam.SetBounds(rightButtonX, actionButtonTop, editBtnW, editBtnH);
+
+            if (btCopyEnt != null)
+            {
+                btCopyEnt.SetBounds(actionX, editButtonTop, editBtnW, 28);
+                btDeleteEnt.SetBounds(rightButtonX, editButtonTop, editBtnW, 28);
+                btUndoDeleteEnt.SetBounds(undoButtonX, editButtonTop, undoBtnW, 28);
+            }
+        }
         private int GetOperationButtonWidth(int panelWidth)
         {
             const int pad = 8;
@@ -734,7 +870,6 @@ namespace BJJCZ_BaseDevelop
                     button.SetBounds(startX + c * (btnW + colGap), startY + r * (btnH + rowGap), btnW, btnH);
                 }
             }
-
             int infoY = startY + 4 * (btnH + rowGap) + 2;
             int textY = infoY + 20;
             label12.SetBounds(startX, infoY, label12.Width, label12.Height);
@@ -830,6 +965,17 @@ namespace BJJCZ_BaseDevelop
         #region 板卡初始化、管道通信与日志
         private void TryInitializeCards()
         {
+            try
+            {
+                JczLmc.lmc1_Close();
+                Thread.Sleep(300);
+                AddMsg("启动初始化前已先关闭旧板卡连接");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"启动初始化前关闭旧板卡连接异常: {ex.Message}");
+            } //让启动状态保持干净
+
             int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
             if (initResult == 0)
             {
@@ -846,7 +992,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"板卡初始化失败({JczLmc.GetErrorText(initResult)})，已切换至模拟模式");
             }
         }
-
         private void RefreshPhysicalCardMapping(string stage)
         {
             int[] snArray = new int[8];
@@ -865,7 +1010,6 @@ namespace BJJCZ_BaseDevelop
                     AddMsg($"逻辑索引 {i + 1}  -> 物理卡号 {snArray[i]}");
                 }
             }
-
             // 多头库示例里 GetAllCardSN 返回的是卡ID显示信息；
             // LoadEzdFile/Mark 等函数仍然使用卡槽索引 i，因此两路管道继续对应 SDK 卡槽0/1。
             phyCardSN[0] = 0;
@@ -892,7 +1036,7 @@ namespace BJJCZ_BaseDevelop
 
             LCZControlParam param = e.receivedMsg;
             param.cardSN = card;
-            currentCard = card;
+            //currentCard = card;// 主程序后台命令不能改变界面当前卡
             lastCmdCard = card;
 
             // 处理客户端返回的容器句柄
@@ -906,17 +1050,134 @@ namespace BJJCZ_BaseDevelop
         }
 
         // =============== 日志 ===============
-        private void AddMsg(string txtMsg)
+        /*private void AddMsg(string txtMsg)
         {
             if (mainMsgBox.IsDisposed) return;
             mainMsgBox.BeginInvoke((MethodInvoker)delegate
             {
+                mainMsgBox.SelectionColor = Color.Black;
+                mainMsgBox.SelectionBackColor = Color.White;
                 mainMsgBox.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + txtMsg + Environment.NewLine);
+                mainMsgBox.SelectionStart = mainMsgBox.Text.Length;
+                mainMsgBox.ScrollToCaret();
+            });
+        }*/
+        private void AddMsg(string txtMsg) //清除调试的日志，可以继续往里面添加需要删除的日志
+        {
+            if (string.IsNullOrWhiteSpace(txtMsg) || ShouldSkipLogMessage(txtMsg)) return;
+            if (mainMsgBox.IsDisposed) return;
+            mainMsgBox.BeginInvoke((MethodInvoker)delegate
+            {
+                mainMsgBox.SelectionColor = Color.Black;
+                mainMsgBox.SelectionBackColor = Color.White;
+                mainMsgBox.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + txtMsg + Environment.NewLine);
+                TrimMainMessageBox(true);
                 mainMsgBox.SelectionStart = mainMsgBox.Text.Length;
                 mainMsgBox.ScrollToCaret();
             });
         }
 
+        private bool ShouldSkipLogMessage(string txtMsg)
+        {
+            string[] internalNoisyKeywords = new string[]
+            {
+                "当前DLL不支持",
+                "改用删除填充对象",
+                "改用禁用笔号接口",
+                "设置完整填充参数",
+                "分阶段写入高级填充参数",
+                "设置隐藏轮廓笔号",
+                "禁用隐藏轮廓笔号",
+                "隐藏原轮廓对象",
+                "删除前备份对象",
+                "删除前创建隐藏备份",
+                "未找到填充对象",
+                "已删除填充对象"
+            };
+
+            foreach (string keyword in internalNoisyKeywords)
+            {
+                if (txtMsg.Contains(keyword))
+                {
+                    return true;
+                }
+            }
+            string[] keepKeywords = new string[]
+            {
+                "失败", "异常", "错误", "超时", "拒绝", "无法", "找不到", "未选中", "未初始化", "不存在", "禁止",
+                "旋转对象", "移动对象", "缩放对象", "群组/解组"
+        
+            };
+
+            foreach (string keyword in keepKeywords)
+            {
+                if (txtMsg.Contains(keyword))
+                {
+                    return false;
+                }
+            }
+            string[] noisyKeywords = new string[]
+            {
+                "收到命令",
+                "发送响应",
+                "调用lmc1_Mark",
+                "lmc1_Mark返回",
+                "收到叠加图范围命令",
+                "背景图加载成功",
+                "对象数量=",
+                "阵列填充圆参数",
+                "准备加载模板底板",
+                "已加载模板底板",
+                "保存填充参数到EZD: 成功",
+                "保存删除填充结果到EZD: 成功",
+                "设置完整填充参数: 成功",
+                "分阶段写入高级填充参数: 成功",
+                "使用上次保存的填充参数",
+                "使用本地XML填充参数",
+                "使用本地保存的填充参数",
+                "无填充参数，使用默认值",
+                "未启用填充，使用EZCAD默认填充参数",
+                "导出预览图 ->"
+
+            };
+
+            foreach (string keyword in noisyKeywords)
+            {
+                if (txtMsg.Contains(keyword))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        private void TrimMainMessageBox(bool onlyWhenTooMany)
+        {
+            if (mainMsgBox == null || mainMsgBox.IsDisposed) return;
+
+            string[] lines = mainMsgBox.Lines;
+            if (onlyWhenTooMany && lines.Length <= MaxLogLineCount)
+            {
+                return;
+            }
+
+            if (!onlyWhenTooMany && lines.Length <= KeepLogLineCount)
+            {
+                return;
+            }
+
+            int keepCount = Math.Min(KeepLogLineCount, lines.Length);
+            string[] keepLines = lines.Skip(lines.Length - keepCount).ToArray();
+            mainMsgBox.Clear();
+            mainMsgBox.SelectionColor = Color.Black;
+            mainMsgBox.SelectionBackColor = Color.White;
+            mainMsgBox.AppendText(string.Join(Environment.NewLine, keepLines));
+            if (mainMsgBox.Text.Length > 0)
+            {
+                mainMsgBox.AppendText(Environment.NewLine);
+            }
+        }
         /// <summary>
         /// 根据命令类型返回中文描述
         /// </summary>
@@ -956,7 +1217,6 @@ namespace BJJCZ_BaseDevelop
                 default: return $"未知命令({cmdType})";
             }
         }
-
         /// <summary>
         /// 根据命令类型返回操作对象描述
         /// </summary>
@@ -1101,7 +1361,6 @@ namespace BJJCZ_BaseDevelop
                     JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
                 }
             }
-
             var worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
             {
@@ -1206,7 +1465,10 @@ namespace BJJCZ_BaseDevelop
                                 ApplyVisualRotateMoveParamIfReady(card, "加载文件后恢复视觉定位偏移");
 
                                 ReloadEntityInfo(card);
-                                RefreshPreview(card);
+                                ApplyFallbackAdjustmentsIfAny(card);
+                                ReloadEntityInfo(card);
+                                InvalidateRoutePreviewCache(card);
+                                ScheduleRoutePreviewRefresh(card, 50);
                             }
                             else
                             {
@@ -1285,13 +1547,18 @@ namespace BJJCZ_BaseDevelop
                             ApplyVisualRotateMoveParamIfReady(card, "加载文件后恢复视觉定位偏移");
 
                             ReloadEntityInfo(card);
+                            ApplyFallbackAdjustmentsIfAny(card);
+                            ReloadEntityInfo(card);
                             CapturePreviewAnchorBounds(card);
                            
                         
                         }
                         // 清除缓存（新文件内容不同）
                         InvalidateRoutePreviewCache(card);
-                        RefreshPreview(card);
+                        if (nErr == 0 && !bSimulateMode[card])
+                        {
+                            ScheduleRoutePreviewRefresh(card, 50);
+                        }
                         AddMsg($"卡{card + 1} 加载文件 -> {JczLmc.GetErrorText(nErr)}");
                         break;
 
@@ -1431,7 +1698,7 @@ namespace BJJCZ_BaseDevelop
                              };
                              workerRed.RunWorkerAsync();
                          }
-                     }
+                         }
                      break;*/
 
                     case 15:
@@ -1547,45 +1814,66 @@ namespace BJJCZ_BaseDevelop
                                 };
                                 workerEntRed.RunWorkerAsync();
                             }
-                        }
+        }
                     }
                     break;*/
 
                     case 23:  // 旋转对象
-                        {
+                    {
                             string targetEntName = ResolveTransformEntityName(param);
                             if (!string.IsNullOrEmpty(targetEntName))
+                            {
                                 nErr = RotateLogicalEntity(card, targetEntName, param.dParam3, param.dParam4, param.dParam5);
+                                if (nErr == 0)
+                                {
+                                    RecordFallbackAdjustmentOperation(card, param, targetEntName);
+                                }
+                            }
                             else
+                            {
                                 nErr = 20;
-                        }                       
-                        InvalidateRoutePreviewCache(card);
-                        RefreshPreview(card);
+                            }
+                    }
+                        ScheduleRoutePreviewRefresh(card);
                         break;
 
                     case 24:  // 移动对象
-                        {
+                    {
                             string targetEntName = ResolveTransformEntityName(param);
                             if (!string.IsNullOrEmpty(targetEntName))
+                            {
                                 nErr = MoveLogicalEntity(card, targetEntName, ref param.dParam1, ref param.dParam2);
+                                if (nErr == 0)
+                                {
+                                    RecordFallbackAdjustmentOperation(card, param, targetEntName);
+                                }
+                            }
                             else
+                            {
                                 nErr = 20;
-                        } 
-                        InvalidateRoutePreviewCache(card);
-                        RefreshPreview(card);
+                            }
+                    }
+                        ScheduleRoutePreviewRefresh(card);
                         break;
 
                     case 25:  // 缩放对象
-                        {
+                    {
                             string targetEntName = ResolveTransformEntityName(param);
                             if (!string.IsNullOrEmpty(targetEntName))
+                            {
                                 nErr = ScaleLogicalEntity(card, targetEntName, param.dParam1, param.dParam2,
                                                           param.dParam3, param.dParam4);
+                                if (nErr == 0)
+                                {
+                                    RecordFallbackAdjustmentOperation(card, param, targetEntName);
+                                }
+                            }
                             else
+                            {
                                 nErr = 20;
-                        }                        
-                        InvalidateRoutePreviewCache(card);
-                        RefreshPreview(card);
+                            }
+                    }
+                        ScheduleRoutePreviewRefresh(card);
                         break;
 
                     case 27:
@@ -1993,8 +2281,6 @@ namespace BJJCZ_BaseDevelop
                                     nErr = SaveEntLibToFileWithoutPreviewAnchor(card, param.strFileName);
                                     AddMsg($"卡{card + 1} 保存文件: {JczLmc.GetErrorText(nErr)}");
                                 }
- 
-                               
                             }
                             else
                                 AddMsg($"卡{card + 1} 添加填充失败: {JczLmc.GetErrorText(nErr)}");
@@ -2064,8 +2350,9 @@ namespace BJJCZ_BaseDevelop
                         alImParam = align;
                         previewAlignParams[card] = align;
                         previewAlignParamReady[card] = IsValidPreviewAlignParam(align);
-                        AddMsg($"卡{card + 1} 主程序对齐参数: 像素({align.width} x {align.height}) 有效={previewAlignParamReady[card]}");
-                        AddMsg($"卡{card + 1} 主程序对齐参数: 中心({align.dCenX:0.###},{align.dCenY:0.###}) 尺寸({align.dWidth:0.###} x {align.dHeight:0.###})");
+                        AddMsg($"卡{card + 1} 主程序对齐: 像素({align.width} x {align.height}) 有效={previewAlignParamReady[card]}");
+                        AddMsg($"卡{card + 1} 主程序对齐: 中心({align.dCenX:0.###},{align.dCenY:0.###})");
+                        AddMsg($"卡{card + 1} 主程序对齐: 尺寸({align.dWidth:0.###} x {align.dHeight:0.###})");
                         this.BeginInvoke(new Action(() =>
                         {
                             // 对齐参数改变，图形映射范围变化，需要重新确定预览视口并重新生成叠加图。
@@ -2207,7 +2494,6 @@ namespace BJJCZ_BaseDevelop
                     return hatchErr;
                 }
             }
-
             // 3. 移除这两个实体在“缩放状态记忆”中的缓存（避免旧的缩放比例影响后续操作）
             RemoveEntityScaleState(card, sourceName);   // 旧轮廓名的缩放状态
             RemoveEntityScaleState(card, oldHatchName); // 旧填充名的缩放状态（若不存在则无影响）
@@ -2264,7 +2550,6 @@ namespace BJJCZ_BaseDevelop
                         return err;
                     }
                 }
-
                 return 0;
             }
             catch (AccessViolationException ex)
@@ -2278,7 +2563,6 @@ namespace BJJCZ_BaseDevelop
                 return 9;
             }
         }
-       
         private string[] GetRedLightContourNames(int card)
         {
             string[] names = sdkEntNames[card] != null && sdkEntNames[card].Length > 0
@@ -2550,7 +2834,6 @@ namespace BJJCZ_BaseDevelop
                     // 路径格式不合法时跳过，继续尝试下一个候选路径。
                 }
             }
-
             return null;
         }
 
@@ -2586,7 +2869,6 @@ namespace BJJCZ_BaseDevelop
                     return fullPath;
                 }
             }
-
             return null;
         }
 
@@ -2602,7 +2884,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} {stage}: 读取对象数量失败 - {ex.Message}");
             }
         }
-
         //2.创建标刻模版时，参数设置的一些限制，生成函数模版
         private int GenerateFilledCircleTemplate(int card, LCZControlParam param)
         {
@@ -2733,7 +3014,6 @@ namespace BJJCZ_BaseDevelop
                     index++;//准备下一个圆
                 }
             }
-
             AddEntityCountLog(card, "阵列圆生成后");
             ReloadEntityInfo(card);
             InvalidateRoutePreviewCache(card);
@@ -2965,7 +3245,6 @@ namespace BJJCZ_BaseDevelop
                 return false;
             }
         }
-
         private void CacheHatchParamForPair(int card, string sourceEntName, string hatchEntName, HatchParam hp)
         {
             CacheHatchParam(card, sourceEntName, hp);
@@ -3010,7 +3289,6 @@ namespace BJJCZ_BaseDevelop
                         break;
                     }
                 }
-
                 if (!replaced)
                 {
                     lines.Add(newLine);
@@ -3067,7 +3345,6 @@ namespace BJJCZ_BaseDevelop
                 sourceContourPenCache[GetSourcePenCacheKey(card, sourceEntName)] = penNo;
             }
         }
-
         private int SetHatchEntParam2ForEntity(int card, string hatchEntName, HatchParam hp)
         {
             try
@@ -3479,7 +3756,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 设置对象 {entName} 笔号异常: {ex.Message}");
             }
         }
-
         private bool DeleteEntityIfExists(int card, string entName)
         {
             if (!EntityExists(card, entName))
@@ -3489,6 +3765,18 @@ namespace BJJCZ_BaseDevelop
 
             int nErr = JczLmc.lmc1_DeleteEnt(phyCardSN[card], entName);
             return nErr == 0 || nErr == 2;
+        }
+
+        private void HideHatchBackupEntity(int card, string hatchBackupName, HatchParam originalHp)
+        {
+            HatchParam hiddenHp = originalHp;
+            hiddenHp.bEnableContour = false;
+            hiddenHp.bEnableHatch = 0;
+            hiddenHp.bHatchEdge = false;
+            hiddenHp.nEdgeLoop = 0;
+            hiddenHp.nPenNo = HiddenContourPenNo;
+            SetHatchEntParam2ForEntity(card, hatchBackupName, hiddenHp);
+            ApplyPenToEntity(card, hatchBackupName, HiddenContourPenNo);
         }
         #endregion
 
@@ -3514,92 +3802,38 @@ namespace BJJCZ_BaseDevelop
         }
         private int SaveEntLibToFileWithoutPreviewAnchor(int card, string fileName)
         {
-            //CleanupPreviewAnchorEntities(card);
-            //CleanupTransformPairEntities(card);
-
-            if (string.IsNullOrWhiteSpace(fileName))
+            lock (_previewSaveLock)
             {
-                AddMsg($"卡{card + 1} 保存EZD失败: 文件路径为空");
-                return 20;
-            }
+                CleanupPreviewAnchorEntities(card);
+                CleanupTransformPairEntities(card);
+                Thread.Sleep(300);//保存前对象库保持干净。
 
-            //string tempPath = null;
-            try
-            {
-                string fullPath = Path.GetFullPath(fileName);
-                string dir = Path.GetDirectoryName(fullPath);
-                if (string.IsNullOrEmpty(dir))
+                if (string.IsNullOrWhiteSpace(fileName))
                 {
-                    AddMsg($"卡{card + 1} 保存EZD失败: 无效路径 {fileName}");
+                    AddMsg($"卡{card + 1} 保存EZD失败: 文件路径为空");
                     return 20;
                 }
 
-                Directory.CreateDirectory(dir);
-                return SaveEntLibDirectWithBackup(card, fullPath);
-            }
-            catch (Exception ex)
-            {
-                AddMsg($"卡{card + 1}保存EZD异常：{ex.Message}");
-                return 12;
-            }
-        }
-
-                /*tempPath = Path.Combine(
-                    dir,
-                    Path.GetFileNameWithoutExtension(fullPath) + ".saving_" +
-                    DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".ezd");
-
-                int saveErr = SaveEntLibToFileWithRetry(card, tempPath);
-                if (saveErr != 0)
+                try
                 {
-                    AddMsg($"卡{card + 1} 保存临时EZD失败: {JczLmc.GetErrorText(saveErr)}");
-                    AddMsg($"卡{card + 1} 尝试直接保存到原EZD路径: {fullPath}");
+                    string fullPath = Path.GetFullPath(fileName);
+                    string dir = Path.GetDirectoryName(fullPath);
+                    if (string.IsNullOrEmpty(dir))
+                    {
+                        AddMsg($"卡{card + 1} 保存EZD失败: 无效路径 {fileName}");
+                        return 20;
+                    }
+
+                    Directory.CreateDirectory(dir);
                     return SaveEntLibDirectWithBackup(card, fullPath);
                 }
-
-                FileInfo tempInfo = new FileInfo(tempPath);
-                if (!tempInfo.Exists || tempInfo.Length == 0)
+                catch (Exception ex)
                 {
-                    AddMsg($"卡{card + 1} 保存临时EZD失败: 文件为空");
+                    AddMsg($"卡{card + 1}保存EZD异常：{ex.Message}");
                     return 12;
                 }
-
-                string backupPath = fullPath + ".bak";
-                if (File.Exists(fullPath))
-                {
-                    File.Copy(fullPath, backupPath, true);
-                    try
-                    {
-                        File.Replace(tempPath, fullPath, null, true);
-                        tempPath = null;
-                    }
-                    catch
-                    {
-                        File.Copy(tempPath, fullPath, true);
-                    }
-                }
-                else
-                {
-                    File.Move(tempPath, fullPath);
-                    tempPath = null;
-                }
-
-                TryDeleteFile(backupPath);
-                AddMsg($"卡{card + 1} 已保存EZD: {fullPath}");
-                return 0;
             }
-            catch (Exception ex)
-            {
-                AddMsg($"卡{card + 1} 保存EZD异常: {ex.Message}");
-                return 12;
-            }
-            finally
-            {
-                TryDeleteFile(tempPath);
-            }
-        }*/
-                
-
+        }
         private int SaveEntLibToFileWithRetry(int card, string fileName)
         {
             const int maxTryCount = 3;
@@ -3609,6 +3843,10 @@ namespace BJJCZ_BaseDevelop
             {
                 try
                 {
+                    CleanupPreviewAnchorEntities(card);
+                    CleanupTransformPairEntities(card);
+                    Thread.Sleep(250);
+
                     lastErr = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], fileName);
                     if (lastErr == 0)
                     {
@@ -3623,7 +3861,7 @@ namespace BJJCZ_BaseDevelop
                     AddMsg($"卡{card + 1} 保存EZD第{i}次异常: {ex.Message}");
                 }
 
-                Thread.Sleep(120);
+                Thread.Sleep(300);
                 //Application.DoEvents();
             }
 
@@ -3644,22 +3882,25 @@ namespace BJJCZ_BaseDevelop
                 if (saveErr == 0)
                 {
                     TryDeleteFile(backupPath);
+                    MarkFallbackAdjustmentAfterSaveSuccess(card, fullPath);
+                    pendingDeferredSave[card] = false;
                     AddMsg($"卡{card + 1} 直接保存EZD成功: {fullPath}");
                     return 0;
                 }
 
                 AddMsg($"卡{card + 1} 直接保存EZD失败: {JczLmc.GetErrorText(saveErr)}");
+                MarkFallbackAdjustmentAfterSaveFailure(card, fullPath);
                 RestoreBackupFile(fullPath, backupPath, card);
                 return saveErr;
             }
             catch (Exception ex)
             {
                 AddMsg($"卡{card + 1} 直接保存EZD异常: {ex.Message}");
+                MarkFallbackAdjustmentAfterSaveFailure(card, fullPath);
                 RestoreBackupFile(fullPath, backupPath, card);
                 return 12;
             }
         }
-
         private void RestoreBackupFile(string fullPath, string backupPath, int card)
         {
             try
@@ -3675,7 +3916,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 从备份恢复EZD失败: {ex.Message}");
             }
         }
-
         private void TryDeleteFile(string fileName)
         {
             try
@@ -3687,6 +3927,562 @@ namespace BJJCZ_BaseDevelop
             }
             catch
             {
+            }
+        }
+        private string GetFallbackAdjustmentFilePathForCurrentFile(int card)
+        {
+            if (card < 0 || card >= currentFilePath.Length)
+            {
+                return null;
+            }
+
+            return GetFallbackAdjustmentFilePath(currentFilePath[card]);
+        }
+
+        private string GetFallbackAdjustmentFilePath(string ezdFilePath)
+        {
+            string fullPath = ResolveFallbackEzdFullPath(ezdFilePath);
+            if (string.IsNullOrWhiteSpace(fullPath))
+            {
+                return null;
+            }
+
+            return fullPath + ".adjust.xml";
+        }
+
+        private string ResolveFallbackEzdFullPath(string ezdFilePath)
+        {
+            if (string.IsNullOrWhiteSpace(ezdFilePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                if (Path.IsPathRooted(ezdFilePath))
+                {
+                    return Path.GetFullPath(ezdFilePath);
+                }
+
+                string existing = ResolveExistingEzdPath(ezdFilePath);
+                if (!string.IsNullOrEmpty(existing))
+                {
+                    return existing;
+                }
+
+                string ezdModelPath = Path.Combine(@"D:\EZDModel", ezdFilePath);
+                if (File.Exists(ezdModelPath))
+                {
+                    return Path.GetFullPath(ezdModelPath);
+                }
+
+                return Path.GetFullPath(ezdFilePath);
+            }
+            catch
+            {
+                return ezdFilePath;
+            }
+        }
+        private EzdFallbackAdjustmentOperation CloneFallbackAdjustmentOperation(EzdFallbackAdjustmentOperation op)
+        {
+            if (op == null)
+            {
+                return null;
+            }
+
+            return new EzdFallbackAdjustmentOperation
+            {
+                CmdType = op.CmdType,
+                EntityName = op.EntityName,
+                EntityIndex = op.EntityIndex,
+                DParam1 = op.DParam1,
+                DParam2 = op.DParam2,
+                DParam3 = op.DParam3,
+                DParam4 = op.DParam4,
+                DParam5 = op.DParam5,
+                CreatedTime = op.CreatedTime
+            };
+        }
+
+        private void EnsureFallbackAdjustmentLists(EzdFallbackAdjustmentFile data)
+        {
+            if (data == null)
+            {
+                return;
+            }
+
+            if (data.Operations == null)
+            {
+                data.Operations = new List<EzdFallbackAdjustmentOperation>();
+            }
+
+            if (data.SavedOperations == null)
+            {
+                data.SavedOperations = new List<EzdFallbackAdjustmentOperation>();
+            }
+        }
+        private EzdFallbackAdjustmentFile CloneFallbackAdjustmentFile(EzdFallbackAdjustmentFile source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            EnsureFallbackAdjustmentLists(source);
+            EzdFallbackAdjustmentFile clone = new EzdFallbackAdjustmentFile
+            {
+                EzdFilePath = source.EzdFilePath,
+                CardIndex = source.CardIndex,
+                NeedsReplay = source.NeedsReplay,
+                LastUpdatedTime = source.LastUpdatedTime,
+                LastSavedTime = source.LastSavedTime,
+                Operations = new List<EzdFallbackAdjustmentOperation>(),
+                SavedOperations = new List<EzdFallbackAdjustmentOperation>()
+            };
+
+            foreach (EzdFallbackAdjustmentOperation op in source.Operations)
+            {
+                EzdFallbackAdjustmentOperation opClone = CloneFallbackAdjustmentOperation(op);
+                if (opClone != null)
+                {
+                    clone.Operations.Add(opClone);
+                }
+            }
+            foreach (EzdFallbackAdjustmentOperation op in source.SavedOperations)
+            {
+                EzdFallbackAdjustmentOperation opClone = CloneFallbackAdjustmentOperation(op);
+                if (opClone != null)
+                {
+                    clone.SavedOperations.Add(opClone);
+                }
+            }
+            return clone;
+        }
+
+        private EzdFallbackAdjustmentFile LoadFallbackAdjustmentFile(int card)
+        {
+            string adjustPath = GetFallbackAdjustmentFilePathForCurrentFile(card);
+            if (string.IsNullOrWhiteSpace(adjustPath))
+            {
+                return null;
+            }
+
+            string key = GetNormalizedFilePath(adjustPath);
+            lock (_fallbackAdjustmentLock)
+            {
+                EzdFallbackAdjustmentFile cached;
+                if (_fallbackAdjustmentCache.TryGetValue(key, out cached))
+                {
+                    return CloneFallbackAdjustmentFile(cached);
+                }
+            }
+            if (!File.Exists(adjustPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(EzdFallbackAdjustmentFile));
+                using (FileStream fs = new FileStream(adjustPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    EzdFallbackAdjustmentFile data = serializer.Deserialize(fs) as EzdFallbackAdjustmentFile;
+                    if (data != null)
+                    {
+                        EnsureFallbackAdjustmentLists(data);
+                        lock (_fallbackAdjustmentLock)
+                        {
+                            _fallbackAdjustmentCache[key] = CloneFallbackAdjustmentFile(data);
+                        }
+                    }
+                    return CloneFallbackAdjustmentFile(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 读取保存兜底参数失败: {ex.Message}");
+                return null;
+            }
+        }
+        private void RecordFallbackAdjustmentOperation(int card, LCZControlParam param, string targetEntName)
+        {
+            if (card < 0 || card >= currentFilePath.Length || _isReplayingFallbackAdjustments[card])
+            {
+                return;
+            }
+
+            if (param.cmdType != 23 && param.cmdType != 24 && param.cmdType != 25)
+            {
+                return;
+            }
+
+            string filePath = currentFilePath[card];
+            if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(targetEntName))
+            {
+                return;
+            }
+
+            string adjustPath = GetFallbackAdjustmentFilePath(filePath);
+            if (string.IsNullOrWhiteSpace(adjustPath))
+            {
+                return;
+            }
+
+            string key = GetNormalizedFilePath(adjustPath);
+            EzdFallbackAdjustmentOperation operation = new EzdFallbackAdjustmentOperation
+            {
+                CmdType = param.cmdType,
+                EntityName = targetEntName,
+                EntityIndex = param.ind1,
+                DParam1 = param.dParam1,
+                DParam2 = param.dParam2,
+                DParam3 = param.dParam3,
+                DParam4 = param.dParam4,
+                DParam5 = param.dParam5,
+                CreatedTime = DateTime.Now
+            };
+
+            lock (_fallbackAdjustmentLock)
+            {
+                EzdFallbackAdjustmentFile data;
+                if (!_fallbackAdjustmentCache.TryGetValue(key, out data) || data == null)
+                {
+                    data = new EzdFallbackAdjustmentFile
+                    {
+                        EzdFilePath = ResolveFallbackEzdFullPath(filePath),
+                        CardIndex = card,
+                        NeedsReplay = true,
+                        LastUpdatedTime = DateTime.Now,
+                        Operations = new List<EzdFallbackAdjustmentOperation>()
+                    };
+                    _fallbackAdjustmentCache[key] = data;
+                }
+
+                EnsureFallbackAdjustmentLists(data);
+                data.Operations.Add(operation);
+                data.EzdFilePath = ResolveFallbackEzdFullPath(filePath);
+                data.CardIndex = card;
+                data.NeedsReplay = true;
+                data.LastUpdatedTime = DateTime.Now;
+            }
+
+            pendingDeferredSave[card] = true;
+        }
+
+        private bool WriteFallbackAdjustmentFile(int card, string ezdFilePath, bool needsReplay)
+        {
+            string adjustPath = GetFallbackAdjustmentFilePath(ezdFilePath);
+            if (string.IsNullOrWhiteSpace(adjustPath))
+            {
+                return false;
+            }
+
+            string key = GetNormalizedFilePath(adjustPath);
+            EzdFallbackAdjustmentFile snapshot = null;
+            lock (_fallbackAdjustmentLock)
+            {
+                EzdFallbackAdjustmentFile data;
+                if (_fallbackAdjustmentCache.TryGetValue(key, out data))
+                {
+                    snapshot = CloneFallbackAdjustmentFile(data);
+                }
+            }
+            if (snapshot == null && File.Exists(adjustPath))
+            {
+                try
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(EzdFallbackAdjustmentFile));
+                    using (FileStream fs = new FileStream(adjustPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        snapshot = serializer.Deserialize(fs) as EzdFallbackAdjustmentFile;
+                    }
+                }
+                catch
+                {
+                    snapshot = null;
+                }
+            }
+            if (snapshot == null)
+            {
+                return false;
+            }
+
+            EnsureFallbackAdjustmentLists(snapshot);
+            if (snapshot.Operations.Count == 0 && snapshot.SavedOperations.Count == 0)
+            {
+                return File.Exists(adjustPath);
+            }
+
+            snapshot.EzdFilePath = ResolveFallbackEzdFullPath(ezdFilePath);
+            snapshot.CardIndex = card;
+            snapshot.LastUpdatedTime = DateTime.Now;
+
+            if (needsReplay)
+            {
+                if (snapshot.Operations.Count == 0)
+                {
+                    return File.Exists(adjustPath);
+                }
+
+                snapshot.NeedsReplay = true;
+            }
+            else
+            {
+                foreach (EzdFallbackAdjustmentOperation op in snapshot.Operations)
+                {
+                    EzdFallbackAdjustmentOperation opClone = CloneFallbackAdjustmentOperation(op);
+                    if (opClone != null)
+                    {
+                        snapshot.SavedOperations.Add(opClone);
+                    }
+                }
+                snapshot.Operations.Clear();
+                snapshot.NeedsReplay = false;
+                snapshot.LastSavedTime = DateTime.Now;
+            }
+
+            lock (_fallbackAdjustmentLock)
+            {
+                _fallbackAdjustmentCache[key] = CloneFallbackAdjustmentFile(snapshot);
+            }
+
+            try
+            {
+                string dir = Path.GetDirectoryName(adjustPath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                XmlSerializer serializer = new XmlSerializer(typeof(EzdFallbackAdjustmentFile));
+                using (FileStream fs = new FileStream(adjustPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    serializer.Serialize(fs, snapshot);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 写入保存兜底参数失败: {ex.Message}");
+                return false;
+            }
+        }
+        private void MarkFallbackAdjustmentAfterSaveSuccess(int card, string ezdFilePath)
+        {
+            try
+            {
+                WriteFallbackAdjustmentFile(card, ezdFilePath, false);
+            }
+            catch
+            {
+            }
+        }
+        private void MarkFallbackAdjustmentAfterSaveFailure(int card, string ezdFilePath)
+        {
+            try
+            {
+                if (WriteFallbackAdjustmentFile(card, ezdFilePath, true))
+                {
+                    pendingDeferredSave[card] = true;
+                    AddMsg($"卡{card + 1} EZD保存失败，已保留兜底参数，下次加载会尝试恢复: {Path.GetFileName(GetFallbackAdjustmentFilePath(ezdFilePath))}");
+                }
+            }
+            catch
+            {
+            }
+        }
+        private void ClearFallbackAdjustmentFileForPath(string ezdFilePath)
+        {
+            string adjustPath = GetFallbackAdjustmentFilePath(ezdFilePath);
+            if (string.IsNullOrWhiteSpace(adjustPath))
+            {
+                return;
+            }
+
+            try
+            {
+                string key = GetNormalizedFilePath(adjustPath);
+                lock (_fallbackAdjustmentLock)
+                {
+                    _fallbackAdjustmentCache.Remove(key);
+                }
+
+                if (File.Exists(adjustPath))
+                {
+                    File.Delete(adjustPath);
+                    AddMsg($"已清除保存兜底参数: {Path.GetFileName(adjustPath)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"清除保存兜底参数失败: {ex.Message}");
+            }
+        }
+        private void ApplyFallbackAdjustmentsIfAny(int card)
+        {
+            EzdFallbackAdjustmentFile data = LoadFallbackAdjustmentFile(card);
+            if (data == null || data.Operations == null || data.Operations.Count == 0)
+            {
+                return;
+            }
+
+            if (!data.NeedsReplay)
+            {
+                return;
+            }
+
+            int successCount = 0;
+            int failCount = 0;
+            _isReplayingFallbackAdjustments[card] = true;
+            try
+            {
+                foreach (EzdFallbackAdjustmentOperation operation in data.Operations)
+                {
+                    int err = ApplyFallbackAdjustmentOperation(card, operation);
+                    if (err == 0)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                    }
+                }
+            }
+            finally
+            {
+                _isReplayingFallbackAdjustments[card] = false;
+            }
+
+            if (successCount > 0)
+            {
+                pendingDeferredSave[card] = true;
+                AddMsg($"卡{card + 1} 已恢复保存兜底参数: {successCount}步");
+            }
+            if (failCount > 0)
+            {
+                AddMsg($"卡{card + 1} 有{failCount}步保存兜底参数恢复失败");
+            }
+        }
+        private int ApplyFallbackAdjustmentOperation(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            if (operation == null)
+            {
+                return 20;
+            }
+
+            string targetEntName = ResolveFallbackAdjustmentEntityName(card, operation);
+            if (string.IsNullOrWhiteSpace(targetEntName))
+            {
+                return 20;
+            }
+
+            if (string.Equals(targetEntName, "grpEnt", StringComparison.OrdinalIgnoreCase) && !EntityExists(card, "grpEnt"))
+            {
+                return ApplyFallbackAdjustmentToAllSourceEntities(card, operation);
+            }
+
+            return ApplyFallbackAdjustmentToEntityName(card, targetEntName, operation);
+        }
+
+        private string ResolveFallbackAdjustmentEntityName(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            if (!string.IsNullOrWhiteSpace(operation.EntityName))
+            {
+                string entityName = operation.EntityName.Trim();
+                if (EntityExists(card, entityName) || string.Equals(entityName, "grpEnt", StringComparison.OrdinalIgnoreCase))
+                {
+                    return entityName;
+                }
+
+                string sourceName = GetHatchSourceName(entityName);
+                if (!string.IsNullOrWhiteSpace(sourceName) &&
+                    (EntityExists(card, sourceName) || EntityExists(card, GetHatchEntityName(sourceName))))
+                {
+                    return sourceName;
+                }
+            }
+            if (operation.EntityIndex >= 0 && operation.EntityIndex < (strEntNames[card]?.Length ?? 0))
+            {
+                return GetSdkEntityNameForOperation(card, operation.EntityIndex);
+            }
+
+            return null;
+        }
+
+        private int ApplyFallbackAdjustmentToAllSourceEntities(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            string[] sourceNames = GetFallbackReplaySourceNames(card);
+            if (sourceNames.Length == 0)
+            {
+                return 20;
+            }
+
+            int lastErr = 0;
+            foreach (string sourceName in sourceNames)
+            {
+                int err = ApplyFallbackAdjustmentToEntityName(card, sourceName, operation);
+                if (err != 0)
+                {
+                    lastErr = err;
+                    AddMsg($"卡{card + 1} 恢复对象{sourceName}兜底参数失败: {JczLmc.GetErrorText(err)}");
+                }
+            }
+            return lastErr;
+        }
+
+        private string[] GetFallbackReplaySourceNames(int card)
+        {
+            List<string> names = new List<string>();
+            IEnumerable<string> sourceList = sdkEntNames[card];
+            if (sourceList == null)
+            {
+                int count = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                List<string> tempNames = new List<string>();
+                for (int i = 0; i < count; i++)
+                {
+                    tempNames.Add(JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i));
+                }
+                sourceList = tempNames;
+            }
+
+            foreach (string sdkName in sourceList)
+            {
+                string sourceName = GetHatchSourceName(sdkName);
+                if (string.IsNullOrWhiteSpace(sourceName) || string.Equals(sourceName, "grpEnt", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                if (sourceName.StartsWith(PreviewAnchorEntityPrefix, StringComparison.OrdinalIgnoreCase) ||
+                    sourceName.StartsWith(TransformPairEntityPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if ((EntityExists(card, sourceName) || EntityExists(card, GetHatchEntityName(sourceName))) &&
+                    !names.Any(name => string.Equals(name, sourceName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    names.Add(sourceName);
+                }
+            }
+            return names.ToArray();
+        }
+
+        private int ApplyFallbackAdjustmentToEntityName(int card, string entityName, EzdFallbackAdjustmentOperation operation)
+        {
+            switch (operation.CmdType)
+            {
+                case 23:
+                    return RotateLogicalEntity(card, entityName, operation.DParam3, operation.DParam4, operation.DParam5);
+                case 24:
+                    double moveX = operation.DParam1;
+                    double moveY = operation.DParam2;
+                    return MoveLogicalEntity(card, entityName, ref moveX, ref moveY);
+                case 25:
+                    return ScaleLogicalEntity(card, entityName, operation.DParam1, operation.DParam2,
+                                              operation.DParam3, operation.DParam4);
+                default:
+                    return 20;
             }
         }
         private int ScaleLogicalEntity(int card, string entName, double centerX, double centerY, double scaleX, double scaleY)
@@ -3897,7 +4693,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 没有可保存的原文件路径，请先加载文件或指定保存路径");
             }
         }
-
         /// <summary>
         /// 获取当前板卡的文件路径
         /// </summary>
@@ -3974,7 +4769,6 @@ namespace BJJCZ_BaseDevelop
                         foundAny = true;
                     }
                 }
-
                 if (foundAny && hp.bEnableHatch != 0)
                 {
                     return;
@@ -4030,6 +4824,39 @@ namespace BJJCZ_BaseDevelop
             {
                 AddMsg($"卡{card + 1} 获取填充参数异常: {ex.Message}");
             }
+        }
+        private bool TryGetEffectiveHatchParamForCopy(int card, string sourceBaseName, string sourceHatchName, ref HatchParam hp)
+        {
+            if (string.IsNullOrWhiteSpace(sourceHatchName) || !EntityExists(card, sourceHatchName))
+            {
+                return false;
+            }
+
+            int requestedIndex = Math.Max(1, Math.Min(3, hp.nParamIndex));
+            HatchParam liveHp = hp;
+            if (TryReadHatchParam(card, sourceHatchName, requestedIndex, ref liveHp) && liveHp.bEnableHatch != 0)
+            {
+                hp = liveHp;
+                return true;
+            }
+
+            for (int paramIndex = 1; paramIndex <= 3; paramIndex++)
+            {
+                if (paramIndex == requestedIndex)
+                {
+                    continue;
+                }
+
+                liveHp = hp;
+                if (TryReadHatchParam(card, sourceHatchName, paramIndex, ref liveHp) && liveHp.bEnableHatch != 0)
+                {
+                    hp = liveHp;
+                    return true;
+                }
+            }
+
+            GetHatchParamForEntity(card, sourceHatchName, ref hp);
+            return hp.bEnableHatch != 0;
         }
         private bool TryGetPersistedHatchParam(int card, string entName, ref HatchParam hp)
         {
@@ -4154,7 +4981,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     AddMsg($"卡{card+1} 对象 {entName} 无填充参数，使用默认值");
                 }
-            }
+        }
             catch (Exception ex)
             {
                 AddMsg($"卡{card+1} 获取填充参数异常: {ex.Message}");
@@ -4269,7 +5096,6 @@ namespace BJJCZ_BaseDevelop
                 SendResponse(param);
             }
         }
-
         private void SendResponse(LCZControlParam param)
         {
             string cmdDesc = GetCmdDescription(param.cmdType);
@@ -4678,43 +5504,189 @@ namespace BJJCZ_BaseDevelop
             return new Size(width, height);
 
         }
+        private void ApplyFastMovePreview(int card, double moveX, double moveY)
+        {
+            if (card < 0 || card >= cachedTransparentRoute.Length || cachedTransparentRoute[card] == null)
+            {
+                return;
+            }
+
+            try
+            {
+                CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+                RectangleF overlayBounds = _fastPreviewOverlayBounds[card].HasValue
+                    ? _fastPreviewOverlayBounds[card].Value
+                    : ((previewAnchorWorldRects[card].Width > 0 && previewAnchorWorldRects[card].Height > 0)
+                        ? previewAnchorWorldRects[card]
+                        : GetRoutePreviewWorldBounds(card));
+
+                RectangleF movedBounds = new RectangleF(
+                    overlayBounds.X + (float)moveX,
+                    overlayBounds.Y + (float)moveY,
+                    overlayBounds.Width,
+                    overlayBounds.Height);
+
+                Bitmap fastOverlay = (Bitmap)cachedTransparentRoute[card].Clone();
+                Bitmap oldFastOverlay = _fastPreviewOverlay[card];
+                _fastPreviewOverlay[card] = fastOverlay;
+                _fastPreviewOverlayBounds[card] = movedBounds;
+                targetBox.SetOverlayImage(fastOverlay, movedBounds);
+                if (oldFastOverlay != null && !ReferenceEquals(oldFastOverlay, fastOverlay))
+                {
+                    oldFastOverlay.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"快速移动预览失败: {ex.Message}");
+            }
+        }
+        private void ClearFastPreviewOverlay(int card, Image replacement)
+        {
+            if (card < 0 || card >= _fastPreviewOverlay.Length)
+            {
+                return;
+            }
+
+            Bitmap oldFastOverlay = _fastPreviewOverlay[card];
+            _fastPreviewOverlay[card] = null;
+            _fastPreviewOverlayBounds[card] = null;
+            if (oldFastOverlay != null && !ReferenceEquals(oldFastOverlay, replacement))
+            {
+                oldFastOverlay.Dispose();
+            }
+        }
+        private void RefreshPreviewBase(int card)
+        {
+            if (card < 0 || card >= originalImage.Length)
+            {
+                return;
+            }
+
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+            try
+            {
+                EnsurePreviewBackgroundLoaded(card);
+                RectangleF bgBounds = GetBackgroundWorldBounds(card);
+                RectangleF displayBounds = BuildPreviewViewBoundsFromBackground(bgBounds);
+                RectangleF routeBounds = GetRoutePreviewWorldBounds(card);
+                previewAnchorWorldRects[card] = routeBounds;
+                previewGuardWorldRects[card] = BuildPreviewGuardBounds(routeBounds);
+                previewAnchorReady[card] = true;
+
+                if (targetBox.IsAutoFitEnabled)
+                {
+                    targetBox.SetWorldViewBounds(displayBounds);
+                }
+
+                if (originalImage[card] != null)
+                {
+                    targetBox.SetWorldImage(originalImage[card],
+                        bgBounds.Left, bgBounds.Right,
+                        bgBounds.Top, bgBounds.Bottom,
+                        autoFit: false);
+                }
+
+                targetBox.SetCanvasBounds(EzcadCanvasBounds);
+                targetBox.SetPreviewWorldEntities(null);
+                targetBox.Invalidate();
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"刷新预览底图失败: {ex.Message}");
+            }
+        }
+        private void EnsurePreviewBackgroundLoaded(int card)
+        {
+            if (originalImage[card] != null)
+            {
+                return;
+            }
+
+            string bgName = (card == 0) ? "sourceBGImgA.jpg" : "sourceBGImgB.jpg";
+            string bgFile = Path.GetFullPath(Path.Combine(Application.StartupPath, "..", "data", bgName));
+            if (!File.Exists(bgFile))
+            {
+                string relativeBgFile = (card == 0) ? @"..\data\sourceBGImgA.jpg" : @"..\data\sourceBGImgB.jpg";
+                bgFile = Path.GetFullPath(relativeBgFile);
+            }
+
+            if (File.Exists(bgFile))
+            {
+                using (FileStream fs = new FileStream(bgFile, FileMode.Open, FileAccess.Read))
+                {
+                    originalImage[card] = new Bitmap(fs);
+                    originalImage[card].RotateFlip(RotateFlipType.RotateNoneFlipX);
+                }
+                AddMsg($"卡{card + 1} 背景图加载成功: {bgFile}");
+            }
+            else
+            {
+                AddMsg($"卡{card + 1} 背景图不存在: {bgFile}");
+            }
+        }
+        private void ScheduleRoutePreviewRefresh(int card)
+        {
+            ScheduleRoutePreviewRefresh(card, RoutePreviewRefreshDelayMs);
+        }
+
+        private void ScheduleRoutePreviewRefresh(int card, int delayMs)
+        {
+            if (card < 0 || card >= _pendingRoutePreviewRefresh.Length)
+            {
+                return;
+            }
+
+            _pendingRoutePreviewRefresh[card] = true;
+            if (_routePreviewRefreshTimer == null)
+            {
+                _routePreviewRefreshTimer = new System.Windows.Forms.Timer();
+                _routePreviewRefreshTimer.Tick += (s, e) => FlushScheduledRoutePreviewRefresh();
+            }
+
+            _routePreviewRefreshTimer.Interval = Math.Max(1, delayMs);
+            _routePreviewRefreshTimer.Stop();
+            _routePreviewRefreshTimer.Start();
+        }
+
+        private void FlushScheduledRoutePreviewRefresh()
+        {
+            if (_routePreviewRefreshTimer != null)
+            {
+                _routePreviewRefreshTimer.Stop();
+            }
+
+            for (int card = 0; card < _pendingRoutePreviewRefresh.Length; card++)
+            {
+                if (!_pendingRoutePreviewRefresh[card])
+                {
+                    continue;
+                }
+
+                _pendingRoutePreviewRefresh[card] = false;
+                RefreshPreview(card);
+            }
+        }
         private void RefreshPreview(int card)
         {
             if(_isSavingEzd)
             {
                 return;
             }
+            lock (_previewSaveLock)
+            {
+                if (_isSavingEzd)
+                {
+                    return;
+                }
+
             // 如果正在模拟模式，可以跳过（按需保留）
             // if (bSimulateMode[card]) return;
             CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
             try
             {
                 // 1. 加载背景图像（如果尚未加载）。使用程序目录解析，避免主程序拉起时工作目录变化导致相对路径失效。
-                if (originalImage[card] == null)
-                {
-                    string bgName = (card == 0) ? "sourceBGImgA.jpg" : "sourceBGImgB.jpg";
-                    string bgFile = Path.GetFullPath(Path.Combine(Application.StartupPath, "..", "data", bgName));
-                    if (!File.Exists(bgFile))
-                    {
-                        string relativeBgFile = (card == 0) ? @"..\data\sourceBGImgA.jpg" : @"..\data\sourceBGImgB.jpg";
-                        bgFile = Path.GetFullPath(relativeBgFile);
-                    }
-
-                    if (File.Exists(bgFile))
-                    {
-                        using (FileStream fs = new FileStream(bgFile, FileMode.Open, FileAccess.Read))
-                        {
-                            originalImage[card] = new Bitmap(fs);
-                            originalImage[card].RotateFlip(RotateFlipType.RotateNoneFlipX);
-                        }
-                     //  originalImage[card] = new Bitmap(bgFile);
-                        AddMsg($"卡{card + 1} 背景图加载成功: {bgFile}");
-                    }
-                    else
-                    {
-                        AddMsg($"卡{card + 1} 背景图不存在: {bgFile}");
-                    }
-                }
+                EnsurePreviewBackgroundLoaded(card);
 
                 // 背景图决定预览框当前显示哪一块视野；红框路径预览保留一个更大的、类似 EZCAD 画布的激光范围。
                 RectangleF bgBounds = GetBackgroundWorldBounds(card);
@@ -4758,9 +5730,15 @@ namespace BJJCZ_BaseDevelop
                             previewSize.Height);
                         if (routeImg != null)
                         {
-                            routeImg.Save("tst1_src.png");
+                            if (PreviewDebugImageSaveEnabled)
+                            {
+                                routeImg.Save("tst1_src.png");
+                            }
                             routeImg = CropPreviewToAnchorBounds(card, routeImg);
-                            routeImg.Save("tst1_crop.png");
+                            if (PreviewDebugImageSaveEnabled)
+                            {
+                                routeImg.Save("tst1_crop.png");
+                            }
                         }
                     }
                     finally
@@ -4785,13 +5763,23 @@ namespace BJJCZ_BaseDevelop
                 if (routeImg == null)
                 {
                     targetBox.SetOverlayImage(null, null);
+                    ClearFastPreviewOverlay(card, null);
                     return;
                 }
 
                 // SDK每次返回的新图内容可能变化但尺寸相同，不能只按宽高复用缓存。
-                if (cachedTransparentRoute[card] != null)
+                /*if (cachedTransparentRoute[card] != null)
                     cachedTransparentRoute[card].Dispose();
 
+                cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);*/
+                if (cachedTransparentRoute[card] != null)
+                {
+                    targetBox.SetOverlayImage(null, null);
+                    targetBox.Invalidate();
+
+                    cachedTransparentRoute[card].Dispose();
+                    cachedTransparentRoute[card] = null;
+                }
                 cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);
                 cachedRouteWidth[card] = routeImg.Width;
                 cachedRouteHeight[card] = routeImg.Height;
@@ -4800,7 +5788,7 @@ namespace BJJCZ_BaseDevelop
                 if (routeImg != cachedTransparentRoute[card])  // 避免重复释放
                     routeImg.Dispose();
 
-                if (cachedTransparentRoute[card] != null)
+                if (PreviewDebugImageSaveEnabled && cachedTransparentRoute[card] != null)
                 {
                     cachedTransparentRoute[card].Save("tst1.png");
                 }
@@ -4813,19 +5801,45 @@ namespace BJJCZ_BaseDevelop
                 // 最终红框使用SDK预览图，保证轮廓/填充/旋转/缩放与EZCAD的显示一致。
                 targetBox.SetCanvasBounds(EzcadCanvasBounds);
                 targetBox.SetPreviewWorldEntities(null);
-                targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
-                
+                //targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
+                Bitmap overlayForBox = null;
+                if (cachedTransparentRoute[card] != null)
+                {
+                    overlayForBox = (Bitmap)cachedTransparentRoute[card].Clone();
+                }
+
+                targetBox.SetOverlayImage(overlayForBox, overlayBounds);
+                ClearFastPreviewOverlay(card, overlayForBox);
+
             }
             catch (Exception ex)
             {
                 AddMsg($"刷新预览失败: {ex.Message}");
             }
+            }
         }
-        private void InvalidateRoutePreviewCache(int card)
+        /*private void InvalidateRoutePreviewCache(int card)
         {
             if (card < 0 || card >= cachedTransparentRoute.Length)
             {
                 return;
+            }
+
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+
+            Action clearOverlay = () =>
+            {
+                targetBox.SetOverlayImage(null, null);
+                targetBox.Invalidate();
+            };
+
+            if (targetBox.InvokeRequired)
+            {
+                targetBox.BeginInvoke(clearOverlay);
+            }
+            else
+            {
+                clearOverlay();
             }
 
             if (cachedTransparentRoute[card] != null)
@@ -4836,7 +5850,50 @@ namespace BJJCZ_BaseDevelop
 
             cachedRouteWidth[card] = 0;
             cachedRouteHeight[card] = 0;
+        }*/
+        private void InvalidateRoutePreviewCache(int card)
+        {
+            if (card < 0 || card >= cachedTransparentRoute.Length)
+            {
+                return;
+            }
+
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+
+            Action clearOverlay = () =>
+            {
+                if (targetBox.IsDisposed)
+                {
+                    return;
+                }
+
+                targetBox.SetOverlayImage(null, null);
+                targetBox.Invalidate();
+            };
+
+            if (!targetBox.IsDisposed && targetBox.IsHandleCreated)
+            {
+                if (targetBox.InvokeRequired)
+                {
+                    targetBox.Invoke(clearOverlay);
+                }
+                else
+                {
+                    clearOverlay();
+                }
+            }
+            ClearFastPreviewOverlay(card, null);
+
+            if (cachedTransparentRoute[card] != null)
+            {
+                cachedTransparentRoute[card].Dispose();
+                cachedTransparentRoute[card] = null;
+            }
+
+            cachedRouteWidth[card] = 0;
+            cachedRouteHeight[card] = 0;
         }
+
         // 辅助方法：将白色背景变为透明
         /*private Bitmap MakeTransparentBackground(Bitmap img)
         {
@@ -4858,7 +5915,7 @@ namespace BJJCZ_BaseDevelop
                     else
                         transparent.SetPixel(x, y, c);
                 }
-            }
+        }
             return transparent;
         }*/
 
@@ -4893,7 +5950,6 @@ namespace BJJCZ_BaseDevelop
                     previewAnchorSourceSizes[card] = sourceSize;
                 }
             }
-
             if (cropRect.Width <= 0 || cropRect.Height <= 0)
             {
                 return img;
@@ -4959,7 +6015,6 @@ namespace BJJCZ_BaseDevelop
                     if (y > maxY) maxY = y;
                 }
             }
-
             if (maxX <= minX || maxY <= minY)
             {
                 return Rectangle.Empty;
@@ -5002,6 +6057,7 @@ namespace BJJCZ_BaseDevelop
         private Bitmap MakeTransparentBackground(Bitmap img)
         {
             if (img == null) return null;
+            const byte overlayAlpha = 128;
 
             Bitmap source = new Bitmap(img.Width, img.Height, PixelFormat.Format24bppRgb);
             using (Graphics g = Graphics.FromImage(source))
@@ -5049,15 +6105,22 @@ namespace BJJCZ_BaseDevelop
                                     dstRow[x * 4] = 20;
                                     dstRow[x * 4 + 1] = 25;
                                     dstRow[x * 4 + 2] = 255;
-                                    dstRow[x * 4 + 3] = redAlpha;
+                                    //dstRow[x * 4 + 3] = redAlpha;
+                                    dstRow[x * 4 + 3] = overlayAlpha;
                                     continue;
+
+                                    dstRow[x * 4] = 0;
+                                    dstRow[x * 4 + 1] = 0;
+                                    dstRow[x * 4 + 2] = 0;
+                                    dstRow[x * 4 + 3] = 0; //不是红色加工线的像素全部透明，避免SDK预览图的杂色叠加到背景图上
                                 }
 
                                 byte alpha = ComputePreviewNonWhiteAlpha(r, g, b);
                                 dstRow[x * 4] = alpha == 0 ? (byte)0 : b;
                                 dstRow[x * 4 + 1] = alpha == 0 ? (byte)0 : g;
                                 dstRow[x * 4 + 2] = alpha == 0 ? (byte)0 : r;
-                                dstRow[x * 4 + 3] = alpha;
+                                //dstRow[x * 4 + 3] = alpha;
+                                dstRow[x * 4 + 3] = alpha == 0 ? (byte)0 : overlayAlpha;
                             }
                         }
                     }
@@ -5070,7 +6133,9 @@ namespace BJJCZ_BaseDevelop
                 source.Dispose();
             }
 
-            return ThickenPreviewOverlay(transparent);
+            //return ThickenPreviewOverlay(transparent);
+            return transparent;
+
         }
 
         private bool IsPreviewAnchorPixelOnCropBorder(int x, int y, int width, int height, byte r, byte g, byte b)
@@ -5317,11 +6382,26 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"导出预览图 -> {name}");
             }
         }
-
         private void menuControl_Click(object sender, EventArgs e) { }
 
+        private void FlushPendingFallbackAdjustmentsOnExit()
+        {
+            for (int card = 0; card < pendingDeferredSave.Length; card++)
+            {
+                if (!pendingDeferredSave[card] || string.IsNullOrWhiteSpace(currentFilePath[card]))
+                {
+                    continue;
+                }
+
+                if (WriteFallbackAdjustmentFile(card, currentFilePath[card], true))
+                {
+                    AddMsg($"卡{card + 1} 退出前已保存兜底参数: {Path.GetFileName(GetFallbackAdjustmentFilePath(currentFilePath[card]))}");
+                }
+            }
+        }
         private void menuExitApp_Click(object sender, EventArgs e)
         {
+            FlushPendingFallbackAdjustmentsOnExit();
             try
             {
                 if (!bSimulateMode[0] && !bSimulateMode[1])
@@ -5334,6 +6414,7 @@ namespace BJJCZ_BaseDevelop
 
         private void JCZServer_FormClosing(object sender, FormClosingEventArgs e)
         {
+            FlushPendingFallbackAdjustmentsOnExit();
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 e.Cancel = true;
@@ -5358,7 +6439,6 @@ namespace BJJCZ_BaseDevelop
                 // AddMsg("已最小化到系统托盘");
             }
         }
-
         /// <summary>
         /// 向客户端发送请求嵌入的消息
         /// </summary>
@@ -5387,7 +6467,6 @@ namespace BJJCZ_BaseDevelop
                // AddMsg($"发送嵌入请求失败: {ex.Message}");
             }
         }
-
         private void Win_Reset_Click(object sender, EventArgs e)
         {
             ResetLayoutToDefault();
@@ -5415,7 +6494,6 @@ namespace BJJCZ_BaseDevelop
                 this.BeginInvoke(new Action(() => ResetLayoutToDefault()));
             }
         }
-
         private void ResetLayoutToDefault()
         {
             if (this.InvokeRequired)
@@ -5454,6 +6532,442 @@ namespace BJJCZ_BaseDevelop
                 iEntIndices[currentCard] = e.RowIndex;
         }
 
+        private void btCopyEnt_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            string sourceName;
+            if (!CanEditSelectedEntity(card, out sourceName))
+            {
+                return;
+            }
+
+            if (!PrepareForEntityEdit(card, "复制对象"))
+            {
+                return;
+            }
+
+            string sourceBaseName = GetHatchSourceName(sourceName);
+            string sourceHatchName = GetHatchEntityName(sourceBaseName);
+            string newBaseName = GenerateCopyEntityBaseName(card, sourceBaseName);
+            string newHatchName = GetHatchEntityName(newBaseName);
+            bool sourceExists = EntityExists(card, sourceBaseName);
+            bool hatchExists = EntityExists(card, sourceHatchName);
+            string copySourceName = sourceExists ? sourceBaseName : sourceName;
+            List<string> copiedNames = new List<string>();
+
+            try
+            {
+                int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], copySourceName, newBaseName);
+                if (copyErr != 0)
+                {
+                    AddMsg($"卡{card + 1} 复制对象 {copySourceName} 失败: {JczLmc.GetErrorText(copyErr)}");
+                    return;
+                }
+                copiedNames.Add(newBaseName);
+
+                if (hatchExists)
+                {
+                    HatchParam hp = new HatchParam(1);
+                    if (!TryGetEffectiveHatchParamForCopy(card, sourceBaseName, sourceHatchName, ref hp))
+                    {
+                        AddMsg($"卡{card + 1} 复制对象 {sourceBaseName} 的填充失败: 无法读取有效填充参数");
+                        foreach (string copiedName in copiedNames)
+                        {
+                            DeleteEntityIfExists(card, copiedName);
+                        }
+                        DeleteEntityIfExists(card, newHatchName);
+                        return;
+                    }
+
+                    if (!ApplyHatchPreservingSource(card, newBaseName, hp))
+                    {
+                        AddMsg($"卡{card + 1} 复制对象 {sourceBaseName} 的填充失败，已回滚复制对象");
+                        foreach (string copiedName in copiedNames)
+                        {
+                            DeleteEntityIfExists(card, copiedName);
+                        }
+                        DeleteEntityIfExists(card, newHatchName);
+                        return;
+                    }
+                    copiedNames.Add(newHatchName);
+                }
+
+                OffsetCopiedEntityAfterCopy(card, newBaseName);
+
+                pendingDeferredSave[card] = true;
+                RemoveEntityScaleState(card, newBaseName);
+                RemoveEntityScaleState(card, newHatchName);
+                ReloadEntityInfo(card);
+                SelectEntityBySdkName(card, newBaseName);
+                InvalidateRoutePreviewCache(card);
+                RefreshPreview(card);
+                AddMsg($"卡{card + 1} 已复制对象 {sourceBaseName} -> {newBaseName}");
+            }
+            catch (Exception ex)
+            {
+                foreach (string copiedName in copiedNames)
+                {
+                    DeleteEntityIfExists(card, copiedName);
+                }
+                DeleteEntityIfExists(card, newHatchName);
+                AddMsg($"卡{card + 1} 复制对象异常: {ex.Message}");
+            }
+        }
+        private void OffsetCopiedEntityAfterCopy(int card, string entName)
+        {
+            string[] names = GetLogicalEntityNames(card, entName);
+            if (names.Length == 0)
+            {
+                return;
+            }
+
+            foreach (string name in names)
+            {
+                double moveX = CopyInitialOffsetDistance;
+                double moveY = CopyInitialOffsetDistance;
+                int err = JczLmc.lmc1_MoveEnt(phyCardSN[card], name, ref moveX, ref moveY);
+                if (err != 0)
+                {
+                    AddMsg($"卡{card + 1} 对象 {name} 复制后偏移失败: {JczLmc.GetErrorText(err)}");
+                }
+            }
+        }
+        private void DetachCopiedEntityFromSource(int card, string entName)
+        {
+            string[] names = GetLogicalEntityNames(card, entName);
+            if (names.Length == 0)
+            {
+                return;
+            }
+
+            foreach (string name in names)
+            {
+                double moveX = CopyDetachMoveDistance;
+                double moveY = 0;
+                int err = JczLmc.lmc1_MoveEnt(phyCardSN[card], name, ref moveX, ref moveY);
+                if (err != 0)
+                {
+                    AddMsg($"卡{card + 1} 对象 {name} 复制脱钩预移动失败: {JczLmc.GetErrorText(err)}");
+                }
+            }
+
+            foreach (string name in names)
+            {
+                double moveX = -CopyDetachMoveDistance;
+                double moveY = 0;
+                int err = JczLmc.lmc1_MoveEnt(phyCardSN[card], name, ref moveX, ref moveY);
+                if (err != 0)
+                {
+                    AddMsg($"卡{card + 1} 对象 {name} 复制脱钩回移失败: {JczLmc.GetErrorText(err)}");
+                }
+            }
+        }
+        private void btDeleteEnt_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            string sourceName;
+            if (!CanEditSelectedEntity(card, out sourceName))
+            {
+                return;
+            }
+
+            if (!PrepareForEntityEdit(card, "删除对象"))
+            {
+                return;
+            }
+
+            string sourceBaseName = GetHatchSourceName(sourceName);
+            string[] names = GetLogicalEntityNames(card, sourceBaseName);
+            if (names.Length == 0)
+            {
+                AddMsg($"卡{card + 1} 删除失败: 找不到对象 {sourceBaseName}");
+                return;
+            }
+
+            DetachCopiedEntityFromSource(card, sourceBaseName);
+            DeleteLastUndoBackups(card);
+            List<string> backupNames = new List<string>();
+            List<int> originalPenNos = new List<int>();
+            List<HatchParam> originalHatchParams = new List<HatchParam>();
+            List<bool> hasOriginalHatchParams = new List<bool>();
+            string stamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+
+            try
+            {
+                if (!EnsureHiddenContourPen(card))
+                {
+                    AddMsg($"卡{card + 1} 删除前创建隐藏备份失败: 隐藏笔号不可用");
+                    return;
+                }
+
+                for (int i = 0; i < names.Length; i++)
+                {
+                    string name = names[i];
+                    string backupName = GenerateUniqueEntityName(card, DeletedEntityBackupPrefix + card + "_" + stamp + "_" + i);
+                    int penNo = GetEntityPenNumber(card, name);
+                    HatchParam originalHatchParam = new HatchParam(1);
+                    bool hasHatchParam = IsGeneratedHatchEntity(name) && TryReadHatchParam(card, name, 1, ref originalHatchParam);
+                    int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], name, backupName);
+                    if (copyErr != 0)
+                    {
+                        AddMsg($"卡{card + 1} 删除前备份对象 {name} 失败: {JczLmc.GetErrorText(copyErr)}");
+                        foreach (string backup in backupNames)
+                        {
+                            DeleteEntityIfExists(card, backup);
+                        }
+                        return;
+                    }
+
+                    if (hasHatchParam)
+                    {
+                        HideHatchBackupEntity(card, backupName, originalHatchParam);
+                    }
+                    else
+                    {
+                        ApplyPenToEntity(card, backupName, HiddenContourPenNo);
+                    }
+                    backupNames.Add(backupName);
+                    originalPenNos.Add(penNo);
+                    originalHatchParams.Add(originalHatchParam);
+                    hasOriginalHatchParams.Add(hasHatchParam);
+                }
+
+                foreach (string name in names.Reverse())
+                {
+                    if (!DeleteEntityIfExists(card, name))
+                    {
+                        AddMsg($"卡{card + 1} 删除对象 {name} 失败");
+                        return;
+                    }
+                    RemoveEntityScaleState(card, name);
+                }
+
+                lastDeletedEntity[card] = new DeletedEntityUndo
+                {
+                    Card = card,
+                    PreviousIndex = iEntIndices[card],
+                    DisplayName = sourceBaseName,
+                    OriginalNames = names,
+                    BackupNames = backupNames.ToArray(),
+                    OriginalPenNos = originalPenNos.ToArray(),
+                    OriginalHatchParams = originalHatchParams.ToArray(),
+                    HasOriginalHatchParams = hasOriginalHatchParams.ToArray()
+                };
+
+                pendingDeferredSave[card] = true;
+                ReloadEntityInfo(card);
+                SelectEntityByIndex(card, Math.Min(lastDeletedEntity[card].PreviousIndex, nEntNums[card] - 1));
+                InvalidateRoutePreviewCache(card);
+                RefreshPreview(card);
+                UpdateUndoDeleteButtonState();
+                AddMsg($"卡{card + 1} 已删除对象 {sourceBaseName}，可点击撤回删除恢复");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 删除对象异常: {ex.Message}");
+            }
+        }
+        private void btUndoDeleteEnt_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            DeletedEntityUndo undo = lastDeletedEntity[card];
+            if (undo == null || undo.BackupNames == null || undo.OriginalNames == null)
+            {
+                AddMsg($"卡{card + 1} 没有可撤回的删除操作");
+                return;
+            }
+
+            if (!PrepareForEntityEdit(card, "撤回删除"))
+            {
+                return;
+            }
+
+            List<string> restoredNames = new List<string>();
+            try
+            {
+                for (int i = 0; i < undo.OriginalNames.Length; i++)
+                {
+                    string originalName = undo.OriginalNames[i];
+                    string backupName = undo.BackupNames.Length > i ? undo.BackupNames[i] : null;
+                    if (string.IsNullOrWhiteSpace(backupName) || !EntityExists(card, backupName))
+                    {
+                        AddMsg($"卡{card + 1} 撤回删除失败: 找不到备份 {backupName}");
+                        return;
+                    }
+
+                    if (EntityExists(card, originalName))
+                    {
+                        AddMsg($"卡{card + 1} 撤回删除失败: 对象 {originalName} 已存在");
+                        return;
+                    }
+
+                    int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], backupName, originalName);
+                    if (copyErr != 0)
+                    {
+                        AddMsg($"卡{card + 1} 撤回删除恢复 {originalName} 失败: {JczLmc.GetErrorText(copyErr)}");
+                        foreach (string restoredName in restoredNames)
+                        {
+                            DeleteEntityIfExists(card, restoredName);
+                        }
+                        return;
+                    }
+
+                    if (undo.OriginalPenNos != null && undo.OriginalPenNos.Length > i && undo.OriginalPenNos[i] >= 0)
+                    {
+                        ApplyPenToEntity(card, originalName, undo.OriginalPenNos[i]);
+                    }
+
+                    if (undo.HasOriginalHatchParams != null && undo.HasOriginalHatchParams.Length > i &&
+                        undo.HasOriginalHatchParams[i] && undo.OriginalHatchParams != null && undo.OriginalHatchParams.Length > i)
+                    {
+                        SetHatchEntParam2ForEntity(card, originalName, undo.OriginalHatchParams[i]);
+                        CacheHatchParam(card, originalName, undo.OriginalHatchParams[i]);
+                    }
+
+                    restoredNames.Add(originalName);
+                }
+
+                foreach (string backupName in undo.BackupNames)
+                {
+                    DeleteEntityIfExists(card, backupName);
+                }
+
+                lastDeletedEntity[card] = null;
+                pendingDeferredSave[card] = true;
+                ReloadEntityInfo(card);
+                SelectEntityBySdkName(card, undo.OriginalNames[0]);
+                InvalidateRoutePreviewCache(card);
+                RefreshPreview(card);
+                UpdateUndoDeleteButtonState();
+                AddMsg($"卡{card + 1} 已撤回删除对象 {undo.DisplayName}");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 撤回删除异常: {ex.Message}");
+            }
+        }
+        private bool CanEditSelectedEntity(int card, out string sourceName)
+        {
+            sourceName = null;
+            if (card < 0 || card >= iEntIndices.Length || iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 请先选择对象");
+                return false;
+            }
+
+            sourceName = GetSdkEntityNameForOperation(card, iEntIndices[card]);
+            if (string.IsNullOrWhiteSpace(sourceName) || !EntityExists(card, sourceName))
+            {
+                AddMsg($"卡{card + 1} 当前选中对象不存在，已取消操作");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool PrepareForEntityEdit(int card, string actionName)
+        {
+            if (bInMark[card])
+            {
+                AddMsg($"卡{card + 1} 正在加工，暂不能{actionName}");
+                return false;
+            }
+
+            if (bInRed[card])
+            {
+                StopRedPreview(card, $"{actionName}前停止红光预览");
+                WaitMarkIdle(card, 1000);
+            }
+
+            CleanupPreviewAnchorEntities(card);
+            CleanupTransformPairEntities(card);
+            return true;
+        }
+
+        private string GenerateCopyEntityBaseName(int card, string sourceBaseName)
+        {
+            string baseName = string.IsNullOrWhiteSpace(sourceBaseName) ? "copy" : sourceBaseName.Trim();
+            string prefix = baseName + "_copy";
+            for (int i = 1; i < 1000; i++)
+            {
+                string candidate = i == 1 ? prefix : prefix + i.ToString();
+                if (!EntityExists(card, candidate) && !EntityExists(card, GetHatchEntityName(candidate)))
+                {
+                    return candidate;
+                }
+            }
+            return GenerateUniqueEntityName(card, prefix + DateTime.Now.ToString("HHmmss"));
+        }
+
+        private string GenerateUniqueEntityName(int card, string prefix)
+        {
+            string safePrefix = string.IsNullOrWhiteSpace(prefix) ? "ent" : prefix.Trim();
+            for (int i = 0; i < 1000; i++)
+            {
+                string candidate = i == 0 ? safePrefix : safePrefix + "_" + i.ToString();
+                if (!EntityExists(card, candidate))
+                {
+                    return candidate;
+                }
+            }
+            return safePrefix + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+        }
+
+        private void DeleteLastUndoBackups(int card)
+        {
+            DeletedEntityUndo undo = lastDeletedEntity[card];
+            if (undo != null && undo.BackupNames != null)
+            {
+                foreach (string backupName in undo.BackupNames)
+                {
+                    DeleteEntityIfExists(card, backupName);
+                }
+            }
+            lastDeletedEntity[card] = null;
+            UpdateUndoDeleteButtonState();
+        }
+
+        private void UpdateUndoDeleteButtonState()
+        {
+            if (btUndoDeleteEnt != null && currentCard >= 0 && currentCard < lastDeletedEntity.Length)
+            {
+                btUndoDeleteEnt.Enabled = lastDeletedEntity[currentCard] != null;
+            }
+        }
+        private void SelectEntityByIndex(int card, int index)
+        {
+            if (dgvEnt == null || index < 0 || index >= (strEntNames[card]?.Length ?? 0))
+            {
+                iEntIndices[card] = -1;
+                return;
+            }
+
+            iEntIndices[card] = index;
+            dgvEnt.ClearSelection();
+            dgvEnt.Rows[index].Selected = true;
+            dgvEnt.CurrentCell = dgvEnt.Rows[index].Cells[1];
+            if (index >= 0 && index < dgvEnt.Rows.Count)
+            {
+                dgvEnt.FirstDisplayedScrollingRowIndex = index;
+            }
+        }
+        private void SelectEntityBySdkName(int card, string sdkName)
+        {
+            if (sdkEntNames[card] == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < sdkEntNames[card].Length; i++)
+            {
+                if (string.Equals(sdkEntNames[card][i], sdkName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(GetHatchSourceName(sdkEntNames[card][i]), sdkName, StringComparison.OrdinalIgnoreCase))
+                {
+                    SelectEntityByIndex(card, i);
+                    return;
+                }
+            }
+        }
         private void btRenameEnt_Click(object sender, EventArgs e)
         {
             int card = currentCard;
@@ -5479,41 +6993,43 @@ namespace BJJCZ_BaseDevelop
              ReloadEntityInfo(card);
              InvalidateRoutePreviewCache(card);
              RefreshPreview(card);
-         }*/   //原代码不管SDK是否有grpEnt，只要复选框变化直接就发case 28 命令    
+         }   //原代码不管SDK是否有grpEnt，只要复选框变化直接就发case 28 命令    */
 
-        private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
+        private void btGroupEnt_Click(object sender, EventArgs e)
         {
-            if (syncingEntGroupState)
+            ExecuteUserGroupCommand(true);
+        }
+
+        private void btUnGroupEnt_Click(object sender, EventArgs e)
+        {
+            ExecuteUserGroupCommand(false);
+        }
+
+        private void ExecuteUserGroupCommand(bool group)
+        {
+            int card = currentCard;
+
+            if (group && EntityExists(card, "grpEnt"))
             {
+                AddMsg($"卡{card + 1} 已存在群组对象 grpEnt，无需重复组群");
                 return;
             }
 
-            int card = currentCard;
-
-            if (chkEntGroup.Checked)
+            if (!group && !EntityExists(card, "grpEnt"))
             {
-                if (!EntityExists(card, "grpEnt"))
-                {
-                    LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = true };
-                    CMDAna(cmd);
-                }
-            }
-            else
-            {
-                if (EntityExists(card, "grpEnt"))
-                {
-                    LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = false };
-                    CMDAna(cmd);
-                }
+                AddMsg($"卡{card + 1} 当前没有 grpEnt 群组对象，无需解组");
+                return;
             }
 
+            LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = group };
+            CMDAna(cmd);
             ReloadEntityInfo(card);
             InvalidateRoutePreviewCache(card);
             RefreshPreview(card);
-        }  //自动同步复选框时直接return，不执行 SDK 操作
-           //用户勾选时，只有当前没有 grpEnt 才群组，避免重复群组。
-           //用户取消时，只有当前有 grpEnt 才解组。
-           //解组后刷新对象表，grpEnt 会变回原对象。
+        }           //点“组群” -> 执行 case 28，bOpen = true
+                    //点“解组” -> 执行 case 28，bOpen = false
+
+
 
         private void EntMvRoSc_Click(object sender, EventArgs e)
         {
@@ -5524,7 +7040,9 @@ namespace BJJCZ_BaseDevelop
             if (pic == null) return;
             string btnName = pic.Name;
 
-            bool isGroupOperation = chkEntGroup.Checked;
+            //bool isGroupOperation = chkEntGroup.Checked;
+            bool isGroupOperation = EntityExists(card, "grpEnt"); //意义：以前靠复选框是否勾选决定整体操作。现在没有复选框了，所以改成看 SDK 里是否真的存在 grpEnt。
+                                                                  //有 grpEnt 就操作整体；没有 grpEnt 就操作当前选中单个对象。
             if (!isGroupOperation)
             {
                 CleanupUserGroupEntity(card);
@@ -5568,19 +7086,48 @@ namespace BJJCZ_BaseDevelop
             pendingDeferredSave[card] = false;
             SaveToOriginalPath(card);
         }*/
-        private void btTransformSave_Click(object sender, EventArgs e) //保存前先停止红光、停止延迟保存、清掉预览缓存、避免保存时SDK状态不稳定
+        private void btTransformSave_Click(object sender, EventArgs e)
         {
             int card = currentCard;
-            if (!PrepareForManualSave(card))
+
+            if (_isSavingEzd)
             {
+                AddMsg($"卡{card + 1} 正在保存，请稍后");
                 return;
             }
 
-            SaveToOriginalPath(card);
-            InvalidateRoutePreviewCache(card);
-            RefreshPreview(card);
+            if (string.IsNullOrWhiteSpace(currentFilePath[card]))
+            {
+                AddMsg($"卡{card + 1} 没有可保存的原文件路径，请先加载文件");
+                return;
+            }
+
+            try
+            {
+                _isSavingEzd = true;
+
+                lock (_previewSaveLock)
+                {
+                    if (!PrepareForManualSave(card))
+                    {
+                        return;
+                    }
+
+                    int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, currentFilePath[card]);
+                    AddMsg($"卡{card + 1} 保存文件 -> {JczLmc.GetErrorText(saveErr)}");
+
+                    if (saveErr == 0)
+                    {
+                        SyncOtherCardsLoadedFromSameFile(card, currentFilePath[card]);
+                    }
+                }
+            }
+            finally
+            {
+                _isSavingEzd = false;
+            }
         }
-        private bool PrepareForManualSave(int card)//与上面操作相对应
+        /*private bool PrepareForManualSave(int card)//与上面操作相对应
         {
             try
             {
@@ -5620,8 +7167,50 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 保存前清理预览状态异常: {ex.Message}");
                 return true;
             }
-        }
+        }*/
+        private bool PrepareForManualSave(int card)//与上面操作相对应
+        {
+            try
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    if (bInMark[i])
+                    {
+                        AddMsg($"卡{i + 1} 正在加工，暂不能保存EZD");
+                        return false;
+                    }
+                }
+                for (int i = 0; i < 2; i++)
+                {
+                    if (bInRed[i])
+                    {
+                        JczLmc.lmc1_StopMark(phyCardSN[i]);
+                        bInRed[i] = false;
+                        Thread.Sleep(80);
+                    }
 
+                    CleanupPreviewAnchorEntities(i);
+                    CleanupTransformPairEntities(i);
+                }
+
+                pendingDeferredSave[card] = false;
+                if (_deferredSaveTimer != null)
+                {
+                    _deferredSaveTimer.Stop();
+                }
+
+                Thread.Sleep(400);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 保存前清理预览状态异常: {ex.Message}");
+                return true;
+            }
+        }  //两张卡只要任意一张正在加工，就不保存
+           //两张卡如果有红光预览，都先停掉
+           //两张卡的预览辅助对象/临时分组/缓存都清掉
+           //再保存当前卡
 
         private void ScheduleSaveToOriginalPath(int card)
         {
@@ -5858,9 +7447,7 @@ namespace BJJCZ_BaseDevelop
         }
         private void File_QuickSaveEZD_Click(object sender, EventArgs e)
         {
-            int card = currentCard;
-            SaveToOriginalPath(card);
-            AddMsg($"卡{card + 1} 快速保存到: {currentFilePath[card]}");
+            btTransformSave_Click(sender, e);
         }
 
         private void File_SaveEZD_Click(object sender, EventArgs e)
@@ -5952,7 +7539,7 @@ namespace BJJCZ_BaseDevelop
         #endregion
 
         #region 板卡切换与显示菜单
-        private void Card_NO1_Click(object sender, EventArgs e)
+        /*private void Card_NO1_Click(object sender, EventArgs e)
         {
             currentCard = 0;
             AddMsg($"切换到卡1 (当前当前卡: {currentCard + 1})");
@@ -5976,7 +7563,69 @@ namespace BJJCZ_BaseDevelop
             // 高亮显示当前卡
             Card_NO1.Checked = false;
             Card_NO2.Checked = true;
+        }*/
+        private void Card_NO1_Click(object sender, EventArgs e)
+        {
+            SwitchCurrentCard(0);
         }
+
+        private void Card_NO2_Click(object sender, EventArgs e)
+        {
+            SwitchCurrentCard(1);
+        }
+
+        private void SwitchCurrentCard(int newCard)
+        {
+            if (newCard < 0 || newCard >= 2)
+            {
+                return;
+            }
+
+            int oldCard = currentCard;
+
+            try
+            {
+                PrepareCardBeforeSwitch(oldCard);
+                PrepareCardBeforeSwitch(newCard);
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"切换到卡{newCard + 1}前清理状态异常: {ex.Message}");
+            }
+
+            currentCard = newCard;
+            AddMsg($"切换到卡{newCard + 1} (当前当前卡: {currentCard + 1})");
+
+            UpdateEntTable(currentCard);
+            UpdateLaserOperationButtonsEnabled();
+            UpdateUndoDeleteButtonState();
+
+            Card_NO1.Checked = currentCard == 0;
+            Card_NO2.Checked = currentCard == 1;
+        }
+
+        private void PrepareCardBeforeSwitch(int card)
+        {
+            if (card < 0 || card >= 2)
+            {
+                return;
+            }
+
+            if (bInRed[card])
+            {
+                JczLmc.lmc1_StopMark(phyCardSN[card]);
+                bInRed[card] = false;
+                Thread.Sleep(80);
+            }
+
+            CleanupPreviewAnchorEntities(card);//清掉为了生成预览图临时加进去的固定边界对象
+            CleanupTransformPairEntities(card);//清掉移动/旋转/缩放时可能留下的临时分组
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+            targetBox.Invalidate();
+        }   //清理旧卡状态
+            //清理新卡状态
+            //再切 currentCard
+            //再刷新界面
 
         private void Win_Log_Click(object sender, EventArgs e)
         {
@@ -6116,7 +7765,6 @@ namespace BJJCZ_BaseDevelop
                     return true;
                 }
             }
-
             return false;
         }
       
@@ -6134,7 +7782,6 @@ namespace BJJCZ_BaseDevelop
                     return hatchHp.nPenNo;
                 }
             }
-
             int penNo = JczLmc.lmc1_GetPenNumberFromEnt(phyCardSN[card], sdkName);
             if (penNo == HiddenContourPenNo)
             {
@@ -6144,7 +7791,6 @@ namespace BJJCZ_BaseDevelop
                     return sourcePenNo;
                 }
             }
-
             if (penNo >= 0)
             {
                 return penNo;
@@ -6321,8 +7967,7 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 清理预览固定边界异常: {ex.Message}");
             }
         }
-
-        private void SyncEntGroupCheckboxFromEntities(int card)
+        /*private void SyncEntGroupCheckboxFromEntities(int card)
         {
             if (card != currentCard || chkEntGroup == null)
             {
@@ -6342,7 +7987,7 @@ namespace BJJCZ_BaseDevelop
             }
         } //打开EZD后，如果文件本身就是grpEnt，原代码不会自动勾选“群组”。
           //这个函数就是每次刷新对象列表时检查：EntityExists(card, "grpEnt")
-          //如果存在，就把右边“群组”复选框自动勾上；不存在就取消勾选。
+          //如果存在，就把右边“群组”复选框自动勾上；不存在就取消勾选。*/
 
         private void ReloadEntityInfo(int card)
         {
@@ -6359,7 +8004,6 @@ namespace BJJCZ_BaseDevelop
                     displaySdkNames.Add(sdkName);
                 }
             }
-
             nEntNums[card] = displaySdkNames.Count;
             strEntNames[card] = new string[nEntNums[card]];
             sdkEntNames[card] = new string[nEntNums[card]];
@@ -6373,7 +8017,7 @@ namespace BJJCZ_BaseDevelop
             }
 
             UpdateEntTable(card);
-            SyncEntGroupCheckboxFromEntities(card);//同步复选框，保证界面状态和SDK真实对象状态一致
+            /*SyncEntGroupCheckboxFromEntities(card);//同步复选框，保证界面状态和SDK真实对象状态一致*/
         }
         private string EnsureEntitySdkName(int card, int entityIndex, string sdkName)
         {
@@ -6411,7 +8055,6 @@ namespace BJJCZ_BaseDevelop
                     return hatchPenNo;
                 }
             }
-
             return GetEntityPenNumber(card, sdkName);
         }
         private string GetHatchEntityName(string sourceEntName)
@@ -6445,12 +8088,11 @@ namespace BJJCZ_BaseDevelop
                     return hatchName;
                 }
             }
-
             return sdkName;
         }
         private const string PreviewAnchorEntityPrefix = "__PreviewAnchor_";
          private bool ShouldShowEntityInTable(string sdkName)
-        {
+         {
             if (string.IsNullOrWhiteSpace(sdkName))
             {
                 return true;
@@ -6458,9 +8100,10 @@ namespace BJJCZ_BaseDevelop
 
             return !IsGeneratedHatchEntity(sdkName)
                 && !IsContourBackupEntity(sdkName)
+                && !sdkName.StartsWith(DeletedEntityBackupPrefix, StringComparison.OrdinalIgnoreCase)
                 && !sdkName.StartsWith(PreviewAnchorEntityPrefix, StringComparison.OrdinalIgnoreCase)
                 && !sdkName.StartsWith(TransformPairEntityPrefix, StringComparison.OrdinalIgnoreCase);
-        }
+         }
         private string GetEntityNameForTable(string sdkName, int entityIndex)
         {
             if (IsContourBackupEntity(sdkName))
@@ -6529,7 +8172,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 开始红光预览边界");
             }
         }
-
         /// <summary>
         /// 红光预览轮廓（整体轮廓，非填充）
         /// </summary>
@@ -6557,7 +8199,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 开始红光预览轮廓");
             }
         }
-
         /// <summary>
         /// 红光预览当前选中对象
         /// </summary>
@@ -6591,7 +8232,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 开始红光预览对象: {strEntNames[card][iEntIndices[card]]}");
             }
         }
-
         /// <summary>
         /// 加工当前选中对象
         /// </summary>
@@ -6905,7 +8545,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 当前对象已是第一个，无法继续上调");
             }
         }
-
         private void btMoveEntAfter_Click(object sender, EventArgs e)
         {
             int card = currentCard;
@@ -6952,7 +8591,6 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 当前对象已是最后一个，无法继续下调");
             }
         }
-
         private void btParam_Click(object sender, EventArgs e)
         {
             int card = currentCard;
@@ -7047,10 +8685,10 @@ namespace BJJCZ_BaseDevelop
             return nErr;
         }
          private class EntityScaleState
-        {
+         {
             public double X = 1.0;
             public double Y = 1.0;
-        }
+         }
         private void ResetEntityScaleStates(int card)
         {
             string prefix = card.ToString() + "|";
@@ -7062,7 +8700,6 @@ namespace BJJCZ_BaseDevelop
                     keysToRemove.Add(key);
                 }
             }
-
             foreach (string key in keysToRemove)
             {
                 entityScaleStates.Remove(key);
@@ -7108,6 +8745,37 @@ namespace BJJCZ_BaseDevelop
         /// 由于金橙子板卡只支持一个软件加载，需要先关闭当前的板卡连接，
         /// 启动 EZcad，待 EZcad 关闭后自动重新初始化板卡。
         /// </summary>
+        /// 
+        /*private bool SaveCurrentDocumentsBeforeOpenEzCad(out string fileToOpen)  //打开 EZCAD 之前，先把 JCZServer 当前内存里的 A 面、B 面 EZD 保存到硬盘
+        {
+            fileToOpen = null;
+
+            for (int i = 0; i < currentFilePath.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(currentFilePath[i]))
+                {
+                    currentFilePath[i] = Path.Combine(@"D:\EZDModel", i == 0 ? "route0.ezd" : "route1.ezd");
+                }
+
+                int saveErr = SaveEntLibToFileWithoutPreviewAnchor(i, currentFilePath[i]);
+                if (saveErr != 0)
+                {
+                    AddMsg($"卡{i + 1} 打开EZcad前保存失败: {JczLmc.GetErrorText(saveErr)}");
+                    return false;
+                }
+
+                AddMsg($"卡{i + 1} 打开EZcad前已保存: {currentFilePath[i]}");
+            }
+
+            if (currentCard >= 0 &&
+                currentCard < currentFilePath.Length &&
+                !string.IsNullOrWhiteSpace(currentFilePath[currentCard]))
+            {
+                fileToOpen = Path.GetFullPath(currentFilePath[currentCard]);
+            }
+
+            return true;
+        }*/
         private void File_OpenEZCad_Click(object sender, EventArgs e)
         {
             int card = currentCard;  // 使用当前选中的板卡
@@ -7156,9 +8824,8 @@ namespace BJJCZ_BaseDevelop
                 ezcadProcess.StartInfo.UseShellExecute = true;   // 直接打开，让 EZcad 正常显示窗口
                                                                  // 可选：设置工作目录为 EZcad 所在目录，避免某些相对路径问题
                 ezcadProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(ezcadPath);
-                string fileToOpen = @"C:\WorkSpace\项目\Github\VisionBasedLaser\bin\EzdModel\route1.ezd";
+                string fileToOpen = Path.Combine(@"D:\EZDModel", card == 0 ? "route0.ezd" : "route1.ezd");
                 ezcadProcess.StartInfo.Arguments = $"\"{fileToOpen}\"";
-                
                 ezcadProcess.Start();
 
                 AddMsg("EZcad 已启动，请在 EZcad 中完成图形编辑。关闭 EZcad 后服务端将自动重新连接板卡");
@@ -7179,7 +8846,6 @@ namespace BJJCZ_BaseDevelop
                 ReinitializeBothCards();
             }
         }
-
         /// <summary>
         /// 查找 EZcad 可执行文件路径（EzCad2.exe）
         /// </summary>
@@ -7202,7 +8868,6 @@ namespace BJJCZ_BaseDevelop
                     return path;
                 }
             }
-
             // 策略2：搜索当前程序运行目录及上级目录（可能 EZcad 被放置在项目附近）
             string[] searchDirs = new string[]
             {
@@ -7221,7 +8886,6 @@ namespace BJJCZ_BaseDevelop
                         return candidate;
                 }
             }
-
             // 策略3：尝试查找系统 PATH 路径下的 EzCad2.exe
             string pathEnv = Environment.GetEnvironmentVariable("PATH");
             if (!string.IsNullOrEmpty(pathEnv))
@@ -7237,7 +8901,6 @@ namespace BJJCZ_BaseDevelop
                     catch { }
                 }
             }
-
             return null;  // 未找到
         }
 
