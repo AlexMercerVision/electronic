@@ -18,6 +18,10 @@ namespace BJJCZ_BaseDevelop
         [STAThread]
         static void Main()
         {
+            /*Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            FrmMainUI FMUI = new FrmMainUI();
+            Application.Run(FMUI);*/
             bool createdNew;
             using (Mutex mutex = new Mutex(true, @"Global\VisionBasedLaser_LaserRemoveGlue", out createdNew))
             {

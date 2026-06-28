@@ -160,6 +160,17 @@ namespace VisionControl
             try
             {
                 StopAliveTimer();
+                if (mMaximumGuiPeriodTimer != null)
+                {
+                    mMaximumGuiPeriodTimer.Dispose();
+                    mMaximumGuiPeriodTimer = null;
+                }
+                if (mMinimumGuiPeriodTimer != null)
+                {
+                    mMinimumGuiPeriodTimer.Dispose();
+                    mMinimumGuiPeriodTimer = null;
+                }
+
                 AttachToJobManager(false);
                 if (bVPPParamChanged)
                     SaveVPP();

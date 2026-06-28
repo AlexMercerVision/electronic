@@ -239,7 +239,7 @@ namespace VisionControl
         private void OnAliveTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             //2026年6月26日
-            return;
+           // return;
             // ★ 如果正在执行 ActivateRun，直接跳过本次定时触发（不向 UI 线程排队）
             if (_isActivating) return;
 
@@ -257,6 +257,7 @@ namespace VisionControl
         //防假死激活运行
         public void ActivateRun()
         {
+            return;
             // 防止重入
             if (_isActivating) return;
             lock (_aliveLock)
@@ -305,10 +306,12 @@ namespace VisionControl
 
                 try
                 {
-                    if (tool.Name != "CogPMAlignTool1") { 
                     bActivateRun = true;
                     tool.Run();
-                    }      // 执行工具（同步，但通常很快）
+                    /*if (tool.Name != "CogPMAlignTool1") { 
+                   
+                    
+                    }   */   // 执行工具（同步，但通常很快）
                 }
                 catch (Exception ex)
                 {

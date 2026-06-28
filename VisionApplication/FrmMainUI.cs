@@ -423,11 +423,11 @@ namespace VisionApplication
             {
                 operLog.iEventStatus = -1;
             }
-            if(cup.p_VPPRTP.bVisionInfer)
+           /* if(cup.p_VPPRTP.bVisionInfer)
             {
                 operLog.strOperEvent = "VP模型初始化";
                 AddLog();
-            }
+            }*/
             
         }
 
@@ -2614,8 +2614,7 @@ namespace VisionApplication
                 fw.SetProgress(80, "正在初始化视图");
                 if (cup.p_VPPRTP.bDeepInfer || rts.initStatus.bVPPInit)
                 {
-                    InitVisionControl();
-                    //   bSucc = vpWin.SetVPPRuntimeParam();             //visionpro控件初始化
+                      InitVisionControl(); 
                 }
 
                 if (!bSucc)
@@ -2624,26 +2623,18 @@ namespace VisionApplication
                     operLog.strOperEvent = "设置流程参数";
                     AddLog();
                 } 
-
-                // Read9PointCalibPoint();
-
+                 
                 iProcess = 70;
                 fw.SetProgress(70, "正在进行历史数据加载");
                 InitRecord();       //初始化路径
                 InitLocalFile();    //加载回放数据                            //  bSucc = vpWin.SetDiagParam(cup);
-
-                /*  iProcess = 80;
-                 fw.SetProgress(80, "正在加深度载推理环境");
-                if (cup.p_VPPRTP.bDeepInfer)
-                   {  InitDL();
-                cdl.det_infer_img();}*/
-
+                 
                 InitCheckStatus(); 
                 iProcess = 90;
                 fw.SetProgress(90, "正在启动相机采集");
                 StartGrab(); 
                 
-                vpWin.iModelRole = rts.iModelRole; 
+          //      vpWin.iModelRole = rts.iModelRole; 
 
                 fw.SetProgress(95, "UI初始化");
                 InitParamUI();  //必要的参数初始化 
@@ -2710,10 +2701,19 @@ namespace VisionApplication
      
         private void FrmMainUI_FormClosing(object sender, FormClosingEventArgs e)
         {
-
+           
             SaveUserParam();
-          //  _parentCheckTimer?.Stop();
-        //    _parentCheckTimer?.Dispose();
+
+            // 1. 停止所有 WinForms 定时器
+            timer1.Stop();
+            timer1.Dispose();
+            timerIOOut?.Stop();
+            timerIOOut?.Dispose();
+            timerIOIn?.Stop();
+            timerIOIn?.Dispose();
+
+            //  _parentCheckTimer?.Stop();
+            //    _parentCheckTimer?.Dispose();
             string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
             fo.SaveRunTimeStatus(strPath, rts);
 
@@ -2721,6 +2721,8 @@ namespace VisionApplication
             for (int i = 0; i < MaxLaserCards; i++)
             {
                 laserDispatchers[i]?.Dispose();
+               // pipeClients[i]?.Dispose();   // 假设 Pipechanel 实现了 IDisposable
+                pipeClients[i] = null;
             }
 
             if (vpWin != null && vpWin._iTaskType == 1)  //如果在实时预览视频，则先停止
@@ -2745,9 +2747,22 @@ namespace VisionApplication
             CloseCam();
             disconnect();
             if (vpWin != null)
+            {
                 vpWin.Close(bVPPParamChanged);
+                vpWin = null;
+            }
 
-           // cdl.CloseDL();
+            // cdl.CloseDL();
+
+            // 9. 强制垃圾回收（可选）
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+           
+            if (Debugger.IsAttached == false) // 非调试环境
+            {
+                Environment.Exit(0);
+            }
+
         }
 
         
@@ -3420,7 +3435,7 @@ namespace VisionApplication
             SearchCam();             //
             InitCam();
             StartGrab();
-            InitVisionControl();
+             InitVisionControl();
         }
 
         private void 软触发一次ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -3536,7 +3551,7 @@ namespace VisionApplication
                     LoadVPFile(true);
                     if (rts.initStatus.bVPPInit)
                     {
-                 //       InitVisionControl();
+                         InitVisionControl();
                         //   bSucc = vpWin.SetVPPRuntimeParam();             //visionpro控件初始化
                     }
 
@@ -4809,6 +4824,7 @@ namespace VisionApplication
 
                 vpWin.iModelRole = rts.iModelRole;
                 timer1.Interval = 10000;
+                bfirstTime = false;
             }
             try
             {
@@ -5707,6 +5723,8 @@ namespace VisionApplication
 
         private bool InitSerialIndex(int i)
         {
+            if (strPortName == null || strPortName.Length <= i)
+                return false;
             bool bSucc = false;
             try
             {
@@ -6275,17 +6293,18 @@ namespace VisionApplication
         //关闭串口
         public bool disconnect()
         {
-
+            bool allClosed = true;
             try {
                 for (int i = 0; i < 4; i++)
                 {
                     if (sPortAll[i] != null && sPortAll[i].IsOpen)
                     {
                         sPortAll[i].Close();
-
-                        operLog.strOperEvent = "关闭串口" + (i + 1) + "成功";
+                        sPortAll[i].Dispose();
+                        sPortAll[i] = null;
+                       /* operLog.strOperEvent = "关闭串口" + (i + 1) + "成功";
                         operLog.iEventStatus = 0;
-                        AddLog();
+                        AddLog();*/
                         ((ToolStripStatusLabel)statusStrip1.Items[i + 8]).ForeColor = Color.Red;
                         //    (this.Controls.Find("toolStripStatus_" + (i + 1).ToString(), true)[0]).ForeColor = Color.Red;
                     }
@@ -6297,16 +6316,18 @@ namespace VisionApplication
 
                 toolStripStatus_Ser.Text = "串口未连接";
                 toolStripStatus_Ser.ForeColor = Color.Red;
-                return true;
+                 
             }
             catch
             {
-                operLog.strOperEvent = "关闭串口失败";
+                allClosed = false;
+               /* operLog.strOperEvent = "关闭串口失败";
                 operLog.iEventStatus = -1;
-                AddLog();
-                return false;
+                AddLog();*/
+               
             }
-
+            return allClosed;
+        
 
         }
 
