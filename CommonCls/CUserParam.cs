@@ -1010,7 +1010,8 @@ namespace CommonCls
         private static void CheckParamCompatibility(CUserParam cup)
         {
             CUserParam cupTmp = new CUserParam();
-            UpgradeLegacyCameraResolution(cup);
+            //2026年6月28日 去掉强制升级
+       //     UpgradeLegacyCameraResolution(cup);
 
             // 相机数组长度兼容
             if (cupTmp.p_Cam.Length > cup.p_Cam.Length)

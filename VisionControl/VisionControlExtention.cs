@@ -23,6 +23,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -2918,6 +2919,97 @@ namespace VisionControl
                 }
             }
         }
+
+        /*private void PreviewThreadProc(MyCamera camera, int wsInd)
+        {
+            MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
+            Control displayControl = GetPreviewControl(wsInd);
+            CogRecordDisplay cogDisplay = displayControl as CogRecordDisplay;
+            if (cogDisplay == null) return;
+
+            DateTime lastUpdateTime = DateTime.MinValue;
+            const int minUpdateIntervalMs = 50; // 20 FPS
+
+            // 缓存最新帧（线程安全）
+            ICogImage latestImage = null;
+            object frameLock = new object();
+
+            while (_previewRunning[wsInd])
+            {
+                int nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
+                if (nRet == MyCamera.MV_OK)
+                {
+                    // 1. 转换为 CogImage
+                    ICogImage newImage = ConvertFrameToCogImage(stFrameInfo.pBufAddr, ref stFrameInfo.stFrameInfo);
+                    if (newImage != null)
+                    {
+                        // 2. 应用翻转/旋转
+                        newImage = acqFIFO.CogFlipRotateIm(newImage, wsInd);
+
+                        // 3. 替换缓存（释放旧帧）
+                        lock (frameLock)
+                        {
+                            ICogImage old = latestImage;
+                            latestImage = newImage;
+                            (old as IDisposable)?.Dispose(); // 立即释放
+                        }
+
+                        // 4. 限频更新 UI
+                        DateTime now = DateTime.Now;
+                        if ((now - lastUpdateTime).TotalMilliseconds >= minUpdateIntervalMs)
+                        {
+                            lastUpdateTime = now;
+                            // 在 UI 线程执行更新
+                            if (cogDisplay.InvokeRequired)
+                            {
+                                cogDisplay.BeginInvoke(new Action(() =>
+                                {
+                                    lock (frameLock)
+                                    {
+                                        // 取出最新帧
+                                        ICogImage toShow = latestImage;
+                                        if (toShow != null)
+                                        {
+                                            // 释放当前显示的旧图像
+                                            ICogImage oldDisplay = cogDisplay.Image;
+                                            cogDisplay.Image = toShow;
+                                            (oldDisplay as IDisposable)?.Dispose();
+                                            // 已交给控件，缓存置空（避免重复释放）
+                                            latestImage = null;
+                                        }
+                                    }
+                                }));
+                            }
+                            else
+                            {
+                                // 同样逻辑（省略，与上面相同）
+                            }
+                        }
+                    }
+
+                    // 5. 释放 SDK 缓冲区
+                    camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
+                }
+                else
+                {
+                    Thread.Sleep(5);
+                }
+            }
+
+            // 线程退出时清理资源
+            lock (frameLock)
+            {
+                (latestImage as IDisposable)?.Dispose();
+               // latestImage?.Dispose();
+                latestImage = null;
+            }
+            if (cogDisplay.InvokeRequired)
+                cogDisplay.BeginInvoke(new Action(() => { cogDisplay.Image = null; }));
+            else
+                cogDisplay.Image = null;
+        }
+*/
+
         private Bitmap CreatePreviewBitmap(IntPtr pData, ref MyCamera.MV_FRAME_OUT_INFO_EX frameInfo, int flipType)
         {
             if (frameInfo.enPixelType != MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8)

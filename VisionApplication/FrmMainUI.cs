@@ -1304,7 +1304,7 @@ namespace VisionApplication
         /// <summary>
         /// 初始化所有摄像头：枚举设备、创建连接、获取载荷大小、设置参数、分配缓冲区（由AcqFIFO管理）
         /// </summary>
-        private void InitCam()
+        /*private void InitCam()
         {
             int iInitType = 0;          // 0:正常初始化 -1:没有可用相机 -2:相机编号超限 -3:获取载荷失败 -4:设置参数失败 -5:分配内存失败 -6:其他异常
             bool bNeedCleanup = false;  // 标记是否需要清理已分配的资源
@@ -1549,8 +1549,156 @@ namespace VisionApplication
 
             // 统一处理初始化结果状态
             ProcessInitCamStatus(iInitType);
-        }
+        }*/
+        private void InitCam()
+        {
+            int iInitType = 0; // 0:正常初始化 -1:没有可用相机
+            bool bNeedCleanup = false;
+            bool bStatusChanged = false;
 
+            if (cameraNum < 1)
+            {
+                iInitType = -1;
+                goto outofInit;
+            }
+
+            try
+            {
+                // 1. 枚举相机名称
+                items = hIKVisionCamera.EnumDevices();
+
+                // 2. 检查每个工位配置的相机编号是否有效，无效则禁用
+                bool bAnyProcessEnabled = false;
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                    {
+                        int iCamIndex = cup.p_CD.camInd[i];
+                        if (iCamIndex >= cameraNum)
+                        {
+                            cup.p_CD.bListProcess[i] = false;
+                            bStatusChanged = true;
+                        }
+                        else
+                        {
+                            bAnyProcessEnabled = true;
+                        }
+                    }
+                }
+                if (!bAnyProcessEnabled)
+                {
+                    iInitType = -2;
+                    goto outofInit;
+                }
+
+                // 3. 创建相机连接对象
+                camera2 = hIKVisionCamera.MultiCameraInit((int)cameraNum, ref rts.cs.iStatus);
+
+                // 4. 循环处理每个启用的工位
+                for (int ind = 0; ind < maxCameraNum; ind++)
+                {
+                    if (!cup.p_CD.bListProcess[ind])
+                        continue;
+
+                    int iCamInd = cup.p_CD.camInd[ind];
+                    if (camera2[iCamInd] == null)
+                    {
+                        cup.p_CD.bListProcess[ind] = false;
+                        bStatusChanged = true;
+                        continue;
+                    }
+
+                    // 5. 一次性设置所有相机参数（包括 ROI、分辨率、曝光、增益、锐度、伽马等）
+                    if (!SetCamParam(iCamInd))
+                    {
+                        cup.p_CD.bListProcess[ind] = false;
+                        bStatusChanged = true;
+                        continue;
+                    }
+                    
+                    // 6. 获取 PayloadSize（图像数据量）
+                    MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
+                    int ret = camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam);
+                    if (ret == MyCamera.MV_OK)
+                    {
+                        nPayloadSizeS[iCamInd] = stParam.nCurValue;
+                        rts.cs.iStatus[iCamInd] = 1;
+                    }
+                    else
+                    {
+                        // 回退方式：抓一帧获取大小
+                        MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
+                        ret = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo, 10000);
+                        if (ret == MyCamera.MV_OK)
+                        {
+                            nPayloadSizeS[iCamInd] = stFrameInfo.stFrameInfo.nFrameLen;
+                            rts.cs.iStatus[iCamInd] = 1;
+                        }
+                        else
+                        {
+                            cup.p_CD.bListProcess[ind] = false;
+                            bStatusChanged = true;
+                            continue;
+                        }
+                    }
+
+                    // 7. 为相机分配匹配的缓冲区（由 AcqFIFO 管理）
+                    if (!acqFIFO.ReallocateBuffer(iCamInd, nPayloadSizeS[iCamInd]))
+                    {
+                        cup.p_CD.bListProcess[ind] = false;
+                        bStatusChanged = true;
+                        continue;
+                    }
+
+                    // 8. 相机就绪
+                    rts.cs.iStatus[iCamInd] = 3;
+                }
+
+                // 9. 再次检查是否还有启用的任务
+                bool anyEnabled = false;
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                    {
+                        anyEnabled = true;
+                        break;
+                    }
+                }
+                if (!anyEnabled)
+                {
+                    iInitType = -3;
+                    bNeedCleanup = true;
+                    goto outofInit;
+                }
+
+                // 如果状态有变化，保存配置
+                if (bStatusChanged)
+                    SaveUserParam();
+
+                iInitType = 0;
+            }
+            catch (Exception ex)
+            {
+                iInitType = -6;
+                bNeedCleanup = true;
+                // 可添加日志记录异常信息
+            }
+
+        outofInit:
+            if (bNeedCleanup)
+            {
+                acqFIFO.FreeAllBuffers();
+                for (int i = 0; i < maxCameraNum; i++)
+                    SyncCameraStatus(i, 0);
+                bStatusChanged = true;
+            }
+
+            if (bStatusChanged)
+                SaveUserParam();
+
+            SyncAllCameraStatus();
+            ProcessInitCamStatus(iInitType);
+        }
         private void Reallocate(int iCamInd)
         {
             // 优先通过标准属性获取PayloadSize
@@ -1808,7 +1956,7 @@ namespace VisionApplication
             CloseCamStatus();
         }
 
-        private bool SetCamParam(int iCamIndex)
+        /*private bool SetCamParam(int iCamIndex)
         {
             string gainshow = null;
             string exposureshow = null;
@@ -1848,8 +1996,78 @@ namespace VisionApplication
                 // MessageBox.Show("修改参数失败！");
             }
             return true;
-        }
+        }*/
+        private bool SetCamParam(int iCamIndex)
+        {
+            // 1. 参数有效性检查
+            if (iCamIndex < 0 || iCamIndex >= maxCameraNum)
+                return false;
+            if (!chooseHIK || camera2 == null || camera2[iCamIndex] == null)
+                return false;
 
+            try
+            {
+                // 2. 设置曝光和增益
+                float exposure = cup.p_Cam[iCamIndex].iExposeTime;
+                float gain = (float)cup.p_Cam[iCamIndex].dGain;
+                string gainshow = null;
+                string exposureshow = null;
+                hIKVisionCamera.SetParam(gain, exposure, ref gainshow, ref exposureshow, camera2[iCamIndex]);
+
+                // 3. 设置像素格式
+                if (!hIKVisionCamera.SetPixelFormat(ref cup.p_Cam[iCamIndex].iMonoType, camera2[iCamIndex]))
+                    return false;
+
+                // 4. 设置锐度
+                if (!hIKVisionCamera.SetSharpness(ref cup.p_Cam[iCamIndex].iSharp, camera2[iCamIndex]))
+                    return false;
+
+                // 5. 设置伽马（先确保伽马使能，如果界面有开关则根据状态设置，这里仅设置值）
+                float gamma = cup.p_Cam[iCamIndex].dGamma;
+                if (!hIKVisionCamera.SetGamma(ref gamma, camera2[iCamIndex]))
+                    return false;
+                cup.p_Cam[iCamIndex].dGamma = gamma; // 同步可能被修正的值
+
+                // 6. 设置分辨率（作为基准）
+                uint iWidth = cup.p_Cam[iCamIndex].iWidth;
+                uint iHeight = cup.p_Cam[iCamIndex].iHeight;
+                if (!hIKVisionCamera.SetResolution(ref iWidth, ref iHeight, camera2[iCamIndex]))
+                    return false;
+
+                // 7. 处理 ROI（确保数组有效）
+                uint[] roi = cup.p_Cam[iCamIndex].iROI;
+                if (roi == null || roi.Length < 4)
+                {
+                    roi = new uint[] { 0, 0, iWidth, iHeight };
+                    cup.p_Cam[iCamIndex].iROI = roi;
+                }
+                // 先设置宽高，再设置偏移（顺序重要）
+                int ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("Width", roi[2]);
+                if (ret != MyCamera.MV_OK) return false;
+                ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("Height", roi[3]);
+                if (ret != MyCamera.MV_OK) return false;
+                ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("OffsetX", roi[0]);
+                if (ret != MyCamera.MV_OK) return false;
+                ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("OffsetY", roi[1]);
+                if (ret != MyCamera.MV_OK) return false;
+
+                // 更新分辨率参数为 ROI 的实际尺寸
+                cup.p_Cam[iCamIndex].iWidth = roi[2];
+                cup.p_Cam[iCamIndex].iHeight = roi[3];
+
+                // 8. 如果当前工位是触发相机，设置触发模式
+                if (cup.p_CD.triggleCam == iCamIndex)
+                {
+                    SetTrigger(iCamIndex);
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         public bool SetTrigger(int iCamIndex)
         {
             if (camera2[iCamIndex] == null)
@@ -3902,6 +4120,16 @@ namespace VisionApplication
         private void InitCheckStatus()
         {
             toolBtSta_MarkAfterLocated.Checked = rts.onLS.bLock;
+            if (toolBtSta_MarkAfterLocated.Checked)
+            {
+                toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithMark;
+                toolBtSta_MarkAfterLocated.ToolTipText = "定位后标刻";
+            }
+            else
+            {
+                toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithOutMark;
+                toolBtSta_MarkAfterLocated.ToolTipText = "定位后不标刻";
+            }
             toolBtSta_FromCam.Checked = cup.p_VPPRTP.bAcqFromCam;
             if (toolBtSta_FromCam.Checked)
                 toolBtSta_FromCam.Image = global::VisionApplication.Properties.Resources.ImageAcqFromCam;
@@ -4757,12 +4985,12 @@ namespace VisionApplication
             if (toolBtSta_MarkAfterLocated.Checked)
             {
                 toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithMark;
-                toolBtSta_MarkAfterLocated.ToolTipText = "不标刻";
+                toolBtSta_MarkAfterLocated.ToolTipText = "定位后标刻";
             }
             else
             {
                 toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithOutMark;
-                toolBtSta_MarkAfterLocated.ToolTipText = "标刻";
+                toolBtSta_MarkAfterLocated.ToolTipText = "定位后不标刻";
             }
         }
 
@@ -6903,7 +7131,7 @@ namespace VisionApplication
         /// <summary>
         /// 设置 ROI 为全尺寸（相机最大分辨率）
         /// </summary>
-        private void btSetROIFull_Click(object sender, EventArgs e)
+        /*private void btSetROIFull_Click(object sender, EventArgs e)
         {
             int icamInd = cbDeviceList.SelectedIndex;
             if (icamInd < 0)
@@ -6916,7 +7144,7 @@ namespace VisionApplication
                 MessageBox.Show("相机未初始化");
                 return;
             }
-
+         //   hIKVisionCamera.StopGrabbing(icamInd);
             // 获取相机的最大分辨率（Width/Height 的最大值）
             MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
             MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
@@ -6957,10 +7185,86 @@ namespace VisionApplication
                 operLog.strFailReason = "调用相机接口失败";
             }
             AddLog();
+         //   hIKVisionCamera.StartGrabbing(icamInd);
+        }*/
+        private void btSetROIFull_Click(object sender, EventArgs e)
+        {
+            int icamInd = cbDeviceList.SelectedIndex;
+            if (icamInd < 0) return;
+            if (camera2 == null || camera2[icamInd] == null) return;
+
+            // 获取最大分辨率
+            MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
+            MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
+            if (camera2[icamInd].MV_CC_GetIntValue_NET("Width", ref stW) != MyCamera.MV_OK ||
+                camera2[icamInd].MV_CC_GetIntValue_NET("Height", ref stH) != MyCamera.MV_OK)
+                return;
+
+            uint maxWidth = stW.nMax;
+            uint maxHeight = stH.nMax;
+            uint[] roi = new uint[] { 0, 0, maxWidth, maxHeight };
+
+            bool bSucc = ApplyCameraROI(icamInd, roi);
+            if (bSucc)
+            {
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "设置ROI全尺寸并重新分配缓冲区";
+                operLog.strFailReason = $"宽度={maxWidth}, 高度={maxHeight}, 载荷大小={acqFIFO.GetPayloadSize(icamInd)}";
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "设置ROI全尺寸失败";
+                operLog.strFailReason = "可能相机不支持该分辨率或缓冲区重新分配失败";
+            }
+            AddLog();
         }
 
+        /// <summary>
+        /// 修改相机 ROI，并重新获取 PayloadSize，重新分配缓冲区
+        /// </summary>
+        /// <param name="cameraIndex">相机索引</param>
+        /// <param name="roi">新 ROI [OffsetX, OffsetY, Width, Height]</param>
+        /// <returns>是否成功</returns>
+        private bool ApplyCameraROI(int cameraIndex, uint[] roi)
+        {
+            if (cameraIndex < 0 || cameraIndex >= camera2.Length) return false;
+            if (camera2[cameraIndex] == null) return false;
+            if (roi == null || roi.Length != 4) return false;
 
+            // 1. 设置 ROI（调用简化版 SetROIParam）
+            cup.p_Cam[cameraIndex].iROI = roi;
+            bool bSucc = hIKVisionCamera.SetROIParam(cup.p_Cam[cameraIndex], camera2[cameraIndex]);
+            if (!bSucc) return false;
 
+            // 2. 获取新的 PayloadSize
+            MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
+            int ret = camera2[cameraIndex].MV_CC_GetIntValue_NET("PayloadSize", ref stParam);
+            if (ret != MyCamera.MV_OK)
+            {
+                // 如果获取失败，尝试根据分辨率计算（备选方案）
+                uint calculatedSize = roi[2] * roi[3] * (uint)(cup.p_Cam[cameraIndex].iMonoType == 0 ? 1 : 3);
+                acqFIFO.ReallocateBuffer(cameraIndex, calculatedSize);
+                return false;
+            }
+            uint newPayloadSize = stParam.nCurValue;
+
+            // 3. 重新分配缓冲区
+            if (!acqFIFO.ReallocateBuffer(cameraIndex, newPayloadSize))
+                return false;
+
+            // 4. 更新相机状态（如果 AcqFIFO 内部维护了状态）
+            // 如果有 _cameraStatus，可在此更新
+            // rts.cs.iStatus[cameraIndex] = 3; // 就绪
+
+            // 5. 更新 UI 显示（可选）
+            numROIOffSetX.Value = roi[0];
+            numROIOffSetY.Value = roi[1];
+            numROIWidth.Value = roi[2];
+            numROIHeight.Value = roi[3];
+
+            return true;
+        }
         /// <summary>
         /// Gamma 使能复选框的状态变化事件
         /// </summary>

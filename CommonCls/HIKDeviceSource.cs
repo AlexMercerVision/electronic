@@ -14,7 +14,7 @@ namespace CommonCls
     {
         // 常量定义
         private const int MaxCameraNum = 2;               // 最大支持相机数量
-        private const int ParamSetDelayMs = 10;           // 设置参数时的延迟（毫秒）
+        private const int ParamSetDelayMs = 20;           // 设置参数时的延迟（毫秒）
 
         // 字段
         private MyCamera _singleCamera;                   // 单相机模式使用的相机对象
@@ -667,26 +667,97 @@ namespace CommonCls
         /// <summary>
         /// 设置 ROI 区域。
         /// </summary>
-        public bool SetROIParam(CameraParam param, MyCamera cam)
+       /* public bool SetROIParam(CameraParam param, MyCamera cam)
         {
             try
             {
                 int ret = MyCamera.MV_OK;
-                ret += cam.MV_CC_SetIntValue_NET("OffsetX", (uint)param.iROI[0]);
-                Thread.Sleep(ParamSetDelayMs);
-                ret += cam.MV_CC_SetIntValue_NET("Width", (uint)param.iROI[2]);
+                bool bSucc = true;
+
+                for (int i = 0; i < 3; i++)
+                {
+                    Thread.Sleep(ParamSetDelayMs);
+                    ret = cam.MV_CC_SetIntValue_NET("Width", (uint)param.iROI[2]);
+                    if (ret == 0)
+                    {
+                        break;
+                    }
+                }
+                bSucc &= ret == 0;
+                for (int i = 0; i < 3; i++)
+                {
+                    Thread.Sleep(ParamSetDelayMs);
+                    ret = cam.MV_CC_SetIntValue_NET("Height", (uint)param.iROI[3]);
+                    if (ret == 0)
+                    {
+                        break;
+                    }
+                }
+                bSucc &= ret == 0;
+
+                for (int i = 0; i < 3; i++)
+                {
+                    Thread.Sleep(ParamSetDelayMs);
+                    ret = cam.MV_CC_SetIntValue_NET("OffsetX", (uint)param.iROI[0]);
+                    if (ret == 0)
+                    { 
+                        break;
+                    }
+                }
+                bSucc &= ret == 0;
+
+             
+                for (int i = 0; i < 3; i++)
+                {
+                    Thread.Sleep(ParamSetDelayMs);
+                    ret = cam.MV_CC_SetIntValue_NET("OffsetY", (uint)param.iROI[1]);
+                    if (ret == 0)
+                    {
+                        break;
+                    }
+                }
+                bSucc &= ret == 0;
+
+               
+               *//* ret += cam.MV_CC_SetIntValue_NET("Width", (uint)param.iROI[2]);
                 Thread.Sleep(ParamSetDelayMs);
                 ret += cam.MV_CC_SetIntValue_NET("OffsetY", (uint)param.iROI[1]);
                 Thread.Sleep(ParamSetDelayMs);
-                ret += cam.MV_CC_SetIntValue_NET("Height", (uint)param.iROI[3]);
-                return ret == MyCamera.MV_OK;
+                ret += cam.MV_CC_SetIntValue_NET("Height", (uint)param.iROI[3]);*//*
+                return bSucc;
+            }
+            catch
+            {
+                return false;
+            }
+        }*/
+        public bool SetROIParam(CameraParam param, MyCamera cam)
+        {
+            try
+            {
+                // 1. 停止采集（必须在停止状态下修改 ROI）
+                cam.MV_CC_StopGrabbing_NET();
+
+                // 2. 设置 ROI（先宽高，后偏移）
+                int ret = cam.MV_CC_SetIntValue_NET("Width", (uint)param.iROI[2]);
+                if (ret != 0) return false;
+                ret = cam.MV_CC_SetIntValue_NET("Height", (uint)param.iROI[3]);
+                if (ret != 0) return false;
+                ret = cam.MV_CC_SetIntValue_NET("OffsetX", (uint)param.iROI[0]);
+                if (ret != 0) return false;
+                ret = cam.MV_CC_SetIntValue_NET("OffsetY", (uint)param.iROI[1]);
+                if (ret != 0) return false;
+
+                // 3. 重新开始采集
+                cam.MV_CC_StartGrabbing_NET();
+
+                return true;
             }
             catch
             {
                 return false;
             }
         }
-
         // 辅助数值限定方法（C# 7.3 兼容）
         private static uint Clamp(uint value, uint min, uint max)
         {

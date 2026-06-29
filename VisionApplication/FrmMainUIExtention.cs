@@ -51,10 +51,13 @@ namespace VisionApplication
         //修改曝光参数
         private void nudExposure_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
+
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
                 return;
+
             cup.p_Cam[icamSelectInd].iExposeTime = (float)nudExposure.Value;
             bool bSucc = hIKVisionCamera.SetExposure(ref cup.p_Cam[icamSelectInd].iExposeTime, camera2[icamSelectInd]);
             if (bSucc)
@@ -73,6 +76,7 @@ namespace VisionApplication
         //修改曝光参数
         private void tbExposure_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -95,6 +99,8 @@ namespace VisionApplication
         //修改曝光参数
         private void chkAutoExposure_Click(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
+
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -128,6 +134,7 @@ namespace VisionApplication
         //修改增益参数
         private void tbGain_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -151,6 +158,7 @@ namespace VisionApplication
         //修改增益参数
         private void nudGain_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -173,6 +181,7 @@ namespace VisionApplication
         //修改锐化参数
         private void tbSharp_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -196,6 +205,7 @@ namespace VisionApplication
         //修改锐化参数
         private void nudSharp_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -219,6 +229,7 @@ namespace VisionApplication
         //修改Gamma参数
         private void tbGamma_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -242,6 +253,7 @@ namespace VisionApplication
         //修改Gamma参数
         private void nudGamma_ValueChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             if (icamSelectInd < 0)
                 return;
             if (camera2 == null || camera2[icamSelectInd] == null)
@@ -262,17 +274,40 @@ namespace VisionApplication
             }
 
         }
+        private bool setBrightness(int iJobIndex)
+        {
+            int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
+
+            if (icamSelectInd < 0)
+                return false; 
+           bool bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
+            if (bSucc)
+            {
+                operLog.iEventStatus =0;
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = "";
+                operLog.strOperEvent = "修改光源亮度参数";
+                AddLog();
+            }
+            return bSucc;
+        }
         //修改亮度参数
         private void tbContrast_ValueChanged(object sender, EventArgs e)
         {
+            //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
+            int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
+
             if (icamSelectInd < 0)
                 return;
-            if (camera2 == null || camera2[icamSelectInd] == null)
-                return;
+           /* if (camera2 == null || camera2[icamSelectInd] == null)
+                return;*/
             cup.p_Cam[icamSelectInd].iBrightness = (uint)tbBirghtness.Value;
             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
           //  bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
-            bool bSucc =  csd.SetLightBrightnessByJob(icamSelectInd, (int)cup.p_Cam[icamSelectInd].iBrightness);
+            bool bSucc =  csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
             if (bSucc)
             {
                 tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
@@ -291,17 +326,20 @@ namespace VisionApplication
         //修改亮度参数
         private void nudContrast_ValueChanged(object sender, EventArgs e)
         {
+          //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
+            int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
+           
             // tbBirghtness.Value = (int)nudContrast.Value;
             if (icamSelectInd < 0)
                 return;
-            if (camera2 == null || camera2[icamSelectInd] == null)
-                return;
+           /* if (camera2 == null || camera2[icamSelectInd] == null)
+                return;*/
             cup.p_Cam[icamSelectInd].iBrightness = (uint)nudContrast.Value;
-            hIKVisionCamera.StopGrabbing(icamSelectInd);
+        //    hIKVisionCamera.StopGrabbing(icamSelectInd);
             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
           //  bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
-            bool bSucc = csd.SetLightBrightnessByJob(icamSelectInd, (int)cup.p_Cam[icamSelectInd].iBrightness);
-            hIKVisionCamera.StartGrabbing(icamSelectInd);
+            bool bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
+    //        hIKVisionCamera.StartGrabbing(icamSelectInd);
             if (bSucc)
             {
                 tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
@@ -322,6 +360,7 @@ namespace VisionApplication
         /// </summary>
         private void cmbPixelFormat_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             // 1. 参数有效性检查
             if (icamSelectInd < 0)
             {
@@ -415,6 +454,7 @@ namespace VisionApplication
         /// </summary>
         private void cmbResulation_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
             // 1. 参数有效性检查
             if (icamSelectInd < 0)
             {
@@ -558,21 +598,121 @@ namespace VisionApplication
             }
         }
         //设置ROI区域
+        /* private void btSetROI_Click(object sender, EventArgs e)
+         {
+
+
+             int icamInd = cbDeviceList.SelectedIndex;
+             hIKVisionCamera.StopGrabbing(icamInd);
+
+             if (icamInd >= 0)
+             {
+                 if (camera2 == null || camera2[icamInd] == null)
+                     return;
+                 cup.p_Cam[icamInd].iROI[0] = (uint)numROIOffSetX.Value;
+                 cup.p_Cam[icamInd].iROI[1] = (uint)numROIOffSetY.Value;
+                 cup.p_Cam[icamInd].iROI[2] = (uint)numROIWidth.Value;
+                 cup.p_Cam[icamInd].iROI[3] = (uint)numROIHeight.Value;
+                bool bSucc=  hIKVisionCamera.SetROIParam(cup.p_Cam[icamInd], camera2[icamInd]);
+             }
+             hIKVisionCamera.StartGrabbing(icamInd);
+         }*/
         private void btSetROI_Click(object sender, EventArgs e)
         {
             int icamInd = cbDeviceList.SelectedIndex;
-            if (icamInd >= 0)
+            if (icamInd < 0)
             {
-                if (camera2 == null || camera2[icamInd] == null)
-                    return;
-                cup.p_Cam[icamInd].iROI[0] = (uint)numROIOffSetX.Value;
-                cup.p_Cam[icamInd].iROI[1] = (uint)numROIOffSetY.Value;
-                cup.p_Cam[icamInd].iROI[2] = (uint)numROIWidth.Value;
-                cup.p_Cam[icamInd].iROI[3] = (uint)numROIHeight.Value;
-                hIKVisionCamera.SetROIParam(cup.p_Cam[icamInd], camera2[icamInd]);
+                MessageBox.Show("请先选择相机");
+                return;
             }
-        }
+            if (camera2 == null || camera2[icamInd] == null)
+            {
+                MessageBox.Show("相机未初始化");
+                return;
+            }
 
+            // 1. 从界面控件获取 ROI 参数
+            uint offsetX = (uint)numROIOffSetX.Value;
+            uint offsetY = (uint)numROIOffSetY.Value;
+            uint roiWidth = (uint)numROIWidth.Value;
+            uint roiHeight = (uint)numROIHeight.Value;
+
+            // 2. 检查参数合法性（可选）
+            // 获取相机最大分辨率
+            MyCamera.MVCC_INTVALUE stW = new MyCamera.MVCC_INTVALUE();
+            MyCamera.MVCC_INTVALUE stH = new MyCamera.MVCC_INTVALUE();
+            if (camera2[icamInd].MV_CC_GetIntValue_NET("Width", ref stW) != MyCamera.MV_OK ||
+                camera2[icamInd].MV_CC_GetIntValue_NET("Height", ref stH) != MyCamera.MV_OK)
+            {
+                MessageBox.Show("无法获取相机最大分辨率");
+                return;
+            }
+            uint maxWidth = stW.nMax;
+            uint maxHeight = stH.nMax;
+
+            if (offsetX + roiWidth > maxWidth || offsetY + roiHeight > maxHeight)
+            {
+                MessageBox.Show("ROI 超出相机最大分辨率范围");
+                return;
+            }
+
+            // 3. 更新用户参数中的 ROI 值
+            cup.p_Cam[icamInd].iROI[0] = offsetX;
+            cup.p_Cam[icamInd].iROI[1] = offsetY;
+            cup.p_Cam[icamInd].iROI[2] = roiWidth;
+            cup.p_Cam[icamInd].iROI[3] = roiHeight;
+
+            // 4. 停止采集（必须在停止状态下修改 ROI）
+            camera2[icamInd].MV_CC_StopGrabbing_NET();
+
+            // 5. 设置 ROI（调用独立的设置方法，不涉及缓冲区重分配）
+            bool bSucc = hIKVisionCamera.SetROIParam(cup.p_Cam[icamInd], camera2[icamInd]);
+            // 注意：此处的 SetROIParam 应只做参数设置，不重分配缓冲区
+
+            if (!bSucc)
+            {
+                MessageBox.Show("设置 ROI 参数失败");
+                // 尝试重新开始采集
+                camera2[icamInd].MV_CC_StartGrabbing_NET();
+                return;
+            }
+
+            // 6. 重新获取 PayloadSize
+            MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
+            int ret = camera2[icamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam);
+            if (ret != MyCamera.MV_OK)
+            {
+                MessageBox.Show("获取 PayloadSize 失败");
+                camera2[icamInd].MV_CC_StartGrabbing_NET();
+                return;
+            }
+            uint newPayloadSize = stParam.nCurValue;
+
+            // 7. 重新分配 AcqFIFO 缓冲区
+            if (!acqFIFO.ReallocateBuffer(icamInd, newPayloadSize))
+            {
+                MessageBox.Show("重新分配图像缓冲区失败");
+                camera2[icamInd].MV_CC_StartGrabbing_NET();
+                return;
+            }
+
+            // 8. 更新相机状态（如果 AcqFIFO 维护了状态）
+            acqFIFO._cs.iStatus[icamInd] = 3; // 就绪
+
+            // 9. 更新本地缓存的相机宽高（用于后续逻辑）
+            cup.p_Cam[icamInd].iWidth = roiWidth;
+            cup.p_Cam[icamInd].iHeight = roiHeight;
+
+            // 10. 重新开始采集
+            camera2[icamInd].MV_CC_StartGrabbing_NET();
+
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "设置相机ROI";
+            operLog.strFailReason = $"偏移({offsetX},{offsetY}) 尺寸({roiWidth}x{roiHeight}) 载荷={newPayloadSize}";
+            AddLog();
+
+            MessageBox.Show("ROI 设置成功");
+        }
         //图像旋转
         private void rdRot_Click(object sender, EventArgs e)
         {
@@ -628,6 +768,8 @@ namespace VisionApplication
         private void cbDeviceList_SelectedIndexChanged(object sender, EventArgs e)
         {
             icamSelectInd = cbDeviceList.SelectedIndex;
+          //  UpdateCamParam2UI();
+            UpdateCamParamToUI();
         }
         //根据UI参数设置相机
         private void UpdateCamParamFromUI()
@@ -650,12 +792,18 @@ namespace VisionApplication
                     cmbPixelFormat.SelectedIndex = 0;
             }
         }
+
+        private bool _isUpdatingUI = false;
         //根据相机参数更新UI
         private void UpdateCamParamToUI()
         {
-            if (cbDeviceList.Items.Count > 0)
+            if (cbDeviceList.Items.Count == 0) return;
+
+                _isUpdatingUI = true;  // 开始更新，禁止事件触发
+
+           // if (cbDeviceList.Items.Count > 0)
             {
-                cbDeviceList.SelectedIndex = 0;
+           //     cbDeviceList.SelectedIndex = 0;
                 int icamInd = cbDeviceList.SelectedIndex;
                 try
                 {
@@ -673,8 +821,24 @@ namespace VisionApplication
 
                         if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)
                             cmbPixelFormat.SelectedIndex = cup.p_Cam[icamInd].iMonoType;
-                       
 
+                        // ---- 新增：加载 ROI 参数 ----
+                        if (cup.p_Cam[icamInd].iROI != null && cup.p_Cam[icamInd].iROI.Length >= 4)
+                        {
+                            numROIOffSetX.Value = cup.p_Cam[icamInd].iROI[0];
+                            numROIOffSetY.Value = cup.p_Cam[icamInd].iROI[1];
+                            numROIWidth.Value = cup.p_Cam[icamInd].iROI[2];
+                            numROIHeight.Value = cup.p_Cam[icamInd].iROI[3];
+                        }
+                        else
+                        {
+                            // 若 iROI 数组无效，设置默认全尺寸（可调用获取最大分辨率后赋值）
+                            // 此处可根据实际需求置 0 或保持当前值
+                            numROIOffSetX.Value = 0;
+                            numROIOffSetY.Value = 0;
+                            numROIWidth.Value = 0;
+                            numROIHeight.Value = 0;
+                        }
                         switch (cup.p_Cam[icamInd].iRotateType)
                         {
                             case 0:
@@ -706,9 +870,13 @@ namespace VisionApplication
                         acqFIFO._rtType = cup.p_Cam[icamInd].iFlipType * 4 + cup.p_Cam[icamInd].iRotateType;
                     }
                 }
-                catch
+                catch(Exception ex)  
                 {
 
+                }
+                finally
+                {
+                    _isUpdatingUI = false;  // 恢复事件响应
                 }
             }
         }
@@ -761,8 +929,12 @@ namespace VisionApplication
 
         private void UpdateCamParam2UI()
         {
-            LightControlTurnOn();
+            LightControlTurnOn(); 
             UpdateCamParamToUI();
+            for(int iJobIndex=0; iJobIndex < maxCameraNum; iJobIndex++)
+            {
+                setBrightness(iJobIndex);
+            }
         }
         #endregion
        

@@ -194,7 +194,6 @@ namespace VisionApplication
             this.toolStripStatusLabel_CardStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel_CardInitStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel_LaserStatus = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatus_inferTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_ExcuteTimes = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.btFunParam = new System.Windows.Forms.Button();
@@ -1776,7 +1775,6 @@ namespace VisionApplication
             this.toolStripStatusLabel_CardStatus,
             this.toolStripStatusLabel_CardInitStatus,
             this.toolStripStatusLabel_LaserStatus,
-            this.toolStripStatus_inferTime,
             this.toolStripStatus_ExcuteTimes});
             this.statusStrip1.Location = new System.Drawing.Point(0, 791);
             this.statusStrip1.Name = "statusStrip1";
@@ -1919,13 +1917,6 @@ namespace VisionApplication
             this.toolStripStatusLabel_LaserStatus.Name = "toolStripStatusLabel_LaserStatus";
             this.toolStripStatusLabel_LaserStatus.Size = new System.Drawing.Size(24, 30);
             this.toolStripStatusLabel_LaserStatus.Text = "    ";
-            // 
-            // toolStripStatus_inferTime
-            // 
-            this.toolStripStatus_inferTime.BackColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.toolStripStatus_inferTime.Name = "toolStripStatus_inferTime";
-            this.toolStripStatus_inferTime.Size = new System.Drawing.Size(59, 30);
-            this.toolStripStatus_inferTime.Text = "推理时间:";
             // 
             // toolStripStatus_ExcuteTimes
             // 
@@ -4980,7 +4971,6 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator12;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatus_Ser4;
         private System.Windows.Forms.ToolStripButton toolBtSta_Triggle;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatus_inferTime;
         private System.Windows.Forms.ToolStripButton toolBtSta_ErrMark;
         private System.Windows.Forms.ToolStripButton toolBtSta_WithOutMark;
         private System.Windows.Forms.ToolStripButton toolBtSta_MarkAfterLocated;
