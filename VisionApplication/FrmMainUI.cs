@@ -3033,6 +3033,14 @@ namespace VisionApplication
         //重新连接相机
         private void toolBt_Cam_Click(object sender, EventArgs e)
         {
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "工位切换";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             if (rts.iModelRole < 0)
             {
                 operLog.iEventStatus = -1;
@@ -3075,7 +3083,14 @@ namespace VisionApplication
                 MessageBox.Show("用户身份未验证，无法操作");
                 return;
             }
-
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "功能操作";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             bool bChecked = false;
             try
             {
@@ -3375,7 +3390,14 @@ namespace VisionApplication
         //**20220410 串口打开或者关闭
         private void toolBt_ConnSer_Click(object sender, EventArgs e)
         {
-
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "工位切换";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             if (!vpWin.bMainTaskFinished)
             {
                 operLog.iEventStatus = -1;
@@ -3747,6 +3769,14 @@ namespace VisionApplication
 
         private void toolBt_RuntimeSet_Click(object sender, EventArgs e)
         {
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "参数设置";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             if (rts.iModelRole < 2)
             {
                 operLog.iEventStatus = -1;
@@ -4124,13 +4154,17 @@ namespace VisionApplication
             if (toolBtSta_LockImage.Checked)
             {
                 toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+              //  toolTip1.SetToolTip(toolBtSta_LockImage, "自动运行模式");
             }
             else
             {
                 toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
+              //  toolTip1.SetToolTip(toolBtSta_LockImage, "手动运行模式");
             }
-            rts.onLS.bTrigg = toolBtSta_LockImage.Checked; 
-            
+            rts.onLS.bTrigg = toolBtSta_LockImage.Checked;
+            tabControl1.Enabled = !rts.onLS.bTrigg;
+            menuStrip1.Enabled = !rts.onLS.bTrigg;
+
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -7507,6 +7541,14 @@ namespace VisionApplication
 
         private void tabControl1_Selecting(object sender, TabControlCancelEventArgs e)
         {
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "参数设置";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             if (vpWin._iTaskType == 5)
             {
                 MessageBox.Show("请先关闭当前工具");

@@ -877,8 +877,8 @@ namespace VisionApplication
 
                 // 更新状态
                 rts.initStatus.bJCZ = 0;
-                toolBtSta_LockImage.Checked = true;
-                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+                toolBtSta_LockImage.Checked = false;
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
 
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "JCZServer嵌入成功";
@@ -1086,14 +1086,14 @@ namespace VisionApplication
                     if (received.nErr != 0)
                     {
                     //    rts.initStatus.bJCZ = -2;
-                        toolBtSta_LockImage.Checked = false;
-                        toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
+                  //      toolBtSta_LockImage.Checked = false;
+                   //     toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
                     }
                     else
                     {
                         rts.initStatus.bJCZ = 0;
-                        toolBtSta_LockImage.Checked = true;
-                        toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+                      //  toolBtSta_LockImage.Checked = true;
+                     //   toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
                         nEntNums[card] = received.ind1;
                         strEntNames[card] = new string[nEntNums[card]];
                         iPenNums[card] = new int[nEntNums[card]];
@@ -1105,8 +1105,8 @@ namespace VisionApplication
                     nErr = received.nErr;
                     if (nErr == 0)
                     {
-                        toolBtSta_LockImage.Checked = true;
-                        toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+                    //    toolBtSta_LockImage.Checked = true;
+                    //    toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
                     }
                     operLog.strOperEvent = "板卡初始化";
                     break;
@@ -1115,8 +1115,8 @@ namespace VisionApplication
                     nErr = received.nErr;
                     if (nErr == 0)
                     {
-                        toolBtSta_LockImage.Checked = false;
-                        toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
+                    //    toolBtSta_LockImage.Checked = false;
+                   //     toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
                     }
                     operLog.strOperEvent = "关闭板卡";
                     break;
@@ -1756,7 +1756,7 @@ namespace VisionApplication
         /// </summary>
         private void UpdateCardStatusIcon(int cardSN)
         {
-            if (bInitJCZ[cardSN] == 0)
+            /*if (bInitJCZ[cardSN] == 0)
             {
                 toolBtSta_LockImage.Checked = true;
                 toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
@@ -1767,7 +1767,7 @@ namespace VisionApplication
                 toolBtSta_LockImage.Checked = false;
                 toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
                 toolBtSta_LockImage.ToolTipText = $"板卡{cardSN + 1}未初始化";
-            }
+            }*/
         }
 
         /// <summary>
@@ -2393,6 +2393,14 @@ namespace VisionApplication
         }*/
         private async void toolBt_JCZ_Conn_Click(object sender, EventArgs e)
         {
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "工位切换";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             operLog.iEventStatus = 0;
             operLog.strOperEvent = "启动/连接JCZ服务端";
             AddLog();
@@ -2878,6 +2886,14 @@ namespace VisionApplication
         /// </summary>
         private void menuWSJobS_Click(object sender, EventArgs e)
         {
+            if(rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "工位切换";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog(); 
+                return;
+            }
             if (!vpWin.bMainTaskFinished)
             {
                 operLog.iEventStatus = -1;
