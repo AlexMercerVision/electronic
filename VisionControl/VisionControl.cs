@@ -530,26 +530,79 @@ namespace VisionControl
                 }
             }
         }
+
+
+        //VP选项配置
+        public int VPConfig()
+        {
+            FormConfig frmConfigSelect = new FormConfig(mQuickBuildAccess, mUsePasswords);
+            frmConfigSelect.ShowDialog(this);
+            int iRet = 0;
+            switch (frmConfigSelect.Result)
+            {
+                case FormConfigResult.None:
+                    break;
+
+                case FormConfigResult.QuickBuild:
+                    // detach from job manager before displaying edit control
+                    AttachToJobManager(false);
+
+                    // put up a new dialog containing QB editor
+                    FormQB frm = new FormQB(mJM);
+                    frm.ShowDialog(this);
+                    frm.Dispose();
+
+                    // prompt for save of vpp file
+                    string vpp = mLoadedVppFilename;
+                    string quotedvpp = "\"" + vpp + "\"";
+                    string saveButtonName = ResourceUtility.GetString("RtSaveSettingsButton");
+                    string quotedSaveButtonName = "\"" + saveButtonName + "\"";
+                    string promptStr = ResourceUtility.FormatString("RtSaveSettingsTextAfterConfig", quotedvpp, quotedSaveButtonName);
+                    iRet = 10 + PromptToSaveSettings(promptStr);
+
+                    // re-attach
+                    AttachToJobManager(true);
+                    break;
+
+                case FormConfigResult.SetPasswords:
+                    FormSetPasswords frmPasswords = new FormSetPasswords(mCurrentPasswordFile);
+                    frmPasswords.ShowDialog(this);
+                    break;
+
+                case FormConfigResult.AppOptions:
+                    FormAppOptions frmOptions = new FormAppOptions(this);
+                    frmOptions.EnableDisplay = mCurrentOptionsFile.EnableImageDisplay;
+                    frmOptions.EnableIOAtStartup = mCurrentOptionsFile.EnableIOAtStartup;
+                    frmOptions.EnableIO = mJM.IOEnable;
+                    DialogResult result = frmOptions.ShowDialog(this);
+                    if (result == DialogResult.OK)
+                    {
+                        mCurrentOptionsFile.EnableImageDisplay = frmOptions.EnableDisplay;
+                        mCurrentOptionsFile.EnableIOAtStartup = frmOptions.EnableIOAtStartup;
+                        mCurrentOptionsFile.Write();
+
+                        // handle IO state change
+                        if (frmOptions.EnableIO != mJM.IOEnable)
+                        {
+                            try
+                            {
+                                mJM.IOEnable = frmOptions.EnableIO;
+                            }
+                            catch (Cognex.VisionPro.Exceptions.CogException ex)
+                            {
+                                MessageBox.Show(ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message,
+                                                mApplicationName);
+                            }
+                        }
+                    }
+                    break;
+            }
+            return iRet;
+        }
+
+
         #endregion
 
-
-        // 1. 声明事件：参数 (工位索引, 错误描述)
-        public event Action<int, string> VisionErrorOccurred;
-
-        // 2. 封装的触发方法（统一入口，方便后续加日志过滤）
-        private void OnVisionError(int jobIndex, string errorMessage)
-        {
-            // 如果错误信息为空，给个默认值
-            if (string.IsNullOrEmpty(errorMessage))
-                errorMessage = "未知视觉错误";
-
-            // 仍然保留旧的 strErrInfo 赋值，防止现有代码依赖它
-            if (jobIndex >= 0 && jobIndex < strErrInfo.Length)
-                strErrInfo[jobIndex] = errorMessage;
-
-            // 触发事件（如果有订阅者）
-            VisionErrorOccurred?.Invoke(jobIndex, errorMessage);
-        }
 
         #region Runtime implementation 
         //回调
@@ -601,23 +654,37 @@ namespace VisionControl
                     //   UpdateControlsEnabled();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // 尝试获取当前 Job 索引
+               // int idx = Utility.GetJobIndexFromName(mJM, job.Name);
+                OnVisionError(idx >= 0 ? idx : 0, $"任务运行回调异常: {ex.Message}");
+            }
         }
         // mJM_UserResultAvailable 中直接使用返回值
         private void mJM_UserResultAvailable(object sender, CogJobManagerActionEventArgs e)
         {
-            int? jobIdx;
-            while ((jobIdx = HandleUserResults()).HasValue)
+            try
             {
-                int idx = jobIdx.Value;
+                int? jobIdx;
+                while ((jobIdx = HandleUserResults()).HasValue)
+                {
+                    int idx = jobIdx.Value;
 
-                RunOneTimeFinished(idx);
-                SetJobBusy(idx, false);
-                DirectShowImage(idx);
-                infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
-                start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
-                cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
-                JobResultReady?.Invoke(idx);
+                    RunOneTimeFinished(idx);
+                    SetJobBusy(idx, false);
+                    DirectShowImage(idx);
+                    infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
+                    start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
+                    cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
+                    JobResultReady?.Invoke(idx);
+                }
+            }
+            catch (Exception ex)
+            {
+                // ✅ 此处无法确定具体工位，默认用 0，可从上下文尝试获取
+                int jobIdx = iCurrentJobIndex >= 0 ? iCurrentJobIndex : 0;
+                OnVisionError(jobIdx, $"用户结果回调异常: {ex.Message}");
             }
         }
 

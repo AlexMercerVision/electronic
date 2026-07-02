@@ -418,6 +418,14 @@ namespace VisionApplication
                 vpWin.JobResultReady += OnJobResultReady;
                 vpWin.InitBG();
                 operLog.iEventStatus = 0;
+
+                // 订阅视觉错误事件
+                if (vpWin != null)
+                {
+                    vpWin.VisionErrorOccurred -= OnVisionErrorFromVP; // 防止重复订阅
+                    vpWin.VisionErrorOccurred += OnVisionErrorFromVP;
+                }
+
             }
             catch
             {
@@ -430,7 +438,15 @@ namespace VisionApplication
             }*/
             
         }
-
+        // 事件处理方法（直接打日志）
+        private void OnVisionErrorFromVP(int jobIndex, string errorMessage)
+        {
+            // AddLog 内部已处理跨线程 Invoke，可直接调用
+            operLog.iEventStatus = -1;
+            operLog.strOperEvent = $"视觉工位{jobIndex + 1}异常";
+            operLog.strFailReason = errorMessage;
+            AddLog();
+        }
         //初始化深度学习模型
         private void InitDL()
         {
@@ -2667,7 +2683,7 @@ namespace VisionApplication
             //  InitCamLog();
 
 
-            if (rts.iModelRole >= 9)
+            if (rts.iModelRole >= 4)
             {
                 /*  txt_NextImageIndex.Visible = true;
                   label5.Visible = true;*/
@@ -3978,7 +3994,7 @@ namespace VisionApplication
                 {
                     operLog.iEventStatus = -1;
                 }
-                if(rts.iModelRole>=3)
+                if(rts.iModelRole>3)
                 {
                     btFunSet.Visible = true;
                 }
@@ -4093,29 +4109,28 @@ namespace VisionApplication
         
         private void toolBtSta_LockImage_Click(object sender, EventArgs e)
         {
-           /* if (toolBtSta_LockImage.Checked)  //关闭板卡
-            {
-                lczParam.cmdType = 2;
-                pipeClient.SendParam(lczParam);
-            }
-            else
-            {
-                jczPipThread = new Thread(ReConnToJCZ);
-                jczPipThread.Start();
-            }*/
+            /* if (toolBtSta_LockImage.Checked)  //关闭板卡
+             {
+                 lczParam.cmdType = 2;
+                 pipeClient.SendParam(lczParam);
+             }
+             else
+             {
+                 jczPipThread = new Thread(ReConnToJCZ);
+                 jczPipThread.Start();
+             }*/
 
-            /*toolBtSta_LockImage.Checked = !toolBtSta_LockImage.Checked;
-            if(toolBtSta_LockImage.Checked)
+            toolBtSta_LockImage.Checked = !toolBtSta_LockImage.Checked;
+            if (toolBtSta_LockImage.Checked)
             {
-                toolBtSta_LockImage.Image=global::VisionApplication.Properties.Resources.Lock;
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
             }
             else
             {
                 toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
             }
-            rts.onLS.bLock = toolBtSta_LockImage.Checked;
-            if(rts.initStatus.bVPPInit)
-                vpWin.SetLock(toolBtSta_LockImage.Checked);*/
+            rts.onLS.bTrigg = toolBtSta_LockImage.Checked; 
+            
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -4271,7 +4286,7 @@ namespace VisionApplication
         {
             if (rts.iModelRole < 0)
                 return;
-            if (rts.iModelRole < 8)
+            if (rts.iModelRole < 4)
             {
                 rts.iModelRole = 0;
                 btFunSet.Visible = false;
@@ -5080,7 +5095,8 @@ namespace VisionApplication
                             rts.cs.iStatus[i] = 0;
                     }
                 }
-                TipInfo();
+                //2026年7月2日 暂时不要更新信息
+           //     TipInfo();
                 if (DateTime.Now.Hour == 0 && DateTime.Now.Minute < 5) //0点到0:05分，
                 {
                     dirJudge(true);
@@ -5832,7 +5848,7 @@ namespace VisionApplication
                 menuManage_SuperOrNormal.Text = "切换至普通用户";
             }
             vpWin.SiftRDMain();
-            if (rts.iModelRole >=9)
+            if (rts.iModelRole >=4)
             {
                 /* txt_NextImageIndex.Visible = true;
                  label5.Visible = true;*/
@@ -6335,7 +6351,9 @@ namespace VisionApplication
             else if (Readlen%10==0 && inf[0] == 0x01 && inf[1] == 0x45
                 && inf[2] == 0x05 && inf[3] == 0x01)
             {
-                operLog.iEventStatus = 0;
+                if (!rts.onLS.bTrigg)
+                    return;
+                    operLog.iEventStatus = 0;
                 operLog.strOperEvent = "收到有效触发信号";
                 operLog.strFailReason = "-";
                 AddLog();
@@ -6948,7 +6966,7 @@ namespace VisionApplication
             if (cup.p_VPPRTP.bAcqFromCam &&  (!rts.initStatus.bCamInit || !rts.initStatus.bCamPrepared))
             {
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = "连续运行";
+                operLog.strOperEvent = "采集图像";
                 operLog.strFailReason = "部分相机没有准备就绪";
                 AddLog();
                 return false;
@@ -6965,7 +6983,7 @@ namespace VisionApplication
             if (cup.p_VPPRTP.bVisionInfer && rts.initStatus.iVPPStatus != 0)  //
             {
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = "运行一次";
+                operLog.strOperEvent = "视觉环境检测";
                 operLog.strFailReason = "视觉推理模块初始化失败";
                 AddLog();
                 return false;
@@ -7415,7 +7433,14 @@ namespace VisionApplication
                 ShowCurrentTaskNotFinishedWarning();
                 return;
             }
-
+            if (rts.iModelRole < 3)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "模板定位";
+                operLog.strFailReason = "用户权限不够";
+                AddLog();
+                return;
+            }
             // 2. 切换编辑模式
             b9PointEdit = !b9PointEdit;
 

@@ -3661,7 +3661,14 @@ namespace VisionApplication
                 ShowCurrentTaskNotFinishedWarning();
                 return;
             }
-
+            if (rts.iModelRole < 3)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "模板定位";
+                operLog.strFailReason = "用户权限不够";
+                AddLog();
+                return;
+            }
             bBlobEdit = !bBlobEdit;
             if (bBlobEdit)
             {

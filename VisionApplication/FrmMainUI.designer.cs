@@ -520,21 +520,21 @@ namespace VisionApplication
             // menuWS_Job1
             // 
             this.menuWS_Job1.Name = "menuWS_Job1";
-            this.menuWS_Job1.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_Job1.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job1.Text = "A面";
             this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job2
             // 
             this.menuWS_Job2.Name = "menuWS_Job2";
-            this.menuWS_Job2.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_Job2.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job2.Text = "B面";
             this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job3
             // 
             this.menuWS_Job3.Name = "menuWS_Job3";
-            this.menuWS_Job3.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_Job3.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job3.Text = "C面";
             this.menuWS_Job3.Visible = false;
             this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
@@ -542,7 +542,7 @@ namespace VisionApplication
             // menuWS_JobS
             // 
             this.menuWS_JobS.Name = "menuWS_JobS";
-            this.menuWS_JobS.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_JobS.Size = new System.Drawing.Size(180, 22);
             this.menuWS_JobS.Text = "同步";
             // 
             // menuCam
@@ -1644,8 +1644,7 @@ namespace VisionApplication
             this.toolBtSta_LockImage.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolBtSta_LockImage.Name = "toolBtSta_LockImage";
             this.toolBtSta_LockImage.Size = new System.Drawing.Size(36, 42);
-            this.toolBtSta_LockImage.ToolTipText = "初始化板卡";
-            this.toolBtSta_LockImage.Visible = false;
+            this.toolBtSta_LockImage.ToolTipText = "自动运行";
             this.toolBtSta_LockImage.Click += new System.EventHandler(this.toolBtSta_LockImage_Click);
             // 
             // toolBt_LaserPreview
@@ -2166,7 +2165,6 @@ namespace VisionApplication
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(357, 543);
             this.tabControl1.TabIndex = 0;
-         //   this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             this.tabControl1.Selecting += new System.Windows.Forms.TabControlCancelEventHandler(this.tabControl1_Selecting);
             // 
             // tabPageCam
