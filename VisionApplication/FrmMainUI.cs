@@ -2762,18 +2762,19 @@ namespace VisionApplication
                 DateVerify(iModelRole);
                 if (rts.iModelRole == 0)
                 {
-                    if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")   //调试专用功能
+                    if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" /*|| strMAC == "00FFCF3A6322"*/ || strMAC == "8C32233F2B85")   //调试专用功能
                     {
                         iModelRole = 9;
-
+                        btFunSet.Visible = true;
                     }
                     else if (DateTime.Now.ToString("yyyyMMdd") == "20260505")  //临时使用
                     {
                         iModelRole = 9;
+                        btFunSet.Visible = true;
                     }
                     else
                     {
-                        iModelRole = 9;
+                        iModelRole = 0;
 
                     }
                     rts.iModelRole = iModelRole;
@@ -3961,10 +3962,11 @@ namespace VisionApplication
                 //  MessageBox.Show("用户身份未验证，无法登录");
                 return;
             }
+          //  int tmpRole=
             Login login = new Login(mPasswordFile);
             if (login.ShowDialog() == DialogResult.OK)
             {
-                rts.iModelRole = login.iModelRole;
+                rts.iModelRole = Math.Max(login.iModelRole, rts.iModelRole);
                 //   rts.iModelRole = iModelRole;
                 operLog.strUserName = login.strID;
                 operLog.strOperEvent = "用户登录";
@@ -3975,6 +3977,14 @@ namespace VisionApplication
                 else
                 {
                     operLog.iEventStatus = -1;
+                }
+                if(rts.iModelRole>=3)
+                {
+                    btFunSet.Visible = true;
+                }
+                else
+                {
+                    btFunSet.Visible = false;
                 }
                 AddLog();
             }
@@ -4261,7 +4271,11 @@ namespace VisionApplication
         {
             if (rts.iModelRole < 0)
                 return;
-            rts.iModelRole = 0;
+            if (rts.iModelRole < 8)
+            {
+                rts.iModelRole = 0;
+                btFunSet.Visible = false;
+            }
             operLog.strUserName = "";
             operLog.strOperEvent = "用户注销";
             operLog.iEventStatus = 0;
@@ -5512,8 +5526,8 @@ namespace VisionApplication
                 toolTip1.SetToolTip(btID, "用户身份未知");
             }
 
-            string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
-            fo.SaveRunTimeStatus(strPath, rts);
+         //   string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
+         //   fo.SaveRunTimeStatus(strPath, rts);
         }
 
         private void menuTask_Click(object sender, EventArgs e)
@@ -5801,16 +5815,17 @@ namespace VisionApplication
         {
 
         }
-
+        bool DebugRole = false;
         private void menuManage_SuperOrNormal_Click(object sender, EventArgs e)
         {
-            if (rts.iModelRole == 9)
+            if (rts.iModelRole >= 9)
             {
-                rts.iModelRole = 8;
-                vpWin.iModelRole = 8;
+                DebugRole = true;
+                rts.iModelRole = 0;
+                vpWin.iModelRole = 0;
                 menuManage_SuperOrNormal.Text = "切换至超级用户";
             }
-            else
+            else if(DebugRole)
             {
                 rts.iModelRole = 9;
                 vpWin.iModelRole = 9;
@@ -7463,8 +7478,16 @@ namespace VisionApplication
                 AddLog();
             }
         }
+ 
 
-       
+        private void tabControl1_Selecting(object sender, TabControlCancelEventArgs e)
+        {
+            if (vpWin._iTaskType == 5)
+            {
+                MessageBox.Show("请先关闭当前工具");
+                e.Cancel = true;  // 阻止切换
+            }
+        }
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
@@ -7566,7 +7589,7 @@ namespace VisionApplication
                     pmaRes[legacyJobIndex] = vpWin._PMARes[legacyJobIndex];
 
                     // 视觉检测完成后，判断是否需要激光标刻
-                    if (rts.onLS.bLock && rts.initStatus.bJCZ == 0)
+                    if (rts.onLS.bLock && rts.initStatus.bJCZ == 0 && pmaRes[legacyJobIndex].bLocated)
                     {
                         // 异步执行激光标刻，不阻塞UI
                         Task.Run(async () =>

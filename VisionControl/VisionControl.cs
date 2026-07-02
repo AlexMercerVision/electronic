@@ -532,6 +532,25 @@ namespace VisionControl
         }
         #endregion
 
+
+        // 1. 声明事件：参数 (工位索引, 错误描述)
+        public event Action<int, string> VisionErrorOccurred;
+
+        // 2. 封装的触发方法（统一入口，方便后续加日志过滤）
+        private void OnVisionError(int jobIndex, string errorMessage)
+        {
+            // 如果错误信息为空，给个默认值
+            if (string.IsNullOrEmpty(errorMessage))
+                errorMessage = "未知视觉错误";
+
+            // 仍然保留旧的 strErrInfo 赋值，防止现有代码依赖它
+            if (jobIndex >= 0 && jobIndex < strErrInfo.Length)
+                strErrInfo[jobIndex] = errorMessage;
+
+            // 触发事件（如果有订阅者）
+            VisionErrorOccurred?.Invoke(jobIndex, errorMessage);
+        }
+
         #region Runtime implementation 
         //回调
         //结果可用回调
@@ -899,6 +918,9 @@ namespace VisionControl
                 if (!pmaRes[iJobIndex].bLocated)
                 {
                     iReject++;
+                    pmaRes[iJobIndex].dPMAScore = 0;
+                    pmaRes[iJobIndex].dTX = 0;
+                    pmaRes[iJobIndex].dTY = 0;
                 }
                 else
                 {

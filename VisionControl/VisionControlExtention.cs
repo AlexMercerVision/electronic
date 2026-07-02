@@ -1727,14 +1727,22 @@ namespace VisionControl
         }
 
         //2026年6月19日 更新九点标定坐标系后重新模式训练
-        public void ReTrainPMAWithUpdateCS(int iJobIndex)
+        public bool ReTrainPMAWithUpdateCS(int iJobIndex)
         {
-            CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-            CogCalibNPointToNPointTool nPointTool = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
-            nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
-            nPointTool.Run();
-            pma.Pattern.TrainImage = nPointTool.OutputImage;
-            pma.Pattern.Train();           
+            try
+            {
+                CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                CogCalibNPointToNPointTool nPointTool = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+                nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
+                nPointTool.Run();
+                pma.Pattern.TrainImage = nPointTool.OutputImage;
+                pma.Pattern.Train();
+                return true;
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
         }
 
         public void ReTrainPMA(int iJobIndex)
@@ -1819,17 +1827,35 @@ namespace VisionControl
         }
     
 
-        public void ReRunPMA(int iJobIndex)
+        public bool ReRunPMA(int iJobIndex)
         {
             CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
             if (!IsPMATrained(iJobIndex))
-                return;
+                return false;
             pma.Run();
+            if (pma.Results.Count > 0)
+            {
+                pmaRes[iJobIndex].dPMAScore = pma.Results[0].Score;
+                pmaRes[iJobIndex].dTX = pma.Results[0].GetPose().TranslationX;
+                pmaRes[iJobIndex].dTY = pma.Results[0].GetPose().TranslationY;
+                pmaRes[iJobIndex].dTR = pma.Results[0].GetPose().Rotation;
+            }
+         
+
             ShowPMARunImage(pma, iJobIndex);
+           return pma.Results.Count > 0;
         }
 
         public void SetPMASearchRegion(int iJobIndex)
         {
+            CogCalibNPointToNPointTool nPointTool = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+
+           
+           nPointTool.InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+            
+
+            nPointTool.Run();
+
             CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
 
             ShowPMACurrentInputImage(pma, iJobIndex);

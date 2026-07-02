@@ -2052,6 +2052,7 @@ namespace VisionApplication
             this.btFunSet.Text = "流程构建";
             this.btFunSet.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btFunSet.UseVisualStyleBackColor = true;
+            this.btFunSet.Visible = false;
             this.btFunSet.Click += new System.EventHandler(this.btFun_Click);
             // 
             // btFun_Preview
@@ -2165,6 +2166,8 @@ namespace VisionApplication
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(357, 543);
             this.tabControl1.TabIndex = 0;
+         //   this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
+            this.tabControl1.Selecting += new System.Windows.Forms.TabControlCancelEventHandler(this.tabControl1_Selecting);
             // 
             // tabPageCam
             // 
@@ -3748,20 +3751,20 @@ namespace VisionApplication
             // btPMASearchRegion
             // 
             this.btPMASearchRegion.ForeColor = System.Drawing.Color.Red;
-            this.btPMASearchRegion.Location = new System.Drawing.Point(230, 138);
+            this.btPMASearchRegion.Location = new System.Drawing.Point(226, 140);
             this.btPMASearchRegion.Name = "btPMASearchRegion";
-            this.btPMASearchRegion.Size = new System.Drawing.Size(76, 32);
+            this.btPMASearchRegion.Size = new System.Drawing.Size(96, 32);
             this.btPMASearchRegion.TabIndex = 96;
-            this.btPMASearchRegion.Text = "匹配区域";
+            this.btPMASearchRegion.Text = "抓取测试图像";
             this.btPMASearchRegion.UseVisualStyleBackColor = true;
             this.btPMASearchRegion.Click += new System.EventHandler(this.btPMASearchRegion_Click);
             // 
             // btPMARun
             // 
             this.btPMARun.ForeColor = System.Drawing.Color.Red;
-            this.btPMARun.Location = new System.Drawing.Point(230, 176);
+            this.btPMARun.Location = new System.Drawing.Point(226, 176);
             this.btPMARun.Name = "btPMARun";
-            this.btPMARun.Size = new System.Drawing.Size(76, 32);
+            this.btPMARun.Size = new System.Drawing.Size(96, 32);
             this.btPMARun.TabIndex = 96;
             this.btPMARun.Text = "定位测试";
             this.btPMARun.UseVisualStyleBackColor = true;

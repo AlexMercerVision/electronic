@@ -679,7 +679,7 @@ namespace CommonCls
                     }
                    
                 }
-                // 应用旋转/镜像（如果需要）
+                // 应用旋转/镜像（如果需要）               
                 cogImage8Grey = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey, iJobIndex);
                 ci8gAcq[iCamIndex] = cogImage8Grey.Copy();
             }

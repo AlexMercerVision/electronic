@@ -30,16 +30,16 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Login));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.cmbAccessLevel = new System.Windows.Forms.ComboBox();
             this.lblPassword = new System.Windows.Forms.Label();
             this.lblUserName = new System.Windows.Forms.Label();
             this.chkPssWrd = new System.Windows.Forms.CheckBox();
-            this.txtUserName = new System.Windows.Forms.TextBox();
             this.txtPassword = new System.Windows.Forms.TextBox();
+            this.txtUserName = new System.Windows.Forms.TextBox();
             this.btOK = new System.Windows.Forms.Button();
             this.btCancel = new System.Windows.Forms.Button();
             this.btUserManage = new System.Windows.Forms.Button();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.cmbAccessLevel = new System.Windows.Forms.ComboBox();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
@@ -56,6 +56,18 @@
             this.groupBox1.Size = new System.Drawing.Size(306, 62);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
+            // 
+            // cmbAccessLevel
+            // 
+            this.cmbAccessLevel.FormattingEnabled = true;
+            this.cmbAccessLevel.Items.AddRange(new object[] {
+            "操作员",
+            "技术管理员",
+            "超级管理员"});
+            this.cmbAccessLevel.Location = new System.Drawing.Point(62, 9);
+            this.cmbAccessLevel.Name = "cmbAccessLevel";
+            this.cmbAccessLevel.Size = new System.Drawing.Size(143, 20);
+            this.cmbAccessLevel.TabIndex = 9;
             // 
             // lblPassword
             // 
@@ -84,15 +96,7 @@
             this.chkPssWrd.TabIndex = 8;
             this.chkPssWrd.Text = "记住密码";
             this.chkPssWrd.UseVisualStyleBackColor = true;
-            // 
-            // txtUserName
-            // 
-            this.txtUserName.Location = new System.Drawing.Point(3, 293);
-            this.txtUserName.Name = "txtUserName";
-            this.txtUserName.Size = new System.Drawing.Size(64, 21);
-            this.txtUserName.TabIndex = 2;
-            this.txtUserName.Text = "admin";
-            this.txtUserName.Visible = false;
+            this.chkPssWrd.Visible = false;
             // 
             // txtPassword
             // 
@@ -102,6 +106,15 @@
             this.txtPassword.Size = new System.Drawing.Size(143, 21);
             this.txtPassword.TabIndex = 3;
             this.txtPassword.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtPassword_KeyPress);
+            // 
+            // txtUserName
+            // 
+            this.txtUserName.Location = new System.Drawing.Point(3, 293);
+            this.txtUserName.Name = "txtUserName";
+            this.txtUserName.Size = new System.Drawing.Size(64, 21);
+            this.txtUserName.TabIndex = 2;
+            this.txtUserName.Text = "admin";
+            this.txtUserName.Visible = false;
             // 
             // btOK
             // 
@@ -146,18 +159,6 @@
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 7;
             this.pictureBox1.TabStop = false;
-            // 
-            // cmbAccessLevel
-            // 
-            this.cmbAccessLevel.FormattingEnabled = true;
-            this.cmbAccessLevel.Items.AddRange(new object[] {
-            "Operator ",
-            "Administrator",
-            "Supervisor"});
-            this.cmbAccessLevel.Location = new System.Drawing.Point(62, 9);
-            this.cmbAccessLevel.Name = "cmbAccessLevel";
-            this.cmbAccessLevel.Size = new System.Drawing.Size(143, 20);
-            this.cmbAccessLevel.TabIndex = 9;
             // 
             // Login
             // 

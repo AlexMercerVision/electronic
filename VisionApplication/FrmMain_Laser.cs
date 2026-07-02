@@ -3375,8 +3375,25 @@ namespace VisionApplication
                     return;
                 }
                 //从新训练PMA模板
-                vpWin.ReRunPMA(iJobIndex);
+               bool bLocate= vpWin.ReRunPMA(iJobIndex);
                 bVPPParamChanged = true;
+                if (bLocate)
+                {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = "定位测试";
+                    pmaRes[iJobIndex] = vpWin.GetJobResult(iJobIndex);
+                    operLog.strFailReason = "分数:" + pmaRes[iJobIndex].dPMAScore.ToString("0.00")
+                   + "，X:" + pmaRes[iJobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[iJobIndex].dTY.ToString("0.00")
+                   + "，R:" + pmaRes[iJobIndex].dTR.ToString("0.00");
+                  //  operLog.strFailReason = "";
+                   AddLog();
+                }
+                else {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "定位测试";
+                    operLog.strFailReason = "定位失败";
+                    AddLog();
+                }
             }
             catch { }
         }
@@ -4348,10 +4365,18 @@ namespace VisionApplication
             if(rts.onLS.bLock)  //是否重新采集图像，提取坐标
                 CaptureCalibImage();
 
-            bool success = UpdateCalibData();
-            if (success)
-                success &= ExeNPointCalib();
-            tcs.SetResult(success);
+            bool bSucc = UpdateCalibData();
+            if (bSucc)
+                bSucc &= ExeNPointCalib();
+            tcs.SetResult(bSucc);
+            if (bSucc)
+                operLog.iEventStatus = 0;
+            else
+                operLog.iEventStatus = -1;
+            operLog.strOperEvent = "更新标定数据";
+            operLog.strFailReason = "标定失败";
+            AddLog();
+
             /* vpWin.GetCalibBlobCoord(cup.calTP.iRow, cup.calTP.iCol, ref dCalibPointIm, iJobIndex);
              UpdateCalibPointTable();*/
         }
@@ -4367,7 +4392,14 @@ namespace VisionApplication
                 ShowCurrentTaskNotFinishedWarning();
                 return;
             }
-            ExeNPointCalib();
+            bool bSucc=ExeNPointCalib();
+            if (bSucc)
+                operLog.iEventStatus = 0;
+            else
+                operLog.iEventStatus = -1;
+            operLog.strOperEvent = "更新标定数据";
+            operLog.strFailReason = "标定失败";
+            AddLog();
         }
         private bool ExeNPointCalib()
         {
@@ -4379,7 +4411,7 @@ namespace VisionApplication
                 cr = vpWin._9PointCalib(dCalibPoint, iJobIndex);
                 UpdateCalibResult2UIFromVar(cr);
 
-                vpWin.ReTrainPMAWithUpdateCS(iJobIndex);
+                bNormal=vpWin.ReTrainPMAWithUpdateCS(iJobIndex);
             }
             return bNormal;
         }
@@ -4805,7 +4837,7 @@ namespace VisionApplication
         /// </summary>
         private void InitParamUI()
         {
-            if (cbDeviceList.Items.Count > 0)
+            if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
                 cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
 
             cmbPMATrainAlg.SelectedIndex = 2;
@@ -4966,7 +4998,7 @@ namespace VisionApplication
                 }
 
                 // 如果视觉检测需要激光标刻（例如结果 OK 且锁标刻开启）
-                if (visionOk && rts.onLS.bLock /*&& rts.initStatus.bJCZ == 0*/)
+                if (visionOk && rts.onLS.bLock  && pmaRes[faceIndex].bLocated/*&& rts.initStatus.bJCZ == 0*/)
                 {
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = $"工位{faceIndex + 1}标刻中";
@@ -4978,7 +5010,7 @@ namespace VisionApplication
                     operLog.strFailReason = vpWin.strErrInfo[faceIndex];
                     AddLog();
                 }
-                if (cup.p_RTSP.bUpdateIO)  //启用IO输出
+                if (cup.p_RTSP.bUpdateIO && pmaRes[faceIndex].bLocated)  //启用IO输出
                 {
                     //只输出OK或者只输出NG
                 //    if (pmaRes[faceIndex].bLocated)
