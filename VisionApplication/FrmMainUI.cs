@@ -425,7 +425,8 @@ namespace VisionApplication
                     vpWin.VisionErrorOccurred -= OnVisionErrorFromVP; // 防止重复订阅
                     vpWin.VisionErrorOccurred += OnVisionErrorFromVP;
                 }
-
+                // 订阅 AcqFIFO 错误事件
+                acqFIFO.ErrorOccurred += OnAcqFIFOError;
             }
             catch
             {
@@ -444,6 +445,14 @@ namespace VisionApplication
             // AddLog 内部已处理跨线程 Invoke，可直接调用
             operLog.iEventStatus = -1;
             operLog.strOperEvent = $"视觉工位{jobIndex + 1}异常";
+            operLog.strFailReason = errorMessage;
+            AddLog();
+        }
+        private void OnAcqFIFOError(object sender, string errorMessage)
+        {
+            // 调用日志记录（AddLog 内部已处理跨线程）
+            operLog.iEventStatus = -1;
+            operLog.strOperEvent = "采集错误";
             operLog.strFailReason = errorMessage;
             AddLog();
         }
@@ -3926,8 +3935,7 @@ namespace VisionApplication
             {
                 if (iShowType == 0)
                     vpWin.PreViewOneImageFromFile(iFileIndex, false, iJobIndex);
-                else if (iShowType == 2)
-                    vpWin.PreViewOneImageFromFileFX(iFileIndex, false);
+               
             }
         }
         private void menuDisp_Default_Click(object sender, EventArgs e)
@@ -6363,9 +6371,9 @@ namespace VisionApplication
             timerIOIn.AutoReset = false; // 只触发一次
             updateUItmp = new delegateUIUpdate(UpdateUIExe); //将委托实例化
         }
- 
+
         //接受数据
-        private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
+        /*private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
         {
            
             // 获取接收缓冲区长度
@@ -6375,11 +6383,11 @@ namespace VisionApplication
             byte[] inf = new byte[Readlen];
             // 接收数据到by里面
             sPortCy.Read(inf, 0, Readlen);
-         /*   string receivedText = Encoding.ASCII.GetString(inf);
+         *//*   string receivedText = Encoding.ASCII.GetString(inf);
             operLog.iEventStatus = -1;
             operLog.strOperEvent = "收到触发信号"+ Readlen.ToString();
             operLog.strFailReason = receivedText;
-            AddLog();*/
+            AddLog();*//*
             //设置Y口输出命令后的反馈
             if ((Readlen == 8 || Readlen == 16) && inf[0] == 0x01 && inf[1] == 0x0f)
             {
@@ -6473,8 +6481,168 @@ namespace VisionApplication
             }
 
         }
+*/
+        // 串口接收缓存（用于处理粘包/拆包）
+        private readonly List<byte> _rxBuffer = new List<byte>();
+        private readonly object _lockBuffer = new object();
+        // 修改后的串口数据接收事件
+        private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
+        {           
+            // 获取接收缓冲区长度
+            Thread.Sleep(60);
+            // 1. 读取所有可用数据
+            int bytesToRead = sPortCy.BytesToRead;
+            if (bytesToRead == 0) return;
+            byte[] temp = new byte[bytesToRead];
+            sPortCy.Read(temp, 0, bytesToRead);
 
-       
+            // 2. 追加到缓存，并加锁防止多线程冲突
+            lock (_lockBuffer)
+            {
+                _rxBuffer.AddRange(temp);
+                ProcessSerialBuffer();   // 尝试解析缓存中的完整包
+            }
+        }
+
+        /// <summary>
+        /// 从缓存中循环解析完整的数据包，直到缓存不足一个包为止。
+        /// </summary>
+        private void ProcessSerialBuffer()
+        {
+            while (_rxBuffer.Count >= 10)  // 至少能容纳一个完整主动上报包（最短10字节）
+            {
+                // ---- 1. 尝试解析主动上报帧（固定10字节） ----
+                if (_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01)
+                {
+                    if (_rxBuffer.Count < 10)
+                        break;   // 数据不够，等待下次接收
+
+                    byte[] packet = _rxBuffer.GetRange(0, 10).ToArray();
+                    _rxBuffer.RemoveRange(0, 10);
+
+                    // 处理该主动上报包（内部会判断触发）
+                    ProcessActiveReport(packet);
+                    continue;
+                }
+
+                // ---- 2. 尝试解析设置输出反馈（长度8或16） ----
+                if (_rxBuffer.Count >= 8 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x0F)
+                {
+                    // 实际长度可能为8或16，这里根据协议判断（示例中简单取8）
+                    int len = 8;
+                    if (_rxBuffer.Count >= len)
+                    {
+                        byte[] packet = _rxBuffer.GetRange(0, len).ToArray();
+                        _rxBuffer.RemoveRange(0, len);
+                        ProcessSetOutputResponse(packet);
+                        continue;
+                    }
+                    break;
+                }
+
+                // ---- 3. 尝试解析查询反馈（长度6） ----
+                if (_rxBuffer.Count >= 6 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x02 && _rxBuffer[2] == 0x01)
+                {
+                    byte[] packet = _rxBuffer.GetRange(0, 6).ToArray();
+                    _rxBuffer.RemoveRange(0, 6);
+                    ProcessQueryResponse(packet);
+                    continue;
+                }
+
+                // ---- 4. 无法识别包头，跳过1字节防止死循环 ----
+                _rxBuffer.RemoveAt(0);
+            }
+        }
+
+        // 处理主动上报包（原主动上报逻辑，但改为收集多个触发类型）
+        private void ProcessActiveReport(byte[] packet)
+        {
+            if (!rts.onLS.bTrigg)
+                return;
+
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "收到有效触发信号";
+            operLog.strFailReason = "-";
+            AddLog();
+
+            // 收集所有触发的类型
+            List<int> triggerTypes = new List<int>();
+            byte diByte = packet[4];   // DI状态字节
+
+            // A面触发
+            if (cup.p_IOPP.APlane > 0)
+            {
+                byte mask = (byte)(1 << (cup.p_IOPP.APlane - 1));
+                if ((diByte & mask) == mask)
+                {
+                    SetFaceTriggerIndicator(0, true);
+                    triggerTypes.Add(1);
+                }
+            }
+
+            // B面触发
+            if (cup.p_IOPP.BPlane > 0)
+            {
+                byte mask = (byte)(1 << (cup.p_IOPP.BPlane - 1));
+                if ((diByte & mask) == mask)
+                {
+                    SetFaceTriggerIndicator(1, true);
+                    triggerTypes.Add(2);
+                }
+            }
+
+            // EndA触发
+            if (cup.p_IOPP.EndAPlane > 0)
+            {
+                byte mask = (byte)(1 << (cup.p_IOPP.EndAPlane - 1));
+                if ((diByte & mask) == mask)
+                    triggerTypes.Add(3);
+            }
+
+            // EndB触发
+            if (cup.p_IOPP.EndBPlane > 0)
+            {
+                byte mask = (byte)(1 << (cup.p_IOPP.EndBPlane - 1));
+                if ((diByte & mask) == mask)
+                    triggerTypes.Add(4);
+            }
+
+            // 执行所有触发任务（按顺序，每个任务异步执行）
+            if (triggerTypes.Count > 0)
+            {
+                Thread.Sleep(5);   // 保留短延时保证稳定性
+                foreach (int type in triggerTypes)
+                {
+                    ExeIOTrig(type);   // ExeIOTrig 内部已经用 Task.Run 异步执行，所以可以循环调用
+                    Thread.Sleep(20);
+                }
+
+                if (!timerIOIn.Enabled)
+                    timerIOIn.Start();
+            }
+        }
+
+        // 处理设置输出反馈（原代码中的第一个 if）
+        private void ProcessSetOutputResponse(byte[] packet)
+        {
+            toolStripStatus_Hand.Text = DateTime.Now.ToString() + ":发送命令：" + strOrder;
+        }
+
+        // 处理查询反馈（原代码中的 else if）
+        private void ProcessQueryResponse(byte[] packet)
+        {
+            if ((packet[3] & 0x01) == 0x01)  // 气缸抬升完成
+            {
+                // 可添加业务逻辑
+            }
+            else if ((packet[3] & 0x02) == 0x02)  // 气缸下降完成
+            {
+                // 可添加业务逻辑
+            }
+        } 
+
+
 
         private void ExeIOTrig(int TrigType)
         {

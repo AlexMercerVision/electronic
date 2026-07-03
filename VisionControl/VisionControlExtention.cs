@@ -49,7 +49,7 @@ namespace VisionControl
         bool bContRun = false;
        // CogImage8Grey ci8g_record, ci8g_preview, cigAcq;
         CogImage8Grey[] ci8gAcq = new CogImage8Grey[maxCameraNum];
-        CogImage8Grey[] ci8gFX = new CogImage8Grey[maxCameraNum];
+     //   CogImage8Grey[] ci8gFX = new CogImage8Grey[maxCameraNum];
       //  HObject[] hObjFX = new HObject[6];              //光度立体产生的图像
 
 
@@ -639,7 +639,7 @@ namespace VisionControl
                         !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFile(iFileIndex, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) >=0)
                     {
                         ci8gAcq = acqFIFO._ci8gAcq;
-                        ci8gFX = acqFIFO.ci8gAcqFX;
+                      //  ci8gFX = acqFIFO.ci8gAcqFX;
 
                         if (cup.p_VPPRTP.bDeepInfer)   //从GPU实时推理
                         {
@@ -701,55 +701,30 @@ namespace VisionControl
                 Thread.Sleep(5);
             }
             try
-            {
-
+            { 
                 //st***20220812
                 //   SetNextImageIndex(ImageInd); 
                 inactiveTime = 0;       //只要运行了，就将不活跃次数置零
 
-                //采集图像或者读取图像，包括重构光度立体图
-
-
-                if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess,iJobIndex,cup.p_CD.camInd[iJobIndex]) ||
-                    !cup.p_VPPRTP.bAcqFromCam && acqFIFO.FXSurfaceAllFromFile(iFileIndex, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType))
-                {
-                    //st 2022年12月22日  深度学习推理
-                    //////////////////////////////////////////////////////////////////////////
-
-
-                    //////////////////////////////////////////////////////////////////////////
-
-
+                //采集图像或者读取图像， 
+                if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogWithObj(bRecord, cup.p_CD.bListProcess,iJobIndex,cup.p_CD.camInd[iJobIndex]) ||
+                    !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogWithObjFromFile(iFileIndex, cup.p_CD.bListProcess, cup.p_VPPRTP.iXBType))
+                { 
                     ci8gAcq = acqFIFO._ci8gAcq;
-                    ci8gFX = acqFIFO.ci8gAcqFX;
-
-
-
-                    //  if (cup.p_VPPRTP.bVisionInfer)  //2024年7月3日  如果启用视觉推理，则
-                    {
-
+               //     ci8gFX = acqFIFO.ci8gAcqFX; 
+                    { 
                         SetVPPImage();
 
                         bRunOneTimeFinished[iJobIndex] = 0;
                         Thread.Sleep(10);  //st** 20220804
                         iJobIndex = 0;
-                        mJM.Job(0).Run();
-
-
-                    }
-                    //  else
-                    {
-                        //  DirectShowImage();
-                        //  bRunOneTimeFinished = 2;
-                    }
-
+                        mJM.Job(0).Run(); 
+                    } 
                 }
                 else
                 {
                     return false;
-                }
-
-
+                } 
             }
             catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
             {
@@ -1852,144 +1827,7 @@ namespace VisionControl
         }
         #endregion
 
-        #region  光度立体法相关
-        public void FXSurfaceFromImageFile(int iFileInd)
-        {
-            acqFIFO.FXSurfaceAllFromFile(iFileInd, cup.p_CD.bListProcess);
-            if (cup.p_CD.bListProcess[0])
-            {
-                if (iModelRole == 10)
-                    cogRDMain.Display.Image = acqFIFO.ci8gAcqFX[0];
-                else
-                    cogRDMainUser.Image = acqFIFO.ci8gAcqFX[0];
-                // cogRDSub1.Image = acqFIFO.ci8gAcq[0];
-            }
-            if (cup.p_CD.bListProcess[1])
-            {
-                cogRDSub1.Image = acqFIFO.ci8gAcqFX[1];
-            }
-            if (cup.p_CD.bListProcess[2])
-            {
-                cogRDSub2.Image = acqFIFO.ci8gAcqFX[2];
-            }
-            /*if (cup.p_CD.bListProcess[3])
-            {
-                cogRDSub3.Image = acqFIFO.ci8gAcqFX[3];
-            }
-            if (cup.p_CD.bListProcess[4])
-            {
-                cogRDSub4.Image = acqFIFO.ci8gAcqFX[4];
-            }*/
-
-        }
-        public void FXSurfaceFromCamNew()
-        {
-            //  acqFIFO.FXSurfaceAll(camNum, bRecord);
-            acqFIFO.FXSurfaceAll(bRecord, cup.p_CD.bListProcess);
-
-            if (cup.p_CD.bListProcess[0])
-            {
-                if (iModelRole == 10)
-                    cogRDMain.Display.Image = acqFIFO.ci8gAcqFX[0];
-                else
-                    cogRDMainUser.Image = acqFIFO.ci8gAcqFX[0];
-                // cogRDSub1.Image = acqFIFO.ci8gAcq[0];
-            }
-            if (cup.p_CD.bListProcess[1])
-            {
-                cogRDSub1.Image = acqFIFO.ci8gAcqFX[1];
-            }
-            if (cup.p_CD.bListProcess[2])
-            {
-                cogRDSub2.Image = acqFIFO.ci8gAcqFX[2];
-            }
-            /*if (cup.p_CD.bListProcess[3])
-            {
-                cogRDSub3.Image = acqFIFO.ci8gAcqFX[3];
-            }
-            if (cup.p_CD.bListProcess[4])
-            {
-                cogRDSub4.Image = acqFIFO.ci8gAcqFX[4];
-            }*/
-        }
-        public bool PreViewOneImageFromFileFX(int iFileInd, bool bSingle)
-        {
-            try
-            {
-                
-                for (int i = 0; i < maxCameraNum; i++)
-                {
-                    ci8gAcq = acqFIFO.GrabOneFrameCogFromFileSingle(iFileInd, cup.p_CD.bListProcess[i], i,cup.p_CD.camInd[i]);
-                    if (cup.p_CD.bListProcess[i] && ci8gAcq != null && ci8gAcq[i] != null)  //启用的检测面才做采集
-                    {
-                        switch (i)
-                        {
-                            case 0:
-                                if (iModelRole == 10)
-                                {
-                                    cogRDMain.Display.Image = ci8gAcq[i];
-
-                                    //  AddGrap(cogRDMain, DL_result[i]);
-                                }
-                                else
-                                {
-                                    cogRDMainUser.Image = ci8gAcq[i];
-
-                                    //   AddGrap(cogRDMainUser, DL_result[i]);
-                                }
-
-                                break;
-                            case 1:
-                                cogRDSub1.Image = ci8gAcq[i];
-                                //  AddGrap(cogRDSub1, DL_result[i]);
-                                break;
-                            case 2:
-                                cogRDSub2.Image = ci8gAcq[i];
-                                //   AddGrap(cogRDSub2, DL_result[i]);
-                                break;
-                                /*case 3:
-                                    cogRDSub3.Image = ci8gAcq[i];
-                                 //   AddGrap(cogRDSub3, DL_result[i]);
-                                    break;
-                                case 4:
-                                    cogRDSub4.Image = ci8gAcq[i];*/
-                                //    AddGrap(cogRDSub4, DL_result[i]);
-                                break;
-                        }
-                    }
-
-                }
-
-                {
-                    ci8gAcq = acqFIFO._ci8gAcq;
-                    ci8gFX = acqFIFO.ci8gAcqFX;
-
-                    if (cup.p_CD.bListProcess[0] && ci8gFX[0] != null)
-                    {
-                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImageFX"].Value = ci8gFX[0];
-                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImageGrey"].Value = ci8gAcq[0];
-
-                    }
-                    for (int i = 1; i < maxCameraNum; i++)
-                    {
-                        if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)
-                        {
-                            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + i.ToString() + "定位"] as CogToolBlock).Inputs["InputImageGrey"].Value = ci8gAcq[i];
-                            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面" + i.ToString() + "定位"] as CogToolBlock).Inputs["InputImageFX"].Value = ci8gFX[i];
-                        }
-                    }
-
-                }
-
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
-        #endregion
+       
 
         #region  图像采集相关
 
@@ -2472,90 +2310,7 @@ namespace VisionControl
                     return false;
             }
         }
-      
-        //实时预览图像
-        public void GrabThreadProcess()
-        {
-            if (true)
-            {
-
-                //  HObject hIm = new HObject();
-                int wsInd = iJobIndex;
-                //   cogRDMain.Display.cogRecordDisplay.Record = null;
-                int iCamIndex = cup.p_CD.camInd[wsInd];
-                while (hikCanGrab)
-                {
-                    try
-                    {
-                        //   GrabThreadProcessHalcon();
-                        // 将海康数据类型转为Mat
-                        if (cup.p_CD.bListProcess[wsInd])
-                        {
-                            //黑白
-                            if (cup.p_Cam[iCamIndex].iMonoType == 0)
-                            {
-                                acqFIFO.GrabOneFrameCog(wsInd);
-                                Thread.Sleep(2);
-                                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
-                                {
-                                    /*  if (iModelRole == 10)
-                                      {
-                                          cogRDMain.Display.Image = acqFIFO.ci8gAcq[wsInd];
-                                      }
-                                      else
-                                      {
-                                          cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
-                                      }*/
-                                    switch (wsInd)
-                                    {
-                                        case 0:
-                                            cogRDMainUser.Image = acqFIFO.ci8gAcq[iCamIndex];
-                                            break;
-                                        case 1:
-                                            cogRDSub1.Image = acqFIFO.ci8gAcq[iCamIndex];
-                                            break;
-                                    }
-                                }
-                            }
-                            else  //彩色
-                            {
-                                acqFIFO.GrabOneFrameCogColor(wsInd, iCamIndex);
-                                Thread.Sleep(2);
-                                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
-                                {
-                                  /*  if (iModelRole == 10)
-                                    {
-                                        cogRDMain.Display.Image = acqFIFO.ci24ColorAcq[wsInd];
-                                    }
-                                    else
-                                    {
-                                        cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
-                                    }*/
-                                    switch (wsInd)
-                                    {
-                                        case 0:
-                                            cogRDMainUser.Image = acqFIFO.ci24ColorAcq[iCamIndex];
-                                            break;
-                                        case 1:
-                                            cogRDSub1.Image = acqFIFO.ci24ColorAcq[iCamIndex];
-                                            break;
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                    catch
-                    {
-                        // MessageBox.Show(se.Message);
-                        // picMain.Image = bitmap;
-                    }
-                    //     Thread.Sleep(50);
-                }
-            }
-
-
-        }
+       
 
         public bool PreViewOneImageFromFile(int iFileInd, bool bSingle, int wsInd)
         {
