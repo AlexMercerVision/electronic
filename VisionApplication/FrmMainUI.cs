@@ -2312,13 +2312,39 @@ namespace VisionApplication
             string faceName = (jobIndex == 0) ? "A面" : "B面";
             operLog.strOperEvent = $"{faceName} 检测完成";
             operLog.iEventStatus = ok ? 2 : -2;
-            operLog.strFailReason = ok ? "OK" : "NG";
+          //  operLog.strFailReason = ok ? "OK" : "NG";
             operLog.strFailReason = "分数:" + pmaRes[jobIndex].dPMAScore.ToString("0.00")
                     + "，X:" + pmaRes[jobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[jobIndex].dTY.ToString("0.00")
-                    + "，R:" + pmaRes[jobIndex].dTR.ToString("0.00");
-
-            
+                    + "，R:" + pmaRes[jobIndex].dTR.ToString("0.00"); 
             AddLog();
+            // ---------- 定位失败自动保存图像 ----------
+            if (!ok || !cup.p_VPPRTP.bRecord )
+            {
+                try
+                {
+                    if (acqFIFO != null &&
+                        !string.IsNullOrEmpty(acqFIFO.strTime[jobIndex]) &&
+                        strErrPathS != null &&
+                        strErrPathS.Length > jobIndex)
+                    {
+                        // 调用新方法保存当前图像
+                        acqFIFO.SaveCurrentImageForErr(strErrPathS, acqFIFO.strTime[jobIndex], jobIndex);
+
+                       /* operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "自动保存失败图像";
+                        operLog.strFailReason = $"{faceName} 图像已保存";
+                        AddLog();*/
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "保存定位失败图像";
+                    operLog.strFailReason = $"{faceName} 图像保存失败";
+                    AddLog();
+                    System.Diagnostics.Debug.WriteLine($"自动保存失败图像异常: {ex.Message}");
+                }
+            }
         }
         /* private void AnaEvent()
          {
@@ -2512,23 +2538,23 @@ namespace VisionApplication
                     case 2:
                     case 9:
                     case 10:
-                        dgvLog.Rows[ind].Cells[2].Value = "操作正常";
+                        dgvLog.Rows[ind].Cells[2].Value = "执行正常";
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Black;
                         break;
                     case -1:
-                        dgvLog.Rows[ind].Cells[2].Value = "操作失败";
+                        dgvLog.Rows[ind].Cells[2].Value = "执行失败";
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                         break;
                     case -2:
-                        dgvLog.Rows[ind].Cells[2].Value = "操作正常";
+                        dgvLog.Rows[ind].Cells[2].Value = "执行失败";
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                         break;
                     case 1:
-                        dgvLog.Rows[ind].Cells[2].Value = "操作超时";
+                        dgvLog.Rows[ind].Cells[2].Value = "执行超时";
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                         break;
                     default:
-                        dgvLog.Rows[ind].Cells[2].Value = "操作异常";
+                        dgvLog.Rows[ind].Cells[2].Value = "执行异常";
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                         break;
                 }
@@ -2548,7 +2574,7 @@ namespace VisionApplication
             }
 
             // 3. 写入文件（简单捕获异常，不因文件写入失败影响日志功能）
-            try
+           /* try
             {
                 string logDir = cup.p_Paf.strLogPath;
                 if (!string.IsNullOrEmpty(logDir))
@@ -2562,7 +2588,7 @@ namespace VisionApplication
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"写日志文件失败: {ex.Message}");
-            }
+            }*/
         }
         /*private void AddLog()
         {
@@ -3546,7 +3572,7 @@ namespace VisionApplication
 
 
                     //错误识别图片存储
-                    strErrPath = cup.p_Paf.strErrPath;
+                    strErrPath = cup.p_Paf.strConSavePath;
                     if (strErrPath.Substring(strErrPath.Length - 1, 1) != "\\")
                         strPath = strErrPath + "\\" + strDate + "\\";
                     else
@@ -4749,7 +4775,7 @@ namespace VisionApplication
             {
                 try
                 {
-                    strResInfo.strTime = acqFIFO.strTime;
+                    strResInfo.strTime = acqFIFO.strTime[0];
                     strResInfo.strResCode = vpWin._iResCode.ToString();
                     strResInfo.strMark = "1";
                     fo.WriteMark(strLogPath, strResInfo);
@@ -4793,7 +4819,7 @@ namespace VisionApplication
             {
                 try
                 {
-                    strResInfo.strTime = acqFIFO.strTime;
+                    strResInfo.strTime = acqFIFO.strTime[0];
                     strResInfo.strResCode = vpWin._iResCode.ToString();
                     strResInfo.strMark = "2";
                     fo.WriteMark(strLogPath, strResInfo);
@@ -4802,7 +4828,8 @@ namespace VisionApplication
                 {
                     operLog.iEventStatus = -1;
                 }
-                //st2023年3月30日   acqFIFO.SaveImageForErr(strErrPathS, acqFIFO.strTime);
+            //   st2023年3月30日   
+              //      acqFIFO.SaveImageForErr(strErrPathS, acqFIFO.strTime);
             }
             else
             {
@@ -5130,7 +5157,7 @@ namespace VisionApplication
                     }
                 }
                 //2026年7月2日 暂时不要更新信息
-           //     TipInfo();
+                TipInfo();
                 if (DateTime.Now.Hour == 0 && DateTime.Now.Minute < 5) //0点到0:05分，
                 {
                     dirJudge(true);
@@ -6342,7 +6369,7 @@ namespace VisionApplication
         {
            
             // 获取接收缓冲区长度
-            Thread.Sleep(30);
+            Thread.Sleep(60);
             int Readlen = sPortCy.BytesToRead;
             // 新建一个 byte[] 数组 用来存放接收的数据
             byte[] inf = new byte[Readlen];
@@ -6387,7 +6414,8 @@ namespace VisionApplication
             {
                 if (!rts.onLS.bTrigg)
                     return;
-                    operLog.iEventStatus = 0;
+                
+                operLog.iEventStatus = 0;
                 operLog.strOperEvent = "收到有效触发信号";
                 operLog.strFailReason = "-";
                 AddLog();
@@ -6446,64 +6474,7 @@ namespace VisionApplication
 
         }
 
-        /*private void ExeIOTrig(int TrigType)
-        {
-            //未登录，禁止操作
-            if (rts.iModelRole < 0)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "执行功能操作";
-                operLog.strFailReason = "用户身份未验证";
-                AddLog();
-                MessageBox.Show("用户身份未验证，无法操作");
-                return;
-            }
-
-            switch (TrigType)
-            {
-                case 1:  //A 面触发
-                         // if (cup.p_IOPP.EndBPlane == 0)  //没有检测结束信号，则认为每次触发仅检测一帧图像
-                    {
-                        if (bRunCondiction(10, 0)) //运行条件判断
-                        {
-                            // 避免重复触发，可增加防抖或状态判断
-                            if (lblIn1.ForeColor != Color.Red)
-                            {
-                                lblIn1.Invoke(new Action(() => lblIn1.ForeColor = Color.Red));
-                                // 启动 A 面（工位 0）一次运行
-                                Task.Run(() => RunOneTimeForFace(0));
-                            }
-                        }
-
-                    }
-
-                    break;
-
-                case 2:  //B面触发
-                    {
-                        if (bRunCondiction(10, 1)) //运行条件判断
-                        {
-                            // 避免重复触发，可增加防抖或状态判断
-                            if (lblIn2.ForeColor != Color.Red)
-                            {
-                                lblIn2.Invoke(new Action(() => lblIn2.ForeColor = Color.Red));
-                                // 启动 A 面（工位 0）一次运行
-                                Task.Run(() => RunOneTimeForFace(1));
-                            }
-                        }
-
-                    }
-                    break;
-                case 3:  //停止采集
-                    PreviewImage(2);  //停止实时预览
-                    break;
-
-                case 4:  //停止检测
-                    StopRun();
-                    break;
-            }
-
-        }*/
+       
 
         private void ExeIOTrig(int TrigType)
         {

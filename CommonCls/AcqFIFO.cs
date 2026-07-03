@@ -210,7 +210,8 @@ namespace CommonCls
         private bool[] bFXRun = new bool[maxCameraNum];
 
         /// <summary>时间戳字符串（用于文件名）</summary>
-        public string strTime;
+        public string[] strTime = new string[maxCameraNum];
+
 
         /// <summary>从文件读取的图像路径数组</summary>
         public string[][] strFiles = new string[maxCameraNum][];   //按工位编号
@@ -448,10 +449,11 @@ namespace CommonCls
         /// <summary>采集单帧灰度图像转Cog格式,VP 算法使用
         public CogImage8Grey GrabOneFrameCog(int iJobIndex,int iCamIndex)
         {
+           
             CameraStatus currentStatus = GetCurrentCameraStatus();
             if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return null;
-
+            strTime[iJobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
             if (_cameraType == 0)
             {
                 nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
@@ -503,7 +505,7 @@ namespace CommonCls
             CameraStatus currentStatus = GetCurrentCameraStatus();
             if (currentStatus.iStatus[iCamIndex] < 2)
                 return null;
-
+            strTime[iJobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
             /*if (_cameraStatus.iStatus[iCamIndex] < 2)
                 return null;*/
             if (_cameraType == 0)
@@ -710,7 +712,7 @@ namespace CommonCls
                         {
                             iStart = cup.p_LI.strPrefix[wsInd].Length;
                         }
-                        strTime = (Path.GetFileName(strFiles[wsInd][ind])).Substring(iStart, iEnd - iStart);
+                        strTime[wsInd] = (Path.GetFileName(strFiles[wsInd][ind])).Substring(iStart, iEnd - iStart);
                     }
                     else
                         ind = iFileInd * cmAcqNum;
@@ -970,6 +972,44 @@ namespace CommonCls
                 return null;
             }
            
+        }
+
+        /// <summary>
+        /// 保存指定工位的当前采集图像到错误路径（用于定位失败自动保存）
+        /// </summary>
+        /// <param name="strErrPathS">错误图像保存路径数组（按工位索引）</param>
+        /// <param name="strTime">时间戳字符串</param>
+        /// <param name="jobIndex">工位索引（0=A面，1=B面）</param>
+        public void SaveCurrentImageForErr(string[] strErrPathS, string strTime, int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                return;
+
+           /* if (cup == null || cup.p_CD == null || cup.p_LI == null)
+                return;*/
+
+            int iCamIndex = cup.p_CD.camInd[jobIndex];  // 物理相机索引
+
+            // 确保错误目录存在
+            string dir = strErrPathS[jobIndex];
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            string strImageFile = Path.Combine(dir, cup.p_LI.strPrefix[jobIndex] + strTime + "_00.jpg");
+
+            // 根据图像类型保存
+            if (cup.p_Cam[jobIndex].iMonoType == 0 && ci8gAcq[iCamIndex] != null)
+            {
+                mImageFile[jobIndex].Open(strImageFile, CogImageFileModeConstants.Write);
+                mImageFile[jobIndex].Append(ci8gAcq[iCamIndex]);
+                mImageFile[jobIndex].Close();
+            }
+            else if (ci24ColorAcq[iCamIndex] != null)
+            {
+                mImageFile[jobIndex].Open(strImageFile, CogImageFileModeConstants.Write);
+                mImageFile[jobIndex].Append(ci24ColorAcq[iCamIndex]);
+                mImageFile[jobIndex].Close();
+            }
         }
         #endregion
 
@@ -1399,7 +1439,7 @@ namespace CommonCls
                         {
                             iStart = cup.p_LI.strCamPrefix[i].Length;
                         }
-                        strTime = (Path.GetFileName(strFiles[i][ind])).Substring(iStart, iEnd - iStart);
+                        strTime[i] = (Path.GetFileName(strFiles[i][ind])).Substring(iStart, iEnd - iStart);
                     }
                     else
                         ind = iFileInd * cmAcqNum;
@@ -1525,7 +1565,7 @@ namespace CommonCls
                     {
                         iStart = cup.p_LI.strCamPrefix[wsInd].Length;
                     }
-                    strTime = (Path.GetFileName(strFiles[wsInd][iFileInd])).Substring(iStart, 14);
+                    strTime[wsInd] = (Path.GetFileName(strFiles[wsInd][iFileInd])).Substring(iStart, 14);
                     HOperatorSet.ReadImage(out hObjFXA[wsInd, 0], strFiles[wsInd][iFileInd]);
                     ci8gAcq[wsInd] = HObj2CogImage(hObjFXA[wsInd, 0]);
                     Thread.Sleep(tWait);
@@ -1553,7 +1593,7 @@ namespace CommonCls
                         int iStart = (Path.GetFileName(strFiles[i][ind])).IndexOf(cup.p_LI.strCamPrefix[i]) + 5;
                         int iEnd = (Path.GetFileName(strFiles[i][ind])).IndexOf("_00");
                         if (iStart == 0) iStart = cup.p_LI.strCamPrefix[i].Length;
-                        strTime = (Path.GetFileName(strFiles[i][ind])).Substring(iStart, iEnd - iStart);
+                        strTime[i] = (Path.GetFileName(strFiles[i][ind])).Substring(iStart, iEnd - iStart);
                     }
                     else
                         ind = iFileInd * cmAcqNum;
@@ -1755,7 +1795,7 @@ namespace CommonCls
                 int dw = 0;
                 //保存时间应该放在分通道之前，统一时间
                 
-                string strImageFile = strConSavePathS[wsInd] + "\\" + cup.p_LI.strPrefix[wsInd] + strTime + "_0" + dw.ToString() + ".jpg";
+                string strImageFile = strConSavePathS[wsInd] + "\\" + cup.p_LI.strPrefix[wsInd] + strTime[wsInd] + "_0" + dw.ToString() + ".jpg";
 
                 //   for (int i = 0; i < maxCameraNum; i++)
                 {
@@ -1791,7 +1831,7 @@ namespace CommonCls
         /// <summary>保存单张图像Halcon函数保存（用于连续采集）</summary>
         public void SaveImageForCam(int ind, int dw)
         {
-            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+            strTime[ind] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
             string strImageFile = strConSavePathS[ind] + "\\" + cup.p_LI.strPrefix[ind] + strTime + "_0" + dw.ToString() + ".jpg";
             if (cup.p_CD.bListProcess[ind] && hObjFXA[ind, 0] != null)
             {
@@ -1801,13 +1841,13 @@ namespace CommonCls
         /// <summary>保存所有光度立体法图像（多方向图+光度图）</summary>
         public void SaveImageForFXSurfaceAll()
         {
-            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+            strTime[0] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
             string strImageFile;
             for (int i = 0; i < maxCameraNum; i++)
             {
                 for (int j = 0; j <= 4; j++)
                 {
-                    strImageFile = strConSavePathS[i] + "\\" + cup.p_LI.strPrefix[i] + strTime + "_0" + j.ToString() + ".jpg";
+                    strImageFile = strConSavePathS[i] + "\\" + cup.p_LI.strPrefix[i] + strTime[0] + "_0" + j.ToString() + ".jpg";
                     if (cup.p_CD.bListProcess[i] && hObjFXA[i, j] != null)
                     {
                         HOperatorSet.WriteImage(hObjFXA[i, j], "jpg", 0, strImageFile);
@@ -1950,12 +1990,12 @@ namespace CommonCls
         /// <summary>保存原始字节图像为JPEG</summary>
         public void SaveImageFormSrcImage()
         {
-            strTime = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+            strTime[0] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
             string strImageFile;
             for (int i = 0; i < maxCameraNum; i++)
             {
                 int iCamIndex = cup.p_CD.camInd[i];
-                strImageFile = strConSavePathS[i] + "\\" + cup.p_LI.strPrefix[i] + strTime + "_00" + ".jpg";
+                strImageFile = strConSavePathS[i] + "\\" + cup.p_LI.strPrefix[i] + strTime[0] + "_00" + ".jpg";
                 if (cup.p_CD.bListProcess[i] && bImgSrcData[iCamIndex] != null)
                 {
                     SaveByteArrayAsJpg_OpenCV(bImgSrcData[iCamIndex], stFrameInfo.nWidth, stFrameInfo.nHeight, 1, strImageFile);

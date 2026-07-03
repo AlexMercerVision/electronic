@@ -128,7 +128,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(77, 20);
             this.label1.TabIndex = 12;
-            this.label1.Text = "缺陷检测";
+            this.label1.Text = "镭射除胶";
             // 
             // Frm_Welcome
             // 

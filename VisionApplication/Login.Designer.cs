@@ -62,8 +62,8 @@
             this.cmbAccessLevel.FormattingEnabled = true;
             this.cmbAccessLevel.Items.AddRange(new object[] {
             "操作员",
-            "技术管理员",
-            "超级管理员"});
+            "工程师",
+            "管理员"});
             this.cmbAccessLevel.Location = new System.Drawing.Point(62, 9);
             this.cmbAccessLevel.Name = "cmbAccessLevel";
             this.cmbAccessLevel.Size = new System.Drawing.Size(143, 20);

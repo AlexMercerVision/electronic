@@ -3395,7 +3395,7 @@ namespace VisionApplication
                 bVPPParamChanged = true;
                 if (bLocate)
                 {
-                    operLog.iEventStatus = 0;
+                    operLog.iEventStatus = 2;
                     operLog.strOperEvent = "定位测试";
                     pmaRes[iJobIndex] = vpWin.GetJobResult(iJobIndex);
                     operLog.strFailReason = "分数:" + pmaRes[iJobIndex].dPMAScore.ToString("0.00")
@@ -4958,6 +4958,7 @@ namespace VisionApplication
             bool reservationReleased = false;
             bool visionBusyEntered = false;
             int previousVisionJobIndex = CaptureVisionExecutionJobIndex();
+            DateTime startTime = DateTime.Now;   // 记录开始时间
             try
             {
                 vpWin.ClearRDRecord(faceIndex);
@@ -5060,6 +5061,14 @@ namespace VisionApplication
                 // 恢复指示灯
                 // 当前自动触发映射：A面(face 0) -> In1，B面(face 1) -> In2
                 SetFaceTriggerIndicator(faceIndex, false);
+
+                // ---------- 新增：记录单次运行总耗时 ----------
+                TimeSpan elapsed = DateTime.Now - startTime;
+                string faceName = (faceIndex == 0) ? "A面" : "B面";
+                operLog.iEventStatus = 2;   // 记录为正常操作，但实际运行结果已在上层分别记录
+                operLog.strOperEvent = $"{faceName} 单次运行完成";
+                operLog.strFailReason = $"总耗时 {elapsed.TotalMilliseconds:F0} ms";
+                AddLog();
             }
         }
 
