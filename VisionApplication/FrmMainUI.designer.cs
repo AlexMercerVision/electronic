@@ -520,21 +520,21 @@ namespace VisionApplication
             // menuWS_Job1
             // 
             this.menuWS_Job1.Name = "menuWS_Job1";
-            this.menuWS_Job1.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_Job1.Size = new System.Drawing.Size(100, 22);
             this.menuWS_Job1.Text = "A面";
             this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job2
             // 
             this.menuWS_Job2.Name = "menuWS_Job2";
-            this.menuWS_Job2.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_Job2.Size = new System.Drawing.Size(100, 22);
             this.menuWS_Job2.Text = "B面";
             this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job3
             // 
             this.menuWS_Job3.Name = "menuWS_Job3";
-            this.menuWS_Job3.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_Job3.Size = new System.Drawing.Size(100, 22);
             this.menuWS_Job3.Text = "C面";
             this.menuWS_Job3.Visible = false;
             this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
@@ -542,7 +542,7 @@ namespace VisionApplication
             // menuWS_JobS
             // 
             this.menuWS_JobS.Name = "menuWS_JobS";
-            this.menuWS_JobS.Size = new System.Drawing.Size(180, 22);
+            this.menuWS_JobS.Size = new System.Drawing.Size(100, 22);
             this.menuWS_JobS.Text = "同步";
             // 
             // menuCam
@@ -555,32 +555,33 @@ namespace VisionApplication
             this.menuCam.Name = "menuCam";
             this.menuCam.Size = new System.Drawing.Size(68, 22);
             this.menuCam.Text = "图像采集";
+            this.menuCam.Click += new System.EventHandler(this.menuCam_Click);
             // 
             // menuCam_Open
             // 
             this.menuCam_Open.Name = "menuCam_Open";
-            this.menuCam_Open.Size = new System.Drawing.Size(160, 22);
+            this.menuCam_Open.Size = new System.Drawing.Size(180, 22);
             this.menuCam_Open.Text = "开启相机";
             this.menuCam_Open.Click += new System.EventHandler(this.menuCam_OpenCloseDev_Click);
             // 
             // menuCam_Close
             // 
             this.menuCam_Close.Name = "menuCam_Close";
-            this.menuCam_Close.Size = new System.Drawing.Size(160, 22);
+            this.menuCam_Close.Size = new System.Drawing.Size(180, 22);
             this.menuCam_Close.Text = "断开相机";
             this.menuCam_Close.Click += new System.EventHandler(this.menuCam_Close_Click);
             // 
             // menuCam_Connect
             // 
             this.menuCam_Connect.Name = "menuCam_Connect";
-            this.menuCam_Connect.Size = new System.Drawing.Size(160, 22);
+            this.menuCam_Connect.Size = new System.Drawing.Size(180, 22);
             this.menuCam_Connect.Text = "启动图像预览";
             this.menuCam_Connect.Click += new System.EventHandler(this.menuCam_Cap_Click);
             // 
             // menuCam_Set
             // 
             this.menuCam_Set.Name = "menuCam_Set";
-            this.menuCam_Set.Size = new System.Drawing.Size(160, 22);
+            this.menuCam_Set.Size = new System.Drawing.Size(180, 22);
             this.menuCam_Set.Text = "摄像头参数设置";
             this.menuCam_Set.Click += new System.EventHandler(this.menuCam_Set_Click);
             // 
@@ -3679,7 +3680,7 @@ namespace VisionApplication
             // 
             // btGetPMAParam
             // 
-            this.btGetPMAParam.Location = new System.Drawing.Point(113, 443);
+            this.btGetPMAParam.Location = new System.Drawing.Point(113, 430);
             this.btGetPMAParam.Name = "btGetPMAParam";
             this.btGetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btGetPMAParam.TabIndex = 96;
@@ -3690,7 +3691,7 @@ namespace VisionApplication
             // 
             // btSetPMAParam
             // 
-            this.btSetPMAParam.Location = new System.Drawing.Point(195, 445);
+            this.btSetPMAParam.Location = new System.Drawing.Point(220, 430);
             this.btSetPMAParam.Name = "btSetPMAParam";
             this.btSetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btSetPMAParam.TabIndex = 96;

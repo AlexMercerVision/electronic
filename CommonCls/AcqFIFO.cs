@@ -903,7 +903,7 @@ namespace CommonCls
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            string strImageFile = Path.Combine(dir, cup.p_LI.strPrefix[jobIndex] + strTime + "_00.jpg");
+            string strImageFile = Path.Combine(dir, cup.p_LI.strPrefix[jobIndex] + strTime + "_10.jpg");
 
             // 根据图像类型保存
             if (cup.p_Cam[jobIndex].iMonoType == 0 && ci8gAcq[iCamIndex] != null)

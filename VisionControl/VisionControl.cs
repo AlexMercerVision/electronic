@@ -995,6 +995,10 @@ namespace VisionControl
                     pmaRes[iJobIndex].dTY = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TY");
                     pmaRes[iJobIndex].dTR = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TR");
                     pmaRes[iJobIndex].dPMAScore = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("PMAScore");
+                    if (pmaRes[iJobIndex].dPMAScore < 0.8)
+                    {
+                        pmaRes[iJobIndex].bLocated = false;
+                    }
                 }
                 bRunOneTimeFinished[iJobIndex] = 2;
             }

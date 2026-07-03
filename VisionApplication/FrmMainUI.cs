@@ -2327,7 +2327,7 @@ namespace VisionApplication
                     + "，R:" + pmaRes[jobIndex].dTR.ToString("0.00"); 
             AddLog();
             // ---------- 定位失败自动保存图像 ----------
-            if (!ok || !cup.p_VPPRTP.bRecord )
+            if (!ok && !cup.p_VPPRTP.bRecord )
             {
                 try
                 {
@@ -2813,7 +2813,7 @@ namespace VisionApplication
                 DateVerify(iModelRole);
                 if (rts.iModelRole == 0)
                 {
-                    if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" /*|| strMAC == "00FFCF3A6322"*/ || strMAC == "8C32233F2B85")   //调试专用功能
+                    if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")   //调试专用功能
                     {
                         iModelRole = 9;
                         btFunSet.Visible = true;
@@ -3492,7 +3492,7 @@ namespace VisionApplication
                 {
                     vpWin._strSigSavePathS = strSigSavePathS;
                     vpWin._strConSavePathS = strConSavePathS;
-                    vpWin._bRecord = cup.p_VPPRTP.bRecord;
+                    
                 }
 
                 acqFIFO._strSigSavePathS = strSigSavePathS;
@@ -4289,6 +4289,7 @@ namespace VisionApplication
             cup.p_VPPRTP.bRecord = !cup.p_VPPRTP.bRecord;
             toolBt_Record.Checked = cup.p_VPPRTP.bRecord;
             rts.onLS.bRecord = cup.p_VPPRTP.bRecord;
+            vpWin._bRecord = cup.p_VPPRTP.bRecord;
             if (toolBt_Record.Checked)
             {
                 toolBt_Record.Image = global::VisionApplication.Properties.Resources.record;
@@ -7693,6 +7694,11 @@ namespace VisionApplication
                 MessageBox.Show("请先关闭当前工具");
                 e.Cancel = true;  // 阻止切换
             }
+        }
+
+        private void menuCam_Click(object sender, EventArgs e)
+        {
+
         }
 
         private void timerIOIn_Tick(object sender, EventArgs e)
