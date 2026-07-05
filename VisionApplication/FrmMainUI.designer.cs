@@ -560,28 +560,28 @@ namespace VisionApplication
             // menuCam_Open
             // 
             this.menuCam_Open.Name = "menuCam_Open";
-            this.menuCam_Open.Size = new System.Drawing.Size(180, 22);
+            this.menuCam_Open.Size = new System.Drawing.Size(160, 22);
             this.menuCam_Open.Text = "开启相机";
             this.menuCam_Open.Click += new System.EventHandler(this.menuCam_OpenCloseDev_Click);
             // 
             // menuCam_Close
             // 
             this.menuCam_Close.Name = "menuCam_Close";
-            this.menuCam_Close.Size = new System.Drawing.Size(180, 22);
+            this.menuCam_Close.Size = new System.Drawing.Size(160, 22);
             this.menuCam_Close.Text = "断开相机";
             this.menuCam_Close.Click += new System.EventHandler(this.menuCam_Close_Click);
             // 
             // menuCam_Connect
             // 
             this.menuCam_Connect.Name = "menuCam_Connect";
-            this.menuCam_Connect.Size = new System.Drawing.Size(180, 22);
+            this.menuCam_Connect.Size = new System.Drawing.Size(160, 22);
             this.menuCam_Connect.Text = "启动图像预览";
             this.menuCam_Connect.Click += new System.EventHandler(this.menuCam_Cap_Click);
             // 
             // menuCam_Set
             // 
             this.menuCam_Set.Name = "menuCam_Set";
-            this.menuCam_Set.Size = new System.Drawing.Size(180, 22);
+            this.menuCam_Set.Size = new System.Drawing.Size(160, 22);
             this.menuCam_Set.Text = "摄像头参数设置";
             this.menuCam_Set.Click += new System.EventHandler(this.menuCam_Set_Click);
             // 
@@ -1816,6 +1816,7 @@ namespace VisionApplication
             this.toolStripStatus_Cam3.Name = "toolStripStatus_Cam3";
             this.toolStripStatus_Cam3.Size = new System.Drawing.Size(26, 30);
             this.toolStripStatus_Cam3.Text = "○";
+            this.toolStripStatus_Cam3.Visible = false;
             // 
             // toolStripStatus_Cam4
             // 

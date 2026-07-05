@@ -109,7 +109,7 @@
             // 
             // txtUserName
             // 
-            this.txtUserName.Location = new System.Drawing.Point(3, 293);
+            this.txtUserName.Location = new System.Drawing.Point(6, 285);
             this.txtUserName.Name = "txtUserName";
             this.txtUserName.Size = new System.Drawing.Size(64, 21);
             this.txtUserName.TabIndex = 2;
@@ -145,9 +145,8 @@
             this.btUserManage.Name = "btUserManage";
             this.btUserManage.Size = new System.Drawing.Size(85, 24);
             this.btUserManage.TabIndex = 6;
-            this.btUserManage.Text = "用户管理";
+            this.btUserManage.Text = "开发者";
             this.btUserManage.UseVisualStyleBackColor = true;
-            this.btUserManage.Visible = false;
             this.btUserManage.Click += new System.EventHandler(this.btUserManage_Click);
             // 
             // pictureBox1

@@ -998,6 +998,7 @@ namespace VisionControl
                     if (pmaRes[iJobIndex].dPMAScore < 0.8)
                     {
                         pmaRes[iJobIndex].bLocated = false;
+                        pmaRes[iJobIndex].dPMAScore -= 0.3;
                     }
                 }
                 bRunOneTimeFinished[iJobIndex] = 2;

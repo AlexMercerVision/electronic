@@ -4223,6 +4223,18 @@ namespace VisionApplication
                 toolBtSta_MarkAfterLocated.Image = global::VisionApplication.Properties.Resources.WithOutMark;
                 toolBtSta_MarkAfterLocated.ToolTipText = "定位后不标刻";
             }
+            toolBtSta_LockImage.Checked = rts.onLS.bTrigg;
+            if (toolBtSta_LockImage.Checked)
+            {
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.Lock;
+                //  toolTip1.SetToolTip(toolBtSta_LockImage, "自动运行模式");
+            }
+            else
+            {
+                toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
+                //  toolTip1.SetToolTip(toolBtSta_LockImage, "手动运行模式");
+            }
+            
             toolBtSta_FromCam.Checked = cup.p_VPPRTP.bAcqFromCam;
             if (toolBtSta_FromCam.Checked)
                 toolBtSta_FromCam.Image = global::VisionApplication.Properties.Resources.ImageAcqFromCam;
@@ -4355,7 +4367,7 @@ namespace VisionApplication
         {
             if (rts.iModelRole < 0)
                 return;
-            if (rts.iModelRole < 4)
+          //  if (rts.iModelRole < 4)
             {
                 rts.iModelRole = 0;
                 btFunSet.Visible = false;
@@ -6536,7 +6548,7 @@ namespace VisionApplication
                     {
                         byte[] packet = _rxBuffer.GetRange(0, len).ToArray();
                         _rxBuffer.RemoveRange(0, len);
-                        ProcessSetOutputResponse(packet);
+                  //      ProcessSetOutputResponse(packet);
                         continue;
                     }
                     break;

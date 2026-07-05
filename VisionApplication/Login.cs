@@ -4,7 +4,7 @@ using System.Net.Sockets;
  
 using System.Net;
 using CommonCls;
-
+using Microsoft.VisualBasic;   // 新增：用于 InputBox
 namespace VisionApplication
 {
     public partial class Login : Form
@@ -155,6 +155,18 @@ namespace VisionApplication
 
         private void btUserManage_Click(object sender, EventArgs e)
         {
+            string pwd = ShowInputDialog("开发者登录", "请输入开发者密码：");
+            if (pwd == "st@2026")   // 预设开发者密码（可改为从配置文件读取）
+            {
+                iModelRole = 4;      // 开发者权限（最高）
+                strID = "开发者";
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            else if (!string.IsNullOrEmpty(pwd))
+            {
+                MessageBox.Show("密码错误！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
             /*string strUserName;
             string strID = txtUserName.Text.Trim();
             string strPwd = txtPassword.Text.Trim();
@@ -177,9 +189,50 @@ namespace VisionApplication
             }
             else
                 MessageBox.Show("请输入登陆账号!");*/
-           
-        }
 
+        }
+        // ★ 自定义输入对话框（不依赖 Microsoft.VisualBasic）
+        private string ShowInputDialog(string title, string prompt, string defaultText = "")
+        {
+            Form form = new Form();
+            Label label = new Label();
+            TextBox textBox = new TextBox();
+            Button btnOk = new Button();
+            Button btnCancel = new Button();
+
+            form.Text = title;
+            label.Text = prompt;
+            textBox.Text = defaultText;
+            textBox.PasswordChar = '*';   // ★ 隐藏密码字符（可选）
+            btnOk.Text = "确定";
+            btnCancel.Text = "取消";
+            btnOk.DialogResult = DialogResult.OK;
+            btnCancel.DialogResult = DialogResult.Cancel;
+
+            label.SetBounds(9, 20, 372, 13);
+            textBox.SetBounds(12, 40, 372, 20);
+            btnOk.SetBounds(228, 72, 75, 23);
+            btnCancel.SetBounds(309, 72, 75, 23);
+
+            label.AutoSize = true;
+            textBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            btnOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+
+            form.ClientSize = new System.Drawing.Size(396, 107);
+            form.Controls.AddRange(new Control[] { label, textBox, btnOk, btnCancel });
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.StartPosition = FormStartPosition.CenterScreen;
+            form.MinimizeBox = false;
+            form.MaximizeBox = false;
+            form.AcceptButton = btnOk;
+            form.CancelButton = btnCancel;
+
+            if (form.ShowDialog() == DialogResult.OK)
+                return textBox.Text;
+            else
+                return "";
+        }
         private void rBTRolesServer_CheckedChanged(object sender, EventArgs e)
         {
             /*if(rBTRolesServer.Checked)

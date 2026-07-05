@@ -1281,10 +1281,15 @@ namespace VisionControl
                 pmaRes[iJobIndex].dTX = pma.Results[0].GetPose().TranslationX;
                 pmaRes[iJobIndex].dTY = pma.Results[0].GetPose().TranslationY;
                 pmaRes[iJobIndex].dTR = pma.Results[0].GetPose().Rotation;
+                if (pmaRes[iJobIndex].dPMAScore < 0.8)
+                {   pmaRes[iJobIndex].bLocated = false;
+                    pmaRes[iJobIndex].dPMAScore -= 0.3;
+                }
+                    
             } 
 
             ShowPMARunImage(pma, iJobIndex);
-           return pma.Results.Count > 0;
+           return pmaRes[iJobIndex].bLocated;
         }
 
         public void SetPMASearchRegion(int iJobIndex)
