@@ -1601,7 +1601,7 @@ namespace VisionApplication
                         int iCamIndex = cup.p_CD.camInd[i];
                         if (iCamIndex >= cameraNum)
                         {
-                            cup.p_CD.bListProcess[i] = false;
+                         //   cup.p_CD.bListProcess[i] = false;
                             bStatusChanged = true;
                         }
                         else
@@ -1628,7 +1628,7 @@ namespace VisionApplication
                     int iCamInd = cup.p_CD.camInd[ind];
                     if (camera2[iCamInd] == null)
                     {
-                        cup.p_CD.bListProcess[ind] = false;
+                     //   cup.p_CD.bListProcess[ind] = false;
                         bStatusChanged = true;
                         continue;
                     }
@@ -1636,7 +1636,7 @@ namespace VisionApplication
                     // 5. 一次性设置所有相机参数（包括 ROI、分辨率、曝光、增益、锐度、伽马等）
                     if (!SetCamParam(iCamInd))
                     {
-                        cup.p_CD.bListProcess[ind] = false;
+                    //    cup.p_CD.bListProcess[ind] = false;
                         bStatusChanged = true;
                         continue;
                     }
@@ -1661,7 +1661,7 @@ namespace VisionApplication
                         }
                         else
                         {
-                            cup.p_CD.bListProcess[ind] = false;
+                         //   cup.p_CD.bListProcess[ind] = false;
                             bStatusChanged = true;
                             continue;
                         }
@@ -1670,7 +1670,7 @@ namespace VisionApplication
                     // 7. 为相机分配匹配的缓冲区（由 AcqFIFO 管理）
                     if (!acqFIFO.ReallocateBuffer(iCamInd, nPayloadSizeS[iCamInd]))
                     {
-                        cup.p_CD.bListProcess[ind] = false;
+                     //   cup.p_CD.bListProcess[ind] = false;
                         bStatusChanged = true;
                         continue;
                     }
@@ -3428,7 +3428,7 @@ namespace VisionApplication
             if (rts.onLS.bTrigg)
             {
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = "工位切换";
+                operLog.strOperEvent = "连接串口";
                 operLog.strFailReason = "自动模式禁止操作";
                 AddLog();
                 return;
@@ -3445,20 +3445,30 @@ namespace VisionApplication
             }
 
             bool bConn = false;
-            for (int i = 0; i < 4; i++)
+            try
             {
-                if (sPortAll[i].IsOpen)
+                for (int i = 0; i < 4; i++)
                 {
-                    bConn = true;
+                    if (sPortAll[i] != null && sPortAll[i].IsOpen)
+                    {
+                        bConn = true;
+                    }
+                }
+                if (bConn)
+                {
+                    disconnect();
+                }
+                else
+                {
+                    InitSerial();
                 }
             }
-            if (bConn)
+            catch(Exception ex)
             {
-                disconnect();
-            }
-            else
-            {
-                InitSerial();
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "连接串口";
+                operLog.strFailReason = ex.Message;
+                AddLog();
             }
 
         }
@@ -5233,6 +5243,26 @@ namespace VisionApplication
             }
 
         }
+
+        private void MonitorJCZProcess()
+        {
+            Process proc = GetJCZServerProcess();
+            if (proc != null)
+            {
+                proc.EnableRaisingEvents = true;
+                proc.Exited += (s, e) =>
+                {
+                    // 进程退出时，立即更新 UI 状态
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        rts.initStatus.bJCZ = -2;
+                        // 更新 btSpace 图标为红色
+                        btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.RedLight;
+                    }));
+                };
+            }
+        }
+
         //界面提示信息
         private void TipInfo()
         {
@@ -6765,13 +6795,14 @@ namespace VisionApplication
                 toolStripStatus_Ser.ForeColor = Color.Red;
                  
             }
-            catch
+            catch(Exception ex)
             {
                 allClosed = false;
-               /* operLog.strOperEvent = "关闭串口失败";
+                operLog.strOperEvent = "关闭串口失败";
+                operLog.strFailReason = ex.Message;
                 operLog.iEventStatus = -1;
-                AddLog();*/
-               
+                AddLog();
+
             }
             return allClosed;
         

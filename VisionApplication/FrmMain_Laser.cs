@@ -737,6 +737,8 @@ namespace VisionApplication
             {
                 ScheduleInitializeJczCards(800);
             }));
+
+            MonitorJCZProcess();
         }
 
         private async Task InitializeJczCardAfterConnect(int card)

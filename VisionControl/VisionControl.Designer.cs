@@ -74,11 +74,11 @@ namespace VisionControl
             this.cogRDMain.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.cogRDMain.Location = new System.Drawing.Point(2, 0);
+            this.cogRDMain.Location = new System.Drawing.Point(24, 64);
             this.cogRDMain.Name = "cogRDMain";
             this.cogRDMain.SelectedRecordKey = null;
             this.cogRDMain.ShowRecordsDropDown = true;
-            this.cogRDMain.Size = new System.Drawing.Size(608, 373);
+            this.cogRDMain.Size = new System.Drawing.Size(277, 183);
             this.cogRDMain.Subject = null;
             this.cogRDMain.TabIndex = 29;
             // 
@@ -103,12 +103,12 @@ namespace VisionControl
             this.cogRDSub2.ColorMapUpperRoiLimit = 1D;
             this.cogRDSub2.DoubleTapZoomCycleLength = 2;
             this.cogRDSub2.DoubleTapZoomSensitivity = 2.5D;
-            this.cogRDSub2.Location = new System.Drawing.Point(570, 216);
+            this.cogRDSub2.Location = new System.Drawing.Point(602, 132);
             this.cogRDSub2.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
             this.cogRDSub2.MouseWheelSensitivity = 1D;
             this.cogRDSub2.Name = "cogRDSub2";
             this.cogRDSub2.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("cogRDSub2.OcxState")));
-            this.cogRDSub2.Size = new System.Drawing.Size(302, 325);
+            this.cogRDSub2.Size = new System.Drawing.Size(254, 241);
             this.cogRDSub2.TabIndex = 31;
             this.cogRDSub2.Visible = false;
             this.cogRDSub2.DoubleClick += new System.EventHandler(this.cogRDSub2_DoubleClick);
@@ -122,12 +122,12 @@ namespace VisionControl
             this.cogRDSub1.ColorMapUpperRoiLimit = 1D;
             this.cogRDSub1.DoubleTapZoomCycleLength = 2;
             this.cogRDSub1.DoubleTapZoomSensitivity = 2.5D;
-            this.cogRDSub1.Location = new System.Drawing.Point(608, 3);
+            this.cogRDSub1.Location = new System.Drawing.Point(472, 40);
             this.cogRDSub1.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
             this.cogRDSub1.MouseWheelSensitivity = 1D;
             this.cogRDSub1.Name = "cogRDSub1";
             this.cogRDSub1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("cogRDSub1.OcxState")));
-            this.cogRDSub1.Size = new System.Drawing.Size(302, 259);
+            this.cogRDSub1.Size = new System.Drawing.Size(228, 190);
             this.cogRDSub1.TabIndex = 31;
             this.cogRDSub1.DoubleClick += new System.EventHandler(this.cogRDSub1_DoubleClick);
             // 
@@ -146,12 +146,12 @@ namespace VisionControl
             this.cogRDMainUser.ColorMapUpperRoiLimit = 1D;
             this.cogRDMainUser.DoubleTapZoomCycleLength = 2;
             this.cogRDMainUser.DoubleTapZoomSensitivity = 2.5D;
-            this.cogRDMainUser.Location = new System.Drawing.Point(123, 111);
+            this.cogRDMainUser.Location = new System.Drawing.Point(223, 96);
             this.cogRDMainUser.MouseWheelMode = Cognex.VisionPro.Display.CogDisplayMouseWheelModeConstants.Zoom1;
             this.cogRDMainUser.MouseWheelSensitivity = 1D;
             this.cogRDMainUser.Name = "cogRDMainUser";
             this.cogRDMainUser.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("cogRDMainUser.OcxState")));
-            this.cogRDMainUser.Size = new System.Drawing.Size(302, 325);
+            this.cogRDMainUser.Size = new System.Drawing.Size(302, 237);
             this.cogRDMainUser.TabIndex = 31;
             this.cogRDMainUser.DoubleClick += new System.EventHandler(this.cogRDSub1_DoubleClick);
             // 
