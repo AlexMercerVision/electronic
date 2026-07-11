@@ -478,15 +478,18 @@ namespace CommonCls
             if (!bListProcess) {
                 OnErrorOccurred($"GrabOneFrameCogFormat (Job{wsInd}, Cam{iCamIndex}): 工位未启用");
                 return false;}
+
+
             try
             {
                 if (cup.p_Cam[iCamIndex].iMonoType == 0)
                     GrabOneFrameCog(wsInd,iCamIndex);         //实时运行时采集一帧黑白Cog格式图像
                 else
                     GrabOneFrameCogColor(wsInd, iCamIndex);    //实时运行时采集一帧彩色Cog格式图像
-
+             //   OnErrorOccurred($"是否存储图像:{bRecord}");
                 if (bRecord)                        //判断保存运行时采集图像条件
                 {
+                  //  OnErrorOccurred($"存储一帧图像");
                     SaveCogImage(wsInd,iCamIndex);            //保存图像按照工位编号保存                  
                 }
                 return true;

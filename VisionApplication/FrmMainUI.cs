@@ -2813,7 +2813,7 @@ namespace VisionApplication
                 DateVerify(iModelRole);
                 if (rts.iModelRole == 0)
                 {
-                    if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")   //调试专用功能
+                    if (strMAC == "00E04C7825321" /*|| strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85"*/)   //调试专用功能
                     {
                         iModelRole = 9;
                         btFunSet.Visible = true;
@@ -3281,7 +3281,7 @@ namespace VisionApplication
                             return;
                         }
 
-                        if (rts.iModelRole < 9)
+                        if (rts.iModelRole < 8)
                         {
                             operLog.iEventStatus = -1;
                             operLog.strOperEvent = "流程设置";
@@ -3300,7 +3300,7 @@ namespace VisionApplication
                         else
                         {
                             operLog.strOperEvent = "流程设置";
-                            if (rts.iModelRole >=9)
+                            if (rts.iModelRole >=8)
                             {
                                 int iTmpType = vpWin._iTaskType;
                                 vpWin._iTaskType = 5;
@@ -3511,6 +3511,7 @@ namespace VisionApplication
 
 
                 toolBt_Record.Checked = cup.p_VPPRTP.bRecord;
+                vpWin._bRecord = cup.p_VPPRTP.bRecord;
                 SaveUserParam();
                 operLog.iEventStatus = 0;
             }
@@ -5288,7 +5289,8 @@ namespace VisionApplication
                 btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.YellowLight;
                 toolTip1.SetToolTip(btSpace, "加载激光打标文件失败");
             }
-            DriveInfo di = new DriveInfo(path.Substring(0, 1)); //"path.Substring(0,1)
+
+           /* DriveInfo di = new DriveInfo(path.Substring(0, 1)); //"path.Substring(0,1)
             if (di.IsReady)
             {
                 long totalSize = di.TotalSize / 1024 / 1024 / 1024;
@@ -5315,7 +5317,7 @@ namespace VisionApplication
                 rts.driveS = -1;
                 btSpace.BackgroundImage = global::VisionApplication.Properties.Resources.EventUn;
                 toolTip1.SetToolTip(btSpace, "存储磁盘不存在或者磁盘异常");
-            }
+            }*/
 
             int iCamSuccNum = 0;
             int iCamFailNum = 0;
@@ -7743,6 +7745,13 @@ namespace VisionApplication
         {
 
         }
+
+        
+
+        /*  private void btPMARun_Click(object sender, EventArgs e)
+          {
+
+          }*/
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {

@@ -57,7 +57,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"获取九点标定工具坐标错误：{ex.Message}");
+                // MessageBox.Show(ex.Message.ToString());
                 return false;
             }
 
@@ -84,7 +85,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"设置九点标定工具坐标错误：{ex.Message}");
+               // MessageBox.Show(ex.Message.ToString());
             }
         }
 
@@ -104,7 +106,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"设置分割参数错误：{ex.Message}");
+               // MessageBox.Show(ex.Message.ToString()); 
             }
         }
         //获取blob分析模板参数
@@ -121,7 +124,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+              //  MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"获取分割参数错误：{ex.Message}");
             }
         }
         //2026年6月17日
@@ -147,7 +151,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+               // MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"9点标定错误：{ex.Message}");
                 return false;
             }
         }
@@ -184,7 +189,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+               // MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"9点标定错误：{ex.Message}");
                 return new CalibRes();
             }
 
@@ -234,7 +240,9 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-              //  MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"设置blob图像失败");
+               
+                //  MessageBox.Show(ex.Message.ToString());
             }
             //  calibIm.Run();
         }
@@ -274,10 +282,16 @@ namespace VisionControl
                 bRecordWithInteractiveGraphics[iJobIndex] = true;
                 int pointNum = row * col;
                 if (cbt.Results == null)
+                {
+                    OnVisionError(iJobIndex, $"未获得有效打标圆点");
                     return false;
+                }
                 int count = cbt.Results.GetBlobs().Count;
                 if (count != pointNum)
+                {
+                    OnVisionError(iJobIndex, $"斑点数量与设计数量不一致");
                     return false;
+                }
                 else
                 {
                     // double[,] dCoord = new double[9, 2];
@@ -302,7 +316,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-              //  MessageBox.Show(ex.Message.ToString());
+                //  MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"获取9点中心坐标失败{ex.Message}");
                 return false;
             }
         }
@@ -400,7 +415,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message.ToString());
+                OnVisionError(iJobIndex, $"获取模板区域失败{ex.Message}");
+               // MessageBox.Show(ex.Message.ToString());
             }
 
         }
@@ -445,8 +461,9 @@ namespace VisionControl
                 }
                 return true;
             }
-            catch
+            catch(Exception ex)
             {
+                OnVisionError(iJobIndex, $"采集图像失败{ex.Message}");
                 return false;
             }
         }
@@ -479,7 +496,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"PreViewCrossImage 异常: {ex.Message}");
+              //  System.Diagnostics.Debug.WriteLine($"PreViewCrossImage 异常: {ex.Message}");
+                OnVisionError(iJobIndex, $"采集十字线图像失败{ex.Message}");
                 return false;
             }
         }
@@ -496,6 +514,7 @@ namespace VisionControl
                 if (!System.IO.File.Exists(fileName))
                 {
                     strErrInfo[wsInd] = $"标定图像文件不存在: {fileName}";
+                    OnVisionError(iJobIndex, strErrInfo[wsInd]);
                     return false;
                 }
                   acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex, fileName);
@@ -508,7 +527,8 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                strErrInfo[wsInd] = $"读取标定图像异常: {ex.Message}";
+                //strErrInfo[wsInd] = $"读取标定图像异常: {ex.Message}";
+                OnVisionError(iJobIndex, strErrInfo[wsInd]);
                 return false;
             }
             return true;
@@ -524,6 +544,7 @@ namespace VisionControl
                 if (!System.IO.File.Exists(fileName))
                 {
                     strErrInfo[wsInd] = $"标定图像文件不存在: {fileName}";
+                    OnVisionError(iJobIndex, strErrInfo[wsInd]);
                     return null;
                 }
                 return acqFIFO.GrabOneFrameCogFromFilePMA(fileName, wsInd);
@@ -533,6 +554,7 @@ namespace VisionControl
             catch (Exception ex)
             {
                 strErrInfo[wsInd] = $"读取训练图像异常: {ex.Message}";
+                OnVisionError(iJobIndex, strErrInfo[wsInd]);
                 return null;
             }
            

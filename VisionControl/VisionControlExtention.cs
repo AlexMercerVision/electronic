@@ -1,7 +1,9 @@
 using Cognex.VisionPro;
 using Cognex.VisionPro.Blob;
 using Cognex.VisionPro.CalibFix;
- 
+using Cognex.VisionPro.Caliper;
+
+
 using Cognex.VisionPro.ImageFile;
 using Cognex.VisionPro.ImageProcessing;
  
@@ -28,6 +30,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 //using gRPC_ClientAPP;
 //using convertService;
 //List<CogPolygon> gpgs
@@ -1188,14 +1191,26 @@ namespace VisionControl
             }
         }
 
-        public void ExtraTrainImage(int iJobIndex,bool bLock)
+        public void ExtraTrainImage(int iJobIndex,bool bFrmCam,bool bLock)
         {
             try
             {
                 CogCalibNPointToNPointTool nPointTool = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
 
-                if (bLock)
+                //实采图像
+                if (bFrmCam)
+                {
+                    //重新采集一帧图像
+                    if (bLock)
+                    {
+                       bool ret = PreViewOneImage(iJobIndex);
+                    }
+                    else
+                    {
+
+                    }
                     nPointTool.InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+                }
                 else
                     nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
 
@@ -1219,7 +1234,8 @@ namespace VisionControl
             {
                 case 0:
                     {
-                        cogRDMainUser.Record = pma.CreateCurrentRecord().SubRecords["InputImage"]; ;
+                        cogRDMainUser.Record = pma.CreateCurrentRecord().SubRecords["InputImage"];
+                        cogRDMainUser.BackColor= Color.Black;
                         cogRDMainUser.Fit(true);
                     }
                     break;
@@ -1351,6 +1367,40 @@ namespace VisionControl
             }
             bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
+
+        private void ShowCFLCurrentInputImage(CogFindLineTool cfl, int iJobIndex)
+        {
+            int iCamIndex = cup.p_CD.camInd[iJobIndex];
+            switch (iJobIndex)
+            {
+                case 0:
+                    {
+                        cogRDMainUser.Record = cfl.CreateCurrentRecord().SubRecords["InputImage"];
+                        cogRDMainUser.Fit(true);
+                    }
+                    break;
+                case 1:
+                    cogRDSub1.Record = cfl.CreateCurrentRecord().SubRecords["InputImage"];
+                     
+                    cogRDSub1.Fit(true);
+                    break;
+            }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
+        }
+
+        public void SetFindLineSearchRegion(int iJobIndex,int iLineIndex)
+        {
+            try
+            {
+                CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLine"+ iLineIndex.ToString()] as CogFindLineTool);
+
+                ShowCFLCurrentInputImage(cfl, iJobIndex);
+            }
+            catch (Exception ex)
+            { OnVisionError(iJobIndex, $"左边缘图像显示: {ex.Message}"); }
+        }
+
+
         //功能尚未实现，2026年6月19日
         public void SetPMAMaskRegion(int iJobIndex)
         {
@@ -2431,15 +2481,7 @@ namespace VisionControl
                         acqFIFO.GrabOneFrameCog(wsInd);
                         Thread.Sleep(2);
                         if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
-                        {
-                            /*if (iModelRole == 10)
-                            {
-                                cogRDMain.Display.Image = acqFIFO.ci8gAcq[wsInd];
-                            }
-                            else
-                            {
-                                cogRDMainUser.Image = acqFIFO.ci8gAcq[wsInd];
-                            }*/
+                        { 
                             switch(wsInd)
                             {
                                 case 0:
@@ -2509,6 +2551,7 @@ namespace VisionControl
             {
                 // MessageBox.Show(se.Message);
                 // picMain.Image = bitmap;
+                OnVisionError(iJobIndex, $"采集图像失败{ex.Message}");
             }
            
             return true;

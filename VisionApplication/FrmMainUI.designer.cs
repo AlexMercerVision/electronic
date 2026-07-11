@@ -193,7 +193,8 @@ namespace VisionApplication
             this.toolStripStatus_No = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel_CardStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel_CardInitStatus = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel_LaserStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel_LaserStatus1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabel_LaserStatus2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatus_ExcuteTimes = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.btFunParam = new System.Windows.Forms.Button();
@@ -319,6 +320,8 @@ namespace VisionApplication
             this.btMarkTemplate = new System.Windows.Forms.Button();
             this.tabPageBase = new System.Windows.Forms.TabPage();
             this.btGetPMAParam = new System.Windows.Forms.Button();
+            this.btLocateEdge2 = new System.Windows.Forms.Button();
+            this.btLocateEdge1 = new System.Windows.Forms.Button();
             this.btSetPMAParam = new System.Windows.Forms.Button();
             this.label50 = new System.Windows.Forms.Label();
             this.label42 = new System.Windows.Forms.Label();
@@ -406,6 +409,7 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
+            this.tabPageFindLine = new System.Windows.Forms.TabPage();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -478,6 +482,7 @@ namespace VisionApplication
             this.splitContainer6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).BeginInit();
             this.groupBox1.SuspendLayout();
+            this.tabPageFindLine.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip1
@@ -1774,7 +1779,8 @@ namespace VisionApplication
             this.toolStripStatus_No,
             this.toolStripStatusLabel_CardStatus,
             this.toolStripStatusLabel_CardInitStatus,
-            this.toolStripStatusLabel_LaserStatus,
+            this.toolStripStatusLabel_LaserStatus1,
+            this.toolStripStatusLabel_LaserStatus2,
             this.toolStripStatus_ExcuteTimes});
             this.statusStrip1.Location = new System.Drawing.Point(0, 791);
             this.statusStrip1.Name = "statusStrip1";
@@ -1912,12 +1918,22 @@ namespace VisionApplication
             this.toolStripStatusLabel_CardInitStatus.Name = "toolStripStatusLabel_CardInitStatus";
             this.toolStripStatusLabel_CardInitStatus.Size = new System.Drawing.Size(20, 30);
             this.toolStripStatusLabel_CardInitStatus.Text = "   ";
+            this.toolStripStatusLabel_CardInitStatus.Visible = false;
             // 
-            // toolStripStatusLabel_LaserStatus
+            // toolStripStatusLabel_LaserStatus1
             // 
-            this.toolStripStatusLabel_LaserStatus.Name = "toolStripStatusLabel_LaserStatus";
-            this.toolStripStatusLabel_LaserStatus.Size = new System.Drawing.Size(24, 30);
-            this.toolStripStatusLabel_LaserStatus.Text = "    ";
+            this.toolStripStatusLabel_LaserStatus1.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.toolStripStatusLabel_LaserStatus1.ForeColor = System.Drawing.SystemColors.Control;
+            this.toolStripStatusLabel_LaserStatus1.Name = "toolStripStatusLabel_LaserStatus1";
+            this.toolStripStatusLabel_LaserStatus1.Size = new System.Drawing.Size(24, 30);
+            this.toolStripStatusLabel_LaserStatus1.Text = "    ";
+            // 
+            // toolStripStatusLabel_LaserStatus2
+            // 
+            this.toolStripStatusLabel_LaserStatus2.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.toolStripStatusLabel_LaserStatus2.Name = "toolStripStatusLabel_LaserStatus2";
+            this.toolStripStatusLabel_LaserStatus2.Size = new System.Drawing.Size(24, 30);
+            this.toolStripStatusLabel_LaserStatus2.Text = "    ";
             // 
             // toolStripStatus_ExcuteTimes
             // 
@@ -2160,6 +2176,7 @@ namespace VisionApplication
             this.tabControl1.Controls.Add(this.tabPageCam);
             this.tabControl1.Controls.Add(this.tabPageCalib);
             this.tabControl1.Controls.Add(this.tabPageBase);
+            this.tabControl1.Controls.Add(this.tabPageFindLine);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
@@ -3681,7 +3698,7 @@ namespace VisionApplication
             // 
             // btGetPMAParam
             // 
-            this.btGetPMAParam.Location = new System.Drawing.Point(113, 430);
+            this.btGetPMAParam.Location = new System.Drawing.Point(187, 480);
             this.btGetPMAParam.Name = "btGetPMAParam";
             this.btGetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btGetPMAParam.TabIndex = 96;
@@ -3690,9 +3707,31 @@ namespace VisionApplication
             this.btGetPMAParam.Visible = false;
             this.btGetPMAParam.Click += new System.EventHandler(this.btGetPMAParam_Click);
             // 
+            // btLocateEdge2
+            // 
+            this.btLocateEdge2.ForeColor = System.Drawing.Color.Red;
+            this.btLocateEdge2.Location = new System.Drawing.Point(169, 202);
+            this.btLocateEdge2.Name = "btLocateEdge2";
+            this.btLocateEdge2.Size = new System.Drawing.Size(96, 32);
+            this.btLocateEdge2.TabIndex = 96;
+            this.btLocateEdge2.Text = "定位边缘2";
+            this.btLocateEdge2.UseVisualStyleBackColor = true;
+            this.btLocateEdge2.Click += new System.EventHandler(this.btLocateEdge2_Click);
+            // 
+            // btLocateEdge1
+            // 
+            this.btLocateEdge1.ForeColor = System.Drawing.Color.Red;
+            this.btLocateEdge1.Location = new System.Drawing.Point(43, 202);
+            this.btLocateEdge1.Name = "btLocateEdge1";
+            this.btLocateEdge1.Size = new System.Drawing.Size(96, 32);
+            this.btLocateEdge1.TabIndex = 96;
+            this.btLocateEdge1.Text = "定位边缘1";
+            this.btLocateEdge1.UseVisualStyleBackColor = true;
+            this.btLocateEdge1.Click += new System.EventHandler(this.btLocateEdge1_Click);
+            // 
             // btSetPMAParam
             // 
-            this.btSetPMAParam.Location = new System.Drawing.Point(220, 430);
+            this.btSetPMAParam.Location = new System.Drawing.Point(267, 480);
             this.btSetPMAParam.Name = "btSetPMAParam";
             this.btSetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btSetPMAParam.TabIndex = 96;
@@ -4758,6 +4797,17 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
+            // tabPageFindLine
+            // 
+            this.tabPageFindLine.Controls.Add(this.btLocateEdge1);
+            this.tabPageFindLine.Controls.Add(this.btLocateEdge2);
+            this.tabPageFindLine.Location = new System.Drawing.Point(4, 24);
+            this.tabPageFindLine.Name = "tabPageFindLine";
+            this.tabPageFindLine.Size = new System.Drawing.Size(349, 515);
+            this.tabPageFindLine.TabIndex = 5;
+            this.tabPageFindLine.Text = "边缘精定位";
+            this.tabPageFindLine.UseVisualStyleBackColor = true;
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -4864,6 +4914,7 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.tabPageFindLine.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -5237,7 +5288,7 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripButton toolBt_StopLaser;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_CardStatus;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_CardInitStatus;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_LaserStatus;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_LaserStatus1;
         private System.Windows.Forms.Button btFunParam;
         private System.Windows.Forms.Button btSetROIFull;
         private System.Windows.Forms.CheckBox chkGamma_Enable;
@@ -5246,5 +5297,9 @@ namespace VisionApplication
         private System.Windows.Forms.Button btPMARun;
         private System.Windows.Forms.Button btPMAExtractTrainImage;
         private System.Windows.Forms.Button btPMASearchRegion;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel_LaserStatus2;
+        private System.Windows.Forms.Button btLocateEdge2;
+        private System.Windows.Forms.Button btLocateEdge1;
+        private System.Windows.Forms.TabPage tabPageFindLine;
     }
 }

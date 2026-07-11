@@ -51,6 +51,7 @@ namespace BJJCZ_BaseDevelop
         private bool[] bInRed = new bool[2];
         private Bitmap[] imLaserRoute = new Bitmap[2];
         private Bitmap[] originalImage = new Bitmap[2];
+        private bool[] previewBackgroundMirrorX = new bool[2] { true, true };//默认开启镜像
         private bool[] bSimulateMode = new bool[2] { false, false };
 
         // =============== 共享参数 ================
@@ -65,10 +66,12 @@ namespace BJJCZ_BaseDevelop
 
         private static readonly RectangleF PreviewViewBounds = new RectangleF(-35f, -50f, 60f, 90f);
         private static readonly RectangleF EzcadCanvasBounds = new RectangleF(-75f, -75f, 150f, 150f);
-        private static readonly RectangleF RoutePreviewWorldBounds = new RectangleF(-150f, -150f, 300f, 300f);
+        private static readonly RectangleF RoutePreviewWorldBounds = new RectangleF(-80f, -80f, 160f, 160f);   // 红框路径固定按EZCAD 150x150画布叠加
+        //private static readonly RectangleF RoutePreviewWorldBounds = new RectangleF(-1f, -1f, 2f, 2f);
         private static readonly RectangleF DefaultBackgroundBounds = new RectangleF(-25f, -25f, 50f, 50f);
         private const int PreviewRouteBitmapScale = 4;
         private const int PreviewRouteBitmapBaseSide = 520;
+        private const int PreviewAnchorCropInsetPixels = 2;  // 预览锚框线宽不参与坐标映射，避免红框被轻微缩小
         private const bool PreviewDebugImageSaveEnabled = false;
         private const int RoutePreviewRefreshDelayMs = 600;
 
@@ -91,6 +94,13 @@ namespace BJJCZ_BaseDevelop
         private bool _isSavingEzd = false;                     // 防止自动保存重入
         private readonly object _previewSaveLock = new object(); // 预览刷新和保存不能同时操作JCZ SDK
         private bool[] _isReplayingFallbackAdjustments = new bool[2]; // 重放兜底参数时避免重复记录
+        private bool[] userGroupMode = new bool[2]; // 只有本次点击“组群”后才按grpEnt整体操作，避免EZD残留grpEnt影响单对象移动
+        private bool[] preserveUserGroupOnSave = new bool[2]; // 保存时是否保留当前grpEnt；与整体移动模式分开
+        private Dictionary<string, EntityProcessParamSnapshot>[] userGroupParamSnapshots = new Dictionary<string, EntityProcessParamSnapshot>[]
+        {
+            new Dictionary<string, EntityProcessParamSnapshot>(StringComparer.OrdinalIgnoreCase),
+            new Dictionary<string, EntityProcessParamSnapshot>(StringComparer.OrdinalIgnoreCase)
+        }; // 组群前记录对象工艺参数，解组后恢复
         private readonly object _fallbackAdjustmentLock = new object();
         private Dictionary<string, EzdFallbackAdjustmentFile> _fallbackAdjustmentCache = new Dictionary<string, EzdFallbackAdjustmentFile>(StringComparer.OrdinalIgnoreCase);
         private bool[] _pendingRoutePreviewRefresh = new bool[2];
@@ -106,6 +116,7 @@ namespace BJJCZ_BaseDevelop
         private Button btCopyEnt;                             // 复制当前对象
         private Button btDeleteEnt;                           // 删除当前对象
         private Button btUndoDeleteEnt;                       // 撤回上一次删除
+        private Button btMirrorBackground;                    // 切换当前卡背景图左右镜像
         private DeletedEntityUndo[] lastDeletedEntity = new DeletedEntityUndo[2];
 
         // ===== 填充参数缓存（持久化 + 内存）=====
@@ -128,9 +139,21 @@ namespace BJJCZ_BaseDevelop
 
         // ===== 辅助常量 =====
         private const string TransformPairEntityPrefix = "__TransformPair_";  // 临时分组前缀（用于填充对象联合变换）
-        private const string DeletedEntityBackupPrefix = "__DeletedBackup_"; // 删除撤回临时备份前缀
         private const double CopyDetachMoveDistance = 0.001;   // 删除前极小位移再移回，让SDK把旧重叠复制体独立出来
         private const double CopyInitialOffsetDistance = 1.0;  // 复制后新对象默认向右、向上各偏移1mm，避免和原对象完全重叠
+
+        private class EntityProcessParamSnapshot
+        {
+            public string EntityName { get; set; }
+            public bool HasPenNo { get; set; }
+            public int PenNo { get; set; }
+            public Dictionary<int, HatchParam> HatchParams { get; private set; }
+
+            public EntityProcessParamSnapshot()
+            {
+                HatchParams = new Dictionary<int, HatchParam>();
+            }
+        }
 
         private class DeletedEntityUndo
         {
@@ -138,10 +161,8 @@ namespace BJJCZ_BaseDevelop
             public int PreviousIndex { get; set; }
             public string DisplayName { get; set; }
             public string[] OriginalNames { get; set; }
-            public string[] BackupNames { get; set; }
-            public int[] OriginalPenNos { get; set; }
-            public HatchParam[] OriginalHatchParams { get; set; }
-            public bool[] HasOriginalHatchParams { get; set; }
+            public string SnapshotFilePath { get; set; }
+            public string OriginalFilePath { get; set; }
         }
 
         public class EzdFallbackAdjustmentFile
@@ -163,15 +184,33 @@ namespace BJJCZ_BaseDevelop
         public class EzdFallbackAdjustmentOperation
         {
             public int CmdType { get; set; }
+            public string OperationType { get; set; }
             public string EntityName { get; set; }
+            public string SourceEntityName { get; set; }
+            public string NewEntityName { get; set; }
             public int EntityIndex { get; set; }
             public double DParam1 { get; set; }
             public double DParam2 { get; set; }
             public double DParam3 { get; set; }
             public double DParam4 { get; set; }
             public double DParam5 { get; set; }
+            public bool BoolParam1 { get; set; }
+            public bool HasHatchParam { get; set; }
+            public HatchParam HatchParam { get; set; }
+            public bool HasEntityBounds { get; set; }
+            public string BoundsEntityName { get; set; }
+            public double MinX { get; set; }
+            public double MinY { get; set; }
+            public double MaxX { get; set; }
+            public double MaxY { get; set; }
+            public double CenterX { get; set; }
+            public double CenterY { get; set; }
+            public double Width { get; set; }
+            public double Height { get; set; }
+            public double Z { get; set; }
             public DateTime CreatedTime { get; set; }
         }
+
         // =============== Windows API 声明 ===============
         [DllImport("user32.dll")]
         private static extern IntPtr GetParent(IntPtr hWnd);
@@ -651,10 +690,13 @@ namespace BJJCZ_BaseDevelop
             btCopyEnt = CreateEntityEditButton("btCopyEnt", "复制", btCopyEnt_Click);
             btDeleteEnt = CreateEntityEditButton("btDeleteEnt", "删除", btDeleteEnt_Click);
             btUndoDeleteEnt = CreateEntityEditButton("btUndoDeleteEnt", "撤回", btUndoDeleteEnt_Click);
+            btMirrorBackground = CreateEntityEditButton("btMirrorBackground", "镜像", btMirrorBackground_Click);
             btCopyEnt.Font = btLaserPenParam.Font;
             btDeleteEnt.Font = btLaserPenParam.Font;
             btUndoDeleteEnt.Font = btDeleteEnt.Font;
             btUndoDeleteEnt.ForeColor = btDeleteEnt.ForeColor;
+            btMirrorBackground.Font = btHatchParam.Font;
+            btMirrorBackground.ForeColor = btHatchParam.ForeColor;
             btUndoDeleteEnt.Enabled = false;
         }
 
@@ -751,7 +793,7 @@ namespace BJJCZ_BaseDevelop
 
             dgvEnt.SetBounds(4, 4, Math.Max(190, actionX - 10), Math.Max(160, panelHeight - 32));
             dgvEnt.RowHeadersWidth = 28;
-            dgvEnt.ScrollBars = ScrollBars.Vertical;
+            dgvEnt.ScrollBars = ScrollBars.Both;
             Column1.Width = 35;
             Column2.Width = 82;
             Column3.Width = 65;
@@ -780,6 +822,10 @@ namespace BJJCZ_BaseDevelop
             int editButtonTop = actionButtonTop + editBtnH + 4;
             btLaserPenParam.SetBounds(actionX, actionButtonTop, editBtnW, editBtnH);
             btHatchParam.SetBounds(rightButtonX, actionButtonTop, editBtnW, editBtnH);
+            if (btMirrorBackground != null)
+            {
+                btMirrorBackground.SetBounds(undoButtonX, actionButtonTop, editBtnW, editBtnH);
+            }
 
             if (btCopyEnt != null)
             {
@@ -1017,6 +1063,20 @@ namespace BJJCZ_BaseDevelop
             AddMsg("------------------------");
         }
 
+        private void RefreshPhysicalCardMappingQuiet()
+        {
+            try
+            {
+                int[] snArray = new int[8];
+                JczLmc.lmc1_GetAllCardSN(snArray);
+            }
+            catch
+            {
+            }
+
+            phyCardSN[0] = 0;
+            phyCardSN[1] = 1;
+        }
         // =============== 管道消息接收 ===============
         private void Pipechanel_msgReceived(object sender, PipeMsg.PipeMsgParamEventArgs e)
         {
@@ -1079,6 +1139,11 @@ namespace BJJCZ_BaseDevelop
 
         private bool ShouldSkipLogMessage(string txtMsg)
         {
+            if (IsReplayingFallbackAdjustmentLog())
+            {
+                return !(txtMsg.Contains("已恢复保存兜底参数") || txtMsg.Contains("保存兜底参数恢复失败"));
+            }
+
             string[] internalNoisyKeywords = new string[]
             {
                 "当前DLL不支持",
@@ -1151,18 +1216,32 @@ namespace BJJCZ_BaseDevelop
             return false;
         }
 
+        private bool IsReplayingFallbackAdjustmentLog()
+        {
+            for (int i = 0; i < _isReplayingFallbackAdjustments.Length; i++)
+            {
+                if (_isReplayingFallbackAdjustments[i])
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 
         private void TrimMainMessageBox(bool onlyWhenTooMany)
         {
             if (mainMsgBox == null || mainMsgBox.IsDisposed) return;
 
-            string[] lines = mainMsgBox.Lines;
-            if (onlyWhenTooMany && lines.Length <= MaxLogLineCount)
+            string[] rawLines = mainMsgBox.Lines;
+            string[] lines = rawLines.Where(line => !string.IsNullOrWhiteSpace(line)).ToArray();
+            bool hasBlankLines = rawLines.Length != lines.Length;
+            if (onlyWhenTooMany && lines.Length <= MaxLogLineCount && !hasBlankLines)
             {
                 return;
             }
 
-            if (!onlyWhenTooMany && lines.Length <= KeepLogLineCount)
+            if (!onlyWhenTooMany && lines.Length <= KeepLogLineCount && !hasBlankLines)
             {
                 return;
             }
@@ -1293,7 +1372,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 阻塞等待标刻完成（同步版本，适合 BackgroundWorker）
         /// </summary>
-        public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 30000)
+        public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 600000)
         {
             if (!CanStartLaserMark(cardSN))
             {
@@ -1337,6 +1416,16 @@ namespace BJJCZ_BaseDevelop
 
         private int StartMarkAllObjects(int card, int responseCmdType, int clientSeq, bool useVisualRotateMove, string visualStage, string markLabel)
         {
+            /*// 临时验证：最小链路加工，模拟官方demo，只清旋转平移后直接 lmc1_Mark
+            AddMsg($"卡{card + 1} 临时最小链路加工测试开始");
+
+            int clearErr = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
+            AddMsg($"卡{card + 1} 清除旋转平移 -> {JczLmc.GetErrorText(clearErr)}");
+
+            int markErrMini = JczLmc.lmc1_Mark(phyCardSN[card], false);
+            AddMsg($"卡{card + 1} 最小链路 lmc1_Mark -> {JczLmc.GetErrorText(markErrMini)}");
+
+            return markErrMini;*/
             if (!CanStartLaserMark(card))
             {
                 return 19;
@@ -1361,10 +1450,18 @@ namespace BJJCZ_BaseDevelop
                     JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
                 }
             }
+            bool markGroupOnly = ShouldMarkUserGroupOnly(card);
+
             var worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
             {
-                int markErr = lmc1_MarkBlocking(card, false);
+                int markErr = markGroupOnly
+                    ? lmc1_MarkEntityBlocking(card, "grpEnt")
+                    : lmc1_MarkBlocking(card, false);
+                /* var worker = new BackgroundWorker();
+                 worker.DoWork += (s, ev) =>
+                 {
+                     int markErr = lmc1_MarkBlocking(card, false);*/
                 bInMark[card] = false;
                 if (markUsesVisualRotateMove)
                 {
@@ -1388,10 +1485,54 @@ namespace BJJCZ_BaseDevelop
             worker.RunWorkerAsync();
             return 0;
         }
+
+        private int lmc1_MarkEntityBlocking(int cardSN, string entName, int timeoutMs = 600000)//群组走的路口
+        {
+            if (!CanStartLaserMark(cardSN))
+            {
+                return 19;
+            }
+
+            if (string.IsNullOrWhiteSpace(entName) || !EntityExists(cardSN, entName))
+            {
+                return 18;
+            }
+
+            int nErr = JczLmc.lmc1_MarkEntity(phyCardSN[cardSN], entName);
+            if (nErr != 0)
+            {
+                return nErr;
+            }
+
+            int elapsedMs = 0;
+            int checkInterval = 10;
+
+            while (elapsedMs < timeoutMs)
+            {
+                if (markStopRequested[cardSN])
+                {
+                    SendStopMark(cardSN);
+                    return 8;
+                }
+
+                int finishStatus = JczLmc.lmc1_IsMarkFinish(phyCardSN[cardSN]);
+                if (finishStatus == 1)
+                {
+                    return 0;
+                }
+
+                Thread.Sleep(checkInterval);
+                elapsedMs += checkInterval;
+            }
+
+            JczLmc.lmc1_StopMark(phyCardSN[cardSN]);
+            return 10;
+        }
+
         #endregion
 
         #region 管道命令解析
-        
+
         private void CMDAna(LCZControlParam param)
         {
             if (this.InvokeRequired)
@@ -1450,7 +1591,7 @@ namespace BJJCZ_BaseDevelop
                             if (nErr == 0)
                             {
                                 // 保存当前文件路径
-                                currentFilePath[card] = param.strFileName;
+                                currentFilePath[card] = param.strFileName;                               
                                 ResetEntityScaleStates(card);
                                 /* 
                                  nEntNums[card] = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
@@ -1539,7 +1680,7 @@ namespace BJJCZ_BaseDevelop
                         nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                         if (nErr == 0 && !bSimulateMode[card])
                         {
-                            currentFilePath[card] = param.strFileName;
+                            currentFilePath[card] = param.strFileName;                           
                             // 保存当前文件路径
 
                             ResetPreviewAnchor(card);
@@ -1599,6 +1740,7 @@ namespace BJJCZ_BaseDevelop
                             "加工");
                         if (nErr == 0)
                         {
+                            //2026年7月8日  启动加工也要进行回复
                             needResponse = false;
                         }
                         break;
@@ -1896,12 +2038,40 @@ namespace BJJCZ_BaseDevelop
                         if (param.bOpen)
                         {
                             string[] groupNames = BuildGroupEntityNames(card);
+                            SnapshotUserGroupProcessParams(card, groupNames);
                             nErr = groupNames.Length > 0
-                                ? JczLmc.lmc1_GroupEnt2(phyCardSN[card], groupNames, groupNames.Length, "grpEnt", 2)
+                                ? JczLmc.lmc1_GroupEnt2(phyCardSN[card], groupNames, groupNames.Length, "grpEnt", GetUserGroupPenNumber(card, groupNames))
                                 : 20;
                         }
                         else
                             nErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
+                        if (nErr == 0)
+                        {
+                            if (param.bOpen)
+                            {
+                                RecordFallbackOperation(card, new EzdFallbackAdjustmentOperation
+                                {
+                                    CmdType = 28,
+                                    OperationType = "Group",
+                                    BoolParam1 = true,
+                                    CreatedTime = DateTime.Now
+                                });
+                            }
+                            else
+                            {
+                                RestoreUserGroupProcessParams(card);
+                                if (!RemovePendingFallbackGroupOperation(card))
+                            {
+                                RecordFallbackOperation(card, new EzdFallbackAdjustmentOperation
+                                {
+                                    CmdType = 28,
+                                    OperationType = "UnGroup",
+                                    BoolParam1 = false,
+                                    CreatedTime = DateTime.Now
+                                });
+                            }
+                            }
+                        }
                         break;
                     case 31:  // 重命名对象
                         if (param.ind1 < strEntNames[card]?.Length)
@@ -2121,7 +2291,11 @@ namespace BJJCZ_BaseDevelop
                                  GetHatchParamForEntity(card, param.strEntyName, ref hp);
 
                                  // 显示填充参数设置对话框
-                                 FrmHatch fh = new FrmHatch(hp);
+                                 string hatchDialogEntName = param.strEntyName;
+                                FrmHatch fh = new FrmHatch(hp, delegate(int paramIndex, out HatchParam loadedHp)
+                                {
+                                    return TryGetExactHatchParamForEntity(card, hatchDialogEntName, paramIndex, out loadedHp);
+                                });
                                  DialogResult dr = fh.ShowDialog();
 
                                  if (dr == DialogResult.OK)
@@ -2193,23 +2367,45 @@ namespace BJJCZ_BaseDevelop
                                 GetHatchParamForEntity(card, param.strEntyName, ref hp);
 
                                 // 显示填充参数设置对话框
-                                FrmHatch fh = new FrmHatch(hp);
+                                string hatchDialogEntName = param.strEntyName;
+                                FrmHatch fh = new FrmHatch(hp, delegate(int paramIndex, out HatchParam loadedHp)
+                                {
+                                    return TryGetExactHatchParamForEntity(card, hatchDialogEntName, paramIndex, out loadedHp);
+                                });
                                 DialogResult dr = fh.ShowDialog();
 
                                 if (dr == DialogResult.OK)
                                 {
                                     hp = fh.hp;
-                                    string sourceEntName = GetHatchSourceName(param.strEntyName);
-                                    bool hatchChanged = hp.bEnableHatch == 0
-                                        ? RemoveHatchPreservingSource(card, sourceEntName)
-                                        : ApplyHatchPreservingSource(card, sourceEntName, hp);
+                                    string selectedEntName = param.strEntyName;
+                                    string sourceEntName = GetHatchSourceName(selectedEntName);
+                                    bool selectedHasHatch = EntityExists(card, selectedEntName) && HasEnabledHatchParam(card, selectedEntName);
+                                    bool hatchChanged;
+                                    string logEntName = selectedHasHatch ? selectedEntName : sourceEntName;
+
+                                    if (hp.bEnableHatch == 0)
+                                    {
+                                        hatchChanged = RemoveHatchPreservingSource(card, selectedEntName);
+                                    }
+                                    else if (selectedHasHatch)
+                                    {
+                                        hatchChanged = SetHatchEntParam2ForEntity(card, selectedEntName, hp) == 0;
+                                        if (hatchChanged)
+                                        {
+                                            CacheHatchParam(card, selectedEntName, hp);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        hatchChanged = ApplyHatchPreservingSource(card, sourceEntName, hp);
+                                    }
 
                                     if (hatchChanged)
                                     {
                                         nErr = 0;
                                         AddMsg(hp.bEnableHatch == 0
-                                            ? $"卡{card + 1} 已清除对象 {sourceEntName} 的填充"
-                                            : $"卡{card + 1} 为对象 {sourceEntName} 设置填充成功");
+                                            ? $"卡{card + 1} 已清除对象 {logEntName} 的填充"
+                                            : $"卡{card + 1} 为对象 {logEntName} 设置填充成功");
                                         // 保存文件
                                         string saveFileName = !string.IsNullOrEmpty(param.strFileName) ? param.strFileName : currentFilePath[card];
                                         if (!string.IsNullOrEmpty(saveFileName))
@@ -2369,7 +2565,7 @@ namespace BJJCZ_BaseDevelop
                         float width = (float)param.dParam3;
                         float height = (float)param.dParam4;
                         _overlayWorldBounds[card] = RoutePreviewWorldBounds;
-                        AddMsg($"卡{card + 1} 收到叠加图范围命令，红框预览固定使用激光坐标 X/Y=-150~150");
+                        AddMsg($"卡{card + 1} 收到叠加图范围命令，红框预览固定使用EZCAD画布 X/Y=-75~75");
                         ResetPreviewAnchor(card);
                         InvalidateRoutePreviewCache(card);
                         RefreshPreview(card); 
@@ -2462,43 +2658,35 @@ namespace BJJCZ_BaseDevelop
         /// <returns>0表示成功，非0表示错误码</returns>
         private int RenameLogicalEntity(int card, string entName, string newName)
         {
-            // 参数校验：名称不能为空或仅空白字符
             if (string.IsNullOrWhiteSpace(entName) || string.IsNullOrWhiteSpace(newName))
             {
-                return 20;  // 参数输入错误
+                return 20;
             }
 
-            // 获取“源名称”：如果传入的是填充对象名（如 "Rect_Hatch"），则截去 "_Hatch" 后缀得到轮廓名（如 "Rect"）
-            string sourceName = GetHatchSourceName(entName);
-            // 根据轮廓名构造其对应的填充对象名（轮廓名 + "_Hatch"）
-            string oldHatchName = GetHatchEntityName(sourceName);
-            // 根据新轮廓名构造新填充对象名
-            string newHatchName = GetHatchEntityName(newName);
+            if (string.Equals(entName, newName, StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
 
-            // 1. 重命名轮廓对象（从 sourceName 改为 newName）
-            int err = JczLmc.lmc1_ChangeEntName(phyCardSN[card], sourceName, newName);
+            if (!EntityExists(card, entName))
+            {
+                return 20;
+            }
+
+            if (EntityExists(card, newName))
+            {
+                return 12;
+            }
+
+            int err = JczLmc.lmc1_ChangeEntName(phyCardSN[card], entName, newName);
             if (err != 0)
             {
-                return err;  // 重命名失败，直接返回错误码
+                return err;
             }
 
-            // 2. 如果该轮廓对象存在对应的填充对象（旧填充名存在），则同步重命名填充对象
-            if (EntityExists(card, oldHatchName))
-            {
-                int hatchErr = JczLmc.lmc1_ChangeEntName(phyCardSN[card], oldHatchName, newHatchName);
-                if (hatchErr != 0)
-                {
-                    // 填充对象重命名失败时记录日志，但注意此时轮廓已经改名，可能需要回滚？
-                    // 当前设计仅记录错误并返回，可能导致轮廓与填充名称不一致。
-                    AddMsg($"卡{card + 1} 重命名内部填充对象失败: {JczLmc.GetErrorText(hatchErr)}");
-                    return hatchErr;
-                }
-            }
-            // 3. 移除这两个实体在“缩放状态记忆”中的缓存（避免旧的缩放比例影响后续操作）
-            RemoveEntityScaleState(card, sourceName);   // 旧轮廓名的缩放状态
-            RemoveEntityScaleState(card, oldHatchName); // 旧填充名的缩放状态（若不存在则无影响）
-
-            return 0;  // 全部成功
+            RemoveEntityScaleState(card, entName);
+            RemoveEntityScaleState(card, newName);
+            return 0;
         }
 
         private void RemoveEntityScaleState(int card, string entName)
@@ -3035,6 +3223,33 @@ namespace BJJCZ_BaseDevelop
 
 
         //JCZServer软件自己的填充设置逻辑
+        private bool TryApplyHatchDirectlyToSource(int card, string sourceEntName, string hatchEntName, HatchParam hp)
+        {
+            if (!EntityExists(card, sourceEntName))
+            {
+                return false;
+            }
+
+            int setErr = SetHatchEntParam2ForEntity(card, sourceEntName, hp);
+            if (setErr != 0)
+            {
+                return false;
+            }
+
+            HatchParam verifyHp = hp;
+            int verifyIndex = Math.Max(1, Math.Min(3, hp.nParamIndex));
+            if (hp.bEnableHatch != 0 &&
+                (!TryReadHatchParam(card, sourceEntName, verifyIndex, ref verifyHp) || verifyHp.bEnableHatch == 0))
+            {
+                return false;
+            }
+
+            TryRemoveHatchEntity(card, sourceEntName, hatchEntName);
+            CacheHatchParam(card, sourceEntName, hp);
+            RemovePersistedHatchParam(card, hatchEntName);
+            AddMsg($"卡{card + 1} 已直接更新对象 {sourceEntName} 的EZD填充参数");
+            return true;
+        }
         private bool ApplyHatchPreservingSource(int card, string sourceEntName, HatchParam hp)
         {
             if (string.IsNullOrEmpty(sourceEntName))
@@ -3056,79 +3271,47 @@ namespace BJJCZ_BaseDevelop
             }
             RememberSourceContourPen(card, sourceEntName);
             RestoreSourceContourPen(card, sourceEntName);
-            int sourcePenNo = GetEntityPenNumber(card, sourceEntName);
 
-            DeleteEntityIfExists(card, backupEntName);
-            int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], sourceEntName, backupEntName);
-            if (copyErr != 0)
+            if (TryApplyHatchDirectlyToSource(card, sourceEntName, hatchEntName, hp))
             {
-                AddMsg($"卡{card + 1} 备份原轮廓 {sourceEntName} 失败: {JczLmc.GetErrorText(copyErr)}");
-                return false;
-            }
-
-            TryRemoveHatchEntity(card, sourceEntName, hatchEntName);
-            HatchParam generationHp = BuildGenerationHatchParam(hp);
-            int paramErr = SetHatchParamForEntity(card, generationHp);
-            if (paramErr != 0)
-            {
-                RestoreContourBackup(card, sourceEntName, backupEntName);
-                AddMsg($"卡{card + 1} 设置填充参数失败: {JczLmc.GetErrorText(paramErr)}");
-                return false;
-            }
-
-            int nErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], sourceEntName, hatchEntName);
-            if (nErr != 0)
-            {
-                RestoreContourBackup(card, sourceEntName, backupEntName);
-                AddMsg($"卡{card + 1} 为对象 {sourceEntName} 生成填充失败: {JczLmc.GetErrorText(nErr)}");
-                return false;
-            }
-
-            if (!EntityExists(card, sourceEntName))
-            {
-                RestoreContourBackup(card, sourceEntName, backupEntName);
-            }
-
-            HatchParam hatchEntityHp = hp;
-
-            int fullParamErr = SetHatchEntParam2ForEntity(card, hatchEntName, hatchEntityHp);
-            if (fullParamErr != 0)
-            {
-                AddMsg($"卡{card + 1} 完整填充参数写入失败，已保留基础填充参数");
-            }
-
-            CacheHatchParamForPair(card, sourceEntName, hatchEntName, hp);
-
-            if (!hp.bEnableContour)
-            {
-                if (!HideSourceContourForHatchOnly(card, sourceEntName))
-                {
-                    AddMsg($"卡{card + 1} 已关闭填充对象轮廓标刻，但隐藏原轮廓对象失败");
-                    return false;
-                }
-
                 DeleteEntityIfExists(card, backupEntName);
-                AddMsg($"卡{card + 1} 已关闭填充对象轮廓标刻，原轮廓对象 {sourceEntName} 已保留并隐藏预览");
+                return true;
             }
-            else if (EntityExists(card, sourceEntName))
+
+            // 走到这里，说明对象当前没有可直接写入的填充结构。
+            // 比如在 EZCAD 里把填充删掉后，软件再点填充设置，就需要重新生成填充。
+            if (!HasEnabledHatchParam(card, sourceEntName))
             {
-                if (hp.bHatchEdge)
+                int setCurrentErr = SetHatchParamForEntity(card, hp);
+                if (setCurrentErr == 0)
                 {
-                    ApplyPenToEntity(card, sourceEntName, sourcePenNo);
+                    DeleteEntityIfExists(card, hatchEntName);
+
+                    int hatchErr = JczLmc.lmc1_HatchEnt(phyCardSN[card], sourceEntName, hatchEntName);
+                    if (hatchErr == 0)
+                    {
+                        SetHatchEntParam2ForEntity(card, hatchEntName, hp);
+                        HideSourceContourForHatchOnly(card, sourceEntName);
+                        CacheHatchParamForPair(card, sourceEntName, hatchEntName, hp);
+                        DeleteEntityIfExists(card, backupEntName);
+
+                        AddMsg($"卡{card + 1} 已重新生成对象 {sourceEntName} 的填充");
+                        return true;
+                    }
+
+                    AddMsg($"卡{card + 1} 重新生成填充失败: {JczLmc.GetErrorText(hatchErr)}");
                 }
                 else
                 {
-                    RestoreSourceContourPen(card, sourceEntName);
+                    AddMsg($"卡{card + 1} 设置当前填充参数失败: {JczLmc.GetErrorText(setCurrentErr)}");
                 }
-
-                DeleteEntityIfExists(card, backupEntName);
-            }
-            else
-            {
-                RestoreContourBackup(card, sourceEntName, backupEntName);
             }
 
-            return true;
+            AddMsg($"卡{card + 1} 直接写入对象 {sourceEntName} 的填充参数失败");
+            DeleteEntityIfExists(card, backupEntName);
+            return false;
+
+
         }
         private HatchParam BuildGenerationHatchParam(HatchParam hp)
         {
@@ -3249,8 +3432,6 @@ namespace BJJCZ_BaseDevelop
         {
             CacheHatchParam(card, sourceEntName, hp);
             CacheHatchParam(card, hatchEntName, hp);
-            PersistHatchParam(card, sourceEntName, hp);
-            PersistHatchParam(card, hatchEntName, hp);
         }
         private void CacheHatchParam(int card, string entName, HatchParam hp)
         {
@@ -3465,8 +3646,54 @@ namespace BJJCZ_BaseDevelop
                 return false;
             }
         }
+        private bool TryUnHatchSelectedEntity(int card, string selectedEntName, out bool handled)
+        {
+            handled = false;
+            if (string.IsNullOrWhiteSpace(selectedEntName) || !EntityExists(card, selectedEntName))
+            {
+                return false;
+            }
+
+            if (!HasEnabledHatchParam(card, selectedEntName))
+            {
+                return false;
+            }
+
+            handled = true;
+            try
+            {
+                int nErr = JczLmc.lmc1_UnHatchEnt(phyCardSN[card], selectedEntName);
+                if (nErr == 0)
+                {
+                    RemoveCachedHatchParamForPair(card, GetHatchSourceName(selectedEntName), selectedEntName);
+                    RemovePersistedHatchParam(card, selectedEntName);
+                    AddMsg($"卡{card + 1} 已删除对象 {selectedEntName} 的填充");
+                    return true;
+                }
+
+                AddMsg($"卡{card + 1} 按对象名删除填充失败: {JczLmc.GetErrorText(nErr)}");
+            }
+            catch (EntryPointNotFoundException)
+            {
+                AddMsg($"卡{card + 1} 当前DLL不支持 lmc1_UnHatchEnt");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 按对象名删除填充异常: {ex.Message}");
+            }
+
+            return false;
+        }
         private bool RemoveHatchPreservingSource(int card, string selectedEntName)
         {
+            bool directHandled;
+            if (TryUnHatchSelectedEntity(card, selectedEntName, out directHandled))
+            {
+                return true;
+            }
+
+
+
             string sourceEntName = GetHatchSourceName(selectedEntName);
             string hatchEntName = GetHatchEntityName(sourceEntName);
             string backupEntName = GetContourBackupName(sourceEntName);
@@ -3500,10 +3727,31 @@ namespace BJJCZ_BaseDevelop
 
             if (!hatchExists)
             {
+                int directSetErr = 0;
+                int disabledCount;
+                if (sourceExists && DisableAllHatchParamsForEntity(card, sourceEntName, out directSetErr, out disabledCount))
+                {
+                    if (disabledCount > 0)
+                    {
+                        RemovePersistedHatchParam(card, hatchEntName);
+                        AddMsg($"卡{card + 1} 已删除直接填充对象 {sourceEntName} 的全部填充，保留轮廓");
+                    }
+                    else
+                    {
+                        AddMsg($"卡{card + 1} 对象 {sourceEntName} 未启用填充，按轮廓保留");
+                    }
+                    return true;
+                }
+
+                if (sourceExists)
+                {
+                    AddMsg($"卡{card + 1} 删除直接填充对象 {sourceEntName} 的填充失败: {JczLmc.GetErrorText(directSetErr)}");
+                    return false;
+                }
+
                 AddMsg($"卡{card + 1} 未找到填充对象 {hatchEntName}，原轮廓 {sourceEntName} 保留");
                 return true;
             }
-
             bool removed = TryRemoveHatchEntity(card, sourceEntName, hatchEntName);
             if (removed && !EntityExists(card, sourceEntName))
             {
@@ -3758,15 +4006,57 @@ namespace BJJCZ_BaseDevelop
         }
         private bool DeleteEntityIfExists(int card, string entName)
         {
-            if (!EntityExists(card, entName))
+            for (int i = 0; i < 3; i++)
             {
-                return true;
+                if (!EntityExists(card, entName))
+                {
+                    return true;
+                }
+
+                int nErr = JczLmc.lmc1_DeleteEnt(phyCardSN[card], entName);
+                if (nErr != 0 && nErr != 2)
+                {
+                    return false;
+                }
+
+                Thread.Sleep(20);
             }
 
-            int nErr = JczLmc.lmc1_DeleteEnt(phyCardSN[card], entName);
-            return nErr == 0 || nErr == 2;
+            return !EntityExists(card, entName);
         }
+        private void CleanupContourBackupEntities(int card)
+        {
+            try
+            {
+                int count = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                List<string> backupNames = new List<string>();
+                for (int i = 0; i < count; i++)
+                {
+                    string entName = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                    if (IsContourBackupEntity(entName))
+                    {
+                        backupNames.Add(entName);
+                    }
+                }
 
+                foreach (string backupName in backupNames)
+                {
+                    string sourceName = GetHatchSourceName(backupName);
+                    if (EntityExists(card, sourceName))
+                    {
+                        DeleteEntityIfExists(card, backupName);
+                    }
+                    else
+                    {
+                        RestoreContourBackup(card, sourceName, backupName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 清理轮廓备份对象异常: {ex.Message}");
+            }
+        }
         private void HideHatchBackupEntity(int card, string hatchBackupName, HatchParam originalHp)
         {
             HatchParam hiddenHp = originalHp;
@@ -3800,12 +4090,44 @@ namespace BJJCZ_BaseDevelop
             moveY = resultY;
             return err;
         }
+        private void CleanupRedundantGeneratedHatchEntities(int card)
+        {
+            try
+            {
+                int count = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    string hatchName = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                    if (!IsGeneratedHatchEntity(hatchName))
+                    {
+                        continue;
+                    }
+
+                    string sourceName = GetHatchSourceName(hatchName);
+                    if (string.IsNullOrWhiteSpace(sourceName) || !EntityExists(card, sourceName))
+                    {
+                        continue;
+                    }
+
+                    if (HasEnabledHatchParam(card, sourceName))
+                    {
+                        TryRemoveHatchEntity(card, sourceName, hatchName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 清理冗余填充对象异常: {ex.Message}");
+            }
+        }
         private int SaveEntLibToFileWithoutPreviewAnchor(int card, string fileName)
         {
             lock (_previewSaveLock)
             {
                 CleanupPreviewAnchorEntities(card);
                 CleanupTransformPairEntities(card);
+                CleanupUserGroupEntityBeforeSave(card);
+                CleanupRedundantGeneratedHatchEntities(card);
                 Thread.Sleep(300);//保存前对象库保持干净。
 
                 if (string.IsNullOrWhiteSpace(fileName))
@@ -3852,13 +4174,10 @@ namespace BJJCZ_BaseDevelop
                     {
                         return 0;
                     }
-
-                    AddMsg($"卡{card + 1} 保存EZD第{i}次失败: {JczLmc.GetErrorText(lastErr)}");
                 }
-                catch (Exception ex)
+                catch
                 {
                     lastErr = 12;
-                    AddMsg($"卡{card + 1} 保存EZD第{i}次异常: {ex.Message}");
                 }
 
                 Thread.Sleep(300);
@@ -3870,7 +4189,10 @@ namespace BJJCZ_BaseDevelop
 
         private int SaveEntLibDirectWithBackup(int card, string fullPath)
         {
+            const int maxSaveRounds = 3;
             string backupPath = fullPath + ".bak";
+            int lastErr = 12;
+
             try
             {
                 if (File.Exists(fullPath))
@@ -3878,42 +4200,156 @@ namespace BJJCZ_BaseDevelop
                     File.Copy(fullPath, backupPath, true);
                 }
 
-                int saveErr = SaveEntLibToFileWithRetry(card, fullPath);
-                if (saveErr == 0)
+                for (int round = 1; round <= maxSaveRounds; round++)
                 {
-                    TryDeleteFile(backupPath);
-                    MarkFallbackAdjustmentAfterSaveSuccess(card, fullPath);
-                    pendingDeferredSave[card] = false;
-                    AddMsg($"卡{card + 1} 直接保存EZD成功: {fullPath}");
-                    return 0;
+                    if (round > 1)
+                    {
+                        int rebuildErr = RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
+                        if (rebuildErr != 0)
+                        {
+                            lastErr = rebuildErr;
+                            break;
+                        }
+                    }
+
+                    lastErr = SaveEntLibToFileWithRetry(card, fullPath);
+                    if (lastErr == 0)
+                    {
+                        return CompleteSuccessfulEzdSave(card, fullPath, backupPath);
+                    }
+
+                    if (round == 1)
+                    {
+                        AddMsg($"卡{card + 1} 保存EZD失败，已保留操作并自动重连后重试保存");
+                    }
+
+                    MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
                 }
 
-                AddMsg($"卡{card + 1} 直接保存EZD失败: {JczLmc.GetErrorText(saveErr)}");
-                MarkFallbackAdjustmentAfterSaveFailure(card, fullPath);
-                RestoreBackupFile(fullPath, backupPath, card);
-                return saveErr;
+                AddMsg($"卡{card + 1} 保存EZD失败，操作已保留，下次打开仍会恢复");
+                MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
+                RestoreBackupFile(fullPath, backupPath, card, false);
+                return lastErr;
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card + 1} 直接保存EZD异常: {ex.Message}");
-                MarkFallbackAdjustmentAfterSaveFailure(card, fullPath);
-                RestoreBackupFile(fullPath, backupPath, card);
+                AddMsg($"卡{card + 1} 保存EZD失败，操作已保留，下次打开仍会恢复: {ex.Message}");
+                MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
+                RestoreBackupFile(fullPath, backupPath, card, false);
                 return 12;
             }
         }
-        private void RestoreBackupFile(string fullPath, string backupPath, int card)
+        private int CompleteSuccessfulEzdSave(int card, string fullPath, string backupPath)
+        {
+            TryDeleteFile(backupPath);
+            MarkFallbackAdjustmentAfterSaveSuccess(card, fullPath);
+            pendingDeferredSave[card] = false;
+            AddMsg($"卡{card + 1} 保存EZD成功");
+            return 0;
+        }
+
+        private int ReconnectCardsForFallbackSave()
+        {
+            for (int i = 0; i < currentFilePath.Length; i++)
+            {
+                try
+                {
+                    if (bInMark[i] || bInRed[i])
+                    {
+                        JczLmc.lmc1_StopMark(phyCardSN[i]);
+                    }
+                    bInMark[i] = false;
+                    bInRed[i] = false;
+
+                    if (pendingDeferredSave[i] && !string.IsNullOrWhiteSpace(currentFilePath[i]))
+                    {
+                        WriteFallbackAdjustmentFile(i, currentFilePath[i], true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AddMsg($"卡{i + 1} 保存失败重连前清理状态异常: {ex.Message}");
+                }
+            }
+
+            try
+            {
+                JczLmc.lmc1_Close();
+                Thread.Sleep(300);
+            }
+            catch
+            {
+            }
+
+            int initResult = JczLmc.InitializeCard(Application.StartupPath + "\\", false, this.Handle);
+            if (initResult != 0)
+            {
+                for (int i = 0; i < JczInitErrs.Length; i++)
+                {
+                    JczInitErrs[i] = initResult;
+                    bSimulateMode[i] = true;
+                }
+                AddMsg($"保存失败后自动重连板卡失败: {JczLmc.GetErrorText(initResult)}");
+                return initResult;
+            }
+
+            RefreshPhysicalCardMappingQuiet();
+            for (int i = 0; i < JczInitErrs.Length; i++)
+            {
+                JczInitErrs[i] = 0;
+                bSimulateMode[i] = false;
+                previewAnchorReady[i] = false;
+                ResetEntityScaleStates(i);
+            }
+            return 0;
+        }
+
+        private int RebuildEzdSaveSceneFromFallback(int card, string fullPath, string backupPath)
+        {
+            RestoreBackupFile(fullPath, backupPath, card, false);
+
+            int reconnectErr = ReconnectCardsForFallbackSave();
+            if (reconnectErr != 0)
+            {
+                return reconnectErr;
+            }
+
+            int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], fullPath);
+            if (loadErr != 0)
+            {
+                AddMsg($"保存失败后恢复稳定EZD失败: {JczLmc.GetErrorText(loadErr)}");
+                return loadErr;
+            }
+
+            currentFilePath[card] = fullPath;
+            ResetEntityScaleStates(card);
+            ApplyVisualRotateMoveParamIfReady(card, "保存失败重连后恢复视觉定位偏移");
+            CleanupPreviewAnchorEntities(card);
+            CleanupTransformPairEntities(card);
+            ReloadEntityInfo(card);
+            ApplyFallbackAdjustmentsIfAny(card, false);
+            ReloadEntityInfo(card);
+            InvalidateRoutePreviewCache(card);
+            ScheduleRoutePreviewRefresh(card, 50);
+            return 0;
+        }
+
+        private void RestoreBackupFile(string fullPath, string backupPath, int card, bool logMessage = true)
         {
             try
             {
                 if (File.Exists(backupPath))
                 {
                     File.Copy(backupPath, fullPath, true);
-                    AddMsg($"卡{card + 1} 已从备份恢复EZD: {backupPath}");
+                    if (logMessage)
+                    {
+                        AddMsg($"卡{card + 1} 已恢复稳定EZD");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card + 1} 从备份恢复EZD失败: {ex.Message}");
+                AddMsg($"卡{card + 1} 恢复稳定EZD失败: {ex.Message}");
             }
         }
         private void TryDeleteFile(string fileName)
@@ -3993,13 +4429,30 @@ namespace BJJCZ_BaseDevelop
             return new EzdFallbackAdjustmentOperation
             {
                 CmdType = op.CmdType,
+                OperationType = op.OperationType,
                 EntityName = op.EntityName,
+                SourceEntityName = op.SourceEntityName,
+                NewEntityName = op.NewEntityName,
                 EntityIndex = op.EntityIndex,
                 DParam1 = op.DParam1,
                 DParam2 = op.DParam2,
                 DParam3 = op.DParam3,
                 DParam4 = op.DParam4,
                 DParam5 = op.DParam5,
+                BoolParam1 = op.BoolParam1,
+                HasHatchParam = op.HasHatchParam,
+                HatchParam = op.HatchParam,
+                HasEntityBounds = op.HasEntityBounds,
+                BoundsEntityName = op.BoundsEntityName,
+                MinX = op.MinX,
+                MinY = op.MinY,
+                MaxX = op.MaxX,
+                MaxY = op.MaxY,
+                CenterX = op.CenterX,
+                CenterY = op.CenterY,
+                Width = op.Width,
+                Height = op.Height,
+                Z = op.Z,
                 CreatedTime = op.CreatedTime
             };
         }
@@ -4059,6 +4512,98 @@ namespace BJJCZ_BaseDevelop
             return clone;
         }
 
+        private bool IsFallbackOperationAllowed(EzdFallbackAdjustmentOperation op)
+        {
+            if (op == null)
+            {
+                return false;
+            }
+
+            string opType = op.OperationType ?? string.Empty;
+            if (string.Equals(opType, "Hatch", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(opType, "RemoveHatch", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (string.Equals(opType, "Copy", StringComparison.OrdinalIgnoreCase))
+            {
+                op.HasHatchParam = false;
+            }
+
+            return true;
+        }
+        private string GetFallbackOperationCompactKey(EzdFallbackAdjustmentOperation op)
+        {
+            if (op == null)
+            {
+                return string.Empty;
+            }
+
+            string opType = op.OperationType ?? string.Empty;
+            if (string.Equals(opType, "Transform", StringComparison.OrdinalIgnoreCase))
+            {
+                string target = !string.IsNullOrWhiteSpace(op.EntityName)
+                    ? op.EntityName
+                    : op.EntityIndex.ToString(CultureInfo.InvariantCulture);
+                return "Transform|" + target;
+            }
+
+            if (string.Equals(opType, "Hatch", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(opType, "RemoveHatch", StringComparison.OrdinalIgnoreCase))
+            {
+                return opType + "|" + (op.EntityName ?? string.Empty);
+            }
+
+            if (string.Equals(opType, "Group", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(opType, "UnGroup", StringComparison.OrdinalIgnoreCase))
+            {
+                return "GroupState";
+            }
+
+            string name = !string.IsNullOrWhiteSpace(op.NewEntityName) ? op.NewEntityName : op.EntityName;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = op.SourceEntityName;
+            }
+
+            return opType + "|" + op.CmdType.ToString(CultureInfo.InvariantCulture) + "|" + (name ?? string.Empty);
+        }
+
+        private List<EzdFallbackAdjustmentOperation> CompactFallbackOperations(IEnumerable<EzdFallbackAdjustmentOperation> operations)
+        {
+            List<EzdFallbackAdjustmentOperation> compacted = new List<EzdFallbackAdjustmentOperation>();
+            if (operations == null)
+            {
+                return compacted;
+            }
+
+            HashSet<string> seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            List<EzdFallbackAdjustmentOperation> source = new List<EzdFallbackAdjustmentOperation>();
+            foreach (EzdFallbackAdjustmentOperation op in operations)
+            {
+                if (op != null && IsFallbackOperationAllowed(op))
+                {
+                    source.Add(op);
+                }
+            }
+
+            for (int i = source.Count - 1; i >= 0; i--)
+            {
+                EzdFallbackAdjustmentOperation op = source[i];
+                string key = GetFallbackOperationCompactKey(op);
+                if (seenKeys.Add(key))
+                {
+                    EzdFallbackAdjustmentOperation clone = CloneFallbackAdjustmentOperation(op);
+                    if (clone != null)
+                    {
+                        compacted.Insert(0, clone);
+                    }
+                }
+            }
+
+            return compacted;
+        }
         private EzdFallbackAdjustmentFile LoadFallbackAdjustmentFile(int card)
         {
             string adjustPath = GetFallbackAdjustmentFilePathForCurrentFile(card);
@@ -4106,18 +4651,148 @@ namespace BJJCZ_BaseDevelop
         }
         private void RecordFallbackAdjustmentOperation(int card, LCZControlParam param, string targetEntName)
         {
-            if (card < 0 || card >= currentFilePath.Length || _isReplayingFallbackAdjustments[card])
-            {
-                return;
-            }
-
             if (param.cmdType != 23 && param.cmdType != 24 && param.cmdType != 25)
             {
                 return;
             }
 
+            RecordFallbackOperation(card, new EzdFallbackAdjustmentOperation
+            {
+                CmdType = param.cmdType,
+                OperationType = "Transform",
+                EntityName = targetEntName,
+                EntityIndex = param.ind1,
+                DParam1 = param.dParam1,
+                DParam2 = param.dParam2,
+                DParam3 = param.dParam3,
+                DParam4 = param.dParam4,
+                DParam5 = param.dParam5,
+                CreatedTime = DateTime.Now
+            });
+        }
+
+        private string GetFallbackOperationBoundsEntityName(EzdFallbackAdjustmentOperation operation)
+        {
+            if (operation == null)
+            {
+                return null;
+            }
+
+            if (string.Equals(operation.OperationType, "Copy", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(operation.NewEntityName))
+            {
+                return operation.NewEntityName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(operation.EntityName))
+            {
+                return operation.EntityName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(operation.NewEntityName))
+            {
+                return operation.NewEntityName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(operation.SourceEntityName))
+            {
+                return operation.SourceEntityName;
+            }
+
+            if (string.Equals(operation.OperationType, "Group", StringComparison.OrdinalIgnoreCase))
+            {
+                return "grpEnt";
+            }
+
+            return null;
+        }
+
+        private bool TryGetLogicalEntityBounds(int card, string entName, out double minX, out double minY, out double maxX, out double maxY, out double z)
+        {
+            minX = minY = maxX = maxY = z = 0;
+            if (card < 0 || card >= phyCardSN.Length || string.IsNullOrWhiteSpace(entName))
+            {
+                return false;
+            }
+
+            string[] names = GetLogicalEntityNames(card, entName);
+            if (names.Length == 0 && EntityExists(card, entName))
+            {
+                names = new string[] { entName };
+            }
+
+            bool hasValue = false;
+            foreach (string name in names)
+            {
+                double entMinX = 0, entMinY = 0, entMaxX = 0, entMaxY = 0, entZ = 0;
+                int err = JczLmc.lmc1_GetEntSize(phyCardSN[card], name, ref entMinX, ref entMinY, ref entMaxX, ref entMaxY, ref entZ);
+                if (err != 0)
+                {
+                    continue;
+                }
+
+                if (!hasValue)
+                {
+                    minX = entMinX;
+                    minY = entMinY;
+                    maxX = entMaxX;
+                    maxY = entMaxY;
+                    z = entZ;
+                    hasValue = true;
+                }
+                else
+                {
+                    minX = Math.Min(minX, entMinX);
+                    minY = Math.Min(minY, entMinY);
+                    maxX = Math.Max(maxX, entMaxX);
+                    maxY = Math.Max(maxY, entMaxY);
+                    z = Math.Max(z, entZ);
+                }
+            }
+
+            return hasValue;
+        }
+
+        private void FillFallbackOperationEntityBounds(int card, EzdFallbackAdjustmentOperation operation, string entityName)
+        {
+            if (operation == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(entityName))
+            {
+                entityName = GetFallbackOperationBoundsEntityName(operation);
+            }
+
+            double minX, minY, maxX, maxY, z;
+            if (!TryGetLogicalEntityBounds(card, entityName, out minX, out minY, out maxX, out maxY, out z))
+            {
+                return;
+            }
+
+            operation.HasEntityBounds = true;
+            operation.BoundsEntityName = GetHatchSourceName(entityName);
+            operation.MinX = minX;
+            operation.MinY = minY;
+            operation.MaxX = maxX;
+            operation.MaxY = maxY;
+            operation.CenterX = (minX + maxX) / 2.0;
+            operation.CenterY = (minY + maxY) / 2.0;
+            operation.Width = Math.Abs(maxX - minX);
+            operation.Height = Math.Abs(maxY - minY);
+            operation.Z = z;
+        }
+
+        private void RecordFallbackOperation(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            if (card < 0 || card >= currentFilePath.Length || _isReplayingFallbackAdjustments[card] || !IsFallbackOperationAllowed(operation))
+            {
+                return;
+            }
+
             string filePath = currentFilePath[card];
-            if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(targetEntName))
+            if (string.IsNullOrWhiteSpace(filePath))
             {
                 return;
             }
@@ -4128,20 +4803,17 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            string key = GetNormalizedFilePath(adjustPath);
-            EzdFallbackAdjustmentOperation operation = new EzdFallbackAdjustmentOperation
+            if (operation.CreatedTime == default(DateTime))
             {
-                CmdType = param.cmdType,
-                EntityName = targetEntName,
-                EntityIndex = param.ind1,
-                DParam1 = param.dParam1,
-                DParam2 = param.dParam2,
-                DParam3 = param.dParam3,
-                DParam4 = param.dParam4,
-                DParam5 = param.dParam5,
-                CreatedTime = DateTime.Now
-            };
+                operation.CreatedTime = DateTime.Now;
+            }
 
+            if (!operation.HasEntityBounds)
+            {
+                FillFallbackOperationEntityBounds(card, operation, null);
+            }
+
+            string key = GetNormalizedFilePath(adjustPath);
             lock (_fallbackAdjustmentLock)
             {
                 EzdFallbackAdjustmentFile data;
@@ -4159,7 +4831,7 @@ namespace BJJCZ_BaseDevelop
                 }
 
                 EnsureFallbackAdjustmentLists(data);
-                data.Operations.Add(operation);
+                data.Operations.Add(CloneFallbackAdjustmentOperation(operation));
                 data.EzdFilePath = ResolveFallbackEzdFullPath(filePath);
                 data.CardIndex = card;
                 data.NeedsReplay = true;
@@ -4169,6 +4841,87 @@ namespace BJJCZ_BaseDevelop
             pendingDeferredSave[card] = true;
         }
 
+        private bool RemovePendingFallbackGroupOperation(int card)
+        {
+            if (card < 0 || card >= currentFilePath.Length || string.IsNullOrWhiteSpace(currentFilePath[card]))
+            {
+                return false;
+            }
+
+            EzdFallbackAdjustmentFile data = LoadFallbackAdjustmentFile(card);
+            if (data == null)
+            {
+                return false;
+            }
+
+            EnsureFallbackAdjustmentLists(data);
+            bool removed = false;
+            for (int i = data.Operations.Count - 1; i >= 0; i--)
+            {
+                EzdFallbackAdjustmentOperation op = data.Operations[i];
+                if (op != null && string.Equals(op.OperationType, "Group", StringComparison.OrdinalIgnoreCase))
+                {
+                    data.Operations.RemoveAt(i);
+                    removed = true;
+                }
+            }
+
+            if (!removed)
+            {
+                return false;
+            }
+
+            string adjustPath = GetFallbackAdjustmentFilePath(currentFilePath[card]);
+            string key = GetNormalizedFilePath(adjustPath);
+            data.NeedsReplay = data.Operations.Count > 0;
+            data.LastUpdatedTime = DateTime.Now;
+            lock (_fallbackAdjustmentLock)
+            {
+                _fallbackAdjustmentCache[key] = CloneFallbackAdjustmentFile(data);
+            }
+
+            pendingDeferredSave[card] = data.Operations.Count > 0;
+            return true;
+        }
+        private void RemovePendingFallbackDeleteOperation(int card, string entityName)
+        {
+            if (card < 0 || card >= currentFilePath.Length || string.IsNullOrWhiteSpace(currentFilePath[card]))
+            {
+                return;
+            }
+
+            string adjustPath = GetFallbackAdjustmentFilePath(currentFilePath[card]);
+            string key = GetNormalizedFilePath(adjustPath);
+            string sourceName = GetHatchSourceName(entityName);
+
+            lock (_fallbackAdjustmentLock)
+            {
+                EzdFallbackAdjustmentFile data;
+                if (!_fallbackAdjustmentCache.TryGetValue(key, out data) || data == null)
+                {
+                    return;
+                }
+
+                EnsureFallbackAdjustmentLists(data);
+                for (int i = data.Operations.Count - 1; i >= 0; i--)
+                {
+                    EzdFallbackAdjustmentOperation op = data.Operations[i];
+                    if (op == null || !string.Equals(op.OperationType, "Delete", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    string opName = GetHatchSourceName(op.EntityName);
+                    if (string.Equals(opName, sourceName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        data.Operations.RemoveAt(i);
+                        data.LastUpdatedTime = DateTime.Now;
+                        pendingDeferredSave[card] = true;
+                        return;
+                    }
+                }
+            }
+        }
         private bool WriteFallbackAdjustmentFile(int card, string ezdFilePath, bool needsReplay)
         {
             string adjustPath = GetFallbackAdjustmentFilePath(ezdFilePath);
@@ -4224,18 +4977,15 @@ namespace BJJCZ_BaseDevelop
                     return File.Exists(adjustPath);
                 }
 
+                snapshot.SavedOperations.Clear();
                 snapshot.NeedsReplay = true;
             }
             else
             {
-                foreach (EzdFallbackAdjustmentOperation op in snapshot.Operations)
-                {
-                    EzdFallbackAdjustmentOperation opClone = CloneFallbackAdjustmentOperation(op);
-                    if (opClone != null)
-                    {
-                        snapshot.SavedOperations.Add(opClone);
-                    }
-                }
+                List<EzdFallbackAdjustmentOperation> latestSource = snapshot.Operations.Count > 0
+                    ? snapshot.Operations
+                    : snapshot.SavedOperations;
+                snapshot.SavedOperations = CompactFallbackOperations(latestSource);
                 snapshot.Operations.Clear();
                 snapshot.NeedsReplay = false;
                 snapshot.LastSavedTime = DateTime.Now;
@@ -4277,14 +5027,17 @@ namespace BJJCZ_BaseDevelop
             {
             }
         }
-        private void MarkFallbackAdjustmentAfterSaveFailure(int card, string ezdFilePath)
+        private void MarkFallbackAdjustmentAfterSaveFailure(int card, string ezdFilePath, bool logMessage = true)
         {
             try
             {
                 if (WriteFallbackAdjustmentFile(card, ezdFilePath, true))
                 {
                     pendingDeferredSave[card] = true;
-                    AddMsg($"卡{card + 1} EZD保存失败，已保留兜底参数，下次加载会尝试恢复: {Path.GetFileName(GetFallbackAdjustmentFilePath(ezdFilePath))}");
+                    if (logMessage)
+                    {
+                        AddMsg($"卡{card + 1} EZD保存失败，已保留操作，下次打开会恢复");
+                    }
                 }
             }
             catch
@@ -4318,7 +5071,7 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"清除保存兜底参数失败: {ex.Message}");
             }
         }
-        private void ApplyFallbackAdjustmentsIfAny(int card)
+        private void ApplyFallbackAdjustmentsIfAny(int card, bool logMessage = true)
         {
             EzdFallbackAdjustmentFile data = LoadFallbackAdjustmentFile(card);
             if (data == null || data.Operations == null || data.Operations.Count == 0)
@@ -4357,11 +5110,17 @@ namespace BJJCZ_BaseDevelop
             if (successCount > 0)
             {
                 pendingDeferredSave[card] = true;
-                AddMsg($"卡{card + 1} 已恢复保存兜底参数: {successCount}步");
+                if (logMessage)
+                {
+                    AddMsg($"卡{card + 1} 已恢复保存兜底参数: {successCount}步");
+                }
             }
             if (failCount > 0)
             {
-                AddMsg($"卡{card + 1} 有{failCount}步保存兜底参数恢复失败");
+                if (logMessage)
+                {
+                    AddMsg($"卡{card + 1} 有{failCount}步保存兜底参数恢复失败");
+                }
             }
         }
         private int ApplyFallbackAdjustmentOperation(int card, EzdFallbackAdjustmentOperation operation)
@@ -4369,6 +5128,26 @@ namespace BJJCZ_BaseDevelop
             if (operation == null)
             {
                 return 20;
+            }
+
+            string opType = string.IsNullOrWhiteSpace(operation.OperationType) ? "Transform" : operation.OperationType;
+            if (string.Equals(opType, "Copy", StringComparison.OrdinalIgnoreCase))
+            {
+                return ReplayFallbackCopy(card, operation);
+            }
+            if (string.Equals(opType, "Delete", StringComparison.OrdinalIgnoreCase))
+            {
+                return ReplayFallbackDelete(card, operation);
+            }
+            if (string.Equals(opType, "Hatch", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(opType, "RemoveHatch", StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+            if (string.Equals(opType, "Group", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(opType, "UnGroup", StringComparison.OrdinalIgnoreCase))
+            {
+                return ReplayFallbackGroup(card, operation, string.Equals(opType, "Group", StringComparison.OrdinalIgnoreCase));
             }
 
             string targetEntName = ResolveFallbackAdjustmentEntityName(card, operation);
@@ -4466,6 +5245,121 @@ namespace BJJCZ_BaseDevelop
                 }
             }
             return names.ToArray();
+        }
+        private int ReplayFallbackCopy(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            string sourceName = GetHatchSourceName(operation.SourceEntityName);
+            string newName = GetHatchSourceName(operation.NewEntityName);
+            if (string.IsNullOrWhiteSpace(sourceName) || string.IsNullOrWhiteSpace(newName))
+            {
+                return 20;
+            }
+
+            if (EntityExists(card, newName) || EntityExists(card, GetHatchEntityName(newName)))
+            {
+                return 0;
+            }
+
+            string copySource = EntityExists(card, sourceName) ? sourceName : operation.SourceEntityName;
+            if (string.IsNullOrWhiteSpace(copySource) || !EntityExists(card, copySource))
+            {
+                return 20;
+            }
+
+            int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], copySource, newName);
+            if (copyErr != 0)
+            {
+                return copyErr;
+            }
+
+
+
+            double moveX = operation.DParam1;
+            double moveY = operation.DParam2;
+            if (Math.Abs(moveX) > 0.000001 || Math.Abs(moveY) > 0.000001)
+            {
+                MoveLogicalEntity(card, newName, ref moveX, ref moveY);
+            }
+            return 0;
+        }
+
+        private int ReplayFallbackDelete(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            string entityName = GetHatchSourceName(operation.EntityName);
+            if (string.IsNullOrWhiteSpace(entityName))
+            {
+                return 20;
+            }
+
+            string[] names = GetLogicalEntityNames(card, entityName);
+            if (names.Length == 0)
+            {
+                return 0;
+            }
+
+            foreach (string name in names.Reverse())
+            {
+                if (!DeleteEntityIfExists(card, name))
+                {
+                    return 12;
+                }
+            }
+            return 0;
+        }
+
+        private int ReplayFallbackHatch(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            string entityName = GetHatchSourceName(operation.EntityName);
+            if (string.IsNullOrWhiteSpace(entityName) || !operation.HasHatchParam)
+            {
+                return 20;
+            }
+
+            return ApplyHatchPreservingSource(card, entityName, operation.HatchParam) ? 0 : 12;
+        }
+
+        private int ReplayFallbackRemoveHatch(int card, EzdFallbackAdjustmentOperation operation)
+        {
+            string entityName = GetHatchSourceName(operation.EntityName);
+            if (string.IsNullOrWhiteSpace(entityName))
+            {
+                return 20;
+            }
+
+            return RemoveHatchPreservingSource(card, entityName) ? 0 : 12;
+        }
+
+        private int ReplayFallbackGroup(int card, EzdFallbackAdjustmentOperation operation, bool group)
+        {
+            if (group)
+            {
+                if (EntityExists(card, "grpEnt"))
+                {
+                    int cleanupGroupErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
+                    if (cleanupGroupErr != 0)
+                    {
+                        return cleanupGroupErr;
+                    }
+                    RestoreUserGroupProcessParams(card);
+                }
+
+                string[] groupNames = BuildGroupEntityNames(card);
+                SnapshotUserGroupProcessParams(card, groupNames);
+                return groupNames.Length > 0
+                    ? JczLmc.lmc1_GroupEnt2(phyCardSN[card], groupNames, groupNames.Length, "grpEnt", GetUserGroupPenNumber(card, groupNames))
+                    : 20;
+            }
+
+            if (!EntityExists(card, "grpEnt"))
+            {
+                return 0;
+            }
+            int ungroupErr = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
+            if (ungroupErr == 0)
+            {
+                RestoreUserGroupProcessParams(card);
+            }
+            return ungroupErr;
         }
 
         private int ApplyFallbackAdjustmentToEntityName(int card, string entityName, EzdFallbackAdjustmentOperation operation)
@@ -4580,18 +5474,137 @@ namespace BJJCZ_BaseDevelop
 
             return names.ToArray();
         }
+        private int GetUserGroupPenNumber(int card, string[] groupNames)
+        {
+            if (groupNames != null)
+            {
+                foreach (string name in groupNames)
+                {
+                    int penNo = GetDisplayPenNumber(card, name);
+                    if (penNo >= 0 && penNo != HiddenContourPenNo && penNo != PreviewAnchorPenNo)
+                    {
+                        return penNo;
+                    }
+                }
+            }
+
+            return 2;
+        }
+        private void SnapshotUserGroupProcessParams(int card, string[] groupNames)
+        {
+            if (card < 0 || card >= userGroupParamSnapshots.Length)
+            {
+                return;
+            }
+
+            userGroupParamSnapshots[card].Clear();
+            if (groupNames == null)
+            {
+                return;
+            }
+
+            foreach (string name in groupNames)
+            {
+                SnapshotEntityProcessParam(card, name);
+                string hatchName = GetHatchEntityName(GetHatchSourceName(name));
+                if (!string.Equals(hatchName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    SnapshotEntityProcessParam(card, hatchName);
+                }
+            }
+        }
+
+        private void SnapshotEntityProcessParam(int card, string entName)
+        {
+            if (card < 0 || card >= userGroupParamSnapshots.Length || string.IsNullOrWhiteSpace(entName) || !EntityExists(card, entName))
+            {
+                return;
+            }
+
+            EntityProcessParamSnapshot snapshot = new EntityProcessParamSnapshot();
+            snapshot.EntityName = entName;
+
+            int penNo = GetEntityPenNumber(card, entName);
+            if (penNo >= 0)
+            {
+                snapshot.HasPenNo = true;
+                snapshot.PenNo = penNo;
+            }
+
+            for (int paramIndex = 1; paramIndex <= 3; paramIndex++)
+            {
+                HatchParam hp = new HatchParam(paramIndex);
+                if (TryReadHatchParam(card, entName, paramIndex, ref hp))
+                {
+                    snapshot.HatchParams[paramIndex] = hp;
+                }
+            }
+
+            if (snapshot.HasPenNo || snapshot.HatchParams.Count > 0)
+            {
+                userGroupParamSnapshots[card][entName] = snapshot;
+            }
+        }
+
+        private void RestoreUserGroupProcessParams(int card)
+        {
+            if (card < 0 || card >= userGroupParamSnapshots.Length || userGroupParamSnapshots[card].Count == 0)
+            {
+                return;
+            }
+
+            bool oldSuppress = suppressHatchDetailLogs[card];
+            suppressHatchDetailLogs[card] = true;
+            try
+            {
+                foreach (EntityProcessParamSnapshot snapshot in userGroupParamSnapshots[card].Values.ToArray())
+                {
+                    if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.EntityName) || !EntityExists(card, snapshot.EntityName))
+                    {
+                        continue;
+                    }
+
+                    if (snapshot.HasPenNo)
+                    {
+                        ApplyPenToEntity(card, snapshot.EntityName, snapshot.PenNo);
+                    }
+
+                    foreach (HatchParam hp in snapshot.HatchParams.Values)
+                    {
+                        SetHatchEntParam2ForEntity(card, snapshot.EntityName, hp);
+                    }
+                }
+            }
+            finally
+            {
+                suppressHatchDetailLogs[card] = oldSuppress;
+                userGroupParamSnapshots[card].Clear();
+            }
+        }
+
         private string[] BuildGroupEntityNames(int card)
         {
             List<string> names = new List<string>();
-            if (sdkEntNames[card] == null)
-            {
-                return names.ToArray();
-            }
+            int count = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
 
-            foreach (string sdkName in sdkEntNames[card])
+            for (int i = 0; i < count; i++)
             {
+                string sdkName = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                if (string.IsNullOrWhiteSpace(sdkName) ||
+                    string.Equals(sdkName, "grpEnt", StringComparison.OrdinalIgnoreCase) ||
+                    !ShouldShowEntityInTable(sdkName))
+                {
+                    continue;
+                }
+
                 foreach (string logicalName in GetLogicalEntityNames(card, sdkName))
                 {
+                    if (string.IsNullOrWhiteSpace(logicalName) ||
+                        string.Equals(logicalName, "grpEnt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     if (!names.Any(name => string.Equals(name, logicalName, StringComparison.OrdinalIgnoreCase)))
                     {
                         names.Add(logicalName);
@@ -4715,6 +5728,50 @@ namespace BJJCZ_BaseDevelop
         /// 获取对象的填充参数
         /// </summary>
         /// 
+        private bool TryGetExactHatchParamForEntity(int card, string entName, int paramIndex, out HatchParam hp)
+        {
+            hp = new HatchParam(Math.Max(1, Math.Min(3, paramIndex)));
+            try
+            {
+                if (string.IsNullOrEmpty(entName))
+                {
+                    return false;
+                }
+
+                string sourceEntName = GetHatchSourceName(entName);
+                string hatchEntName = GetHatchEntityName(sourceEntName);
+                int requestedIndex = Math.Max(1, Math.Min(3, paramIndex));
+                hp.nParamIndex = requestedIndex;
+
+                if (TryReadHatchParam(card, entName, requestedIndex, ref hp))
+                {
+                    hp.nParamIndex = requestedIndex;
+                    return true;
+                }
+
+                if (!string.Equals(entName, sourceEntName, StringComparison.OrdinalIgnoreCase) &&
+                    EntityExists(card, sourceEntName) &&
+                    TryReadHatchParam(card, sourceEntName, requestedIndex, ref hp))
+                {
+                    hp.nParamIndex = requestedIndex;
+                    return true;
+                }
+
+                if (!string.Equals(entName, hatchEntName, StringComparison.OrdinalIgnoreCase) &&
+                    EntityExists(card, hatchEntName) &&
+                    TryReadHatchParam(card, hatchEntName, requestedIndex, ref hp))
+                {
+                    hp.nParamIndex = requestedIndex;
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 读取填充{paramIndex}参数异常: {ex.Message}");
+            }
+
+            return false;
+        }
         private void GetHatchParamForEntity(int card, string entName, ref HatchParam hp)
         {
             try
@@ -4725,53 +5782,20 @@ namespace BJJCZ_BaseDevelop
                     return;
                 }
 
-                if (TryGetCachedHatchParam(card, entName, ref hp) ||
-                    TryGetCachedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
-                    TryGetCachedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
-                {
-                    AddMsg($"卡{card + 1} 对象 {entName} 使用上次保存的填充参数");
-                    return;
-                }
-
-                if (TryLoadHatchParamXml(card, entName, ref hp) ||
-                    TryLoadHatchParamXml(card, GetHatchSourceName(entName), ref hp) ||
-                    TryLoadHatchParamXml(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
-                {
-                    AddMsg($"卡{card + 1} 对象 {entName} 使用本地XML填充参数");
-                    CacheHatchParam(card, entName, hp);
-                    return;
-                }
-
-                if (TryGetPersistedHatchParam(card, entName, ref hp) ||
-                    TryGetPersistedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
-                    TryGetPersistedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
-                {
-                    AddMsg($"卡{card + 1} 对象 {entName} 使用本地保存的填充参数");
-                    CacheHatchParam(card, entName, hp);
-                    return;
-                }
-
                 string sourceEntName = GetHatchSourceName(entName);
                 string hatchEntName = GetHatchEntityName(sourceEntName);
-                string readEntName = entName;
+                bool hasEzdFile = !string.IsNullOrEmpty(currentFilePath[card]);
 
                 int requestedIndex = Math.Max(1, Math.Min(3, hp.nParamIndex));
-                bool foundAny = TryReadHatchParam(card, readEntName, requestedIndex, ref hp);
-                if ((!foundAny || hp.bEnableHatch == 0) &&
-                    !string.Equals(readEntName, hatchEntName, StringComparison.OrdinalIgnoreCase) &&
-                    EntityExists(card, hatchEntName))
+                HatchParam exactHp;
+                bool foundAny = TryGetExactHatchParamForEntity(card, entName, requestedIndex, out exactHp);
+                if (foundAny)
                 {
-                    HatchParam hatchHp = hp;
-                    if (TryReadHatchParam(card, hatchEntName, requestedIndex, ref hatchHp))
+                    hp = exactHp;
+                    if (hp.bEnableHatch != 0)
                     {
-                        hp = hatchHp;
-                        readEntName = hatchEntName;
-                        foundAny = true;
+                        return;
                     }
-                }
-                if (foundAny && hp.bEnableHatch != 0)
-                {
-                    return;
                 }
 
                 for (int paramIndex = 1; paramIndex <= 3; paramIndex++)
@@ -4781,16 +5805,8 @@ namespace BJJCZ_BaseDevelop
                         continue;
                     }
 
-                    HatchParam candidate = hp;
-                    bool candidateFound = TryReadHatchParam(card, readEntName, paramIndex, ref candidate);
-                    if ((!candidateFound || candidate.bEnableHatch == 0) &&
-                        !string.Equals(readEntName, hatchEntName, StringComparison.OrdinalIgnoreCase) &&
-                        EntityExists(card, hatchEntName))
-                    {
-                        candidateFound = TryReadHatchParam(card, hatchEntName, paramIndex, ref candidate);
-                    }
-
-                    if (candidateFound)
+                    HatchParam candidate;
+                    if (TryGetExactHatchParamForEntity(card, entName, paramIndex, out candidate))
                     {
                         if (candidate.bEnableHatch != 0)
                         {
@@ -4804,6 +5820,36 @@ namespace BJJCZ_BaseDevelop
                             foundAny = true;
                         }
                     }
+                }
+
+                if ((!foundAny || hp.bEnableHatch == 0) && !hasEzdFile)
+                {
+                    if (TryGetCachedHatchParam(card, entName, ref hp) ||
+                        TryGetCachedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
+                        TryGetCachedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
+                    {
+                        AddMsg($"卡{card + 1} 对象 {entName} 使用上次保存的填充参数");
+                        return;
+                    }
+
+                    if (TryLoadHatchParamXml(card, entName, ref hp) ||
+                        TryLoadHatchParamXml(card, GetHatchSourceName(entName), ref hp) ||
+                        TryLoadHatchParamXml(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
+                    {
+                        AddMsg($"卡{card + 1} 对象 {entName} 使用本地XML填充参数");
+                        CacheHatchParam(card, entName, hp);
+                        return;
+                    }
+
+                    if (TryGetPersistedHatchParam(card, entName, ref hp) ||
+                        TryGetPersistedHatchParam(card, GetHatchSourceName(entName), ref hp) ||
+                        TryGetPersistedHatchParam(card, GetHatchEntityName(GetHatchSourceName(entName)), ref hp))
+                    {
+                        AddMsg($"卡{card + 1} 对象 {entName} 使用本地保存的填充参数");
+                        CacheHatchParam(card, entName, hp);
+                        return;
+                    }
+
                 }
 
                 if (!foundAny)
@@ -5567,6 +6613,7 @@ namespace BJJCZ_BaseDevelop
             try
             {
                 EnsurePreviewBackgroundLoaded(card);
+                CleanupContourBackupEntities(card);
                 RectangleF bgBounds = GetBackgroundWorldBounds(card);
                 RectangleF displayBounds = BuildPreviewViewBoundsFromBackground(bgBounds);
                 RectangleF routeBounds = GetRoutePreviewWorldBounds(card);
@@ -5616,7 +6663,10 @@ namespace BJJCZ_BaseDevelop
                 using (FileStream fs = new FileStream(bgFile, FileMode.Open, FileAccess.Read))
                 {
                     originalImage[card] = new Bitmap(fs);
-                    originalImage[card].RotateFlip(RotateFlipType.RotateNoneFlipX);
+                    if (previewBackgroundMirrorX[card])
+                    {
+                        originalImage[card].RotateFlip(RotateFlipType.RotateNoneFlipX);//默认开启镜像
+                    }
                 }
                 AddMsg($"卡{card + 1} 背景图加载成功: {bgFile}");
             }
@@ -5656,6 +6706,7 @@ namespace BJJCZ_BaseDevelop
                 _routePreviewRefreshTimer.Stop();
             }
 
+            bool hasDeferredBusyCard = false;
             for (int card = 0; card < _pendingRoutePreviewRefresh.Length; card++)
             {
                 if (!_pendingRoutePreviewRefresh[card])
@@ -5663,12 +6714,34 @@ namespace BJJCZ_BaseDevelop
                     continue;
                 }
 
+                if (card >= 0 && card < bInMark.Length && bInMark[card])
+                {
+                    hasDeferredBusyCard = true;
+                    continue;
+                }
+
                 _pendingRoutePreviewRefresh[card] = false;
                 RefreshPreview(card);
+            }
+
+            if (hasDeferredBusyCard && _routePreviewRefreshTimer != null)
+            {
+                _routePreviewRefreshTimer.Interval = 300;
+                _routePreviewRefreshTimer.Start();
             }
         }
         private void RefreshPreview(int card)
         {
+            if (card >= 0 && card < bInMark.Length && bInMark[card])
+            {
+                if (card < _pendingRoutePreviewRefresh.Length)
+                {
+                    _pendingRoutePreviewRefresh[card] = true;
+                    ScheduleRoutePreviewRefresh(card, 300);
+                }
+                return;
+            }
+
             if(_isSavingEzd)
             {
                 return;
@@ -5687,6 +6760,7 @@ namespace BJJCZ_BaseDevelop
             {
                 // 1. 加载背景图像（如果尚未加载）。使用程序目录解析，避免主程序拉起时工作目录变化导致相对路径失效。
                 EnsurePreviewBackgroundLoaded(card);
+                CleanupContourBackupEntities(card);
 
                 // 背景图决定预览框当前显示哪一块视野；红框路径预览保留一个更大的、类似 EZCAD 画布的激光范围。
                 RectangleF bgBounds = GetBackgroundWorldBounds(card);
@@ -5725,7 +6799,7 @@ namespace BJJCZ_BaseDevelop
                         // 3. 获取激光路径预览图（带透明背景）
                         routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
                             phyCardSN[card],
-                            targetBox.Handle,
+                            /*targetBox.Handle*/IntPtr.Zero,
                             previewSize.Width,
                             previewSize.Height);
                         if (routeImg != null)
@@ -5735,7 +6809,7 @@ namespace BJJCZ_BaseDevelop
                                 routeImg.Save("tst1_src.png");
                             }
                             routeImg = CropPreviewToAnchorBounds(card, routeImg);
-                            if (PreviewDebugImageSaveEnabled)
+                            if (PreviewDebugImageSaveEnabled && routeImg != null)
                             {
                                 routeImg.Save("tst1_crop.png");
                             }
@@ -5816,7 +6890,7 @@ namespace BJJCZ_BaseDevelop
             {
                 AddMsg($"刷新预览失败: {ex.Message}");
             }
-            }
+            }           
         }
         /*private void InvalidateRoutePreviewCache(int card)
         {
@@ -5850,11 +6924,26 @@ namespace BJJCZ_BaseDevelop
 
             cachedRouteWidth[card] = 0;
             cachedRouteHeight[card] = 0;
+            if (card >= 0 && card < previewAnchorRects.Length)
+            {
+                previewAnchorRects[card] = Rectangle.Empty;
+                previewAnchorSourceSizes[card] = Size.Empty;
+            }
         }*/
         private void InvalidateRoutePreviewCache(int card)
         {
             if (card < 0 || card >= cachedTransparentRoute.Length)
             {
+                return;
+            }
+
+            if (card < bInMark.Length && bInMark[card])
+            {
+                if (card < _pendingRoutePreviewRefresh.Length)
+                {
+                    _pendingRoutePreviewRefresh[card] = true;
+                    ScheduleRoutePreviewRefresh(card, 300);
+                }
                 return;
             }
 
@@ -5892,6 +6981,11 @@ namespace BJJCZ_BaseDevelop
 
             cachedRouteWidth[card] = 0;
             cachedRouteHeight[card] = 0;
+            if (card >= 0 && card < previewAnchorRects.Length)
+            {
+                previewAnchorRects[card] = Rectangle.Empty;
+                previewAnchorSourceSizes[card] = Size.Empty;
+            }
         }
 
         // 辅助方法：将白色背景变为透明
@@ -5927,29 +7021,26 @@ namespace BJJCZ_BaseDevelop
             }
 
             Size sourceSize = new Size(img.Width, img.Height);
-            Rectangle cropRect = Rectangle.Empty;
-            bool hasCachedCrop = card >= 0 && card < previewAnchorRects.Length &&
-                previewAnchorRects[card].Width > 0 && previewAnchorRects[card].Height > 0;
+            Rectangle cropRect = FindPreviewAnchorCropRect(img);
 
-            if (hasCachedCrop && previewAnchorSourceSizes[card] == sourceSize)
+            if (cropRect.Width > 0 && cropRect.Height > 0)
             {
-                cropRect = previewAnchorRects[card];
-            }
-            else if (hasCachedCrop && previewAnchorSourceSizes[card].Width > 0 && previewAnchorSourceSizes[card].Height > 0)
-            {
-                cropRect = ScaleCropRect(previewAnchorRects[card], previewAnchorSourceSizes[card], sourceSize);
-                previewAnchorRects[card] = cropRect;
-                previewAnchorSourceSizes[card] = sourceSize;
-            }
-            else
-            {
-                cropRect = FindPreviewAnchorCropRect(img);
-                if (card >= 0 && card < previewAnchorRects.Length && cropRect.Width > 0 && cropRect.Height > 0)
+                cropRect = NormalizePreviewAnchorCropRect(cropRect, sourceSize);
+                if (card >= 0 && card < previewAnchorRects.Length)
                 {
                     previewAnchorRects[card] = cropRect;
                     previewAnchorSourceSizes[card] = sourceSize;
                 }
             }
+            else if (card >= 0 && card < previewAnchorRects.Length &&
+                     previewAnchorRects[card].Width > 0 && previewAnchorRects[card].Height > 0)
+            {
+                cropRect = previewAnchorSourceSizes[card] == sourceSize
+                    ? previewAnchorRects[card]
+                    : ScaleCropRect(previewAnchorRects[card], previewAnchorSourceSizes[card], sourceSize);
+                cropRect = NormalizePreviewAnchorCropRect(cropRect, sourceSize);
+            }
+
             if (cropRect.Width <= 0 || cropRect.Height <= 0)
             {
                 return img;
@@ -5970,6 +7061,37 @@ namespace BJJCZ_BaseDevelop
 
             img.Dispose();
             return cropped;
+        }
+
+        private Rectangle NormalizePreviewAnchorCropRect(Rectangle cropRect, Size sourceSize)
+        {
+            if (sourceSize.Width <= 0 || sourceSize.Height <= 0 || cropRect.Width <= 0 || cropRect.Height <= 0)
+            {
+                return Rectangle.Empty;
+            }
+
+            int left = Math.Max(0, cropRect.Left);
+            int top = Math.Max(0, cropRect.Top);
+            int right = Math.Min(sourceSize.Width, cropRect.Right);
+            int bottom = Math.Min(sourceSize.Height, cropRect.Bottom);
+
+            if (right <= left || bottom <= top)
+            {
+                return Rectangle.Empty;
+            }
+
+            Rectangle normalized = Rectangle.FromLTRB(left, top, right, bottom);
+            int inset = Math.Min(PreviewAnchorCropInsetPixels, Math.Min(normalized.Width / 8, normalized.Height / 8));
+            if (inset > 0 && normalized.Width > inset * 2 + 4 && normalized.Height > inset * 2 + 4)
+            {
+                normalized = Rectangle.FromLTRB(
+                    normalized.Left + inset,
+                    normalized.Top + inset,
+                    normalized.Right - inset,
+                    normalized.Bottom - inset);
+            }
+
+            return normalized;
         }
 
         private Rectangle ScaleCropRect(Rectangle cropRect, Size oldSize, Size newSize)
@@ -5995,26 +7117,77 @@ namespace BJJCZ_BaseDevelop
 
         private Rectangle FindPreviewAnchorCropRect(Bitmap img)
         {
+            if (img == null || img.Width <= 0 || img.Height <= 0)
+            {
+                return Rectangle.Empty;
+            }
+
             int minX = img.Width;
             int minY = img.Height;
             int maxX = -1;
             int maxY = -1;
+            Bitmap source = null;
+            bool disposeSource = false;
 
-            for (int y = 0; y < img.Height; y++)
+            try
             {
-                for (int x = 0; x < img.Width; x++)
+                if (img.PixelFormat == PixelFormat.Format24bppRgb)
                 {
-                    if (!IsPreviewAnchorColor(img.GetPixel(x, y)))
+                    source = img;
+                }
+                else
+                {
+                    source = new Bitmap(img.Width, img.Height, PixelFormat.Format24bppRgb);
+                    disposeSource = true;
+                    using (Graphics g = Graphics.FromImage(source))
                     {
-                        continue;
+                        g.Clear(Color.White);
+                        g.DrawImage(img, 0, 0, img.Width, img.Height);
                     }
+                }
 
-                    if (x < minX) minX = x;
-                    if (x > maxX) maxX = x;
-                    if (y < minY) minY = y;
-                    if (y > maxY) maxY = y;
+                Rectangle rect = new Rectangle(0, 0, source.Width, source.Height);
+                BitmapData data = source.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                try
+                {
+                    unsafe
+                    {
+                        byte* scan0 = (byte*)data.Scan0;
+                        int stride = data.Stride;
+                        for (int y = 0; y < source.Height; y++)
+                        {
+                            byte* row = scan0 + y * stride;
+                            for (int x = 0; x < source.Width; x++)
+                            {
+                                byte b = row[x * 3];
+                                byte g = row[x * 3 + 1];
+                                byte r = row[x * 3 + 2];
+                                if (!IsPreviewAnchorRgb(r, g, b))
+                                {
+                                    continue;
+                                }
+
+                                if (x < minX) minX = x;
+                                if (x > maxX) maxX = x;
+                                if (y < minY) minY = y;
+                                if (y > maxY) maxY = y;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    source.UnlockBits(data);
                 }
             }
+            finally
+            {
+                if (disposeSource && source != null)
+                {
+                    source.Dispose();
+                }
+            }
+
             if (maxX <= minX || maxY <= minY)
             {
                 return Rectangle.Empty;
@@ -6026,7 +7199,6 @@ namespace BJJCZ_BaseDevelop
                 Math.Min(img.Width, maxX + 1),
                 Math.Min(img.Height, maxY + 1));
         }
-
         private bool IsPreviewAnchorColor(Color color)
         {
             return IsPreviewAnchorRgb(color.R, color.G, color.B);
@@ -6277,10 +7449,41 @@ namespace BJJCZ_BaseDevelop
         {
             if (bSimulateMode[card]) return;
 
+            // 后台加载另一张卡时，只更新该卡内部缓存和预览，不能覆盖当前菜单选中卡的对象表。
+            if (card != currentCard)
+            {
+                return;
+            }
+
             if (dgvEnt.InvokeRequired)
             {
                 dgvEnt.Invoke(new Action<int>(UpdateEntTable), card);
                 return;
+            }
+
+            if (card != currentCard)
+            {
+                return;
+            }
+
+            int previousIndex = (card >= 0 && card < iEntIndices.Length) ? iEntIndices[card] : -1;
+            string previousSdkName = null;
+            string previousDisplayName = null;
+            if (previousIndex >= 0 && strEntNames[card] != null && previousIndex < strEntNames[card].Length)
+            {
+                previousDisplayName = strEntNames[card][previousIndex];
+                previousSdkName = (sdkEntNames[card] != null && previousIndex < sdkEntNames[card].Length)
+                    ? sdkEntNames[card][previousIndex]
+                    : previousDisplayName;
+            }
+            int previousFirstRow = -1;
+            try
+            {
+                previousFirstRow = dgvEnt.FirstDisplayedScrollingRowIndex;
+            }
+            catch
+            {
+                previousFirstRow = -1;
             }
 
             dgvEnt.Rows.Clear();
@@ -6297,6 +7500,48 @@ namespace BJJCZ_BaseDevelop
                 dgvEnt.Rows[i].Cells[3].Value = iPenNos[card][i].ToString();
                 dgvEnt.Rows[i].HeaderCell.Value = (i + 1).ToString();
             }
+
+            int restoreIndex = -1;
+            if (!string.IsNullOrEmpty(previousSdkName) || !string.IsNullOrEmpty(previousDisplayName))
+            {
+                for (int i = 0; i < nEntNums[card]; i++)
+                {
+                    string entName = strEntNames[card][i];
+                    string sdkName = (sdkEntNames[card] != null && i < sdkEntNames[card].Length) ? sdkEntNames[card][i] : entName;
+                    if ((!string.IsNullOrEmpty(previousSdkName) && string.Equals(sdkName, previousSdkName, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrEmpty(previousDisplayName) && string.Equals(entName, previousDisplayName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        restoreIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (restoreIndex < 0 && previousIndex >= 0 && previousIndex < nEntNums[card])
+            {
+                restoreIndex = previousIndex;
+            }
+
+            if (restoreIndex >= 0 && restoreIndex < dgvEnt.Rows.Count)
+            {
+                iEntIndices[card] = restoreIndex;
+                dgvEnt.ClearSelection();
+                dgvEnt.Rows[restoreIndex].Selected = true;
+                dgvEnt.CurrentCell = dgvEnt.Rows[restoreIndex].Cells[1];
+                if (previousFirstRow >= 0 && previousFirstRow < dgvEnt.Rows.Count)
+                {
+                    dgvEnt.FirstDisplayedScrollingRowIndex = previousFirstRow;
+                }
+                else
+                {
+                    dgvEnt.FirstDisplayedScrollingRowIndex = restoreIndex;
+                }
+            }
+            else
+            {
+                iEntIndices[card] = -1;
+                dgvEnt.ClearSelection();
+            }
         }
         /// <summary>
         /// 获取指定对象的类型（填充/轮廓）
@@ -6304,57 +7549,21 @@ namespace BJJCZ_BaseDevelop
         private string GetEntityType(int card, string entName)
         {
             if (bSimulateMode[card] || string.IsNullOrEmpty(entName))
+            {
                 return "轮廓";
+            }
 
             try
             {
                 string sourceEntName = GetHatchSourceName(entName);
                 string hatchEntName = GetHatchEntityName(sourceEntName);
-                if (!IsGeneratedHatchEntity(entName) && EntityExists(card, hatchEntName))
+
+                if (!IsGeneratedHatchEntity(entName) && HasEnabledHatchParam(card, hatchEntName))
                 {
                     return "填充";
                 }
 
-                // 调用获取填充参数函数
-                bool bEnableContour = false;
-                int nParamIndex = 1;
-                int bEnableHatch = 1;
-                bool bContourFirst = false;
-                int nPenNo = 0;
-                int nHatchType = 0;
-                bool bHatchAllCalc = false;
-                bool bHatchEdge = false;
-                bool bHatchAverageLine = false;
-                double dHatchAngle = 0;
-                double dHatchLineDist = 0;
-                double dHatchEdgeDist = 0;
-                double dHatchStartOffset = 0;
-                double dHatchEndOffset = 0;
-                double dHatchLineReduction = 0;
-                double dHatchLoopDist = 0;
-                int nEdgeLoop = 0;
-                bool bHatchLoopRev = false;
-                bool bHatchAutoRotate = false;
-                double dHatchRotateAngle = 0;
-                bool bHatchCross = false;
-                int dCycCount = 0;
-
-                int nErr = JczLmc.lmc1_GetHatchEntParam2(
-                    phyCardSN[card], entName,
-                    ref bEnableContour, nParamIndex, ref bEnableHatch,
-                    ref bContourFirst, ref nPenNo, ref nHatchType,
-                    ref bHatchAllCalc, ref bHatchEdge, ref bHatchAverageLine,
-                    ref dHatchAngle, ref dHatchLineDist, ref dHatchEdgeDist,
-                    ref dHatchStartOffset, ref dHatchEndOffset, ref dHatchLineReduction,
-                    ref dHatchLoopDist, ref nEdgeLoop, ref bHatchLoopRev,
-                    ref bHatchAutoRotate, ref dHatchRotateAngle, ref bHatchCross,
-                    ref dCycCount);
-
-                // 如果获取成功且填充使能，则为填充对象
-                if (nErr == 0 && bEnableHatch!=0)
-                    return "填充";
-                else
-                    return "轮廓";
+                return HasEnabledHatchParam(card, entName) ? "填充" : "轮廓";
             }
             catch
             {
@@ -6601,6 +7810,17 @@ namespace BJJCZ_BaseDevelop
                 SelectEntityBySdkName(card, newBaseName);
                 InvalidateRoutePreviewCache(card);
                 RefreshPreview(card);
+                RecordFallbackOperation(card, new EzdFallbackAdjustmentOperation
+                {
+                    CmdType = 101,
+                    OperationType = "Copy",
+                    SourceEntityName = sourceBaseName,
+                    NewEntityName = newBaseName,
+                    EntityName = newBaseName,
+                    DParam1 = CopyInitialOffsetDistance,
+                    DParam2 = CopyInitialOffsetDistance,
+                    CreatedTime = DateTime.Now
+                });
                 AddMsg($"卡{card + 1} 已复制对象 {sourceBaseName} -> {newBaseName}");
             }
             catch (Exception ex)
@@ -6677,6 +7897,7 @@ namespace BJJCZ_BaseDevelop
             }
 
             string sourceBaseName = GetHatchSourceName(sourceName);
+            DetachCopiedEntityFromSource(card, sourceBaseName);
             string[] names = GetLogicalEntityNames(card, sourceBaseName);
             if (names.Length == 0)
             {
@@ -6684,74 +7905,45 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            DetachCopiedEntityFromSource(card, sourceBaseName);
-            DeleteLastUndoBackups(card);
-            List<string> backupNames = new List<string>();
-            List<int> originalPenNos = new List<int>();
-            List<HatchParam> originalHatchParams = new List<HatchParam>();
-            List<bool> hasOriginalHatchParams = new List<bool>();
-            string stamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+            EzdFallbackAdjustmentOperation deleteFallbackOperation = new EzdFallbackAdjustmentOperation
+            {
+                CmdType = 102,
+                OperationType = "Delete",
+                EntityName = sourceBaseName,
+                EntityIndex = iEntIndices[card],
+                CreatedTime = DateTime.Now
+            };
+            FillFallbackOperationEntityBounds(card, deleteFallbackOperation, sourceBaseName);
+            string snapshotPath = GetDeleteUndoSnapshotPath(card, sourceBaseName);
+            if (!TryCreateDeleteUndoSnapshot(card, snapshotPath))
+            {
+                AddMsg($"卡{card + 1} 删除对象 {sourceBaseName} 已取消: 无法创建撤回快照");
+                return;
+            }
 
             try
             {
-                if (!EnsureHiddenContourPen(card))
-                {
-                    AddMsg($"卡{card + 1} 删除前创建隐藏备份失败: 隐藏笔号不可用");
-                    return;
-                }
-
-                for (int i = 0; i < names.Length; i++)
-                {
-                    string name = names[i];
-                    string backupName = GenerateUniqueEntityName(card, DeletedEntityBackupPrefix + card + "_" + stamp + "_" + i);
-                    int penNo = GetEntityPenNumber(card, name);
-                    HatchParam originalHatchParam = new HatchParam(1);
-                    bool hasHatchParam = IsGeneratedHatchEntity(name) && TryReadHatchParam(card, name, 1, ref originalHatchParam);
-                    int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], name, backupName);
-                    if (copyErr != 0)
-                    {
-                        AddMsg($"卡{card + 1} 删除前备份对象 {name} 失败: {JczLmc.GetErrorText(copyErr)}");
-                        foreach (string backup in backupNames)
-                        {
-                            DeleteEntityIfExists(card, backup);
-                        }
-                        return;
-                    }
-
-                    if (hasHatchParam)
-                    {
-                        HideHatchBackupEntity(card, backupName, originalHatchParam);
-                    }
-                    else
-                    {
-                        ApplyPenToEntity(card, backupName, HiddenContourPenNo);
-                    }
-                    backupNames.Add(backupName);
-                    originalPenNos.Add(penNo);
-                    originalHatchParams.Add(originalHatchParam);
-                    hasOriginalHatchParams.Add(hasHatchParam);
-                }
-
                 foreach (string name in names.Reverse())
                 {
                     if (!DeleteEntityIfExists(card, name))
                     {
-                        AddMsg($"卡{card + 1} 删除对象 {name} 失败");
+                        AddMsg($"卡{card + 1} 删除对象 {name} 失败，正在恢复删除前状态");
+                        RestoreDeleteSnapshotAfterFailedDelete(card, snapshotPath, currentFilePath[card]);
+                        TryDeleteFileQuietly(snapshotPath);
                         return;
                     }
                     RemoveEntityScaleState(card, name);
                 }
 
+                RemoveCachedHatchParamForPair(card, sourceBaseName, GetHatchEntityName(sourceBaseName));
                 lastDeletedEntity[card] = new DeletedEntityUndo
                 {
                     Card = card,
                     PreviousIndex = iEntIndices[card],
                     DisplayName = sourceBaseName,
                     OriginalNames = names,
-                    BackupNames = backupNames.ToArray(),
-                    OriginalPenNos = originalPenNos.ToArray(),
-                    OriginalHatchParams = originalHatchParams.ToArray(),
-                    HasOriginalHatchParams = hasOriginalHatchParams.ToArray()
+                    SnapshotFilePath = snapshotPath,
+                    OriginalFilePath = currentFilePath[card]
                 };
 
                 pendingDeferredSave[card] = true;
@@ -6760,18 +7952,21 @@ namespace BJJCZ_BaseDevelop
                 InvalidateRoutePreviewCache(card);
                 RefreshPreview(card);
                 UpdateUndoDeleteButtonState();
+                RecordFallbackOperation(card, deleteFallbackOperation);
                 AddMsg($"卡{card + 1} 已删除对象 {sourceBaseName}，可点击撤回删除恢复");
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card + 1} 删除对象异常: {ex.Message}");
+                AddMsg($"卡{card + 1} 删除对象异常: {ex.Message}，正在恢复删除前状态");
+                RestoreDeleteSnapshotAfterFailedDelete(card, snapshotPath, currentFilePath[card]);
+                TryDeleteFileQuietly(snapshotPath);
             }
         }
         private void btUndoDeleteEnt_Click(object sender, EventArgs e)
         {
             int card = currentCard;
             DeletedEntityUndo undo = lastDeletedEntity[card];
-            if (undo == null || undo.BackupNames == null || undo.OriginalNames == null)
+            if (undo == null || string.IsNullOrWhiteSpace(undo.SnapshotFilePath) || !File.Exists(undo.SnapshotFilePath))
             {
                 AddMsg($"卡{card + 1} 没有可撤回的删除操作");
                 return;
@@ -6782,62 +7977,28 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            List<string> restoredNames = new List<string>();
             try
             {
-                for (int i = 0; i < undo.OriginalNames.Length; i++)
+                int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], undo.SnapshotFilePath);
+                if (loadErr != 0)
                 {
-                    string originalName = undo.OriginalNames[i];
-                    string backupName = undo.BackupNames.Length > i ? undo.BackupNames[i] : null;
-                    if (string.IsNullOrWhiteSpace(backupName) || !EntityExists(card, backupName))
-                    {
-                        AddMsg($"卡{card + 1} 撤回删除失败: 找不到备份 {backupName}");
-                        return;
-                    }
-
-                    if (EntityExists(card, originalName))
-                    {
-                        AddMsg($"卡{card + 1} 撤回删除失败: 对象 {originalName} 已存在");
-                        return;
-                    }
-
-                    int copyErr = JczLmc.lmc1_CopyEnt(phyCardSN[card], backupName, originalName);
-                    if (copyErr != 0)
-                    {
-                        AddMsg($"卡{card + 1} 撤回删除恢复 {originalName} 失败: {JczLmc.GetErrorText(copyErr)}");
-                        foreach (string restoredName in restoredNames)
-                        {
-                            DeleteEntityIfExists(card, restoredName);
-                        }
-                        return;
-                    }
-
-                    if (undo.OriginalPenNos != null && undo.OriginalPenNos.Length > i && undo.OriginalPenNos[i] >= 0)
-                    {
-                        ApplyPenToEntity(card, originalName, undo.OriginalPenNos[i]);
-                    }
-
-                    if (undo.HasOriginalHatchParams != null && undo.HasOriginalHatchParams.Length > i &&
-                        undo.HasOriginalHatchParams[i] && undo.OriginalHatchParams != null && undo.OriginalHatchParams.Length > i)
-                    {
-                        SetHatchEntParam2ForEntity(card, originalName, undo.OriginalHatchParams[i]);
-                        CacheHatchParam(card, originalName, undo.OriginalHatchParams[i]);
-                    }
-
-                    restoredNames.Add(originalName);
+                    AddMsg($"卡{card + 1} 撤回删除失败: {JczLmc.GetErrorText(loadErr)}");
+                    return;
                 }
 
-                foreach (string backupName in undo.BackupNames)
+                if (!string.IsNullOrWhiteSpace(undo.OriginalFilePath))
                 {
-                    DeleteEntityIfExists(card, backupName);
+                    currentFilePath[card] = undo.OriginalFilePath;
                 }
 
-                lastDeletedEntity[card] = null;
                 pendingDeferredSave[card] = true;
+                RemovePendingFallbackDeleteOperation(card, undo.DisplayName);
                 ReloadEntityInfo(card);
-                SelectEntityBySdkName(card, undo.OriginalNames[0]);
+                SelectEntityBySdkName(card, undo.OriginalNames != null && undo.OriginalNames.Length > 0 ? undo.OriginalNames[0] : undo.DisplayName);
                 InvalidateRoutePreviewCache(card);
                 RefreshPreview(card);
+                TryDeleteFileQuietly(undo.SnapshotFilePath);
+                lastDeletedEntity[card] = null;
                 UpdateUndoDeleteButtonState();
                 AddMsg($"卡{card + 1} 已撤回删除对象 {undo.DisplayName}");
             }
@@ -6912,21 +8073,97 @@ namespace BJJCZ_BaseDevelop
             }
             return safePrefix + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
         }
-
         private void DeleteLastUndoBackups(int card)
         {
             DeletedEntityUndo undo = lastDeletedEntity[card];
-            if (undo != null && undo.BackupNames != null)
+            if (undo != null && !string.IsNullOrWhiteSpace(undo.SnapshotFilePath))
             {
-                foreach (string backupName in undo.BackupNames)
-                {
-                    DeleteEntityIfExists(card, backupName);
-                }
+                TryDeleteFileQuietly(undo.SnapshotFilePath);
             }
             lastDeletedEntity[card] = null;
             UpdateUndoDeleteButtonState();
         }
 
+        private string GetDeleteUndoSnapshotPath(int card, string entName)
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UserData", "DeleteUndo");
+            Directory.CreateDirectory(dir);
+
+            string safeName = string.IsNullOrWhiteSpace(entName) ? "entity" : entName.Trim();
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                safeName = safeName.Replace(c, '_');
+            }
+
+            return Path.Combine(dir, $"card{card + 1}_{DateTime.Now:yyyyMMddHHmmssfff}_{safeName}.ezd");
+        }
+
+        private bool TryCreateDeleteUndoSnapshot(int card, string snapshotPath)
+        {
+            try
+            {
+                CleanupPreviewAnchorEntities(card);
+                CleanupTransformPairEntities(card);
+
+                int err = JczLmc.lmc1_SaveEntLibToFile(phyCardSN[card], snapshotPath);
+                if (err != 0)
+                {
+                    AddMsg($"卡{card + 1} 创建删除撤回快照失败: {JczLmc.GetErrorText(err)}");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 创建删除撤回快照异常: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void RestoreDeleteSnapshotAfterFailedDelete(int card, string snapshotPath, string originalFilePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(snapshotPath) || !File.Exists(snapshotPath))
+                {
+                    return;
+                }
+
+                int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], snapshotPath);
+                if (loadErr != 0)
+                {
+                    AddMsg($"卡{card + 1} 恢复删除前状态失败: {JczLmc.GetErrorText(loadErr)}");
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(originalFilePath))
+                {
+                    currentFilePath[card] = originalFilePath;
+                }
+                ReloadEntityInfo(card);
+                InvalidateRoutePreviewCache(card);
+                RefreshPreview(card);
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"卡{card + 1} 恢复删除前状态异常: {ex.Message}");
+            }
+        }
+
+        private void TryDeleteFileQuietly(string filePath)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch
+            {
+            }
+        }
         private void UpdateUndoDeleteButtonState()
         {
             if (btUndoDeleteEnt != null && currentCard >= 0 && currentCard < lastDeletedEntity.Length)
@@ -6971,18 +8208,50 @@ namespace BJJCZ_BaseDevelop
         private void btRenameEnt_Click(object sender, EventArgs e)
         {
             int card = currentCard;
-            if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (strEntNames[card]?.Length ?? 0))
+            {
+                return;
+            }
 
             string newName = txtEntName.Text.Trim();
-            if (string.IsNullOrEmpty(newName)) return;
+            if (string.IsNullOrEmpty(newName))
+            {
+                return;
+            }
 
-            LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 31, ind1 = iEntIndices[card], strEntyName = newName };
-            CMDAna(cmd);
-            strEntNames[card][iEntIndices[card]] = newName;
-            dgvEnt.Rows[iEntIndices[card]].Cells[1].Value = newName;
+            string oldName = GetSdkEntityNameForOperation(card, iEntIndices[card]);
+            int err = RenameLogicalEntity(card, oldName, newName);
+            if (err != 0)
+            {
+                AddMsg($"卡{card + 1} 重命名对象 {oldName} -> {newName} 失败: {JczLmc.GetErrorText(err)}");
+                ReloadEntityInfo(card);
+                SelectEntityBySdkName(card, oldName);
+                return;
+            }
 
-            // 保存到原文件路径（不弹出对话框）
-            SaveToOriginalPath(card);
+            int saveErr = 0;
+            if (!string.IsNullOrEmpty(currentFilePath[card]))
+            {
+                saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, currentFilePath[card]);
+            }
+            else
+            {
+                saveErr = 20;
+            }
+
+            if (saveErr != 0)
+            {
+                AddMsg($"卡{card + 1} 重命名对象 {oldName} -> {newName} 已改到内存，但保存EZD失败: {JczLmc.GetErrorText(saveErr)}");
+            }
+            else
+            {
+                AddMsg($"卡{card + 1} 重命名对象 {oldName} -> {newName} 已保存到EZD");
+            }
+
+            ReloadEntityInfo(card);
+            SelectEntityBySdkName(card, newName);
+            InvalidateRoutePreviewCache(card);
+            RefreshPreview(card);
         }
 
         /*private void chkEntGroup_CheckedChanged(object sender, EventArgs e)
@@ -7009,20 +8278,38 @@ namespace BJJCZ_BaseDevelop
         {
             int card = currentCard;
 
-            if (group && EntityExists(card, "grpEnt"))
+            if (group)
             {
-                AddMsg($"卡{card + 1} 已存在群组对象 grpEnt，无需重复组群");
-                return;
+                if (EntityExists(card, "grpEnt"))
+                {
+                    CleanupUserGroupEntity(card);
+                }
+                userGroupMode[card] = true;
             }
-
-            if (!group && !EntityExists(card, "grpEnt"))
+            else
             {
-                AddMsg($"卡{card + 1} 当前没有 grpEnt 群组对象，无需解组");
-                return;
+                userGroupMode[card] = false;
+                if (!EntityExists(card, "grpEnt"))
+                {
+                    preserveUserGroupOnSave[card] = false;
+                    AddMsg($"卡{card + 1} 当前没有 grpEnt 群组对象，无需解组");
+                    return;
+                }
             }
 
             LCZControlParam cmd = new LCZControlParam { cardSN = card, cmdType = 28, bOpen = group };
             CMDAna(cmd);
+            if (group)
+            {
+                bool hasGroupEnt = EntityExists(card, "grpEnt");
+                userGroupMode[card] = hasGroupEnt;
+                preserveUserGroupOnSave[card] = hasGroupEnt;
+            }
+            else
+            {
+                userGroupMode[card] = false;
+                preserveUserGroupOnSave[card] = false;
+            }
             ReloadEntityInfo(card);
             InvalidateRoutePreviewCache(card);
             RefreshPreview(card);
@@ -7040,9 +8327,7 @@ namespace BJJCZ_BaseDevelop
             if (pic == null) return;
             string btnName = pic.Name;
 
-            //bool isGroupOperation = chkEntGroup.Checked;
-            bool isGroupOperation = EntityExists(card, "grpEnt"); //意义：以前靠复选框是否勾选决定整体操作。现在没有复选框了，所以改成看 SDK 里是否真的存在 grpEnt。
-                                                                  //有 grpEnt 就操作整体；没有 grpEnt 就操作当前选中单个对象。
+            bool isGroupOperation = userGroupMode[card] && EntityExists(card, "grpEnt");
             if (!isGroupOperation)
             {
                 CleanupUserGroupEntity(card);
@@ -7191,6 +8476,7 @@ namespace BJJCZ_BaseDevelop
 
                     CleanupPreviewAnchorEntities(i);
                     CleanupTransformPairEntities(i);
+                    CleanupUserGroupEntityBeforeSave(i);
                 }
 
                 pendingDeferredSave[card] = false;
@@ -7315,6 +8601,89 @@ namespace BJJCZ_BaseDevelop
                 return filePath;
             }
         }
+        private void SyncUserGroupSaveStateFromEntities(int card)
+        {
+            if (card < 0 || card >= preserveUserGroupOnSave.Length)
+            {
+                return;
+            }
+
+            bool hasGroupEnt = EntityExists(card, "grpEnt");
+            bool cleanGroupFile = hasGroupEnt && IsCleanUserGroupEntity(card);
+            preserveUserGroupOnSave[card] = cleanGroupFile || (card < userGroupMode.Length && userGroupMode[card] && hasGroupEnt);
+            if (card < userGroupMode.Length && cleanGroupFile)
+            {
+                userGroupMode[card] = true;
+            }
+        }
+
+        private bool IsCleanUserGroupEntity(int card)
+        {
+            int visibleCount = 0;
+            int count = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
+            for (int i = 0; i < count; i++)
+            {
+                string entName = JczLmc.lmc1_GetEntityNameByIndex(phyCardSN[card], i);
+                if (!ShouldShowEntityInTable(entName))
+                {
+                    continue;
+                }
+
+                visibleCount++;
+                if (!string.Equals(entName, "grpEnt", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return visibleCount == 1;
+        }
+        private bool ShouldMarkUserGroupOnly(int card)//新增群组判断函数
+        {
+            if (card < 0 || card >= userGroupMode.Length)
+            {
+                return false;
+            }
+
+            if (!EntityExists(card, "grpEnt"))
+            {
+                return false;
+            }
+
+            return userGroupMode[card] ||
+                   preserveUserGroupOnSave[card] ||
+                   IsCleanUserGroupEntity(card);
+        }
+        private bool ShouldPreserveUserGroupEntityOnSave(int card)
+        {
+            if (card < 0 || card >= preserveUserGroupOnSave.Length)
+            {
+                return false;
+            }
+
+            if (!preserveUserGroupOnSave[card])
+            {
+                return false;
+            }
+
+            if (!EntityExists(card, "grpEnt"))
+            {
+                preserveUserGroupOnSave[card] = false;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void CleanupUserGroupEntityBeforeSave(int card)
+        {
+            if (ShouldPreserveUserGroupEntityOnSave(card))
+            {
+                return;
+            }
+
+            CleanupUserGroupEntity(card);
+        }
         private void CleanupUserGroupEntity(int card)
         {
             try
@@ -7324,12 +8693,24 @@ namespace BJJCZ_BaseDevelop
                     int err = JczLmc.lmc1_UnGroupEnt(phyCardSN[card], "grpEnt");
                     if (err == 0)
                     {
+                        RestoreUserGroupProcessParams(card);
                         AddMsg($"卡{card + 1} 已解除残留组对象 grpEnt，后续按单对象操作");
                     }
                 }
             }
             catch
             {
+            }
+            finally
+            {
+                if (card >= 0 && card < userGroupMode.Length)
+                {
+                    userGroupMode[card] = false;
+                    if (card < preserveUserGroupOnSave.Length)
+                    {
+                        preserveUserGroupOnSave[card] = false;
+                    }
+                }
             }
         }
         private double DegreesToRadians(double degrees)
@@ -7661,6 +9042,50 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 设置填充参数（对应选中对象）
         /// </summary>
+        private void ReloadPreviewBackgroundOnly(int card)
+        {
+            if (card < 0 || card >= originalImage.Length)
+            {
+                return;
+            }
+
+            Bitmap oldImage = originalImage[card];
+            originalImage[card] = null;
+
+            EnsurePreviewBackgroundLoaded(card);
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+            RectangleF bgBounds = GetBackgroundWorldBounds(card);
+            if (originalImage[card] != null)
+            {
+                targetBox.SetWorldImage(originalImage[card],
+                    bgBounds.Left, bgBounds.Right,
+                    bgBounds.Top, bgBounds.Bottom,
+                    autoFit: false);
+                targetBox.Invalidate();
+
+                if (oldImage != null && !ReferenceEquals(oldImage, originalImage[card]))
+                {
+                    oldImage.Dispose();
+                }
+            }
+            else
+            {
+                originalImage[card] = oldImage;
+            }
+        }
+
+        private void btMirrorBackground_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (card < 0 || card >= previewBackgroundMirrorX.Length)
+            {
+                return;
+            }
+
+            previewBackgroundMirrorX[card] = !previewBackgroundMirrorX[card];
+            ReloadPreviewBackgroundOnly(card);
+            AddMsg($"卡{card + 1} 背景图镜像{(previewBackgroundMirrorX[card] ? "开启" : "关闭")}");
+        }
         private void btHatchParam_Click(object sender, EventArgs e)
         {
             int card = currentCard;
@@ -7886,6 +9311,61 @@ namespace BJJCZ_BaseDevelop
             hp.nCycCount = nCycCount;
             return true;
         }
+
+        private bool HasEnabledHatchParam(int card, string entName)
+        {
+            if (string.IsNullOrWhiteSpace(entName) || !EntityExists(card, entName))
+            {
+                return false;
+            }
+
+            for (int paramIndex = 1; paramIndex <= 3; paramIndex++)
+            {
+                HatchParam hp = new HatchParam(paramIndex);
+                if (TryReadHatchParam(card, entName, paramIndex, ref hp) && hp.bEnableHatch != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool DisableAllHatchParamsForEntity(int card, string entName, out int firstError, out int disabledCount)
+        {
+            firstError = 0;
+            disabledCount = 0;
+            if (string.IsNullOrWhiteSpace(entName) || !EntityExists(card, entName))
+            {
+                return true;
+            }
+
+            for (int paramIndex = 1; paramIndex <= 3; paramIndex++)
+            {
+                HatchParam hp = new HatchParam(paramIndex);
+                if (!TryReadHatchParam(card, entName, paramIndex, ref hp) || hp.bEnableHatch == 0)
+                {
+                    continue;
+                }
+
+                hp.bEnableContour = true;
+                hp.bEnableHatch = 0;
+                hp.bHatchEdge = false;
+                hp.nEdgeLoop = 0;
+                hp.nParamIndex = paramIndex;
+                int setErr = SetHatchEntParam2ForEntity(card, entName, hp);
+                if (setErr != 0)
+                {
+                    firstError = setErr;
+                    return false;
+                }
+
+                CacheHatchParam(card, entName, hp);
+                disabledCount++;
+            }
+
+            return true;
+        }
         private string GetHatchSourceName(string entName)
         {
             const string suffix = "_Hatch";
@@ -7915,12 +9395,19 @@ namespace BJJCZ_BaseDevelop
         private void btLaserPenParam_Click(object sender, EventArgs e)
         {
             int card = currentCard;
-            int penNo = 1;
-            if (iEntIndices[card] >= 0 && iEntIndices[card] < (iPenNos[card]?.Length ?? 0))
+            if ((iEntIndices[card] < 0 || iEntIndices[card] >= (iPenNos[card]?.Length ?? 0)) &&
+                (iPenNos[card]?.Length ?? 0) > 0)
             {
-                penNo = iPenNos[card][iEntIndices[card]];
+                SelectEntityByIndex(card, 0);
             }
 
+            if (iEntIndices[card] < 0 || iEntIndices[card] >= (iPenNos[card]?.Length ?? 0))
+            {
+                AddMsg($"卡{card + 1} 没有可设置笔号参数的对象");
+                return;
+            }
+
+            int penNo = iPenNos[card][iEntIndices[card]];
             LaserpenParam currentParam = new LaserpenParam(1);
             currentParam.nPenNo = penNo;
 
@@ -7930,14 +9417,69 @@ namespace BJJCZ_BaseDevelop
                 SaveToOriginalPath(card);
             }
 
+            string selectedName = null;
+            if (iEntIndices[card] >= 0 && iEntIndices[card] < (sdkEntNames[card]?.Length ?? 0))
+            {
+                selectedName = sdkEntNames[card][iEntIndices[card]];
+            }
+
             CleanupPreviewAnchorEntities(card);
             FrmLaserPen frm = new FrmLaserPen(currentParam, phyCardSN[card], currentFilePath[card]);
             if (frm.ShowDialog() == DialogResult.OK)
             {
                 AddMsg($"卡{card + 1} 笔号{frm.SelectedPenNo} 参数已更新");
-                ReloadEntityInfo(card);
-                RefreshPreview(card);
+                if (!ReloadCurrentEzdAfterPenSave(card, selectedName))
+                {
+                    ReloadEntityInfo(card);
+                    RefreshPreview(card);
+                }
             }
+        }
+        private bool ReloadCurrentEzdAfterPenSave(int card, string selectedName)
+        {
+            if (card < 0 || card >= currentFilePath.Length)
+            {
+                return false;
+            }
+
+            if (bInMark[card] || bInRed[card])
+            {
+                AddMsg($"卡{card + 1} 正在加工/红光预览，跳过笔号保存后的EZD重载");
+                return false;
+            }
+
+            if (pendingDeferredSave[card])
+            {
+                AddMsg($"卡{card + 1} 存在未保存的位置/旋转/缩放操作，跳过笔号保存后的EZD重载");
+                return false;
+            }
+
+            string filePath = currentFilePath[card];
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                return false;
+            }
+
+            int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], filePath);
+            if (loadErr != 0)
+            {
+                AddMsg($"卡{card + 1} 笔号保存后重新加载EZD失败: {JczLmc.GetErrorText(loadErr)}");
+                return false;
+            }
+
+            ResetEntityScaleStates(card);
+            ReloadEntityInfo(card);
+
+            if (!string.IsNullOrWhiteSpace(selectedName))
+            {
+                SelectEntityBySdkName(card, selectedName);
+            }
+
+            InvalidateRoutePreviewCache(card);
+            RefreshPreview(card);
+
+            AddMsg($"卡{card + 1} 笔号保存后已重新加载当前EZD");
+            return true;
         }
         private const int PreviewAnchorPenNo = 254;
         private static readonly Color PreviewAnchorColor = Color.Lime;
@@ -7988,10 +9530,11 @@ namespace BJJCZ_BaseDevelop
         } //打开EZD后，如果文件本身就是grpEnt，原代码不会自动勾选“群组”。
           //这个函数就是每次刷新对象列表时检查：EntityExists(card, "grpEnt")
           //如果存在，就把右边“群组”复选框自动勾上；不存在就取消勾选。*/
-
         private void ReloadEntityInfo(int card)
         {
             CleanupPreviewAnchorEntities(card);
+            SyncUserGroupSaveStateFromEntities(card);
+            CleanupContourBackupEntities(card);
 
             int sdkCount = JczLmc.lmc1_GetEntityCount(phyCardSN[card]);
             List<string> displaySdkNames = new List<string>();
@@ -8047,7 +9590,7 @@ namespace BJJCZ_BaseDevelop
         private int GetDisplayPenNumber(int card, string sdkName)
         {
             string hatchEntName = GetHatchEntityName(GetHatchSourceName(sdkName));
-            if (EntityExists(card, hatchEntName))
+            if (HasEnabledHatchParam(card, hatchEntName))
             {
                 int hatchPenNo = GetEntityPenNumber(card, hatchEntName);
                 if (hatchPenNo >= 0)
@@ -8080,13 +9623,9 @@ namespace BJJCZ_BaseDevelop
 
             string sourceName = GetHatchSourceName(sdkName);
             string hatchName = GetHatchEntityName(sourceName);
-            if (EntityExists(card, hatchName))
+            if (HasEnabledHatchParam(card, hatchName))
             {
-                HatchParam hp = new HatchParam(1);
-                if (!TryReadHatchParam(card, hatchName, 1, ref hp) || hp.bEnableHatch != 0)
-                {
-                    return hatchName;
-                }
+                return hatchName;
             }
             return sdkName;
         }
@@ -8098,9 +9637,7 @@ namespace BJJCZ_BaseDevelop
                 return true;
             }
 
-            return !IsGeneratedHatchEntity(sdkName)
-                && !IsContourBackupEntity(sdkName)
-                && !sdkName.StartsWith(DeletedEntityBackupPrefix, StringComparison.OrdinalIgnoreCase)
+            return !IsContourBackupEntity(sdkName)
                 && !sdkName.StartsWith(PreviewAnchorEntityPrefix, StringComparison.OrdinalIgnoreCase)
                 && !sdkName.StartsWith(TransformPairEntityPrefix, StringComparison.OrdinalIgnoreCase);
          }

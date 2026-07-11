@@ -733,6 +733,7 @@ namespace VisionApplication
                     //_ = InitializeJczCardAfterConnect(card);
                 }
             }
+            rts.initStatus.bJCZ = 0;
             this.BeginInvoke(new Action(() => //延迟500ms发送
             {
                 ScheduleInitializeJczCards(800);
@@ -1117,8 +1118,8 @@ namespace VisionApplication
                     nErr = received.nErr;
                     if (nErr == 0)
                     {
-                    //    toolBtSta_LockImage.Checked = false;
-                   //     toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
+                      //  toolBtSta_LockImage.Checked = false;
+                     //   toolBtSta_LockImage.Image = global::VisionApplication.Properties.Resources.UnLock;
                     }
                     operLog.strOperEvent = "关闭板卡";
                     break;
@@ -1152,7 +1153,7 @@ namespace VisionApplication
                     nErr = 0; // 执行成功，错误由 bOpen 和 ind3 标志处理
                     operLog.strOperEvent = "激光加工";
                     if (received.bOpen || nErr == 11) // bOpen 表示加工完成，nErr==11 表示未初始化（也视为结束）
-                    {
+                    { 
                         try
                         {
                             if (loadingForm != null)
@@ -1171,7 +1172,14 @@ namespace VisionApplication
                                 btFunMark.FlatStyle = FlatStyle.Popup;
                             }
                         }
+                        UpdateLaserStatusLabel(card);   // 立即更新状态
                     }
+                    else
+                    {
+                        iLaserWorkingTypes[card] = 1;
+                        UpdateLaserStatusLabel(card);   // 立即更新状态
+                    }
+
                     if (received.ind3 == 1)  // 标刻模板（用于9点标定）
                     {
                         vpWin.bMainTaskFinished = true;
@@ -1193,6 +1201,7 @@ namespace VisionApplication
                     {
                         btFunMark.FlatStyle = FlatStyle.Popup;
                         iLaserWorkingTypes[card] = 0;
+                        UpdateLaserStatusLabel(card);   // 立即更新状态
                     }
                     break;
 
@@ -1800,10 +1809,45 @@ namespace VisionApplication
             // 根据当前选中对象更新菜单项可用性
             UpdateEntityMenuState(cardSN);
         }
-         
+
         /// <summary>
         /// 更新状态栏中的板卡状态显示
         /// </summary>
+        /// // 在 FrmMain_Laser.cs 中添加
+        private void UpdateLaserStatusLabel(int card)
+        {
+            if (card < 0 || card >= MaxLaserCards)
+                return;
+
+            // 选择对应的状态栏标签
+            ToolStripStatusLabel label = (card == 0)
+                ? toolStripStatusLabel_LaserStatus1
+                : toolStripStatusLabel_LaserStatus2;
+
+            if (label == null)
+                return;
+
+            // 根据工作状态设置文本和颜色
+            switch (iLaserWorkingTypes[card])
+            {
+                case 1:  // 加工中
+                    label.Text = "● 加工中";
+                    label.ForeColor = Color.Red;
+                    break;
+                case 2:  // 红光预览
+                    label.Text = "● 红光预览";
+                    label.ForeColor = Color.Orange;
+                    break;
+                case 4:  // 参数设置
+                    label.Text = "● 参数设置";
+                    label.ForeColor = Color.Blue;
+                    break;
+                default: // 空闲（0）或其他
+                    label.Text = "● 空闲";
+                    label.ForeColor = Color.Green;
+                    break;
+            }
+        }
         private void UpdateStatusStripForCard(int cardSN)
         {
             // 更新状态栏文本
@@ -1823,11 +1867,11 @@ namespace VisionApplication
 
             // 更新加工状态
             if (iLaserWorkingTypes[cardSN] == 1)
-                toolStripStatusLabel_LaserStatus.Text = "● 加工中";
+                toolStripStatusLabel_LaserStatus1.Text = "● 加工中";
             else if (iLaserWorkingTypes[cardSN] == 2)
-                toolStripStatusLabel_LaserStatus.Text = "● 红光预览";
+                toolStripStatusLabel_LaserStatus1.Text = "● 红光预览";
             else
-                toolStripStatusLabel_LaserStatus.Text = "● 空闲";
+                toolStripStatusLabel_LaserStatus1.Text = "● 空闲";
         }
 
         /// <summary>
@@ -3428,7 +3472,7 @@ namespace VisionApplication
             try
             {
                 bVPPParamChanged = true;
-                vpWin.ExtraTrainImage(iJobIndex, rts.onLS.bLock);
+                vpWin.ExtraTrainImage(iJobIndex, rts.onLS.bAcqFromCam, rts.onLS.bLock);
             }
             catch { }
         } 
@@ -3476,6 +3520,27 @@ namespace VisionApplication
                 nudPMARunAngleU.Enabled = false;
             }
         }
+
+        private void btLocateEdge1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                vpWin.SetFindLineSearchRegion(iJobIndex,1);
+                bVPPParamChanged = true;
+            }
+            catch { }
+        }
+
+        private void btLocateEdge2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                vpWin.SetFindLineSearchRegion(iJobIndex, 2);
+                bVPPParamChanged = true;
+            }
+            catch { }
+        }
+
 
         #endregion
 

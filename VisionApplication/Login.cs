@@ -158,7 +158,7 @@ namespace VisionApplication
             string pwd = ShowInputDialog("开发者登录", "请输入开发者密码：");
             if (pwd == "st@2026")   // 预设开发者密码（可改为从配置文件读取）
             {
-                iModelRole = 4;      // 开发者权限（最高）
+                iModelRole = 8;      // 开发者权限（最高）
                 strID = "开发者";
                 this.DialogResult = DialogResult.OK;
                 this.Close();
