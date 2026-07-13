@@ -1415,17 +1415,7 @@ namespace BJJCZ_BaseDevelop
         }
 
         private int StartMarkAllObjects(int card, int responseCmdType, int clientSeq, bool useVisualRotateMove, string visualStage, string markLabel)
-        {
-            /*// 临时验证：最小链路加工，模拟官方demo，只清旋转平移后直接 lmc1_Mark
-            AddMsg($"卡{card + 1} 临时最小链路加工测试开始");
-
-            int clearErr = JczLmc.lmc1_SetRotateMoveParam(phyCardSN[card], 0, 0, 0, 0, 0);
-            AddMsg($"卡{card + 1} 清除旋转平移 -> {JczLmc.GetErrorText(clearErr)}");
-
-            int markErrMini = JczLmc.lmc1_Mark(phyCardSN[card], false);
-            AddMsg($"卡{card + 1} 最小链路 lmc1_Mark -> {JczLmc.GetErrorText(markErrMini)}");
-
-            return markErrMini;*/
+        {      
             if (!CanStartLaserMark(card))
             {
                 return 19;
@@ -1455,17 +1445,24 @@ namespace BJJCZ_BaseDevelop
             var worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
             {
-                int markErr = markGroupOnly
-                    ? lmc1_MarkEntityBlocking(card, "grpEnt")
-                    : lmc1_MarkBlocking(card, false);
-                /* var worker = new BackgroundWorker();
-                 worker.DoWork += (s, ev) =>
-                 {
-                     int markErr = lmc1_MarkBlocking(card, false);*/
-                bInMark[card] = false;
-                if (markUsesVisualRotateMove)
+                int markErr = 12;
+                try
                 {
-                    visualRotateMoveReady[card] = false;
+                    markErr = markGroupOnly
+                        ? lmc1_MarkEntityBlocking(card, "grpEnt")
+                        : lmc1_MarkBlocking(card, false);
+                }
+                catch (Exception ex)
+                {
+                    markErr = 12;
+                }
+                finally
+                {
+                    bInMark[card] = false;
+                    if (markUsesVisualRotateMove)
+                    {
+                        visualRotateMoveReady[card] = false;
+                    }
                 }
 
                 AddMsg(markStopRequested[card]
@@ -4120,10 +4117,71 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"卡{card + 1} 清理冗余填充对象异常: {ex.Message}");
             }
         }
+        private bool WaitAllCardsIdleBeforeSave(int timeoutMs = 3000, int settleMs = 500)
+        {
+            int elapsed = 0;
+            const int interval = 100;
+            string lastState = string.Empty;
+
+            while (elapsed <= timeoutMs)
+            {
+                bool allIdle = true;
+                StringBuilder state = new StringBuilder();
+
+                for (int i = 0; i < phyCardSN.Length && i < bInMark.Length; i++)
+                {
+                    if ((i < bSimulateMode.Length && bSimulateMode[i]) ||
+                        (i < JczInitErrs.Length && JczInitErrs[i] != 0))
+                    {
+                        state.Append($"卡{i + 1}:skip; ");
+                        continue;
+                    }
+
+                    bool busyFlag = (i < bInMark.Length && bInMark[i]) ||
+                                    (i < bInRed.Length && bInRed[i]);
+                    int finishStatus;
+                    try
+                    {
+                        finishStatus = JczLmc.lmc1_IsMarkFinish(phyCardSN[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        allIdle = false;
+                        state.Append($"卡{i + 1}:queryErr={ex.Message}; ");
+                        continue;
+                    }
+
+                    state.Append($"卡{i + 1}:bInMark={bInMark[i]},bInRed={bInRed[i]},finish={finishStatus}; ");
+                    if (busyFlag || finishStatus != 1)
+                    {
+                        allIdle = false;
+                    }
+                }
+
+                lastState = state.ToString();
+                if (allIdle)
+                {
+                    Thread.Sleep(settleMs);
+                    return true;
+                }
+
+                Thread.Sleep(interval);
+                elapsed += interval;
+            }
+
+            return false;
+        }
         private int SaveEntLibToFileWithoutPreviewAnchor(int card, string fileName)
         {
             lock (_previewSaveLock)
             {
+                if (!WaitAllCardsIdleBeforeSave())
+                {
+                    AddMsg($"卡{card + 1} 保存失败: 加工状态未完全结束，请稍后再保存");
+                    return 19;
+                }
+
+
                 CleanupPreviewAnchorEntities(card);
                 CleanupTransformPairEntities(card);
                 CleanupUserGroupEntityBeforeSave(card);
@@ -4189,8 +4247,8 @@ namespace BJJCZ_BaseDevelop
 
         private int SaveEntLibDirectWithBackup(int card, string fullPath)
         {
-            const int maxSaveRounds = 3;
             string backupPath = fullPath + ".bak";
+            string savingPath = fullPath + ".saving";
             int lastErr = 12;
 
             try
@@ -4199,44 +4257,57 @@ namespace BJJCZ_BaseDevelop
                 {
                     File.Copy(fullPath, backupPath, true);
                 }
+                TryDeleteFile(savingPath);
 
-                for (int round = 1; round <= maxSaveRounds; round++)
+                lastErr = SaveEntLibToFileWithRetry(card, savingPath);
+                if (lastErr == 0)
                 {
-                    if (round > 1)
+                    if (!File.Exists(savingPath))
                     {
-                        int rebuildErr = RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
-                        if (rebuildErr != 0)
+                        AddMsg($"卡{card + 1} 保存EZD失败: 临时文件未生成");
+                        lastErr = 12;
+                    }
+                    else
+                    {
+                        try
                         {
-                            lastErr = rebuildErr;
-                            break;
+                            File.Copy(savingPath, fullPath, true);
+                            TryDeleteFile(savingPath);
+                            return CompleteSuccessfulEzdSave(card, fullPath, backupPath);
+                        }
+                        catch (Exception replaceEx)
+                        {
+                            AddMsg($"卡{card + 1} 替换EZD失败，已尝试恢复原文件: {replaceEx.Message}");
+                            RestoreBackupFile(fullPath, backupPath, card, false);
+                            TryDeleteFile(savingPath);
+                            lastErr = 12;
                         }
                     }
-
-                    lastErr = SaveEntLibToFileWithRetry(card, fullPath);
-                    if (lastErr == 0)
-                    {
-                        return CompleteSuccessfulEzdSave(card, fullPath, backupPath);
-                    }
-
-                    if (round == 1)
-                    {
-                        AddMsg($"卡{card + 1} 保存EZD失败，已保留操作并自动重连后重试保存");
-                    }
-
-                    MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
                 }
 
-                AddMsg($"卡{card + 1} 保存EZD失败，操作已保留，下次打开仍会恢复");
                 MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
                 RestoreBackupFile(fullPath, backupPath, card, false);
-                return lastErr;
+                int recoverErr = RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
+                if (recoverErr == 0)
+                {
+                    AddMsg($"卡{card + 1} 保存失败，已自动重连并恢复兜底操作，请再次保存");
+                    return lastErr;
+                }
+
+                AddMsg($"卡{card + 1} 保存失败，自动重连恢复失败: {JczLmc.GetErrorText(recoverErr)}");
+                return recoverErr;
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card + 1} 保存EZD失败，操作已保留，下次打开仍会恢复: {ex.Message}");
+                AddMsg($"卡{card + 1} 保存EZD失败，操作已保留: {ex.Message}");
                 MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
                 RestoreBackupFile(fullPath, backupPath, card, false);
+                RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
                 return 12;
+            }
+            finally
+            {
+                TryDeleteFile(savingPath);
             }
         }
         private int CompleteSuccessfulEzdSave(int card, string fullPath, string backupPath)
@@ -4314,19 +4385,35 @@ namespace BJJCZ_BaseDevelop
                 return reconnectErr;
             }
 
-            int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], fullPath);
-            if (loadErr != 0)
+            if (card >= 0 && card < currentFilePath.Length)
             {
-                AddMsg($"保存失败后恢复稳定EZD失败: {JczLmc.GetErrorText(loadErr)}");
-                return loadErr;
+                currentFilePath[card] = fullPath;
             }
 
-            currentFilePath[card] = fullPath;
-            ResetEntityScaleStates(card);
+            for (int i = 0; i < currentFilePath.Length; i++)
+            {
+                string path = currentFilePath[i];
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    continue;
+                }
+
+                int loadErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[i], path);
+                if (loadErr != 0)
+                {
+                    AddMsg($"卡{i + 1} 保存失败后恢复稳定EZD失败: {JczLmc.GetErrorText(loadErr)}");
+                    return loadErr;
+                }
+
+                ResetEntityScaleStates(i);
+                CleanupPreviewAnchorEntities(i);
+                CleanupTransformPairEntities(i);
+                ReloadEntityInfo(i);
+                InvalidateRoutePreviewCache(i);
+                ScheduleRoutePreviewRefresh(i, 50);
+            }
+
             ApplyVisualRotateMoveParamIfReady(card, "保存失败重连后恢复视觉定位偏移");
-            CleanupPreviewAnchorEntities(card);
-            CleanupTransformPairEntities(card);
-            ReloadEntityInfo(card);
             ApplyFallbackAdjustmentsIfAny(card, false);
             ReloadEntityInfo(card);
             InvalidateRoutePreviewCache(card);
@@ -6149,8 +6236,16 @@ namespace BJJCZ_BaseDevelop
             AddMsg($"发送响应 [卡{param.cardSN+1}] {cmdDesc} - {result}");
 
             Pipechanel server = (param.cardSN == 0) ? pipeServer0 : pipeServer1;
-            server.SendParam(param);
+            try
+            {
+                server.SendParam(param);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
+
         #endregion
 
         #region 预览图、背景图与透明叠加

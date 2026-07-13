@@ -5140,15 +5140,7 @@ namespace VisionApplication
 
         }
 
-        private void menuTool_RemarkManager_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void menuTool_ImageGroupPreview_Click(object sender, EventArgs e)
-        {
-
-        }
+       
 
        
         private void timer1_Tick(object sender, EventArgs e)
@@ -7744,14 +7736,268 @@ namespace VisionApplication
         private void menuCam_Click(object sender, EventArgs e)
         {
 
+        }         
+
+        private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            calipFindLineParam cflParam = new calipFindLineParam();
+            vpWin.GetCLPParam(ref cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+            UpdateUIFromCLPParam(cflParam);
         }
 
-        
+        /// <summary>
+        /// 加载工程：恢复训练图像、激光文件、用户参数
+        /// </summary>
+        private async void menuLaser_LoadEngine_Click(object sender, EventArgs e)
+        {
+            // 1. 检查任务状态与权限
+            if (!vpWin.bMainTaskFinished)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "加载工程";
+                operLog.strFailReason = "当前任务没有结束";
+                AddLog();
+                ShowCurrentTaskNotFinishedWarning();
+                return;
+            }
+            if (rts.iModelRole < 3)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "加载工程";
+                operLog.strFailReason = "用户权限不够";
+                AddLog();
+                return;
+            }
 
-        /*  private void btPMARun_Click(object sender, EventArgs e)
-          {
+            // 2. 选择工程根目录
+            FolderBrowserDialog folderDialog = new FolderBrowserDialog();
+            folderDialog.Description = "选择工程根目录";
+            folderDialog.SelectedPath = cup.p_Paf.strResSavePath; // 默认上次结果保存路径
+            if (folderDialog.ShowDialog() != DialogResult.OK) return;
+            string rootDir = folderDialog.SelectedPath;
 
-          }*/
+            // 3. 检查必需的子目录和文件
+            string pmaDir = Path.Combine(rootDir, "PMAlignTools");
+            string trainDir = Path.Combine(rootDir, "TrainImages");
+            string laserDir = Path.Combine(rootDir, "LaserFiles");
+            string paramFile = Path.Combine(rootDir, "UserParam.dat");
+
+            if (!Directory.Exists(pmaDir) || !Directory.Exists(trainDir) ||
+                !Directory.Exists(laserDir) /*|| !File.Exists(paramFile)*/)
+            {
+                MessageBox.Show("所选目录不是有效工程（缺少必要子目录或文件）。", "错误",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
+                vpWin.LoadAllPMAlignTools(pmaDir);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "加载PMA工具";
+                operLog.strFailReason = $"从 {pmaDir} 加载";
+                AddLog();
+
+                // 5. 加载训练图像到 PMA 工具（用于重新训练或显示）
+                // 5. 恢复背景模板图到程序 data 目录（仅文件复制，不加载到VP）
+                string dataDir = Path.Combine(Application.StartupPath, "data");
+                if (!Directory.Exists(dataDir))
+                    Directory.CreateDirectory(dataDir);
+
+                foreach (string file in Directory.GetFiles(trainDir, "*.jpg"))
+                {
+                    string dest = Path.Combine(dataDir, Path.GetFileName(file));
+                    File.Copy(file, dest, true);
+                }
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "恢复背景模板图";
+                operLog.strFailReason = $"从 {trainDir} 复制到 {dataDir}";
+                AddLog();
+
+                // 6. 恢复激光加工文件到 ManuMarkPath（覆盖）
+                string destLaserDir = cup.p_Paf.ManuMarkPath;
+                if (!Directory.Exists(destLaserDir))
+                    Directory.CreateDirectory(destLaserDir);
+                foreach (string file in Directory.GetFiles(laserDir, "*.*"))
+                {
+                    string dest = Path.Combine(destLaserDir, Path.GetFileName(file));
+                    File.Copy(file, dest, true);
+                }
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "恢复激光文件";
+                operLog.strFailReason = $"从 {laserDir} 复制到 {destLaserDir}";
+                AddLog();
+
+                // 7. 加载用户参数（反序列化并更新当前 cup）
+                /* CUserParam loadedCup = new CUserParam();
+                 if (fo.ReadUserParam(paramFile, ref loadedCup))
+                 {
+                     // 保留运行时状态（如相机句柄等）仅更新配置项
+                     // 注意：此处简单整体替换，实际可能需要保留某些运行时对象
+                     cup = loadedCup;
+
+                 }
+                 else
+                 {
+                     operLog.iEventStatus = -1;
+                     operLog.strOperEvent = "加载用户参数";
+                     operLog.strFailReason = "反序列化失败，文件可能损坏";
+                     AddLog();
+                 }*/
+
+                // 8. 提示用户重启软件使所有设置生效（或自动重新初始化）
+                /*  MessageBox.Show("工程加载完成！建议重启软件使所有参数生效。", "提示",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information);*/
+
+                if (!_laserDispatchersReady || !IsJCZServerRunning())
+                {
+                    await Task.Run(() => InitJCZ());
+                }
+                else
+                {
+                    ScheduleInitializeJczCards(200);
+                }
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "加载工程";
+                operLog.strFailReason = $"从 {rootDir} 加载成功";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "加载工程";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+                MessageBox.Show($"加载失败：{ex.Message}", "错误",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        /* private void menuLaser_LoadEngine_Click(object sender, EventArgs e)
+         {
+             // 检查权限或任务状态
+             if (!vpWin.bMainTaskFinished)
+             {
+                 operLog.iEventStatus = -1;
+                 operLog.strOperEvent = "加载PMA工具";
+                 operLog.strFailReason = "当前任务没有结束";
+                 AddLog();
+                 ShowCurrentTaskNotFinishedWarning();
+                 return;
+             }
+             if (rts.iModelRole < 3)
+             {
+                 operLog.iEventStatus = -1;
+                 operLog.strOperEvent = "加载PMA工具";
+                 operLog.strFailReason = "用户权限不够";
+                 AddLog();
+                 return;
+             }
+
+             FolderBrowserDialog folderDialog = new FolderBrowserDialog();
+             folderDialog.Description = "请选择包含PMA工具的文件夹";
+             if (folderDialog.ShowDialog() == DialogResult.OK)
+             {
+                 string folderPath = folderDialog.SelectedPath;
+                 // 检查文件夹下是否存在PMA0.vpp和PMA1.vpp，可选
+                 // 但直接调用LoadAllPMAlignTools，内部会判断文件存在并触发错误事件
+                 vpWin.LoadAllPMAlignTools(folderPath);
+                 operLog.iEventStatus = 0;
+                 operLog.strOperEvent = "加载PMA工具";
+                 operLog.strFailReason = $"从文件夹 {folderPath} 加载成功";
+                 AddLog();
+             }
+         }*/
+        private void menuLaser_SaveEngine_Click(object sender, EventArgs e)
+        {
+            // 1. 检查权限与任务状态
+            if (!vpWin.bMainTaskFinished)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "保存工程";
+                operLog.strFailReason = "当前任务没有结束";
+                AddLog();
+                ShowCurrentTaskNotFinishedWarning();
+                return;
+            }
+            if (rts.iModelRole < 0)  //是否需要权限等级大于等于0？根据实际情况调整
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "保存工程";
+                operLog.strFailReason = "用户权限不够";
+                AddLog();
+                return;
+            }
+
+            // 2. 选择目标文件夹
+            FolderBrowserDialog folderDialog = new FolderBrowserDialog();
+            folderDialog.Description = "请选择或创建工程保存目录";
+            folderDialog.SelectedPath = cup.p_Paf.strResSavePath;
+            folderDialog.ShowNewFolderButton = true;
+            if (folderDialog.ShowDialog() != DialogResult.OK) return;
+            string rootDir = folderDialog.SelectedPath;
+
+            // 3. 创建子目录
+
+            string PMADir = Path.Combine(rootDir, "PMAlignTools");
+            string trainDir = Path.Combine(rootDir, "TrainImages");
+            string laserDir = Path.Combine(rootDir, "LaserFiles");
+            Directory.CreateDirectory(trainDir);
+            Directory.CreateDirectory(laserDir);
+            Directory.CreateDirectory(PMADir);
+
+            try
+            {
+                //保存    PMA 工具
+                vpWin.SaveAllPMAlignTools(PMADir);
+
+
+                // 4. 保存训练背景图像（使用 VisionControl 中已有的 SaveTrainImage 方法）
+                vpWin.SaveBGTrainImageFiles(trainDir);   // 需要实现
+
+                // 5. 复制激光加工文件
+                //    从 cup 中读取激光文件路径（假设保存在 cup.p_Laser.strLaserFile[0/1]）
+                //    或者让用户手动指定，这里我们根据配置复制
+                string[] laserSourcePaths = new string[2];
+                laserSourcePaths[0] = Path.Combine(cup.p_Paf.ManuMarkPath, "route0.ezd");  // 您需要自己定义字段
+                laserSourcePaths[1] = Path.Combine(cup.p_Paf.ManuMarkPath, "route1.ezd");
+                for (int i = 0; i < 2; i++)
+                {
+                    if (!string.IsNullOrEmpty(laserSourcePaths[i]) && File.Exists(laserSourcePaths[i]))
+                    {
+                        string dest = Path.Combine(laserDir, $"Job{i}_" + Path.GetFileName(laserSourcePaths[i]));
+                        File.Copy(laserSourcePaths[i], dest, true);
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"复制激光文件 Job{i}";
+                        operLog.strFailReason = "源文件不存在或路径未配置";
+                        AddLog();
+                    }
+                }
+
+                // 6. 保存用户参数（CUserParam）
+              //  string paramFile = Path.Combine(rootDir, "UserParam");
+                FileOper.SaveUserParam(cup, rootDir);   // 需要扩展 FileOper 支持指定路径
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "保存工程";
+                operLog.strFailReason = $"已保存到 {rootDir}";
+                AddLog();
+                MessageBox.Show("工程保存成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "保存工程";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+                MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+       
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {

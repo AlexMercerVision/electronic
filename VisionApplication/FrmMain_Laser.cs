@@ -1,5 +1,6 @@
 ﻿﻿﻿using Cognex.VisionPro.Blob;
 using Cognex.VisionPro.PMAlign;
+using Cognex.VisionPro.Caliper;
 using CommonCls;
 using PipeChanel;
 using System;
@@ -768,15 +769,7 @@ namespace VisionApplication
                 _jczCardInitRunning = false;
             }
         }//结束
-
-
-        private string GetLaserTemplateFileName(int card)
-        {
-            string fileName = card == 0 ? cup.p_Paf.LaserTemplateFileA : cup.p_Paf.LaserTemplateFileB;
-            if (string.IsNullOrWhiteSpace(fileName))
-                fileName = "route" + (card + 1).ToString() + ".ezd";
-            return Path.GetFileName(fileName);
-        }
+         
 
         private string GetLaserTemplatePath(int card)
         {
@@ -1663,6 +1656,8 @@ namespace VisionApplication
         {
             if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
                 cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
+            cmbCLPEdgeLeft.SelectedIndex = iJobIndex;
+
 
             cmbPMATrainAlg.SelectedIndex = 2;
             cmbPMARunAlg.SelectedIndex = 2;
@@ -1673,6 +1668,7 @@ namespace VisionApplication
                 UpdateLaserVisionCalibParam2UIFromVP();
                 vpWin.GetPMAParam(ref pmaParam, iJobIndex);
                 UpdateUIFromPMAParam();
+                
             }
         //    UpdateCamParam2UI();
          //   ViewLayout();
@@ -2043,238 +2039,8 @@ namespace VisionApplication
             await RefreshAndSendAlignParamToJCZServer(jobIndex);
         }
 
-        /// <summary>
-        /// 查询当前选中板卡的初始化状态（命令码 100）。
-        /// 异步版本，替换原有的轮询等待。
-        /// </summary>
-        public async Task QueryCardStatusAsync()
-        {
-            int card = currentCardSN;
-            var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
-
-            var param = lczParams[card];
-            param.cmdType = 100;
-            param.cardSN = card;
-            param.strFileName = GetLaserTemplatePath(card);
-            param.ind1 = alImParam[card].width;
-            param.ind2 = alImParam[card].height;
-            param.dParam1 = alImParam[card].dCenX;
-            param.dParam2 = alImParam[card].dCenY;
-            param.dParam3 = alImParam[card].dWidth;
-            param.dParam4 = alImParam[card].dHeight;
-            param.ind3 = 0; // 序列号由调度器填充，此处可忽略
-
-            try
-            {
-                var result = await dispatcher.SendCommandAsync(param);
-                // 结果已在CMDAna中处理，此处无需额外操作
-            }
-            catch (TimeoutException)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "查询板卡状态";
-                operLog.strFailReason = "命令超时";
-                AddLog();
-            }
-        }
-
-        /// <summary>
-        /// 查询所有对象信息，每次发送前设置当前板卡号。
-        /// 异步版本，通过循环发送 cmdType=7 命令，服务端逐个返回对象信息。
-        /// </summary>
-        private async Task QueryEntInfoAsync()
-        {
-            int card = currentCardSN;
-            var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
-            if (strEntNames[card] == null || strEntNames[card].Length <= 0) return;
-
-            for (int i = 0; i < strEntNames[card].Length; i++)
-            {
-                var param = new LCZControlParam
-                {
-                    cmdType = 7,
-                    cardSN = card,
-                    ind2 = i
-                };
-                try
-                {
-                    await dispatcher.SendCommandAsync(param);
-                }
-                catch (TimeoutException)
-                {
-                    // 单条超时处理，可继续下一对象或终止
-                }
-                Thread.Sleep(30); // 保持原有间隔
-            }
-        }
-
-        /// <summary>
-        /// 移动旋转复位：将实体平移和旋转置零。
-        /// </summary>
-        private async Task ResetLaserEntAsync()
-        {
-            int card = currentCardSN;
-            var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
-
-            var param = new LCZControlParam
-            {
-                cmdType = 27,
-                cardSN = card,
-                dParam3 = 0,
-                dParam4 = 0,
-                dParam1 = 0.003,
-                dParam2 = 0.003,
-                dParam5 = 0
-            };
-            try
-            {
-                await dispatcher.SendCommandAsync(param);
-            }
-            catch (TimeoutException) { }
-        }
-
-        /// <summary>
-        /// 重新加载模板文件（route.ezd）。
-        /// </summary>
-        private async Task ReLoadTemplateAsync()
-        {
-            int card = currentCardSN;
-            var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
-
-            var param = new LCZControlParam
-            {
-                cmdType = 4,
-                cardSN = card,
-                strFileName = GetLaserTemplatePath(card),
-                ind3 = 0
-            };
-            try
-            {
-                await dispatcher.SendCommandAsync(param);
-            }
-            catch (TimeoutException) { }
-        }
-
-        // 2025年6月12日，在执行完视觉检测后启动激光加工
-        /// <summary>
-        /// 视觉检测后执行激光加工。
-        /// 根据模板匹配结果设置旋转平移量，然后执行标刻。
-        /// 异步版本，不再使用轮询。
-        /// </summary>
-        /// <summary>
-        /// 视觉检测后执行激光加工。
-        /// 根据模板匹配结果设置旋转平移量，然后执行标刻。
-        /// </summary>
-        private async Task LaserMarkAfterVisionDetAsync()
-        {
-            int card = currentCardSN;
-            var dispatcher = laserDispatchers[card];
-            if (dispatcher == null) return;
-
-            try
-            {
-                // 设置旋转平移量
-                var paramShift = new LCZControlParam
-                {
-                    cmdType = 27,
-                    cardSN = card,
-                    ind3 = 0,
-                    dParam3 = 0,
-                    dParam4 = 0
-                };
-
-                // 根据视觉检测结果设置偏移量
-                if (pmaRes[card].bLocated)
-                {
-                    paramShift.dParam1 = pmaRes[card].dTX;
-                    paramShift.dParam2 = pmaRes[card].dTY;
-                    paramShift.dParam5 = pmaRes[card].dTR;
-                }
-                else
-                {
-                    // 未定位成功，记录日志
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "激光标刻前定位检查";
-                    operLog.strFailReason = "视觉定位失败，使用默认偏移";
-                    AddLog();
-
-                    paramShift.dParam1 = 0;
-                    paramShift.dParam2 = 0;
-                    paramShift.dParam5 = 0;
-                }
-
-                // 发送偏移参数
-                if (!await SendRotateMoveParamAsync(dispatcher, card, paramShift))
-                {
-                    iLaserWorkingTypes[card] = 0;
-                    return;
-                }
-
-                // 加载激光打标模板文件
-                string templatePath = GetLaserTemplatePath(card);
-                var loadParam = new LCZControlParam
-                {
-                    cmdType = 4,
-                    cardSN = card,
-                    strFileName = templatePath,
-                    ind3 = 0
-                };
-                await dispatcher.SendCommandAsync(loadParam);
-
-                // 执行激光标刻
-                iLaserWorkingTypes[card] = 1;
-
-                var markParam = new LCZControlParam
-                {
-                    cmdType = 10,  // 使用10命令，保留前面下发的旋转平移补偿
-                    cardSN = card,
-                    ind3 = 0
-                };
-
-                // 30秒超时
-                var result = await dispatcher.SendCommandAsync(markParam, 30000);
-
-                iLaserWorkingTypes[card] = 0;
-
-                if (result.nErr == 0)
-                {
-                    operLog.iEventStatus = 0;
-                    operLog.strOperEvent = "激光标刻完成";
-                    operLog.strFailReason = $"偏移: X={paramShift.dParam1:F3}, Y={paramShift.dParam2:F3}, R={paramShift.dParam5:F3}";
-                    AddLog();
-
-                    // 发送OK信号
-                    csd.SendResult(sPortCy, true, 0);
-                }
-                else
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "激光标刻";
-                    operLog.strFailReason = GetErrorText(result.nErr);
-                    AddLog();
-                }
-            }
-            catch (TimeoutException)
-            {
-                iLaserWorkingTypes[card] = 0;
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "激光标刻";
-                operLog.strFailReason = "标刻超时";
-                AddLog();
-            }
-            catch (Exception ex)
-            {
-                iLaserWorkingTypes[card] = 0;
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "激光标刻";
-                operLog.strFailReason = ex.Message;
-                AddLog();
-            }
-        }
+          
+  
 
         /// <summary>
         /// 激光工作条件判断（根据当前选中板卡）。
@@ -3382,6 +3148,74 @@ namespace VisionApplication
                 }
             }
         }
+        bool bFindEdgeEdit = false;
+        CogFindLineEditV2 cflV2; 
+        private async void btLocateEdgeSet_Click(object sender, EventArgs e)
+        {
+            {
+                if (vpWin._iTaskType != 5 && !vpWin.bMainTaskFinished)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = "当前任务未结束";
+                    AddLog();
+                    return;
+                }
+                if (rts.iModelRole < 3)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = "用户权限不够";
+                    AddLog();
+                    return;
+                }
+
+                if (rts.initStatus.iVPPStatus != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = "流程文件初始化失败";
+                    return;
+                }
+                operLog.strOperEvent = "精确定位设置";
+
+
+                bFindEdgeEdit = !bFindEdgeEdit;
+                if (bFindEdgeEdit)
+                {
+                    iTmpType = vpWin._iTaskType;
+                    cflV2 = new CogFindLineEditV2();
+                    cflV2.Subject = vpWin.getCLP(iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  //2026年6月14日 需要修改第二个参数
+                  //  splitContainer3.Panel1.Controls.Add(cflV2);
+                    splitContainer2.Panel1.Controls.Add(cflV2);
+                    cflV2.Dock = DockStyle.Fill;
+
+                    vpWin.Visible = false;
+                    bVPPParamChanged = true;
+
+
+                    vpWin._iTaskType = 5;
+                    operLog.iEventStatus = 0;
+                    ((Button)sender).FlatStyle = FlatStyle.Flat;
+                    vpWin.bMainTaskFinished = false;
+                }
+                else
+                {
+                    vpWin.setCLP(cflV2.Subject, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0); //2026年6月14日 需要修改第三个参数
+                  //  splitContainer3.Panel1.Controls.Remove(cflV2);
+                    splitContainer2.Panel1.Controls.Remove(cflV2);
+                    cflV2.Dispose();
+
+                    vpWin._iTaskType = iTmpType;
+                    ((Button)sender).FlatStyle = FlatStyle.Popup;
+                    vpWin.bMainTaskFinished = true;
+
+                    vpWin.Visible = true;
+
+                }
+
+            }
+        }
         private bool CheckPMATrainedWithPrompt(int jobIndex)
         {
             if (vpWin.CheckPMATrained(jobIndex))
@@ -3525,7 +3359,13 @@ namespace VisionApplication
         {
             try
             {
-                vpWin.SetFindLineSearchRegion(iJobIndex,1);
+                int index=cmbCLPEdgeLeft.SelectedIndex+1;
+                if(index<1 || index>2)
+                {
+                    MessageBox.Show("请选择定位边缘");
+                    return;
+                }
+                vpWin.SetFindLineSearchRegion(iJobIndex, index);
                 bVPPParamChanged = true;
             }
             catch { }
@@ -3535,7 +3375,13 @@ namespace VisionApplication
         {
             try
             {
-                vpWin.SetFindLineSearchRegion(iJobIndex, 2);
+                int index = cmbCLPEdgeLeft.SelectedIndex + 1;
+                if (index < 1 || index > 2)
+                {
+                    MessageBox.Show("请选择定位边缘");
+                    return;
+                }
+                vpWin.GetFindLineSearchRes(iJobIndex, index);
                 bVPPParamChanged = true;
             }
             catch { }

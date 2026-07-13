@@ -54,7 +54,7 @@ namespace CommonCls
         private int _cameraType = 0;  //用户预先分配的非托管缓冲区
 
         /// <summary>旋转镜像类型（0-无，1-90°，2-180°，3-270°，4-翻转，5-翻转+90°等）</summary>
-        private int _rotateFlipType = 0;
+        private int _rotateFlipType = 4;
 
         /// <summary>海康SDK返回值</summary>
         private int nRet = 0;

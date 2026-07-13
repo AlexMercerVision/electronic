@@ -325,7 +325,17 @@ namespace CommonCls
         public bool bUpdateDef4;
         public int runTimeOut;
     }
-
+    public struct calipFindLineParam
+    {
+        public bool bUseTuneLocation;  //左边缘还是右边缘
+        public int bPolarity;  //边缘极性
+        public double dThre;       //边缘对比度阈值
+        public int iRadius;     //边缘滤波半径
+        public int iRemovePoint;       //预留参数1
+        public int iCaliperNum;       //预留参数2
+        public double dRes1;    //预留参数3
+        public double dRes2;    //预留参数4
+    }
     // 主参数类
     [Serializable]
     public class CUserParam
@@ -1004,6 +1014,25 @@ namespace CommonCls
                 return false;
             }
         }
+
+        public static bool SaveUserParam(CUserParam cup,string dir)
+        {
+            try
+            {
+               // string dir = "UserData";
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                string jsonPath = Path.Combine(dir, "serUserParam.json");
+                string json = SerializeToJson(cup);
+                File.WriteAllText(jsonPath, json);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         #endregion
 
         #region 兼容性检查（原 CheckParam 方法，改为静态）

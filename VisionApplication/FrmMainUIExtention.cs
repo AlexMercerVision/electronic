@@ -936,9 +936,77 @@ namespace VisionApplication
                 setBrightness(iJobIndex);
             }
         }
+
+
+        /// <summary>
+        /// 获取标定找线参数
+        /// </summary>
+
+        private void btGetCalipFLParam_Click(object sender, EventArgs e)
+        {
+            calipFindLineParam cflParam = new calipFindLineParam();
+            vpWin.GetCLPParam(ref cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+            UpdateUIFromCLPParam(cflParam); 
+        }
+        /// <summary>
+        /// 设置标定找线参数
+        /// </summary>
+
+        private void btSetCalipFLParam_Click(object sender, EventArgs e)
+        {
+            calipFindLineParam cflParam=new  calipFindLineParam();
+
+            UpdateCLPParamFromUI(ref cflParam);
+
+            vpWin.SetCLPParam(cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  
+        }
+        /// <summary>
+        /// 提取标定找线基础参数
+        /// </summary>
+        private void btExtractCaliperBase_Click(object sender, EventArgs e)
+        {
+            bVPPParamChanged = true;
+            vpWin.ExtractLocateBase(iJobIndex);
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "提取定位基准";
+            AddLog();
+        }
+        /// <summary>
+        /// 是否启用找线定位工具
+        /// </summary>
+        private void chkUseTuneLocation_CheckedChanged(object sender, EventArgs e)
+        {
+            bVPPParamChanged = true;
+            vpWin.SetUseTuneLocation(iJobIndex,chkUseTuneLocation.Checked);
+        }
+        /// <summary>
+        /// 由VP参数更新UI
+        /// </summary>
+        private void UpdateUIFromCLPParam(calipFindLineParam cflParam)
+        {
+            chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+            cmbCLPPol.SelectedIndex = cflParam.bPolarity;
+            nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
+            nudCLPRad.Value = (decimal)cflParam.iRadius;
+            nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
+            nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+
+        }
+        /// <summary>
+        /// 由UI参数更新VP
+        /// </summary>
+        private void UpdateCLPParamFromUI(ref calipFindLineParam cflParam)
+        {
+            cflParam.bUseTuneLocation= chkUseTuneLocation.Checked;
+            cflParam.bPolarity = cmbCLPPol.SelectedIndex;
+            cflParam.dThre = (double)nudCLPEdgeThre.Value;
+            cflParam.iRadius = (int)nudCLPRad.Value;
+            cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+            cflParam.iCaliperNum= (int)nudCLPCaliperNum.Value;
+        } 
         #endregion
-       
-       
+
+
 
 
     }
