@@ -1019,7 +1019,7 @@ namespace VisionApplication
             bVPPParamChanged = true;
             vpWin.SetUseTuneLocation(iJobIndex,chkUseTuneLocation.Checked);
                 operLog.strOperEvent = "修改边缘定位启用状态";
-                operLog.iEventStatus = -1;
+                operLog.iEventStatus =0;
               
                 AddLog();
             }

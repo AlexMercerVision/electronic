@@ -1203,9 +1203,9 @@ namespace CommonCls
             if (string.IsNullOrEmpty(cup.p_Paf.ManuMarkPath))
                 cup.p_Paf.ManuMarkPath = @"..\..\EZDModel";
             if (string.IsNullOrEmpty(cup.p_Paf.LaserTemplateFileA))
-                cup.p_Paf.LaserTemplateFileA = "route1.ezd";
+                cup.p_Paf.LaserTemplateFileA = "route0.ezd";
             if (string.IsNullOrEmpty(cup.p_Paf.LaserTemplateFileB))
-                cup.p_Paf.LaserTemplateFileB = "route2.ezd";
+                cup.p_Paf.LaserTemplateFileB = "route1.ezd";
 
             // 运行时超时兼容
             if (cup.p_RTSP.runTimeOut == 0)

@@ -1,7 +1,7 @@
 using Cognex.VisionPro.Blob;
+using Cognex.VisionPro.CalibFix;
 //using PipeChanel;
 using Cognex.VisionPro.PMAlign;
-using Cognex.VisionPro.CalibFix;
 using CommonCls;
 using HalconDotNet;
 /*using System.IO.Pipes;
@@ -25,15 +25,15 @@ using System.IO.Pipes;
 using System.IO.Ports;
 using System.Linq;
 using System.Management;
-
-   
-using System.Threading.Tasks;   // 可选，如果使用 Task.Run 则需要，上述代码未使用 Task
 //using HOperatorSet_EX;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
+   
+using System.Threading.Tasks;   // 可选，如果使用 Task.Run 则需要，上述代码未使用 Task
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -7368,10 +7368,7 @@ namespace VisionApplication
         {
             StartService("Cognex Security Service");
         }
-
-
-
-
+         
         /// <summary>
         /// 设置 ROI 为全尺寸（相机最大分辨率）
         /// </summary>
@@ -7745,6 +7742,8 @@ namespace VisionApplication
             UpdateUIFromCLPParam(cflParam);
         }
 
+        string strEngineerName = "";
+        string strEngineerDir = "";
         /// <summary>
         /// 加载工程：恢复训练图像、激光文件、用户参数
         /// </summary>
@@ -7767,7 +7766,13 @@ namespace VisionApplication
                 operLog.strFailReason = "用户权限不够";
                 AddLog();
                 return;
-            }
+            } 
+
+            //ezd文件可能随时修改，加载之前先备份ezd文件
+            if (strEngineerDir != "")
+            {
+                SaveLaserFile();
+            } 
 
             // 2. 选择工程根目录
             FolderBrowserDialog folderDialog = new FolderBrowserDialog();
@@ -7782,6 +7787,8 @@ namespace VisionApplication
             string trainDir = Path.Combine(rootDir, "TrainImages");
             string laserDir = Path.Combine(rootDir, "LaserFiles");
             string paramFile = Path.Combine(rootDir, "UserParam.dat");
+            string LaserParamDir = Path.Combine(rootDir, "LaserParam");
+
 
             if (!Directory.Exists(pmaDir) || !Directory.Exists(trainDir) ||
                 !Directory.Exists(laserDir) || !Directory.Exists(findlineDir))
@@ -7790,7 +7797,10 @@ namespace VisionApplication
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
+            bVPPParamChanged = true;
+            strEngineerDir = rootDir;
+            strEngineerName = Path.GetFileName(rootDir);
+            toolStripStatus_Engineer.Text = "机种:" + strEngineerName; ;
             try
             {
                 // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
@@ -7804,6 +7814,12 @@ namespace VisionApplication
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "加载边缘定位工具";
                 operLog.strFailReason = $"从 {findlineDir} 加载";
+                AddLog();
+
+                vpWin.ExtractLocateBase(0);
+                vpWin.ExtractLocateBase(1);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "提取定位基准";
                 AddLog();
 
                 // 5. 加载训练图像到 PMA 工具（用于重新训练或显示）
@@ -7852,6 +7868,12 @@ namespace VisionApplication
                      operLog.strFailReason = "反序列化失败，文件可能损坏";
                      AddLog();
                  }*/
+
+
+                // 恢复激光器参数设置
+                if(Directory.Exists(pmaDir))
+                    CopyDirectory( LaserParamDir, ".\\JCZ", true);
+
 
                 // 8. 提示用户重启软件使所有设置生效（或自动重新初始化）
                 /*  MessageBox.Show("工程加载完成！建议重启软件使所有参数生效。", "提示",
@@ -7917,7 +7939,8 @@ namespace VisionApplication
             string trainDir = Path.Combine(rootDir, "TrainImages");
             string laserDir = Path.Combine(rootDir, "LaserFiles");
             string FindLineDir= Path.Combine(rootDir, "FindLineTools");
-            if(!Directory.Exists(rootDir))
+            string LaserParamDir = Path.Combine(rootDir, "LaserParam");
+            if (!Directory.Exists(rootDir))
                 Directory.CreateDirectory(rootDir);
             if(!Directory.Exists(PMADir))
                 Directory.CreateDirectory(trainDir);
@@ -7927,6 +7950,9 @@ namespace VisionApplication
                 Directory.CreateDirectory(PMADir);
             if(!Directory.Exists(FindLineDir))
                 Directory.CreateDirectory(FindLineDir);
+            if (!Directory.Exists(LaserParamDir))
+                Directory.CreateDirectory(LaserParamDir);
+
             try
             {
                 //保存    PMA 工具
@@ -7969,6 +7995,18 @@ namespace VisionApplication
                 operLog.strFailReason = $"已保存到 {rootDir}";
                 AddLog();
                 MessageBox.Show("工程保存成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                //7. 保存激光器参数
+                string strLaserParamDirDest = Path.Combine(LaserParamDir, "Custom.ini"); ;
+                string strLaserParamDirSrc = Path.Combine(".\\JCZ\\", "Custom.ini");
+                File.Copy(strLaserParamDirSrc, strLaserParamDirDest, true);
+
+                strLaserParamDirDest = Path.Combine(LaserParamDir, "EZCAD.CFG"); ;
+                strLaserParamDirSrc = Path.Combine(".\\JCZ\\", "EZCAD.CFG");
+                File.Copy(strLaserParamDirSrc, strLaserParamDirDest, true);
+
+                CopyFolderToParent(".\\JCZ\\plug", LaserParamDir);
+
             }
             catch (Exception ex)
             {
@@ -7979,8 +8017,97 @@ namespace VisionApplication
                 MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-       
 
+        private void SaveLaserFile()
+        {
+            string laserDir = Path.Combine(strEngineerDir, "LaserFiles");
+
+            string[] laserSourcePaths = new string[2];
+            laserSourcePaths[0] = Path.Combine(cup.p_Paf.ManuMarkPath, "route0.ezd");  // 您需要自己定义字段
+            laserSourcePaths[1] = Path.Combine(cup.p_Paf.ManuMarkPath, "route1.ezd");
+            for (int i = 0; i < 2; i++)
+            {
+                if (!string.IsNullOrEmpty(laserSourcePaths[i]) && File.Exists(laserSourcePaths[i]))
+                {
+                    string dest = Path.Combine(laserDir, Path.GetFileName(laserSourcePaths[i]));
+                    File.Copy(laserSourcePaths[i], dest, true);
+                }
+                else
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"复制激光文件 Job{i}";
+                    operLog.strFailReason = "源文件不存在或路径未配置";
+                    AddLog();
+                }
+            }
+        }
+        /// <summary>
+        /// 将整个源文件夹（如 plug）复制到目标父文件夹（如 LaserParam）下
+        /// </summary>
+        /// <param name="sourcePath">源文件夹路径（如 @"D:\Data\plug"）</param>
+        /// <param name="destParentPath">目标父文件夹路径（如 @"D:\Data\LaserParam"）</param>
+        private void CopyFolderToParent(string sourcePath, string destParentPath)
+        {
+            DirectoryInfo sourceDir = new DirectoryInfo(sourcePath);
+            if (!sourceDir.Exists)
+            {
+                Console.WriteLine($"错误：源文件夹不存在 - {sourcePath}");
+                return;
+            }
+
+            // ★ 核心：目标路径 = LaserParam 文件夹下的 plug 文件夹 ★
+            string destFullPath = Path.Combine(destParentPath, sourceDir.Name);
+
+            // 开始递归复制
+            CopyRecursive(sourceDir.FullName, destFullPath);
+        }
+
+        private   void CopyRecursive(string source, string destination)
+        {
+            // 1. 创建目标文件夹（如果 LaserParam\plug 已存在，不会报错）
+            Directory.CreateDirectory(destination);
+
+            // 2. 复制当前目录下的所有文件
+            foreach (string file in Directory.GetFiles(source))
+            {
+                string fileName = Path.GetFileName(file);
+                string destFile = Path.Combine(destination, fileName);
+                File.Copy(file, destFile, overwrite: true); // true 表示同名文件直接覆盖
+            }
+
+            // 3. 递归处理所有子文件夹（如果 plug 里面还有文件夹，一并复制）
+            foreach (string subDir in Directory.GetDirectories(source))
+            {
+                string dirName = Path.GetFileName(subDir);
+                string destSubDir = Path.Combine(destination, dirName);
+                CopyRecursive(subDir, destSubDir);
+            }
+        }
+
+        private void CopyDirectory(string sourceDir, string destinationDir, bool overwrite = true)
+        {
+            // 1. 校验源目录是否存在
+            DirectoryInfo source = new DirectoryInfo(sourceDir);
+            if (!source.Exists)
+                throw new DirectoryNotFoundException($"源目录不存在: {sourceDir}");
+
+            // 2. 创建目标目录（如果已存在则不会报错，等同于 EnsureDirectory）
+            Directory.CreateDirectory(destinationDir);
+
+            // 3. 复制当前目录下的所有文件
+            foreach (FileInfo file in source.GetFiles())
+            {
+                string destFile = Path.Combine(destinationDir, file.Name);
+                file.CopyTo(destFile, overwrite);
+            }
+
+            // 4. 递归复制所有子目录
+            foreach (DirectoryInfo subDir in source.GetDirectories())
+            {
+                string destSubDir = Path.Combine(destinationDir, subDir.Name);
+                CopyDirectory(subDir.FullName, destSubDir, overwrite);
+            }
+        }
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
             SetFaceTriggerIndicator(0, false);

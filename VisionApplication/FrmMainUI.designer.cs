@@ -32,6 +32,12 @@ namespace VisionApplication
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMainUI));
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.menuLaserFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_SaveFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator18 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuLaser_SaveEngine = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuLaser_LoadEngine = new System.Windows.Forms.ToolStripMenuItem();
             this.menuXBType = new System.Windows.Forms.ToolStripMenuItem();
             this.menuWS_Job1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuWS_Job2 = new System.Windows.Forms.ToolStripMenuItem();
@@ -42,12 +48,6 @@ namespace VisionApplication
             this.menuCam_Close = new System.Windows.Forms.ToolStripMenuItem();
             this.menuCam_Connect = new System.Windows.Forms.ToolStripMenuItem();
             this.menuCam_Set = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaserFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_LoadFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_SaveFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator18 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuLaser_LoadEngine = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuLaser_SaveEngine = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFile_SaveDirectory = new System.Windows.Forms.ToolStripMenuItem();
             this.menuFile_PlaybackDirectory = new System.Windows.Forms.ToolStripMenuItem();
@@ -432,6 +432,7 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
+            this.toolStripStatus_Engineer = new System.Windows.Forms.ToolStripStatusLabel();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -538,6 +539,51 @@ namespace VisionApplication
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
+            // menuLaserFile
+            // 
+            this.menuLaserFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuLaser_LoadFile,
+            this.menuLaser_SaveFile,
+            this.toolStripSeparator18,
+            this.menuLaser_SaveEngine,
+            this.menuLaser_LoadEngine});
+            this.menuLaserFile.Name = "menuLaserFile";
+            this.menuLaserFile.Size = new System.Drawing.Size(44, 22);
+            this.menuLaserFile.Text = "文件";
+            // 
+            // menuLaser_LoadFile
+            // 
+            this.menuLaser_LoadFile.Name = "menuLaser_LoadFile";
+            this.menuLaser_LoadFile.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_LoadFile.Text = "加载激光文件";
+            this.menuLaser_LoadFile.Click += new System.EventHandler(this.menuLaser_LoadFile_Click);
+            // 
+            // menuLaser_SaveFile
+            // 
+            this.menuLaser_SaveFile.Name = "menuLaser_SaveFile";
+            this.menuLaser_SaveFile.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_SaveFile.Text = "保存激光文件";
+            this.menuLaser_SaveFile.Click += new System.EventHandler(this.menuLaser_SaveFile_Click);
+            // 
+            // toolStripSeparator18
+            // 
+            this.toolStripSeparator18.Name = "toolStripSeparator18";
+            this.toolStripSeparator18.Size = new System.Drawing.Size(177, 6);
+            // 
+            // menuLaser_SaveEngine
+            // 
+            this.menuLaser_SaveEngine.Name = "menuLaser_SaveEngine";
+            this.menuLaser_SaveEngine.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_SaveEngine.Text = "保存工程";
+            this.menuLaser_SaveEngine.Click += new System.EventHandler(this.menuLaser_SaveEngine_Click);
+            // 
+            // menuLaser_LoadEngine
+            // 
+            this.menuLaser_LoadEngine.Name = "menuLaser_LoadEngine";
+            this.menuLaser_LoadEngine.Size = new System.Drawing.Size(180, 22);
+            this.menuLaser_LoadEngine.Text = "加载工程";
+            this.menuLaser_LoadEngine.Click += new System.EventHandler(this.menuLaser_LoadEngine_Click);
+            // 
             // menuXBType
             // 
             this.menuXBType.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -616,51 +662,6 @@ namespace VisionApplication
             this.menuCam_Set.Size = new System.Drawing.Size(148, 22);
             this.menuCam_Set.Text = "相机参数设置";
             this.menuCam_Set.Click += new System.EventHandler(this.menuCam_Set_Click);
-            // 
-            // menuLaserFile
-            // 
-            this.menuLaserFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuLaser_LoadFile,
-            this.menuLaser_SaveFile,
-            this.toolStripSeparator18,
-            this.menuLaser_SaveEngine,
-            this.menuLaser_LoadEngine});
-            this.menuLaserFile.Name = "menuLaserFile";
-            this.menuLaserFile.Size = new System.Drawing.Size(44, 22);
-            this.menuLaserFile.Text = "文件";
-            // 
-            // menuLaser_LoadFile
-            // 
-            this.menuLaser_LoadFile.Name = "menuLaser_LoadFile";
-            this.menuLaser_LoadFile.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_LoadFile.Text = "加载激光文件";
-            this.menuLaser_LoadFile.Click += new System.EventHandler(this.menuLaser_LoadFile_Click);
-            // 
-            // menuLaser_SaveFile
-            // 
-            this.menuLaser_SaveFile.Name = "menuLaser_SaveFile";
-            this.menuLaser_SaveFile.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_SaveFile.Text = "保存激光文件";
-            this.menuLaser_SaveFile.Click += new System.EventHandler(this.menuLaser_SaveFile_Click);
-            // 
-            // toolStripSeparator18
-            // 
-            this.toolStripSeparator18.Name = "toolStripSeparator18";
-            this.toolStripSeparator18.Size = new System.Drawing.Size(177, 6);
-            // 
-            // menuLaser_LoadEngine
-            // 
-            this.menuLaser_LoadEngine.Name = "menuLaser_LoadEngine";
-            this.menuLaser_LoadEngine.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_LoadEngine.Text = "加载工程";
-            this.menuLaser_LoadEngine.Click += new System.EventHandler(this.menuLaser_LoadEngine_Click);
-            // 
-            // menuLaser_SaveEngine
-            // 
-            this.menuLaser_SaveEngine.Name = "menuLaser_SaveEngine";
-            this.menuLaser_SaveEngine.Size = new System.Drawing.Size(180, 22);
-            this.menuLaser_SaveEngine.Text = "保存工程";
-            this.menuLaser_SaveEngine.Click += new System.EventHandler(this.menuLaser_SaveEngine_Click);
             // 
             // menuFile
             // 
@@ -1830,7 +1831,8 @@ namespace VisionApplication
             this.toolStripStatusLabel_CardInitStatus,
             this.toolStripStatusLabel_LaserStatus1,
             this.toolStripStatusLabel_LaserStatus2,
-            this.toolStripStatus_ExcuteTimes});
+            this.toolStripStatus_ExcuteTimes,
+            this.toolStripStatus_Engineer});
             this.statusStrip1.Location = new System.Drawing.Point(0, 791);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(986, 35);
@@ -5109,6 +5111,13 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
+            // toolStripStatus_Engineer
+            // 
+            this.toolStripStatus_Engineer.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.toolStripStatus_Engineer.Name = "toolStripStatus_Engineer";
+            this.toolStripStatus_Engineer.Size = new System.Drawing.Size(44, 30);
+            this.toolStripStatus_Engineer.Text = "机种：";
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -5631,5 +5640,6 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator18;
         private System.Windows.Forms.ToolStripMenuItem menuLaser_LoadEngine;
         private System.Windows.Forms.ToolStripMenuItem menuLaser_SaveEngine;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatus_Engineer;
     }
 }

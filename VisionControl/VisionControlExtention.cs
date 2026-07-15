@@ -1470,7 +1470,7 @@ namespace VisionControl
             try
             {
                 CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
-
+                cfl.Run();
                 ShowCFLCurrentOutputImage(cfl, iJobIndex);
             }
             catch (Exception ex)

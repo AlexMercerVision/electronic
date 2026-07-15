@@ -775,7 +775,7 @@ namespace VisionApplication
         {
             string fileName = card == 0 ? cup.p_Paf.LaserTemplateFileA : cup.p_Paf.LaserTemplateFileB;
             if (string.IsNullOrWhiteSpace(fileName))
-                fileName = "route" + (card + 1).ToString() + ".ezd";
+                fileName = "route" + (card).ToString() + ".ezd";
 
             if (Path.IsPathRooted(fileName))
                 return fileName;
