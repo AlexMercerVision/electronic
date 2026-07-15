@@ -7778,12 +7778,13 @@ namespace VisionApplication
 
             // 3. 检查必需的子目录和文件
             string pmaDir = Path.Combine(rootDir, "PMAlignTools");
+            string findlineDir = Path.Combine(rootDir, "FindLineTools");
             string trainDir = Path.Combine(rootDir, "TrainImages");
             string laserDir = Path.Combine(rootDir, "LaserFiles");
             string paramFile = Path.Combine(rootDir, "UserParam.dat");
 
             if (!Directory.Exists(pmaDir) || !Directory.Exists(trainDir) ||
-                !Directory.Exists(laserDir) /*|| !File.Exists(paramFile)*/)
+                !Directory.Exists(laserDir) || !Directory.Exists(findlineDir))
             {
                 MessageBox.Show("所选目录不是有效工程（缺少必要子目录或文件）。", "错误",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -7795,8 +7796,14 @@ namespace VisionApplication
                 // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
                 vpWin.LoadAllPMAlignTools(pmaDir);
                 operLog.iEventStatus = 0;
-                operLog.strOperEvent = "加载PMA工具";
+                operLog.strOperEvent = "加载模板匹配工具";
                 operLog.strFailReason = $"从 {pmaDir} 加载";
+                AddLog();
+
+                vpWin.LoadAllFindLineTools(findlineDir);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "加载边缘定位工具";
+                operLog.strFailReason = $"从 {findlineDir} 加载";
                 AddLog();
 
                 // 5. 加载训练图像到 PMA 工具（用于重新训练或显示）
@@ -7874,41 +7881,7 @@ namespace VisionApplication
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        /* private void menuLaser_LoadEngine_Click(object sender, EventArgs e)
-         {
-             // 检查权限或任务状态
-             if (!vpWin.bMainTaskFinished)
-             {
-                 operLog.iEventStatus = -1;
-                 operLog.strOperEvent = "加载PMA工具";
-                 operLog.strFailReason = "当前任务没有结束";
-                 AddLog();
-                 ShowCurrentTaskNotFinishedWarning();
-                 return;
-             }
-             if (rts.iModelRole < 3)
-             {
-                 operLog.iEventStatus = -1;
-                 operLog.strOperEvent = "加载PMA工具";
-                 operLog.strFailReason = "用户权限不够";
-                 AddLog();
-                 return;
-             }
-
-             FolderBrowserDialog folderDialog = new FolderBrowserDialog();
-             folderDialog.Description = "请选择包含PMA工具的文件夹";
-             if (folderDialog.ShowDialog() == DialogResult.OK)
-             {
-                 string folderPath = folderDialog.SelectedPath;
-                 // 检查文件夹下是否存在PMA0.vpp和PMA1.vpp，可选
-                 // 但直接调用LoadAllPMAlignTools，内部会判断文件存在并触发错误事件
-                 vpWin.LoadAllPMAlignTools(folderPath);
-                 operLog.iEventStatus = 0;
-                 operLog.strOperEvent = "加载PMA工具";
-                 operLog.strFailReason = $"从文件夹 {folderPath} 加载成功";
-                 AddLog();
-             }
-         }*/
+        
         private void menuLaser_SaveEngine_Click(object sender, EventArgs e)
         {
             // 1. 检查权限与任务状态
@@ -7943,15 +7916,24 @@ namespace VisionApplication
             string PMADir = Path.Combine(rootDir, "PMAlignTools");
             string trainDir = Path.Combine(rootDir, "TrainImages");
             string laserDir = Path.Combine(rootDir, "LaserFiles");
-            Directory.CreateDirectory(trainDir);
-            Directory.CreateDirectory(laserDir);
-            Directory.CreateDirectory(PMADir);
-
+            string FindLineDir= Path.Combine(rootDir, "FindLineTools");
+            if(!Directory.Exists(rootDir))
+                Directory.CreateDirectory(rootDir);
+            if(!Directory.Exists(PMADir))
+                Directory.CreateDirectory(trainDir);
+            if(!Directory.Exists(laserDir))
+                Directory.CreateDirectory(laserDir);
+            if(!Directory.Exists(PMADir))
+                Directory.CreateDirectory(PMADir);
+            if(!Directory.Exists(FindLineDir))
+                Directory.CreateDirectory(FindLineDir);
             try
             {
                 //保存    PMA 工具
                 vpWin.SaveAllPMAlignTools(PMADir);
 
+                //保存    精定位 工具
+                vpWin.SaveAllFindLineTools(FindLineDir);
 
                 // 4. 保存训练背景图像（使用 VisionControl 中已有的 SaveTrainImage 方法）
                 vpWin.SaveBGTrainImageFiles(trainDir);   // 需要实现
@@ -7966,7 +7948,7 @@ namespace VisionApplication
                 {
                     if (!string.IsNullOrEmpty(laserSourcePaths[i]) && File.Exists(laserSourcePaths[i]))
                     {
-                        string dest = Path.Combine(laserDir, $"Job{i}_" + Path.GetFileName(laserSourcePaths[i]));
+                        string dest = Path.Combine(laserDir,Path.GetFileName(laserSourcePaths[i]));
                         File.Copy(laserSourcePaths[i], dest, true);
                     }
                     else

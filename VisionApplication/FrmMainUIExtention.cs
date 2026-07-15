@@ -944,9 +944,23 @@ namespace VisionApplication
 
         private void btGetCalipFLParam_Click(object sender, EventArgs e)
         {
-            calipFindLineParam cflParam = new calipFindLineParam();
-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
-            UpdateUIFromCLPParam(cflParam); 
+            try
+            {
+                calipFindLineParam cflParam = new calipFindLineParam();
+                vpWin.GetCLPParam(ref cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+                UpdateUIFromCLPParam(cflParam);
+                operLog.strOperEvent = "获取边缘定位参数";
+                operLog.iEventStatus = 0;
+                
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.strOperEvent = "获取边缘定位参数";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = ex.ToString();
+                AddLog();
+            }
         }
         /// <summary>
         /// 设置标定找线参数
@@ -954,42 +968,90 @@ namespace VisionApplication
 
         private void btSetCalipFLParam_Click(object sender, EventArgs e)
         {
-            calipFindLineParam cflParam=new  calipFindLineParam();
+            try
+            {
+                calipFindLineParam cflParam = new calipFindLineParam();
 
-            UpdateCLPParamFromUI(ref cflParam);
+                UpdateCLPParamFromUI(ref cflParam);
 
-            vpWin.SetCLPParam(cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  
+                vpWin.SetCLPParam(cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+                operLog.strOperEvent = "设置边缘定位参数";
+                operLog.iEventStatus = 0;
+
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.strOperEvent = "设置边缘定位参数";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = ex.ToString();
+                AddLog();
+            }
         }
         /// <summary>
         /// 提取标定找线基础参数
         /// </summary>
         private void btExtractCaliperBase_Click(object sender, EventArgs e)
         {
-            bVPPParamChanged = true;
-            vpWin.ExtractLocateBase(iJobIndex);
-            operLog.iEventStatus = 0;
-            operLog.strOperEvent = "提取定位基准";
-            AddLog();
+            try
+            {
+                bVPPParamChanged = true;
+                vpWin.ExtractLocateBase(iJobIndex);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "提取定位基准";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.strOperEvent = "获取边缘定位参数";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = ex.ToString();
+                AddLog() ;
+            }
+
         }
         /// <summary>
         /// 是否启用找线定位工具
         /// </summary>
         private void chkUseTuneLocation_CheckedChanged(object sender, EventArgs e)
         {
+            try { 
             bVPPParamChanged = true;
             vpWin.SetUseTuneLocation(iJobIndex,chkUseTuneLocation.Checked);
+                operLog.strOperEvent = "修改边缘定位启用状态";
+                operLog.iEventStatus = -1;
+              
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.strOperEvent = "修改边缘定位启用状态";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = ex.ToString();
+                AddLog();
+            }
         }
         /// <summary>
         /// 由VP参数更新UI
         /// </summary>
         private void UpdateUIFromCLPParam(calipFindLineParam cflParam)
         {
-            chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
-            cmbCLPPol.SelectedIndex = cflParam.bPolarity;
-            nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
-            nudCLPRad.Value = (decimal)cflParam.iRadius;
-            nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
-            nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+            try
+            {
+                chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+                cmbCLPPol.SelectedIndex = cflParam.bPolarity;
+                nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
+                nudCLPRad.Value = (decimal)cflParam.iRadius;
+                nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
+                nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+            }
+            catch(Exception ex)
+            {
+                operLog.strOperEvent = "获取边缘定位参数";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = ex.ToString();
+                AddLog();
+            }
 
         }
         /// <summary>
@@ -997,12 +1059,22 @@ namespace VisionApplication
         /// </summary>
         private void UpdateCLPParamFromUI(ref calipFindLineParam cflParam)
         {
-            cflParam.bUseTuneLocation= chkUseTuneLocation.Checked;
-            cflParam.bPolarity = cmbCLPPol.SelectedIndex;
-            cflParam.dThre = (double)nudCLPEdgeThre.Value;
-            cflParam.iRadius = (int)nudCLPRad.Value;
-            cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
-            cflParam.iCaliperNum= (int)nudCLPCaliperNum.Value;
+            try
+            {
+                cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
+                cflParam.bPolarity = cmbCLPPol.SelectedIndex;
+                cflParam.dThre = (double)nudCLPEdgeThre.Value;
+                cflParam.iRadius = (int)nudCLPRad.Value;
+                cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+                cflParam.iCaliperNum = (int)nudCLPCaliperNum.Value;
+            }
+            catch (Exception ex)
+            {
+                operLog.strOperEvent = "修改边缘定位参数";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = ex.ToString();
+                AddLog();
+            }
         } 
         #endregion
 
