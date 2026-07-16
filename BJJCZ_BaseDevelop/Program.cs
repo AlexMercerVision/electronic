@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -8,18 +8,18 @@ namespace BJJCZ_BaseDevelop
     static class Program
     {
         /// <summary>
-        /// åº”ç”¨ç¨‹åºçš„ä¸»å…¥å£ç‚¹ã€‚
+        /// Ó¦ÓÃ³ÌĞòµÄÖ÷Èë¿Úµã¡£
         /// </summary>
         [STAThread]
         static void Main()
         {
 
-            // è·å–å½“å‰è¿›ç¨‹å
+            // »ñÈ¡µ±Ç°½ø³ÌÃû
             string currentProcessName = Process.GetCurrentProcess().ProcessName;
            // string[] strProName= Process.GetProcessesByName(currentProcessName).Select(p => p.ProcessName).ToArray();
             if (Process.GetProcessesByName(currentProcessName).Length > 1)
             {
-                MessageBox.Show("ç¨‹åºå·²å¯åŠ¨", "æç¤º", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("³ÌĞòÒÑÆô¶¯", "ÌáÊ¾", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Application.EnableVisualStyles();

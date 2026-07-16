@@ -21,27 +21,27 @@ namespace BJJCZ_BaseDevelop
         public double dCurrent;        // 电流,A
         public int nFreq;              // 频率 HZ
         public double dQPulseWidth;    // 脉宽，yag us    ylpm ns
-        public int nStartTC;           // 开光延时
+        public int nStartTC;           // 开光延�?
         public int nLaserOffTC;        // 关光延时
         public int nEndTC;             // 结束延时
         public int nPolyTC;            // 拐角延时
         public double dJumpSpeed;      // 跳转速度
-        public int nMinJumpDelayTCUs;  // 最小跳转延时
-        public int nMaxJumpDelayTCUs;  // 最大跳转延时
-        public double dJumpLengthLimit;// 跳转距离阈值
+        public int nMinJumpDelayTCUs;  // 最小跳转延�?
+        public int nMaxJumpDelayTCUs;  // 最大跳转延�?
+        public double dJumpLengthLimit;// 跳转距离阈�?
         public double dPointTimeMs;    // 打点时间
         public bool nSpiSpiContinueMode;// SPI连续模式
         public int nSpiWave;           // SPI波形编号
         public int nYagMarkMode;       // YAG优化模式
         public bool bPulsePointMode;   // 脉冲打点模式
         public int nPulseNum;          // 脉冲打点脉冲数量
-        public bool bEnableACCMode;    // 启用加减速优化
-        public double dEndComp;        // 加速
-        public double dAccDist;        // 减速
+        public bool bEnableACCMode;    // 启用加减速优�?
+        public double dEndComp;        // 加�?
+        public double dAccDist;        // 减�?
         public double dBreakAngle;     // 中断角度
         public bool bWobbleMode;       // 抖动模式
         public double bWobbleDiameter; // 抖动直径
-        public double bWobbleDist;     // 抖动线间距
+        public double bWobbleDist;     // 抖动线间�?
 
         public LaserpenParam(int p)
         {
@@ -87,7 +87,7 @@ namespace BJJCZ_BaseDevelop
         private bool _handlersRegistered;
         private string _ezdFilePath;
         /// <summary>
-        /// 当前操作的板卡序号（多卡支持）
+        /// 当前操作的板卡序号（多卡支持�?
         /// </summary>
         public int CardNumber { get; private set; } = 0;
         public int SelectedPenNo { get { return pP.nPenNo; } }
@@ -267,7 +267,7 @@ namespace BJJCZ_BaseDevelop
 
             if (!bNormal)
             {
-                MessageBox.Show("数据格式有误，请检查");
+                MessageBox.Show("\u6570\u636e\u683c\u5f0f\u6709\u8bef\uff0c\u8bf7\u68c0\u67e5");
             }
             return bNormal;
         }
@@ -341,6 +341,15 @@ namespace BJJCZ_BaseDevelop
                 param.nYagMarkMode, param.bPulsePointMode, param.nPulseNum, param.bEnableACCMode,
                 param.dEndComp, param.dAccDist, param.dBreakAngle, param.bWobbleMode, param.bWobbleDiameter,
                 param.bWobbleDist);
+            if (ret != 0)
+            {
+                ret = JczLmc.lmc1_SetPenParam(CardNumber, param.nPenNo,
+                    param.nMarkLoop, param.dMarkSpeed, param.dPowerRatio, param.dCurrent, param.nFreq,
+                    param.dQPulseWidth, param.nStartTC, param.nLaserOffTC, param.nEndTC, param.nPolyTC,
+                    param.dJumpSpeed, param.nMinJumpDelayTCUs, param.nMaxJumpDelayTCUs,
+                    param.dEndComp, param.dAccDist, param.dPointTimeMs, param.bPulsePointMode,
+                    param.nPulseNum, 0);
+            }
 
             if (!hasEzdFile)
             {
@@ -349,7 +358,7 @@ namespace BJJCZ_BaseDevelop
                     SaveDefaultPenParam(CardNumber, param);
                     if (ret != 0)
                     {
-                        MessageBox.Show($"默认笔号参数已保存，但写入板卡失败: {JczLmc.GetErrorText(ret)}");
+                        MessageBox.Show($"默认笔号参数已保存，但写入板卡失�? {JczLmc.GetErrorText(ret)}");
                     }
                     return true;
                 }
@@ -368,10 +377,6 @@ namespace BJJCZ_BaseDevelop
             if (ret == 0 && !string.IsNullOrEmpty(_ezdFilePath))
             {
                 ret = JczLmc.lmc1_SaveEntLibToFile(CardNumber, _ezdFilePath);
-                if (ret == 0)
-                {
-                    SavePenParam(CardNumber, _ezdFilePath, param);
-                }
                 if (ret != 0)
                 {
                     MessageBox.Show($"保存EZD文件失败: {JczLmc.GetErrorText(ret)}");
@@ -393,25 +398,18 @@ namespace BJJCZ_BaseDevelop
         {
             LaserpenParam cached;
             LaserpenParam savedParam = new LaserpenParam(1);
-            bool hasSavedParam = !string.IsNullOrEmpty(ezdFilePath)
-                && TryLoadPenParam(cardNumber, ezdFilePath, penNo, out savedParam);
-            bool hasDefaultParam = string.IsNullOrEmpty(ezdFilePath)
+            bool hasEzdFile = !string.IsNullOrEmpty(ezdFilePath);
+            bool hasDefaultParam = !hasEzdFile
                 && TryLoadDefaultPenParam(cardNumber, penNo, out savedParam);
 
-            if (hasDefaultParam)
+            if (hasEzdFile)
             {
-                return savedParam;
-            }
-
-            if (hasSavedParam)
-            {
-                LaserpenParam boardParam;
-                if (TryLoadBoardPenParam(cardNumber, penNo, out boardParam))
+                if (TryLoadBoardPenParam(cardNumber, penNo, out cached))
                 {
-                    savedParam.clr = boardParam.clr;
+                    return cached;
                 }
 
-                return savedParam;
+                return CreateDefaultParam(penNo);
             }
 
             if (TryLoadBoardPenParam(cardNumber, penNo, out cached))

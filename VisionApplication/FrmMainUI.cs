@@ -324,12 +324,7 @@ namespace VisionApplication
                  //       this.vpWin.Size = new System.Drawing.Size(393, 357);
                         this.vpWin.TabIndex = 2;
 
-                        //2025年8月26日
-                        alImParam[0] = new AlignImParam();
-                        alImParam[0] = new AlignImParam();
-                        vpWin.GetAlignRegion(ref alImParam[0], 0);
-                        alImParam[1] = new AlignImParam();
-                        vpWin.GetAlignRegion(ref alImParam[1], 1);
+                      
                     }
                     else
                     {
@@ -2861,32 +2856,42 @@ namespace VisionApplication
                 fw.SetProgress(20, "正在加载机器视觉环境");
                 LoadVPFile(false);            //VP控件初始化，加载VPP文件和VisionControl控件
 
-
                 iProcess = 30;
-                fw.SetProgress(30, "正在加载硬件驱动");
+                fw.SetProgress(30, "正在初始化视图");
+               
 
+
+                iProcess = 40;
+                fw.SetProgress(40, "正在加载硬件驱动");
+
+               
                 EnsureJCZServerRunning();          // 确保 JCZServer 进程正常
                 jczPipThread = new Thread(InitJCZ);
                 jczPipThread.IsBackground = true;
                 jczPipThread.Start();
 
 
-                iProcess = 40;
-                fw.SetProgress(40, "正在搜索并初始化相机");
+                iProcess = 50;
+                fw.SetProgress(50, "正在搜索并初始化相机");
                 SearchCam();   // 搜搜相机数量                //
                 InitCam();      //
 
-                iProcess = 50;
-                fw.SetProgress(80, "正在搜索并初始化串口");
+                iProcess = 60;
+                fw.SetProgress(60, "正在搜索并初始化串口");
                 InitSerial();                                           //串口初始化
                 InitTimer(); //IO口状态刷新                                                  //    fw.SetProgress(90, "正在初始化算法");
-                iProcess = 60;
-                fw.SetProgress(80, "正在初始化视图");
+
                 if (cup.p_VPPRTP.bDeepInfer || rts.initStatus.bVPPInit)
                 {
-                      InitVisionControl(); 
-                }
+                    InitVisionControl();
 
+                    //2025年8月26日
+                    alImParam[0] = new AlignImParam();
+                    alImParam[0] = new AlignImParam();
+                    vpWin.GetAlignRegion(ref alImParam[0], 0);
+                    alImParam[1] = new AlignImParam();
+                    vpWin.GetAlignRegion(ref alImParam[1], 1);
+                }
                 if (!bSucc)
                 {
                     operLog.iEventStatus = -1;
@@ -7878,7 +7883,7 @@ namespace VisionApplication
                 // 8. 提示用户重启软件使所有设置生效（或自动重新初始化）
                 /*  MessageBox.Show("工程加载完成！建议重启软件使所有参数生效。", "提示",
                                   MessageBoxButtons.OK, MessageBoxIcon.Information);*/
-
+                bReLoadBGImg = true; //重新加载工程要更新背景图    
                 if (!_laserDispatchersReady || !IsJCZServerRunning())
                 {
                     await Task.Run(() => InitJCZ());

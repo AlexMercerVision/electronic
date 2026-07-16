@@ -1415,7 +1415,7 @@ namespace BJJCZ_BaseDevelop
         }
 
         private int StartMarkAllObjects(int card, int responseCmdType, int clientSeq, bool useVisualRotateMove, string visualStage, string markLabel)
-        {      
+        {
             if (!CanStartLaserMark(card))
             {
                 return 19;
@@ -1529,7 +1529,7 @@ namespace BJJCZ_BaseDevelop
         #endregion
 
         #region 管道命令解析
-
+        bool bReLoadBGImg = false;  //是否需要重新加载背景图
         private void CMDAna(LCZControlParam param)
         {
             if (this.InvokeRequired)
@@ -1571,7 +1571,7 @@ namespace BJJCZ_BaseDevelop
 
             int nErr = 0;
             bool needResponse = true;
-
+           
             try
             {
                 switch (param.cmdType)
@@ -2540,6 +2540,7 @@ namespace BJJCZ_BaseDevelop
                             dWidth = param.dParam3,
                             dHeight = param.dParam4
                         };
+                        bReLoadBGImg = param.bOpen;
                         alImParam = align;
                         previewAlignParams[card] = align;
                         previewAlignParamReady[card] = IsValidPreviewAlignParam(align);
@@ -6740,7 +6741,7 @@ namespace BJJCZ_BaseDevelop
         }
         private void EnsurePreviewBackgroundLoaded(int card)
         {
-            if (originalImage[card] != null)
+            if (originalImage[card] != null && !bReLoadBGImg)
             {
                 return;
             }
@@ -6848,143 +6849,143 @@ namespace BJJCZ_BaseDevelop
                     return;
                 }
 
-            // 如果正在模拟模式，可以跳过（按需保留）
-            // if (bSimulateMode[card]) return;
-            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
-            try
-            {
-                // 1. 加载背景图像（如果尚未加载）。使用程序目录解析，避免主程序拉起时工作目录变化导致相对路径失效。
-                EnsurePreviewBackgroundLoaded(card);
-                CleanupContourBackupEntities(card);
-
-                // 背景图决定预览框当前显示哪一块视野；红框路径预览保留一个更大的、类似 EZCAD 画布的激光范围。
-                RectangleF bgBounds = GetBackgroundWorldBounds(card);
-                RectangleF displayBounds = BuildPreviewViewBoundsFromBackground(bgBounds);
-                RectangleF routeBounds = GetRoutePreviewWorldBounds(card);
-                previewAnchorWorldRects[card] = routeBounds;
-                previewGuardWorldRects[card] = BuildPreviewGuardBounds(routeBounds);
-                previewAnchorReady[card] = true;
-              //  targetBox.SetWorldViewBounds(displayBounds);
-                if (targetBox.IsAutoFitEnabled)
+                // 如果正在模拟模式，可以跳过（按需保留）
+                // if (bSimulateMode[card]) return;
+                CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+                try
                 {
-                    targetBox.SetWorldViewBounds(displayBounds);
-                }
-                if (originalImage[card] != null)
-                {
-                    targetBox.SetWorldImage(originalImage[card],
-                        bgBounds.Left, bgBounds.Right,
-                        bgBounds.Top, bgBounds.Bottom,
-                        autoFit: false);
-                }
-                targetBox.SetCanvasBounds(EzcadCanvasBounds);
-                targetBox.SetPreviewWorldEntities(null);
+                    // 1. 加载背景图像（如果尚未加载）。使用程序目录解析，避免主程序拉起时工作目录变化导致相对路径失效。
+                    EnsurePreviewBackgroundLoaded(card);
+                    CleanupContourBackupEntities(card);
 
-                Bitmap routeImg = null;
-               
-
-                //   if (routeImg == null) return;
-                if (!bSimulateMode[card])
-                {
-                    try
+                    // 背景图决定预览框当前显示哪一块视野；红框路径预览保留一个更大的、类似 EZCAD 画布的激光范围。
+                    RectangleF bgBounds = GetBackgroundWorldBounds(card);
+                    RectangleF displayBounds = BuildPreviewViewBoundsFromBackground(bgBounds);
+                    RectangleF routeBounds = GetRoutePreviewWorldBounds(card);
+                    previewAnchorWorldRects[card] = routeBounds;
+                    previewGuardWorldRects[card] = BuildPreviewGuardBounds(routeBounds);
+                    previewAnchorReady[card] = true;
+                    //  targetBox.SetWorldViewBounds(displayBounds);
+                    if (targetBox.IsAutoFitEnabled)
                     {
-                        // 2. 只在取预览图的瞬间临时固定JCZ视野，取完立即删除，避免混入对象列表。
-                        EnsurePreviewAnchorEntity(card);
-                        Size previewSize = GetScaledPreviewBitmapSize(GetPreviewDisplaySize(card));
+                        targetBox.SetWorldViewBounds(displayBounds);
+                    }
+                    if (originalImage[card] != null)
+                    {
+                        targetBox.SetWorldImage(originalImage[card],
+                            bgBounds.Left, bgBounds.Right,
+                            bgBounds.Top, bgBounds.Bottom,
+                            autoFit: false);
+                    }
+                    targetBox.SetCanvasBounds(EzcadCanvasBounds);
+                    targetBox.SetPreviewWorldEntities(null);
 
-                        // 3. 获取激光路径预览图（带透明背景）
-                        routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
-                            phyCardSN[card],
-                            /*targetBox.Handle*/IntPtr.Zero,
-                            previewSize.Width,
-                            previewSize.Height);
-                        if (routeImg != null)
+                    Bitmap routeImg = null;
+
+
+                    //   if (routeImg == null) return;
+                    if (!bSimulateMode[card])
+                    {
+                        try
                         {
-                            if (PreviewDebugImageSaveEnabled)
+                            // 2. 只在取预览图的瞬间临时固定JCZ视野，取完立即删除，避免混入对象列表。
+                            EnsurePreviewAnchorEntity(card);
+                            Size previewSize = GetScaledPreviewBitmapSize(GetPreviewDisplaySize(card));
+
+                            // 3. 获取激光路径预览图（带透明背景）
+                            routeImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
+                                phyCardSN[card],
+                                /*targetBox.Handle*/IntPtr.Zero,
+                                previewSize.Width,
+                                previewSize.Height);
+                            if (routeImg != null)
                             {
-                                routeImg.Save("tst1_src.png");
-                            }
-                            routeImg = CropPreviewToAnchorBounds(card, routeImg);
-                            if (PreviewDebugImageSaveEnabled && routeImg != null)
-                            {
-                                routeImg.Save("tst1_crop.png");
+                                if (PreviewDebugImageSaveEnabled)
+                                {
+                                    routeImg.Save("tst1_src.png");
+                                }
+                                routeImg = CropPreviewToAnchorBounds(card, routeImg);
+                                if (PreviewDebugImageSaveEnabled && routeImg != null)
+                                {
+                                    routeImg.Save("tst1_crop.png");
+                                }
                             }
                         }
+                        finally
+                        {
+                            CleanupPreviewAnchorEntities(card);
+                        }
+
+                        /*rawRouteImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
+                            phyCardSN[card],
+                            targetBox.Handle,
+                            targetBox.Width,
+                            targetBox.Height);*/
                     }
-                    finally
+                    else
                     {
-                        CleanupPreviewAnchorEntities(card);
+                        // 模拟模式：从默认路径加载测试图片
+                        string routeFile = "..\\EzdModel\\route.png";
+                        if (File.Exists(routeFile))
+                            routeImg = new Bitmap(routeFile);
                     }
 
-                    /*rawRouteImg = (Bitmap)JczLmc.lmc1_GetCurPreviewImage3(
-                        phyCardSN[card],
-                        targetBox.Handle,
-                        targetBox.Width,
-                        targetBox.Height);*/
+                    if (routeImg == null)
+                    {
+                        targetBox.SetOverlayImage(null, null);
+                        ClearFastPreviewOverlay(card, null);
+                        return;
+                    }
+
+                    // SDK每次返回的新图内容可能变化但尺寸相同，不能只按宽高复用缓存。
+                    /*if (cachedTransparentRoute[card] != null)
+                        cachedTransparentRoute[card].Dispose();
+
+                    cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);*/
+                    if (cachedTransparentRoute[card] != null)
+                    {
+                        targetBox.SetOverlayImage(null, null);
+                        targetBox.Invalidate();
+
+                        cachedTransparentRoute[card].Dispose();
+                        cachedTransparentRoute[card] = null;
+                    }
+                    cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);
+                    cachedRouteWidth[card] = routeImg.Width;
+                    cachedRouteHeight[card] = routeImg.Height;
+
+                    // 原始临时图像不再需要，释放（如果 SDK 返回的新对象）
+                    if (routeImg != cachedTransparentRoute[card])  // 避免重复释放
+                        routeImg.Dispose();
+
+                    if (PreviewDebugImageSaveEnabled && cachedTransparentRoute[card] != null)
+                    {
+                        cachedTransparentRoute[card].Save("tst1.png");
+                    }
+
+                    // 4. 红框贴在同一个稳定激光坐标视口里，移动对象不会改变其他路径比例。
+                    RectangleF overlayBounds = (previewAnchorWorldRects[card].Width > 0 && previewAnchorWorldRects[card].Height > 0)
+                                ? previewAnchorWorldRects[card]
+                                : GetRoutePreviewWorldBounds(card);
+
+                    // 最终红框使用SDK预览图，保证轮廓/填充/旋转/缩放与EZCAD的显示一致。
+                    targetBox.SetCanvasBounds(EzcadCanvasBounds);
+                    targetBox.SetPreviewWorldEntities(null);
+                    //targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
+                    Bitmap overlayForBox = null;
+                    if (cachedTransparentRoute[card] != null)
+                    {
+                        overlayForBox = (Bitmap)cachedTransparentRoute[card].Clone();
+                    }
+
+                    targetBox.SetOverlayImage(overlayForBox, overlayBounds);
+                    ClearFastPreviewOverlay(card, overlayForBox);
+
                 }
-                else
+                catch (Exception ex)
                 {
-                    // 模拟模式：从默认路径加载测试图片
-                    string routeFile = "..\\EzdModel\\route.png";
-                    if (File.Exists(routeFile))
-                        routeImg = new Bitmap(routeFile);
+                    AddMsg($"刷新预览失败: {ex.Message}");
                 }
-
-                if (routeImg == null)
-                {
-                    targetBox.SetOverlayImage(null, null);
-                    ClearFastPreviewOverlay(card, null);
-                    return;
-                }
-
-                // SDK每次返回的新图内容可能变化但尺寸相同，不能只按宽高复用缓存。
-                /*if (cachedTransparentRoute[card] != null)
-                    cachedTransparentRoute[card].Dispose();
-
-                cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);*/
-                if (cachedTransparentRoute[card] != null)
-                {
-                    targetBox.SetOverlayImage(null, null);
-                    targetBox.Invalidate();
-
-                    cachedTransparentRoute[card].Dispose();
-                    cachedTransparentRoute[card] = null;
-                }
-                cachedTransparentRoute[card] = MakeTransparentBackground(routeImg);
-                cachedRouteWidth[card] = routeImg.Width;
-                cachedRouteHeight[card] = routeImg.Height;
-
-                // 原始临时图像不再需要，释放（如果 SDK 返回的新对象）
-                if (routeImg != cachedTransparentRoute[card])  // 避免重复释放
-                    routeImg.Dispose();
-
-                if (PreviewDebugImageSaveEnabled && cachedTransparentRoute[card] != null)
-                {
-                    cachedTransparentRoute[card].Save("tst1.png");
-                }
-
-                // 4. 红框贴在同一个稳定激光坐标视口里，移动对象不会改变其他路径比例。
-                RectangleF overlayBounds = (previewAnchorWorldRects[card].Width > 0 && previewAnchorWorldRects[card].Height > 0)
-                            ? previewAnchorWorldRects[card]
-                            : GetRoutePreviewWorldBounds(card);
-
-                // 最终红框使用SDK预览图，保证轮廓/填充/旋转/缩放与EZCAD的显示一致。
-                targetBox.SetCanvasBounds(EzcadCanvasBounds);
-                targetBox.SetPreviewWorldEntities(null);
-                //targetBox.SetOverlayImage(cachedTransparentRoute[card], overlayBounds);
-                Bitmap overlayForBox = null;
-                if (cachedTransparentRoute[card] != null)
-                {
-                    overlayForBox = (Bitmap)cachedTransparentRoute[card].Clone();
-                }
-
-                targetBox.SetOverlayImage(overlayForBox, overlayBounds);
-                ClearFastPreviewOverlay(card, overlayForBox);
-
-            }
-            catch (Exception ex)
-            {
-                AddMsg($"刷新预览失败: {ex.Message}");
-            }
             }           
         }
         /*private void InvalidateRoutePreviewCache(int card)
@@ -8415,49 +8416,52 @@ namespace BJJCZ_BaseDevelop
 
         private void EntMvRoSc_Click(object sender, EventArgs e)
         {
-            int card = currentCard;
-            if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
-
-            PictureBox pic = sender as PictureBox;
-            if (pic == null) return;
-            string btnName = pic.Name;
-
-            bool isGroupOperation = userGroupMode[card] && EntityExists(card, "grpEnt");
-            if (!isGroupOperation)
+            lock (_previewSaveLock)
             {
-                CleanupUserGroupEntity(card);
+                int card = currentCard;
+                if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
+
+                PictureBox pic = sender as PictureBox;
+                if (pic == null) return;
+                string btnName = pic.Name;
+
+                bool isGroupOperation = userGroupMode[card] && EntityExists(card, "grpEnt");
+                if (!isGroupOperation)
+                {
+                    CleanupUserGroupEntity(card);
+                }
+
+                LCZControlParam cmd = new LCZControlParam { cardSN = card, ind1 = iEntIndices[card] };
+                cmd.strEntyName = isGroupOperation ? "grpEnt" : GetSdkEntityNameForOperation(card, iEntIndices[card]);
+
+                double moveVal = 0, rotateVal = 0, scaleVal = 0, cenX = 0, cenY = 0;
+                double.TryParse(txtMv_Value.Text, out moveVal);
+                double.TryParse(txtRo_Value.Text, out rotateVal);
+                double.TryParse(txtScale_Value.Text, out scaleVal);
+                double.TryParse(txtRo_cenX.Text, out cenX);
+                double.TryParse(txtRo_cenY.Text, out cenY);
+
+                switch (btnName)
+                {
+                    case "picMvLeft": cmd.cmdType = 24; cmd.dParam1 = -moveVal; cmd.dParam2 = 0; break;
+                    case "picMvRight": cmd.cmdType = 24; cmd.dParam1 = moveVal; cmd.dParam2 = 0; break;
+                    case "picMvUp": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = moveVal; break;
+                    case "picMvDown": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = -moveVal; break;
+                    case "picRoClock":
+                        cmd.cmdType = 23;
+                        if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
+                        cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = -rotateVal;
+                        break;
+                    case "picRoCrossClock":
+                        cmd.cmdType = 23;
+                        if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
+                        cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = rotateVal;
+                        break;
+                    case "picScaleX": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
+                    case "picScaleY": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
+                }
+                CMDAna(cmd);
             }
-
-            LCZControlParam cmd = new LCZControlParam { cardSN = card, ind1 = iEntIndices[card] };
-            cmd.strEntyName = isGroupOperation ? "grpEnt" : GetSdkEntityNameForOperation(card, iEntIndices[card]);
-
-            double moveVal = 0, rotateVal = 0, scaleVal = 0, cenX = 0, cenY = 0;
-            double.TryParse(txtMv_Value.Text, out moveVal);
-            double.TryParse(txtRo_Value.Text, out rotateVal);
-            double.TryParse(txtScale_Value.Text, out scaleVal);
-            double.TryParse(txtRo_cenX.Text, out cenX);
-            double.TryParse(txtRo_cenY.Text, out cenY);
-
-            switch (btnName)
-            {
-                case "picMvLeft": cmd.cmdType = 24; cmd.dParam1 = -moveVal; cmd.dParam2 = 0; break;
-                case "picMvRight": cmd.cmdType = 24; cmd.dParam1 = moveVal; cmd.dParam2 = 0; break;
-                case "picMvUp": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = moveVal; break;
-                case "picMvDown": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = -moveVal; break;
-                case "picRoClock":
-                    cmd.cmdType = 23;
-                    if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
-                    cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = -rotateVal;
-                    break;
-                case "picRoCrossClock":
-                    cmd.cmdType = 23;
-                    if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
-                    cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = rotateVal;
-                    break;
-                case "picScaleX": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
-                case "picScaleY": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
-            }
-            CMDAna(cmd);
         }
 
         /*private void btTransformSave_Click(object sender, EventArgs e)

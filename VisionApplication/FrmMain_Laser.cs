@@ -1958,6 +1958,7 @@ namespace VisionApplication
             return $"width={param.width}, height={param.height}, dCenX={param.dCenX:F3}, dCenY={param.dCenY:F3}, dWidth={param.dWidth:F6}, dHeight={param.dHeight:F6}";
         }
 
+        bool bReLoadBGImg = false;
         private async Task SendAlignParamToJCZServer(int card)
         {
             if (card < 0 || card >= MaxLaserCards)
@@ -1990,6 +1991,7 @@ namespace VisionApplication
             {
                 cmdType = 42,
                 cardSN = card,
+                bOpen = bReLoadBGImg,
                 ind1 = alImParam[card].width,
                 ind2 = alImParam[card].height,
                 dParam1 = alImParam[card].dCenX,
@@ -2019,6 +2021,10 @@ namespace VisionApplication
                 operLog.strOperEvent = $"发送对齐参数(卡{card + 1})";
                 operLog.strFailReason = ex.Message;
                 AddLog();
+            }
+            finally
+            {
+                bReLoadBGImg = false;
             }
         }
 

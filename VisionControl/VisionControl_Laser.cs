@@ -401,7 +401,7 @@ namespace VisionControl
                 alImParam.dHeight = cogTrans.Region.SideYLength;
 
                 ctb.Run();
-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(ctb);
+              
                 CogImage8Grey cogIm = (ctb.Tools[1] as CogIPOneImageTool).OutputImage as CogImage8Grey;
 
                //     ogTrans.OutputImage as CogImage8Grey;
@@ -412,6 +412,8 @@ namespace VisionControl
                 mImageFile.Open(strImageFile, CogImageFileModeConstants.Write);
                 mImageFile.Append(acqFIFO.CogFlipRotateIm(cogIm,iJobIndex));
                 mImageFile.Close();
+
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(ctb);
             }
             catch (Exception ex)
             {

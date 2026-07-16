@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
@@ -6,34 +6,34 @@ using System.Globalization;
 namespace BJJCZ_BaseDevelop
 {
     /// <summary>
-    /// å¡«å……å‚æ•°ç»“æ„ï¼ˆä¸å¤šå¤´åº“å…¼å®¹ï¼‰
+    /// Ìî³ä²ÎÊı½á¹¹£¨Óë¶àÍ·¿â¼æÈİ£©
     /// </summary>
     public struct HatchParam
     {
-        public bool bEnableContour;         // ä½¿èƒ½è½®å»“æ ‡åˆ»
-        public int bEnableHatch;            // ä½¿èƒ½å¡«å…… (0/1)
-        public bool bContourFirst;          // è½®å»“ä¼˜å…ˆæ ‡åˆ»
-        public bool bHatchAllCalc;          // æ˜¯å¦å…¨éƒ¨å¯¹è±¡ä½œä¸ºæ•´ä½“ä¸€èµ·è®¡ç®—
-        public bool bHatchEdge;             // ç»•è¾¹ä¸€æ¬¡
-        public bool bHatchAverageLine;      // è‡ªåŠ¨å¹³å‡åˆ†å¸ƒçº¿
-        public bool bHatchLoopRev;          // ç¯å½¢åè½¬
-        public bool bHatchAutoRotate;       // æ˜¯å¦è‡ªåŠ¨æ—‹è½¬è§’åº¦
-        public bool bHatchCross;            // äº¤å‰å¡«å……
+        public bool bEnableContour;         // Ê¹ÄÜÂÖÀª±ê¿Ì
+        public int bEnableHatch;            // Ê¹ÄÜÌî³ä (0/1)
+        public bool bContourFirst;          // ÂÖÀªÓÅÏÈ±ê¿Ì
+        public bool bHatchAllCalc;          // ÊÇ·ñÈ«²¿¶ÔÏó×÷ÎªÕûÌåÒ»Æğ¼ÆËã
+        public bool bHatchEdge;             // ÈÆ±ßÒ»´Î
+        public bool bHatchAverageLine;      // ×Ô¶¯Æ½¾ù·Ö²¼Ïß
+        public bool bHatchLoopRev;          // »·ĞÎ·´×ª
+        public bool bHatchAutoRotate;       // ÊÇ·ñ×Ô¶¯Ğı×ª½Ç¶È
+        public bool bHatchCross;            // ½»²æÌî³ä
 
-        public int nPenNo;                  // ç¬”å·
-        public int nHatchType;              // å¡«å……ç±»å‹ 0å•å‘ 1åŒå‘ 2å›å½¢ 3è¿ç»­å¼“å½¢ 4å¸¦è¾¹æ®µå¼“å½¢
-        public int nEdgeLoop;               // è¾¹ç¼˜ç¯çº¿æ•°ç›®
-        public int nParamIndex;             // å¡«å……å‚æ•°åºå· 1,2,3
-        public int nCycCount;               // å¡«å……æ•°ç›®ï¼ˆ20200813æ–°å¢ï¼‰
+        public int nPenNo;                  // ±ÊºÅ
+        public int nHatchType;              // Ìî³äÀàĞÍ 0µ¥Ïò 1Ë«Ïò 2»ØĞÎ 3Á¬Ğø¹­ĞÎ 4´ø±ß¶Î¹­ĞÎ
+        public int nEdgeLoop;               // ±ßÔµ»·ÏßÊıÄ¿
+        public int nParamIndex;             // Ìî³ä²ÎÊıĞòºÅ 1,2,3
+        public int nCycCount;               // Ìî³äÊıÄ¿£¨20200813ĞÂÔö£©
          
-        public double dHatchAngle;          // å¡«å……çº¿è§’åº¦ï¼ˆå¼§åº¦å€¼ï¼‰
-        public double dHatchRotateAngle;    // è‡ªåŠ¨æ—‹è½¬è§’åº¦ï¼ˆå¼§åº¦å€¼ï¼‰
-        public double dHatchLineDist;       // å¡«å……çº¿é—´è· (mm)
-        public double dHatchEdgeDist;       // å¡«å……çº¿è¾¹è· (mm)
-        public double dHatchStartOffset;    // å¡«å……çº¿èµ·å§‹åç§»è·ç¦» (mm)
-        public double dHatchEndOffset;      // å¡«å……çº¿ç»“æŸåç§»è·ç¦» (mm)
-        public double dHatchLineReduction;  // ç›´çº¿ç¼©è¿› (mm)
-        public double dHatchLoopDist;       // ç¯é—´è· (mm)
+        public double dHatchAngle;          // Ìî³äÏß½Ç¶È£¨¶È£©
+        public double dHatchRotateAngle;    // ×Ô¶¯Ğı×ª½Ç¶È£¨¶È£©
+        public double dHatchLineDist;       // Ìî³äÏß¼ä¾à (mm)
+        public double dHatchEdgeDist;       // Ìî³äÏß±ß¾à (mm)
+        public double dHatchStartOffset;    // Ìî³äÏßÆğÊ¼Æ«ÒÆ¾àÀë (mm)
+        public double dHatchEndOffset;      // Ìî³äÏß½áÊøÆ«ÒÆ¾àÀë (mm)
+        public double dHatchLineReduction;  // Ö±ÏßËõ½ø (mm)
+        public double dHatchLoopDist;       // »·¼ä¾à (mm)
 
         public HatchParam(int init)
         {
@@ -69,11 +69,16 @@ namespace BJJCZ_BaseDevelop
         public HatchParam hp = new HatchParam(1);
         int nParamIndex = 1;
         /// <summary>
-        /// å½“å‰æ“ä½œçš„æ¿å¡åºå·ï¼ˆå¤šå¡æ”¯æŒï¼‰
+        /// µ±Ç°²Ù×÷µÄ°å¿¨ĞòºÅ£¨¶à¿¨Ö§³Ö£©
         /// </summary>
         public int CardNumber { get; set; } = 0;
 
-        // ç”¨äºç•Œé¢æ˜¾ç¤ºçš„å›¾åƒèµ„æº
+        
+        public delegate bool TryLoadHatchParamHandler(int paramIndex, out HatchParam param);
+
+        private TryLoadHatchParamHandler tryLoadHatchParam;
+        private bool suppressHatchIndexChanged;
+// ÓÃÓÚ½çÃæÏÔÊ¾µÄÍ¼Ïñ×ÊÔ´
         private Image[] imagesLoopRev;
         private Image[] imagesHatchType;
         private int indLoopRev = 0;
@@ -155,6 +160,37 @@ namespace BJJCZ_BaseDevelop
             return normalized < 0 ? normalized + count : normalized;
         }
 
+
+        private int HatchTypeToUiIndex(int hatchType)
+        {
+            if (hatchType == 1)
+            {
+                return 3;
+            }
+
+            if (hatchType == 3)
+            {
+                return 1;
+            }
+
+            return NormalizeIndex(hatchType, imagesHatchType.Length);
+        }
+
+        private int UiIndexToHatchType(int uiIndex)
+        {
+            uiIndex = NormalizeIndex(uiIndex, imagesHatchType.Length);
+            if (uiIndex == 1)
+            {
+                return 3;
+            }
+
+            if (uiIndex == 3)
+            {
+                return 1;
+            }
+
+            return uiIndex;
+        }
         private decimal ClampToRange(decimal value, NumericUpDown control)
         {
             if (value < control.Minimum)
@@ -192,7 +228,7 @@ namespace BJJCZ_BaseDevelop
                 return true;
             }
 
-            MessageBox.Show(fieldName + "æ•°å­—æœ‰è¯¯ï¼Œè¯·æ£€æŸ¥");
+            MessageBox.Show(fieldName + "Êı×ÖÓĞÎó£¬Çë¼ì²é");
             textBox.Focus();
             textBox.SelectAll();
             return false;
@@ -221,7 +257,7 @@ namespace BJJCZ_BaseDevelop
         private void ApplyHatchTypeRules(bool resetForSelectedType)
         {
             bool loopType = IsLoopHatchType();
-            chkAllCalc.Text = loopType ? "åè½¬" : "å¯¹è±¡æ•´ä½“è®¡ç®—";
+            chkAllCalc.Text = loopType ? "·´×ª" : "¶ÔÏóÕûÌå¼ÆËã";
 
             if (loopType)
             {
@@ -279,6 +315,7 @@ namespace BJJCZ_BaseDevelop
             InitializeComponent();
             ccbPenNum.ResetPenColors();
             LoadImage();
+            WireHatchIndexEvents();
             SetParam(hp);
         }
 
@@ -288,7 +325,53 @@ namespace BJJCZ_BaseDevelop
             ccbPenNum.ResetPenColors();
             this.hp = hp;
             LoadImage();
+            WireHatchIndexEvents();
             SetParam(hp);
+        }
+        public FrmHatch(HatchParam hp, TryLoadHatchParamHandler tryLoadHatchParam)
+        {
+            InitializeComponent();
+            ccbPenNum.ResetPenColors();
+            this.hp = hp;
+            this.tryLoadHatchParam = tryLoadHatchParam;
+            LoadImage();
+            WireHatchIndexEvents();
+            SetParam(hp);
+        }
+
+        private void WireHatchIndexEvents()
+        {
+            rbHatch1.CheckedChanged += rbHatch_CheckedChanged;
+            rbHatch2.CheckedChanged += rbHatch_CheckedChanged;
+            rbHatch3.CheckedChanged += rbHatch_CheckedChanged;
+        }
+
+        private void rbHatch_CheckedChanged(object sender, EventArgs e)
+        {
+            if (suppressHatchIndexChanged)
+            {
+                return;
+            }
+
+            RadioButton rb = sender as RadioButton;
+            if (rb == null || !rb.Checked)
+            {
+                return;
+            }
+
+            int index = GetSelectedParamIndex();
+            nParamIndex = index;
+
+            HatchParam loaded;
+            if (tryLoadHatchParam != null && tryLoadHatchParam(index, out loaded))
+            {
+                loaded.nParamIndex = index;
+                hp = loaded;
+                SetParam(hp);
+                return;
+            }
+
+            hp.nParamIndex = index;
         }
 
         private void SetParam(HatchParam hp)
@@ -312,7 +395,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     ccbPenNum.SelectedIndex = Math.Max(0, Math.Min(hp.nPenNo, ccbPenNum.Items.Count - 1));
                 }
-                indHatchType = NormalizeIndex(hp.nHatchType, imagesHatchType.Length);
+                indHatchType = HatchTypeToUiIndex(hp.nHatchType);
                 picHatchModel.Image = imagesHatchType[indHatchType];
                 if (IsLoopHatchType())
                 {
@@ -328,15 +411,23 @@ namespace BJJCZ_BaseDevelop
                 txtLinereduction.Text = FormatNumber(hp.dHatchLineReduction);
                 txtLoopDist.Text = FormatNumber(hp.dHatchLoopDist);
 
-                nudAngle.Value = ClampToRange((decimal)RadiansToDegrees(hp.dHatchAngle), nudAngle);
-                nudRotateAngel.Value = ClampToRange((decimal)RadiansToDegrees(hp.dHatchRotateAngle), nudRotateAngel);
+                nudAngle.Value = ClampToRange((decimal)hp.dHatchAngle, nudAngle);
+                nudRotateAngel.Value = ClampToRange((decimal)hp.dHatchRotateAngle, nudRotateAngel);
 
-                // è®¾ç½®å¡«å……å‚æ•°åºå·å•é€‰æŒ‰é’®
-                switch (nParamIndex)
+                // ÉèÖÃÌî³ä²ÎÊıĞòºÅµ¥Ñ¡°´Å¥
+                suppressHatchIndexChanged = true;
+                try
                 {
-                    case 1: rbHatch1.Checked = true; break;
-                    case 2: rbHatch2.Checked = true; break;
-                    case 3: rbHatch3.Checked = true; break;
+                    switch (nParamIndex)
+                    {
+                        case 1: rbHatch1.Checked = true; break;
+                        case 2: rbHatch2.Checked = true; break;
+                        case 3: rbHatch3.Checked = true; break;
+                    }
+                }
+                finally
+                {
+                    suppressHatchIndexChanged = false;
                 }
 
                 ApplyHatchTypeRules(false);
@@ -370,10 +461,13 @@ namespace BJJCZ_BaseDevelop
             }
 
             indHatchType = NormalizeIndex(indHatchType, imagesHatchType.Length);
-            hp.nHatchType = indHatchType;
+            hp.nHatchType = UiIndexToHatchType(indHatchType);
             hp.nParamIndex = GetSelectedParamIndex();
             hp.nEdgeLoop = (int)nudLoopNum.Value;
-            hp.nCycCount = 1;  // é»˜è®¤å€¼ï¼Œå¯è°ƒæ•´
+            if (hp.nCycCount <= 0)
+            {
+                hp.nCycCount = 1;
+            }
 
             if (hp.nHatchType == 2)
             {
@@ -382,18 +476,18 @@ namespace BJJCZ_BaseDevelop
                 hp.bHatchAverageLine = true;
             }
 
-            if (!TryReadDouble(txtLineDis, "å¡«å……çº¿é—´è·", out hp.dHatchLineDist) ||
-                !TryReadDouble(txtEdgeOffset, "å¡«å……çº¿è¾¹è·", out hp.dHatchEdgeDist) ||
-                !TryReadDouble(txtStartOffset, "èµ·ç‚¹åç§»", out hp.dHatchStartOffset) ||
-                !TryReadDouble(txtEndOffset, "ç»ˆç‚¹åç§»", out hp.dHatchEndOffset) ||
-                !TryReadDouble(txtLinereduction, "çº¿ç¼©è¿›", out hp.dHatchLineReduction) ||
-                !TryReadDouble(txtLoopDist, "ç¯é—´è·", out hp.dHatchLoopDist))
+            if (!TryReadDouble(txtLineDis, "Ìî³äÏß¼ä¾à", out hp.dHatchLineDist) ||
+                !TryReadDouble(txtEdgeOffset, "Ìî³äÏß±ß¾à", out hp.dHatchEdgeDist) ||
+                !TryReadDouble(txtStartOffset, "ÆğµãÆ«ÒÆ", out hp.dHatchStartOffset) ||
+                !TryReadDouble(txtEndOffset, "ÖÕµãÆ«ÒÆ", out hp.dHatchEndOffset) ||
+                !TryReadDouble(txtLinereduction, "ÏßËõ½ø", out hp.dHatchLineReduction) ||
+                !TryReadDouble(txtLoopDist, "»·¼ä¾à", out hp.dHatchLoopDist))
             {
                 return false;
             }
 
-            hp.dHatchAngle = DegreesToRadians((double)nudAngle.Value);
-            hp.dHatchRotateAngle = DegreesToRadians((double)nudRotateAngel.Value);
+            hp.dHatchAngle = (double)nudAngle.Value;
+            hp.dHatchRotateAngle = (double)nudRotateAngel.Value;
             return true;
         }
 
@@ -429,9 +523,9 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            // å°†å¡«å……å‚æ•°åº”ç”¨åˆ°å½“å‰å¯¹è±¡ï¼ˆä½¿ç”¨å½“å‰å¡å·ï¼‰
-            // æ³¨æ„ï¼šéœ€è¦å¤–éƒ¨ä¼ å…¥å½“å‰æ“ä½œçš„å¯¹è±¡åç§°ï¼Œæ­¤å¤„æœªæä¾›ï¼Œæ•…ä»…ä¿å­˜å‚æ•°åˆ°ç»“æ„ä½“ï¼Œ
-            // å®é™…è®¾ç½®å¡«å……å‚æ•°åº”åœ¨å¤–éƒ¨è°ƒç”¨ SetHatchParam å¹¶è°ƒç”¨ HatchEnt
+            // ½«Ìî³ä²ÎÊıÓ¦ÓÃµ½µ±Ç°¶ÔÏó£¨Ê¹ÓÃµ±Ç°¿¨ºÅ£©
+            // ×¢Òâ£ºĞèÒªÍâ²¿´«Èëµ±Ç°²Ù×÷µÄ¶ÔÏóÃû³Æ£¬´Ë´¦Î´Ìá¹©£¬¹Ê½ö±£´æ²ÎÊıµ½½á¹¹Ìå£¬
+            // Êµ¼ÊÉèÖÃÌî³ä²ÎÊıÓ¦ÔÚÍâ²¿µ÷ÓÃ SetHatchParam ²¢µ÷ÓÃ HatchEnt
             DialogResult = DialogResult.OK;
         }
 
@@ -443,7 +537,7 @@ namespace BJJCZ_BaseDevelop
 
         private void btDelHatch_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.Abort;  // è¡¨ç¤ºåˆ é™¤å¡«å……
+            DialogResult = DialogResult.Abort;  // ±íÊ¾É¾³ıÌî³ä
         }
 
         private void chkAutoRorateAngle_CheckedChanged(object sender, EventArgs e)
