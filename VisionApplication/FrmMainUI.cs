@@ -323,8 +323,7 @@ namespace VisionApplication
                         this.vpWin.Name = "XB视图";
                  //       this.vpWin.Size = new System.Drawing.Size(393, 357);
                         this.vpWin.TabIndex = 2;
-
-                      
+                         
                     }
                     else
                     {
@@ -2884,7 +2883,6 @@ namespace VisionApplication
                 if (cup.p_VPPRTP.bDeepInfer || rts.initStatus.bVPPInit)
                 {
                     InitVisionControl();
-
                     //2025年8月26日
                     alImParam[0] = new AlignImParam();
                     alImParam[0] = new AlignImParam();
@@ -7740,12 +7738,7 @@ namespace VisionApplication
 
         }         
 
-        private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            calipFindLineParam cflParam = new calipFindLineParam();
-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
-            UpdateUIFromCLPParam(cflParam);
-        }
+    
 
         string strEngineerName = "";
         string strEngineerDir = "";
@@ -7821,8 +7814,8 @@ namespace VisionApplication
                 operLog.strFailReason = $"从 {findlineDir} 加载";
                 AddLog();
 
-                vpWin.ExtractLocateBase(0);
-                vpWin.ExtractLocateBase(1);
+                vpWin.ExtractLocateBase(0,cup.p_DL.gpuID);
+                vpWin.ExtractLocateBase(1, cup.p_DL.gpuID);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "提取定位基准";
                 AddLog();
@@ -8113,6 +8106,9 @@ namespace VisionApplication
                 CopyDirectory(subDir.FullName, destSubDir, overwrite);
             }
         }
+
+      
+
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
             SetFaceTriggerIndicator(0, false);

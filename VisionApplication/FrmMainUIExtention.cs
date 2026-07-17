@@ -1,39 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.IO.Pipes;
-using System.Management;
-using System.Xml;
-
+﻿using Cognex.VisionPro.Blob;
+using Cognex.VisionPro.Caliper;
+//using PipeChanel;
+using Cognex.VisionPro.PMAlign;
+using CommonCls;
 using HalconDotNet;
-//using HOperatorSet_EX;
-using System.Runtime.InteropServices;
-
-using System.Drawing.Imaging;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.IO.Ports;
 /*using System.IO.Pipes;
 
 using OpenCvSharp;
 using OpenCvSharp.Extensions;*/
 
 using MvCamCtrl.NET;  // 海康相机
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 //using gRPC_ClientAPP;
 using System.Diagnostics;
-
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.IO.Pipes;
+using System.IO.Ports;
+using System.Linq;
+using System.Management;
+//using HOperatorSet_EX;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
 using CameraHandle = System.Int32;
-using CommonCls;
-//using PipeChanel;
-using Cognex.VisionPro.PMAlign;
-using Cognex.VisionPro.Blob;
 
 namespace VisionApplication
 {
@@ -942,12 +940,142 @@ namespace VisionApplication
         /// 获取标定找线参数
         /// </summary>
 
+
+        bool bFindEdgeEdit = false;
+        CogFindLineEditV2 cflV2;
+        CogCaliperEditV2 ccV2;
+
+        private async void btLocateEdgeSet_Click(object sender, EventArgs e)
+        {
+            {
+                if (vpWin._iTaskType != 5 && !vpWin.bMainTaskFinished)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = "当前任务未结束";
+                    AddLog();
+                    return;
+                }
+                if (rts.iModelRole < 3)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = "用户权限不够";
+                    AddLog();
+                    return;
+                }
+
+                if (rts.initStatus.iVPPStatus != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = "流程文件初始化失败";
+                    return;
+                }
+                operLog.strOperEvent = "精确定位设置";
+
+
+                bFindEdgeEdit = !bFindEdgeEdit;
+
+                try
+                {
+                    if (cup.p_DL.gpuID == 1)
+                    {
+                        if (bFindEdgeEdit)
+                        {
+                            rdBT_Caliper.Enabled = false;
+                            rdBT_FindLine.Enabled = false;
+
+                            iTmpType = vpWin._iTaskType;
+                            ccV2 = new CogCaliperEditV2();
+                            ccV2.Subject = vpWin.getCC(iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  //2026年6月14日 需要修改第二个参数
+                                                                                                       //  splitContainer3.Panel1.Controls.Add(cflV2);
+                            splitContainer2.Panel1.Controls.Add(ccV2);
+                            ccV2.Dock = DockStyle.Fill;
+
+                            vpWin.Visible = false;
+                            bVPPParamChanged = true;
+
+
+                            vpWin._iTaskType = 5;
+                            operLog.iEventStatus = 0;
+                            ((Button)sender).FlatStyle = FlatStyle.Flat;
+                            vpWin.bMainTaskFinished = false;
+                        }
+                        else
+                        {
+                            rdBT_Caliper.Enabled = true;
+                            rdBT_FindLine.Enabled = true;
+                            vpWin.setCC(ccV2.Subject, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0); //2026年6月14日 需要修改第三个参数
+                                                                                                     //  splitContainer3.Panel1.Controls.Remove(cflV2);
+                            splitContainer2.Panel1.Controls.Remove(ccV2);
+                            ccV2.Dispose();
+
+                            vpWin._iTaskType = iTmpType;
+                            ((Button)sender).FlatStyle = FlatStyle.Popup;
+                            vpWin.bMainTaskFinished = true;
+
+                            vpWin.Visible = true;
+
+                        }
+                    }
+                    else if (cup.p_DL.gpuID == 0)
+                    {
+                        if (bFindEdgeEdit)
+                        {
+                            rdBT_Caliper.Enabled = false;
+                            rdBT_FindLine.Enabled = false;
+                            iTmpType = vpWin._iTaskType;
+                            cflV2 = new CogFindLineEditV2();
+                            cflV2.Subject = vpWin.getCLP(iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  //2026年6月14日 需要修改第二个参数
+                                                                                                         //  splitContainer3.Panel1.Controls.Add(cflV2);
+                            splitContainer2.Panel1.Controls.Add(cflV2);
+                            cflV2.Dock = DockStyle.Fill;
+
+                            vpWin.Visible = false;
+                            bVPPParamChanged = true;
+
+
+                            vpWin._iTaskType = 5;
+                            operLog.iEventStatus = 0;
+                            ((Button)sender).FlatStyle = FlatStyle.Flat;
+                            vpWin.bMainTaskFinished = false;
+                        }
+                        else
+                        {
+                            rdBT_Caliper.Enabled = true;
+                            rdBT_FindLine.Enabled = true;
+                            vpWin.setCLP(cflV2.Subject, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0); //2026年6月14日 需要修改第三个参数
+                                                                                                       //  splitContainer3.Panel1.Controls.Remove(cflV2);
+                            splitContainer2.Panel1.Controls.Remove(cflV2);
+                            cflV2.Dispose();
+
+                            vpWin._iTaskType = iTmpType;
+                            ((Button)sender).FlatStyle = FlatStyle.Popup;
+                            vpWin.bMainTaskFinished = true;
+
+                            vpWin.Visible = true;
+
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "精确定位设置";
+                    operLog.strFailReason = ex.Message;
+                    return;
+                }
+
+            }
+        }
+
         private void btGetCalipFLParam_Click(object sender, EventArgs e)
         {
             try
             {
                 calipFindLineParam cflParam = new calipFindLineParam();
-                vpWin.GetCLPParam(ref cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+                vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID,cmbCLPEdgeLeft.SelectedIndex == 0);
                 UpdateUIFromCLPParam(cflParam);
                 operLog.strOperEvent = "获取边缘定位参数";
                 operLog.iEventStatus = 0;
@@ -974,7 +1102,7 @@ namespace VisionApplication
 
                 UpdateCLPParamFromUI(ref cflParam);
 
-                vpWin.SetCLPParam(cflParam, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+                vpWin.SetCLPParam(cflParam, iJobIndex,cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
                 operLog.strOperEvent = "设置边缘定位参数";
                 operLog.iEventStatus = 0;
 
@@ -988,6 +1116,39 @@ namespace VisionApplication
                 AddLog();
             }
         }
+
+        private void btLocateEdge1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int index = cmbCLPEdgeLeft.SelectedIndex + 1;
+                if (index < 1 || index > 2)
+                {
+                    MessageBox.Show("请选择定位边缘");
+                    return;
+                }
+                vpWin.SetFindLineSearchRegion(iJobIndex, index,cup.p_DL.gpuID);
+                bVPPParamChanged = true;
+            }
+            catch { }
+        }
+
+        private void btLocateEdge2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int index = cmbCLPEdgeLeft.SelectedIndex + 1;
+                if (index < 1 || index > 2)
+                {
+                    MessageBox.Show("请选择定位边缘");
+                    return;
+                }
+                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_DL.gpuID);
+                bVPPParamChanged = true;
+            }
+            catch { }
+        }
+         
         /// <summary>
         /// 提取标定找线基础参数
         /// </summary>
@@ -996,7 +1157,7 @@ namespace VisionApplication
             try
             {
                 bVPPParamChanged = true;
-                vpWin.ExtractLocateBase(iJobIndex);
+                vpWin.ExtractLocateBase(iJobIndex,cup.p_DL.gpuID);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "提取定位基准";
                 AddLog();
@@ -1016,8 +1177,11 @@ namespace VisionApplication
         private void chkUseTuneLocation_CheckedChanged(object sender, EventArgs e)
         {
             try { 
-            bVPPParamChanged = true;
-            vpWin.SetUseTuneLocation(iJobIndex,chkUseTuneLocation.Checked);
+                    bVPPParamChanged = true;
+
+               
+                    vpWin.SetUseTuneLocation(iJobIndex,chkUseTuneLocation.Checked, cup.p_DL.gpuID);
+               
                 operLog.strOperEvent = "修改边缘定位启用状态";
                 operLog.iEventStatus =0;
               
@@ -1031,6 +1195,32 @@ namespace VisionApplication
                 AddLog();
             }
         }
+
+        
+        private void rdBT_FindLine_Click(object sender, EventArgs e)
+        {
+            if (rdBT_FindLine.Checked)
+            {
+                cup.p_DL.gpuID = 0;
+            }
+            if (rdBT_Caliper.Checked)
+            {
+                cup.p_DL.gpuID = 1;
+            }
+            CaliperControlVisSet(cup.p_DL.gpuID);
+             calipFindLineParam cflParam = new calipFindLineParam();
+            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
+            UpdateUIFromCLPParam(cflParam);
+
+            vpWin.SetUseTuneLocation(iJobIndex, chkUseTuneLocation.Checked, cup.p_DL.gpuID);
+
+        }
+        private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            calipFindLineParam cflParam = new calipFindLineParam();
+            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
+            UpdateUIFromCLPParam(cflParam);
+        }
         /// <summary>
         /// 由VP参数更新UI
         /// </summary>
@@ -1038,12 +1228,27 @@ namespace VisionApplication
         {
             try
             {
-                chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
-                cmbCLPPol.SelectedIndex = cflParam.bPolarity;
-                nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
-                nudCLPRad.Value = (decimal)cflParam.iRadius;
-                nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
-                nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+                if(cup.p_DL.gpuID==0)
+                {
+                    chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+                    cmbCLPPol.SelectedIndex = cflParam.bPolarity;
+                    nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
+                    nudCLPRad.Value = (decimal)cflParam.iRadius;
+                    nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
+                    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+                }
+                else if (cup.p_DL.gpuID == 1)
+                {
+                    chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+                    cmbCLPPol.SelectedIndex = cflParam.bPolarity;
+                    cmbCLPPol2.SelectedIndex = cflParam.iCaliperNum; 
+
+                    nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
+                    nudCLPRad.Value = (decimal)cflParam.iRadius;
+                //    nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
+                //    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+                }
+
             }
             catch(Exception ex)
             {
@@ -1061,12 +1266,25 @@ namespace VisionApplication
         {
             try
             {
-                cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
-                cflParam.bPolarity = cmbCLPPol.SelectedIndex;
-                cflParam.dThre = (double)nudCLPEdgeThre.Value;
-                cflParam.iRadius = (int)nudCLPRad.Value;
-                cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
-                cflParam.iCaliperNum = (int)nudCLPCaliperNum.Value;
+                if (cup.p_DL.gpuID == 0)
+                {
+                    cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
+                    cflParam.bPolarity = cmbCLPPol.SelectedIndex;
+                    cflParam.iCaliperNum = (int)nudCLPCaliperNum.Value; 
+                    cflParam.dThre = (double)nudCLPEdgeThre.Value;
+                    cflParam.iRadius = (int)nudCLPRad.Value;
+                    cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+                }
+               else if (cup.p_DL.gpuID == 1)
+                {
+                    cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
+                    cflParam.bPolarity = cmbCLPPol.SelectedIndex;
+                    cflParam.iCaliperNum = cmbCLPPol2.SelectedIndex;
+                    cflParam.dThre = (double)nudCLPEdgeThre.Value;
+                    cflParam.iRadius = (int)nudCLPRad.Value;
+                   //cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+                }
+                
             }
             catch (Exception ex)
             {
@@ -1076,6 +1294,30 @@ namespace VisionApplication
                 AddLog();
             }
         } 
+       
+        private void CaliperControlVisSet(int iTuneType)
+        {
+            if(iTuneType==0)
+            {
+                label70.Visible = false;
+                cmbCLPPol2.Visible = false; 
+                label62.Visible = true;
+                nudCLPCaliperNum.Visible = true;
+                label56.Visible = true;
+                nudCLPRemovePoint.Visible = true;  
+            }
+            else if (iTuneType == 1)
+            {
+                label56.Visible = false;
+                nudCLPRemovePoint.Visible = false;
+                label62.Visible = false;
+                nudCLPCaliperNum.Visible = false;
+                label70.Visible = true; 
+                cmbCLPPol2.Visible = true;
+
+            }
+        }
+        
         #endregion
 
 

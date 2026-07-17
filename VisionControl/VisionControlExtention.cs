@@ -1430,13 +1430,20 @@ namespace VisionControl
         }
 
         //显示边缘定位工具的输入图像，可编辑边缘搜索区域
-        public void SetFindLineSearchRegion(int iJobIndex, int iLineIndex)
+        public void SetFindLineSearchRegion(int iJobIndex, int iLineIndex,int iTuneType)
         {
             try
             {
-                CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
-
-                ShowCFLCurrentInputImage(cfl, iJobIndex);
+                if (iTuneType == 0)
+                {
+                    CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
+                    ShowCFLCurrentInputImage(cfl, iJobIndex);
+                }
+                else if (iTuneType == 1)
+                {
+                    CogCaliperTool cc = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool" + iLineIndex.ToString()] as CogCaliperTool);
+                    ShowCCCurrentInputImage(cc, iJobIndex);
+                }
             }
             catch (Exception ex)
             { OnVisionError(iJobIndex, $"边缘图像显示: {ex.Message}"); }
@@ -1464,14 +1471,44 @@ namespace VisionControl
             bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
 
+        private void ShowCCCurrentInputImage(CogCaliperTool cc, int iJobIndex)
+        {
+             
+            switch (iJobIndex)
+            {
+                case 0:
+                    {
+                        
+                        cogRDMainUser.Record = cc.CreateCurrentRecord().SubRecords["InputImage"];
+                        cogRDMainUser.BackColor = Color.Black;
+                        cogRDMainUser.Fit(true);
+                    }
+                    break;
+                case 1:
+                    cogRDSub1.Record = cc.CreateCurrentRecord().SubRecords["InputImage"];
+                    cogRDSub1.BackColor = Color.Black;
+                    cogRDSub1.Fit(true);
+                    break;
+            }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
+        }
         //显示边缘定位工具的输出图像
-        public void GetFindLineSearchRes(int iJobIndex, int iLineIndex)
+        public void GetFindLineSearchRes(int iJobIndex, int iLineIndex,int iTuneType)
         {
             try
             {
-                CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
-                cfl.Run();
-                ShowCFLCurrentOutputImage(cfl, iJobIndex);
+                if (iTuneType == 0)
+                {
+                    CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
+                    cfl.Run();
+                    ShowCFLCurrentOutputImage(cfl, iJobIndex);
+                }
+                else if (iTuneType == 1)
+                {
+                    CogCaliperTool cc = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool" + iLineIndex.ToString()] as CogCaliperTool);
+                    cc.Run();
+                    ShowCCCurrentOutputImage(cc, iJobIndex);
+                }
             }
             catch (Exception ex)
             { OnVisionError(iJobIndex, $"边缘图像显示: {ex.Message}"); }
@@ -1498,7 +1535,29 @@ namespace VisionControl
             }
             bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
+
+        //  显示边缘定位工具的输出图像 
+        private void ShowCCCurrentOutputImage(CogCaliperTool cc, int iJobIndex)
+        {
             
+            switch (iJobIndex)
+            {
+                case 0:
+                    {
+                        cogRDMainUser.Record = cc.CreateLastRunRecord().SubRecords["InputImage"];
+                        cogRDMainUser.Fit(true);
+                        cogRDMainUser.BackColor = Color.Black;
+                    }
+                    break;
+                case 1:
+                    cogRDSub1.Record = cc.CreateLastRunRecord().SubRecords["InputImage"];
+                    cogRDSub1.BackColor = Color.Black;
+                    cogRDSub1.Fit(true);
+                    break;
+            }
+            bRecordWithInteractiveGraphics[iJobIndex] = true;
+        }
+
         //  从VP中获取边缘定位工具
         public CogFindLineTool getCLP(int iJobIndex, bool bLeft)
         {
@@ -1508,6 +1567,22 @@ namespace VisionControl
                     return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"]) as CogFindLineTool;
                 else
                     return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"]) as CogFindLineTool;
+
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public CogCaliperTool getCC(int iJobIndex, bool bLeft)
+        {
+            try
+            {
+                if (bLeft)
+                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"]) as CogCaliperTool;
+                else
+                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"]) as CogCaliperTool;
 
             }
             catch
@@ -1534,21 +1609,54 @@ namespace VisionControl
             }
         }
 
+
+        public bool setCC(CogCaliperTool cc, int iJobIndex, bool bLeft)
+        {
+            try
+            {
+                if (bLeft)
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] = cc;
+                else
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] = cc;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
         //  获取边缘定位参数
-        public void GetCLPParam(ref calipFindLineParam cflParam, int iJobIndex, bool bLeft)
+        public void GetCLPParam(ref calipFindLineParam cflParam, int iJobIndex, int iTuneType,bool bLeft)
         {
             //获取训练参数
             try
             {
-                string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
-                CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
-                cflParam.bUseTuneLocation =(bool) (mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
+                if (iTuneType == 0)
+                {
+                    string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
+                    CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
+                    cflParam.bUseTuneLocation = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
 
-                cflParam.bPolarity = (int)cfl.RunParams.CaliperRunParams.Edge0Polarity-1;
-                cflParam.dThre = cfl.RunParams.CaliperRunParams.ContrastThreshold;
-                cflParam.iRadius = cfl.RunParams.CaliperRunParams.FilterHalfSizeInPixels;
-                cflParam.iRemovePoint= cfl.RunParams.NumToIgnore;
-                cflParam.iCaliperNum = cfl.RunParams.NumCalipers;
+                    cflParam.bPolarity = (int)cfl.RunParams.CaliperRunParams.Edge0Polarity - 1;
+                    cflParam.dThre = cfl.RunParams.CaliperRunParams.ContrastThreshold;
+                    cflParam.iRadius = cfl.RunParams.CaliperRunParams.FilterHalfSizeInPixels;
+                    cflParam.iRemovePoint = cfl.RunParams.NumToIgnore;
+                    cflParam.iCaliperNum = cfl.RunParams.NumCalipers;
+                }
+                else if (iTuneType == 1)
+                {
+                    string calipName = bLeft ? "CogCaliperTool1" : "CogCaliperTool2";
+                    CogCaliperTool ccT= (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
+                    cflParam.bUseTuneLocation = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
+
+                    cflParam.bPolarity = (int)ccT.RunParams.Edge0Polarity - 1;
+                    cflParam.iCaliperNum = (int)ccT.RunParams.Edge1Polarity - 1; //边缘对右边缘
+                    cflParam.dThre = ccT.RunParams.ContrastThreshold;
+                    cflParam.iRadius = ccT.RunParams.FilterHalfSizeInPixels;
+
+                }
             }
             catch (Exception ex)
             {
@@ -1558,20 +1666,35 @@ namespace VisionControl
         }
         //  设置边缘定位参数
 
-        public void SetCLPParam(calipFindLineParam clpParam, int iJobIndex, bool bLeft)
+        public void SetCLPParam(calipFindLineParam clpParam, int iJobIndex,int iTuneType, bool bLeft)
         {
             //获取训练参数
             try
             {
-                string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
-                CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
+                if (iTuneType == 0)
+                {
+                    string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
+                    CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
 
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
-                cfl.RunParams.CaliperRunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
-                cfl.RunParams.CaliperRunParams.ContrastThreshold = clpParam.dThre;
-                cfl.RunParams.CaliperRunParams.FilterHalfSizeInPixels = clpParam.iRadius;
-                cfl.RunParams.NumToIgnore= clpParam.iRemovePoint;
-                cfl.RunParams.NumCalipers = clpParam.iCaliperNum;
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
+                    cfl.RunParams.CaliperRunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
+                    cfl.RunParams.CaliperRunParams.ContrastThreshold = clpParam.dThre;
+                    cfl.RunParams.CaliperRunParams.FilterHalfSizeInPixels = clpParam.iRadius;
+                    cfl.RunParams.NumToIgnore = clpParam.iRemovePoint;
+                    cfl.RunParams.NumCalipers = clpParam.iCaliperNum;
+                }
+                else if (iTuneType == 1)
+                {
+                    string calipName = bLeft ? "CogCaliperTool1" : "CogCaliperTool2";
+                    CogCaliperTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
+
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
+                    cfl.RunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
+                    cfl.RunParams.Edge1Polarity= (CogCaliperPolarityConstants)(clpParam.iCaliperNum +1);
+                    cfl.RunParams.ContrastThreshold = clpParam.dThre;
+                    cfl.RunParams.FilterHalfSizeInPixels = clpParam.iRadius;
+                    
+                }
 
                 //  (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.iRes1);
             }
@@ -1583,29 +1706,52 @@ namespace VisionControl
         }
 
         //  提取边缘定位基准
-        public void ExtractLocateBase(int iJobIndex)
+        public void ExtractLocateBase(int iJobIndex,int iTuneType)
         {
             try
             {
                 CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                double dX=0, dY=0, dR=0;
+                switch(iTuneType)
+                {
+                    case 0:
+                        CogFindLineTool cflLeft = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+                        cflLeft.InputImage = pma.Pattern.TrainImage as CogImage8Grey;
+                        cflLeft.Run();
+                        CogFindLineTool cflRight = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+                        cflRight.InputImage = pma.Pattern.TrainImage as CogImage8Grey;
+                        cflRight.Run();
+                        dR = (cflLeft.Results.GetLine().Rotation + cflRight.Results.GetLine().Rotation) / 2;
+                        dX = (cflLeft.Results.GetLine().X + cflRight.Results.GetLine().X) / 2;
+                        dY = (cflLeft.Results.GetLine().Y + cflRight.Results.GetLine().Y) / 2;
+                        break;
 
+                    case 1:
+                        CogCaliperTool cctUp = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                        cctUp.InputImage = pma.Pattern.TrainImage as CogImage8Grey;
+                        cctUp.Run();
+                        CogCaliperTool cctDown = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+                        cctDown.InputImage = pma.Pattern.TrainImage as CogImage8Grey;
+                        cctDown.Run();
+                        double dX1 = cctUp.Results[0].PositionX;
+                        double dY1 = cctUp.Results[0].PositionY;
+                        double dX2 = cctDown.Results[0].PositionX;
+                        double dY2 = cctDown.Results[0].PositionY;
+                        dX = (dX1 + dX2) / 2;
+                        dY = (dY1 + dY2) / 2;
+                        dR = Math.Atan2(dX1-dX2, dY1-dY2); 
+
+                        break;
+                }
                 //  string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
-                CogFindLineTool cflLeft = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                cflLeft.InputImage = pma.Pattern.TrainImage as CogImage8Grey;
-                cflLeft.Run();
-                CogFindLineTool cflRight = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
-                cflRight.InputImage = pma.Pattern.TrainImage as CogImage8Grey;
-                cflRight.Run();
-                double dR = (cflLeft.Results.GetLine().Rotation + cflRight.Results.GetLine().Rotation)/2;
-                double dX= (cflLeft.Results.GetLine().X + cflRight.Results.GetLine().X) / 2;
-                double dY = (cflLeft.Results.GetLine().Y + cflRight.Results.GetLine().Y) / 2;
+               
 
 
                 (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dRBase", dR);
                 (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dXBase", dX);
                 (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dYBase", dY);
            
-                CogFixtureTool cft= (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFixtureTool1"] as CogFixtureTool;
+            //    CogFixtureTool cft= (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFixtureTool1"] as CogFixtureTool;
 
             //    cflLeft.InputImage = cft.OutputImage as CogImage8Grey;
             //    cflRight.InputImage = cft.OutputImage as CogImage8Grey;
@@ -1617,25 +1763,60 @@ namespace VisionControl
             }  
         }
         // 2026年6月19日  设置是否使用精定位
-        public void SetUseTuneLocation(int iJobIndex,bool bUseTureLocation)
+        public void SetUseTuneLocation(int iJobIndex,bool bUseTureLocation,int iTuneType)
         {
-            try {
+            try
+            {
 
                 (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", bUseTureLocation);
+                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("tuneType", iTuneType);
+                CogFindLineTool cf1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+                CogFindLineTool cf2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+                CogCaliperTool cct1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                CogCaliperTool cct2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+
+                try
+                {
+                   
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf1);
+                }
+                catch 
+                { }
+
+                try
+                {
+                    
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf2);
+                }
+                catch 
+                { }
+                try
+                {
+                  
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct1);
+                }
+                catch { }
+                try
+                {
+                   
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct2);
+                }
+                catch 
+                { }
+
                 if (bUseTureLocation)
                 {
-                    CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cfl);
-                    cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cfl);
-                }
-                else
-                {
-                    CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cfl);
-                    cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cfl);
-                }
+                    if (iTuneType == 0)
+                    {
+                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf1);
+                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf2);
+                    }
+                    else if (iTuneType == 1)
+                    {
+                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct1);
+                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct2);
+                    }
+                }                
             }
             catch (Exception ex)
             {

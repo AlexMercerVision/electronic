@@ -3154,74 +3154,9 @@ namespace VisionApplication
                 }
             }
         }
-        bool bFindEdgeEdit = false;
-        CogFindLineEditV2 cflV2; 
-        private async void btLocateEdgeSet_Click(object sender, EventArgs e)
-        {
-            {
-                if (vpWin._iTaskType != 5 && !vpWin.bMainTaskFinished)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "精确定位设置";
-                    operLog.strFailReason = "当前任务未结束";
-                    AddLog();
-                    return;
-                }
-                if (rts.iModelRole < 3)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "精确定位设置";
-                    operLog.strFailReason = "用户权限不够";
-                    AddLog();
-                    return;
-                }
-
-                if (rts.initStatus.iVPPStatus != 0)
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "精确定位设置";
-                    operLog.strFailReason = "流程文件初始化失败";
-                    return;
-                }
-                operLog.strOperEvent = "精确定位设置";
-
-
-                bFindEdgeEdit = !bFindEdgeEdit;
-                if (bFindEdgeEdit)
-                {
-                    iTmpType = vpWin._iTaskType;
-                    cflV2 = new CogFindLineEditV2();
-                    cflV2.Subject = vpWin.getCLP(iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  //2026年6月14日 需要修改第二个参数
-                  //  splitContainer3.Panel1.Controls.Add(cflV2);
-                    splitContainer2.Panel1.Controls.Add(cflV2);
-                    cflV2.Dock = DockStyle.Fill;
-
-                    vpWin.Visible = false;
-                    bVPPParamChanged = true;
-
-
-                    vpWin._iTaskType = 5;
-                    operLog.iEventStatus = 0;
-                    ((Button)sender).FlatStyle = FlatStyle.Flat;
-                    vpWin.bMainTaskFinished = false;
-                }
-                else
-                {
-                    vpWin.setCLP(cflV2.Subject, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0); //2026年6月14日 需要修改第三个参数
-                  //  splitContainer3.Panel1.Controls.Remove(cflV2);
-                    splitContainer2.Panel1.Controls.Remove(cflV2);
-                    cflV2.Dispose();
-
-                    vpWin._iTaskType = iTmpType;
-                    ((Button)sender).FlatStyle = FlatStyle.Popup;
-                    vpWin.bMainTaskFinished = true;
-
-                    vpWin.Visible = true;
-
-                }
-
-            }
-        }
+       
+      
+      
         private bool CheckPMATrainedWithPrompt(int jobIndex)
         {
             if (vpWin.CheckPMATrained(jobIndex))
@@ -3361,38 +3296,7 @@ namespace VisionApplication
             }
         }
 
-        private void btLocateEdge1_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                int index=cmbCLPEdgeLeft.SelectedIndex+1;
-                if(index<1 || index>2)
-                {
-                    MessageBox.Show("请选择定位边缘");
-                    return;
-                }
-                vpWin.SetFindLineSearchRegion(iJobIndex, index);
-                bVPPParamChanged = true;
-            }
-            catch { }
-        }
-
-        private void btLocateEdge2_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                int index = cmbCLPEdgeLeft.SelectedIndex + 1;
-                if (index < 1 || index > 2)
-                {
-                    MessageBox.Show("请选择定位边缘");
-                    return;
-                }
-                vpWin.GetFindLineSearchRes(iJobIndex, index);
-                bVPPParamChanged = true;
-            }
-            catch { }
-        }
-
+      
 
         #endregion
 
