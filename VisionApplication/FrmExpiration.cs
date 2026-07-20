@@ -1,13 +1,14 @@
-﻿using System;
+﻿using CommonCls;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using CommonCls;
 namespace VisionApplication
 {
     public partial class FrmExpiration : Form
@@ -62,24 +63,33 @@ namespace VisionApplication
                     iModelRole = 9;
 
                 }
-                else if (DateTime.Now.ToString("yyyyMMdd") == "20240617")  //临时使用
+                else if (IsBetween(DateTime.Now.ToString("yyyyMMdd")))  //临时使用
                 {
-                    iModelRole = 9;
+                    iModelRole = 8;
                 }
                 else
                 {
-                    iModelRole = 3;
+                    iModelRole = 0;
 
                 }
                
             }
          
         }
+
+        private  bool IsBetween(string dateStr)
+        {
+            // 按 "yyyyMMdd" 格式解析（忽略本地文化）
+            DateTime date = DateTime.ParseExact(dateStr, "yyyyMMdd", CultureInfo.InvariantCulture);
+            DateTime start = new DateTime(2026, 7, 20);
+            DateTime end = new DateTime(2026, 7, 31);
+            return date >= start && date <= end;  // 包含两端
+        }
         private void FrmExpiration_Load(object sender, EventArgs e)
         {
             dtDeadLine = mPasswordFile.GetDate(DateType.DeadLine);
             dTPicker_DeadLIne.Value = dtDeadLine;
-            if (iModelRole >= 0)
+            if (iModelRole >= 8)
             {
                 dTPicker_DeadLIne.Enabled = true;
                 chkForever.Enabled = true;

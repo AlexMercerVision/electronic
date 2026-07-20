@@ -1210,10 +1210,8 @@ namespace VisionApplication
             CaliperControlVisSet(cup.p_DL.gpuID);
              calipFindLineParam cflParam = new calipFindLineParam();
             vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
-            UpdateUIFromCLPParam(cflParam);
-
-            vpWin.SetUseTuneLocation(iJobIndex, chkUseTuneLocation.Checked, cup.p_DL.gpuID);
-
+            UpdateUIFromCLPParam(cflParam); 
+            vpWin.SetUseTuneLocation(iJobIndex, chkUseTuneLocation.Checked, cup.p_DL.gpuID); 
         }
         private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
         {

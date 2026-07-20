@@ -4697,6 +4697,19 @@ namespace VisionApplication
                 UpdateUIFromPMAParam();
             }
             UpdateCamParam2UI();
+
+            //精定位界面初始化
+            if(cup.p_DL.gpuID==1)
+            {
+                rdBT_Caliper.Checked = true;
+            }
+            else
+            {
+                rdBT_FindLine.Checked = true;
+            }
+            cmbCLPEdgeLeft.SelectedIndex = 0;
+
+
             ViewLayout();
             SyncCurrentCardSelection(true);
             toolBtSta_MarkAfterLocated.Checked= rts.onLS.bLock;

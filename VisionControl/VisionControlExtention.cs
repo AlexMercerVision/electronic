@@ -1925,11 +1925,16 @@ namespace VisionControl
             // 按名称获取工具（请确保名称一致）
             CogFindLineTool tool1 = null;
             CogFindLineTool tool2 = null;
+            CogCaliperTool tool3 = null;
+            CogCaliperTool tool4 = null;
             try
             {
                 tool1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
                 tool2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
-                //  tool = job.Tools["CogPMAlignTool1"] as CogPMAlignTool;
+
+                tool3 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                tool4 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+                
             }
             catch (Exception ex)
             {
@@ -1954,6 +1959,14 @@ namespace VisionControl
                 fileName = $"CFL{iJobIndex}_2.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 CogSerializer.SaveObjectToFile(tool2, fullPath);
+
+                fileName = $"CC{iJobIndex}_1.vpp";
+                fullPath = Path.Combine(filePath, fileName);
+                CogSerializer.SaveObjectToFile(tool3, fullPath);
+
+                fileName = $"CC{iJobIndex}_2.vpp";
+                fullPath = Path.Combine(filePath, fileName);
+                CogSerializer.SaveObjectToFile(tool4, fullPath);
 
                 // 保存成功可以记录日志（可选）
                 // Console.WriteLine($"工具已保存至：{filePath}");
@@ -2020,6 +2033,10 @@ namespace VisionControl
             // 1. 从文件加载工具
             CogFindLineTool loadedTool1 = null;
             CogFindLineTool loadedTool2 = null;
+
+            CogCaliperTool loadedTool3 = null;
+            CogCaliperTool loadedTool4 = null;
+
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
@@ -2043,6 +2060,15 @@ namespace VisionControl
                 fullPath = Path.Combine(filePath, fileName);
                 loadedTool2 = CogSerializer.LoadObjectFromFile(fullPath) as CogFindLineTool;
 
+                fileName = $"CC{iJobIndex}_1.vpp";
+                fullPath = Path.Combine(filePath, fileName);
+                loadedTool3 = CogSerializer.LoadObjectFromFile(fullPath) as CogCaliperTool;
+                fileName = $"CC{iJobIndex}_2.vpp";
+                fullPath = Path.Combine(filePath, fileName);
+                loadedTool4 = CogSerializer.LoadObjectFromFile(fullPath) as CogCaliperTool;
+
+
+
                 CogFindLineTool existingTool1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
                 CogFindLineTool existingTool2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
 
@@ -2055,6 +2081,22 @@ namespace VisionControl
                 existingTool2.RunParams = loadedTool2.RunParams;
                 existingTool2.InputImage = loadedTool2.InputImage;
                 existingTool2.Run();
+
+
+
+                CogCaliperTool existingTool3 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                CogCaliperTool existingTool4 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+
+                // 复制训练特征数据（包含模板、特征等）
+
+                existingTool3.RunParams = loadedTool3.RunParams;
+                existingTool3.InputImage = loadedTool3.InputImage;
+                existingTool3.Run();
+
+                existingTool4.RunParams = loadedTool4.RunParams;
+                existingTool4.InputImage = loadedTool4.InputImage;
+                existingTool4.Run();
+
 
                 // 复制其他配置（可选）
                 //   existingTool.Params = loadedTool.Params;            // 一般和Pattern关联

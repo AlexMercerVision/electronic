@@ -10460,7 +10460,7 @@ namespace BJJCZ_BaseDevelop
                 ezcadProcess.StartInfo.UseShellExecute = true;   // 直接打开，让 EZcad 正常显示窗口
                                                                  // 可选：设置工作目录为 EZcad 所在目录，避免某些相对路径问题
                 ezcadProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(ezcadPath);
-                string fileToOpen = Path.Combine(@"D:\EZDModel", card == 0 ? "route0.ezd" : "route1.ezd");
+                string fileToOpen = currentFilePath[card];// Path.Combine(@"D:\EZDModel", card == 0 ? "route0.ezd" : "route1.ezd");
                 ezcadProcess.StartInfo.Arguments = $"\"{fileToOpen}\"";
                 ezcadProcess.Start();
 

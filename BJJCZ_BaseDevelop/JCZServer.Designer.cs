@@ -388,6 +388,7 @@
             // 
             // btHatchParam
             // 
+            this.btHatchParam.Enabled = false;
             this.btHatchParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btHatchParam.ForeColor = System.Drawing.Color.Red;
             this.btHatchParam.Location = new System.Drawing.Point(299, 195);
@@ -438,6 +439,7 @@
             // 
             // btLaserPenParam
             // 
+            this.btLaserPenParam.Enabled = false;
             this.btLaserPenParam.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btLaserPenParam.ForeColor = System.Drawing.Color.Red;
             this.btLaserPenParam.Location = new System.Drawing.Point(247, 200);
@@ -750,6 +752,7 @@
             // 
             // btRedPreviewCou
             // 
+            this.btRedPreviewCou.Enabled = false;
             this.btRedPreviewCou.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedPreviewCou.ForeColor = System.Drawing.Color.Blue;
             this.btRedPreviewCou.Location = new System.Drawing.Point(406, 135);
@@ -784,6 +787,7 @@
             // 
             // btZJPosSearch
             // 
+            this.btZJPosSearch.Enabled = false;
             this.btZJPosSearch.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btZJPosSearch.ForeColor = System.Drawing.Color.Blue;
             this.btZJPosSearch.Location = new System.Drawing.Point(277, 210);
@@ -796,6 +800,7 @@
             // 
             // btRedPreviewEnt
             // 
+            this.btRedPreviewEnt.Enabled = false;
             this.btRedPreviewEnt.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedPreviewEnt.ForeColor = System.Drawing.Color.Blue;
             this.btRedPreviewEnt.Location = new System.Drawing.Point(277, 173);
