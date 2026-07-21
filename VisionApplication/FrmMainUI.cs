@@ -6547,7 +6547,7 @@ namespace VisionApplication
         /// <summary>
         /// 从缓存中循环解析完整的数据包，直到缓存不足一个包为止。
         /// </summary>
-        private void ProcessSerialBuffer()
+        private void ProcessSerialBuffer() 
         {
             while (_rxBuffer.Count >= 10)  // 至少能容纳一个完整主动上报包（最短10字节）
             {
