@@ -7398,17 +7398,17 @@ namespace BJJCZ_BaseDevelop
                                 byte redAlpha = ComputePreviewRedAlpha(r, g, b);
                                 if (redAlpha > 0)
                                 {
-                                    dstRow[x * 4] = 20;
-                                    dstRow[x * 4 + 1] = 25;
-                                    dstRow[x * 4 + 2] = 255;
+                                    dstRow[x * 4] = b;
+                                    dstRow[x * 4 + 1] = g;
+                                    dstRow[x * 4 + 2] = r;
                                     //dstRow[x * 4 + 3] = redAlpha;
                                     dstRow[x * 4 + 3] = overlayAlpha;
                                     continue;
 
-                                    dstRow[x * 4] = 0;
+                                   /* dstRow[x * 4] = 0;
                                     dstRow[x * 4 + 1] = 0;
                                     dstRow[x * 4 + 2] = 0;
-                                    dstRow[x * 4 + 3] = 0; //不是红色加工线的像素全部透明，避免SDK预览图的杂色叠加到背景图上
+                                    dstRow[x * 4 + 3] = 0;*/ //不是红色加工线的像素全部透明，避免SDK预览图的杂色叠加到背景图上
                                 }
 
                                 byte alpha = ComputePreviewNonWhiteAlpha(r, g, b);

@@ -673,7 +673,8 @@ namespace VisionControl
 
                     RunOneTimeFinished(idx);
                     SetJobBusy(idx, false);
-                    DirectShowImage(idx);
+                    if (!SkipImageUpdateForCurrentRun)
+                        DirectShowImage(idx);
                     infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
                     start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
                     cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;

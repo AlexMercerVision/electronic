@@ -166,6 +166,9 @@ namespace VisionApplication
         // 13. 委托
         private delegate void delegateUIUpdate();                // 委托：更新UI
         private delegateUIUpdate updateUItmp;                   // 委托实例（未初始化，默认为null）
+                                                                // ★★★ 新增：静默运行标志 ★★★
+        private bool _skipStatUpdateForCurrentRun = false;
+
         #endregion
 
         // 14. 构造函数
@@ -8299,6 +8302,14 @@ namespace VisionApplication
         {
             if (jobIndex < 0 || jobIndex >= maxCameraNum)
                 return;
+
+            // ★★★ 如果当前是静默运行，则跳过累加，重置标志并返回 ★★★
+            if (_skipStatUpdateForCurrentRun)
+            {
+                _skipStatUpdateForCurrentRun = false;  // 一次性标志，用完即复位
+                                                       // 此时不累加 rts.detS，不做 IO 反馈，仅显示图像（已在别处更新）
+                return;
+            }
 
             UpdateStatisticsForJob(jobIndex);  //更新统计数据
             if (cup.p_RTSP.bUpdateRecord)

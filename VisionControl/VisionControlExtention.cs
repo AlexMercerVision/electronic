@@ -931,6 +931,7 @@ namespace VisionControl
 
 
         #region PMA 相关设置与操作
+        public bool SkipImageUpdateForCurrentRun { get; set; } = false;
         public bool setPMA(CogPMAlignTool pma,int iJobIndex)
         {
             try
@@ -1168,6 +1169,7 @@ namespace VisionControl
                 nPointTool.Run();
                 pma.Pattern.TrainImage = nPointTool.OutputImage;
                 pma.Pattern.Train();
+               //  mJM.Job(iJobIndex).Run();
                 return true;
             }
             catch(Exception ex)
@@ -1176,13 +1178,14 @@ namespace VisionControl
                 return false;
             }
         }
-
+      //  CogPMAlignTool[] pma = new CogPMAlignTool[maxCameraNum];
         public void ReTrainPMA(int iJobIndex)
         {
             try
             {
                 CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 pma.Pattern.Train();
+               //  mJM.Job(iJobIndex).Run();
                 SaveTrainImage(iJobIndex, pma);
                 ShowPMATrainImage(pma, iJobIndex);
             }

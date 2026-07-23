@@ -3197,6 +3197,10 @@ namespace VisionApplication
                     vpWin.GetAlignRegion(ref alImParam[card], card);
                     await SendAlignParamToJCZServer(card);
                 }
+
+                // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
+                await RunSilentOnceForJob(iJobIndex);
+
                 bVPPParamChanged = true;
             }
             catch { }
@@ -4261,9 +4265,77 @@ namespace VisionApplication
                 UpdateCalibResult2UIFromVar(cr);
 
                 bNormal=vpWin.ReTrainPMAWithUpdateCS(iJobIndex);
+
+                // ★★★ 标定完成后，执行一次静默运行，刷新状态 ★★★
+                RunSilentOnceForJob(iJobIndex);
             }
             return bNormal;
         }
+
+
+        /// <summary>
+        /// 执行一次“静默运行”：刷新 VP 状态，但不计入生产统计。
+        /// </summary>
+        /// 
+       
+       
+
+       
+        private async Task RunSilentOnceForJob(int jobIndex)
+        {
+            if (vpWin == null || jobIndex < 0 || jobIndex >= maxCameraNum)
+                return;
+
+            // 如果视觉任务正忙，跳过（防止冲突）
+            if (!vpWin.bMainTaskFinished)
+                return;
+
+            // 设置静默标志
+            _skipStatUpdateForCurrentRun = true;
+            vpWin.SkipImageUpdateForCurrentRun = true;   // 新增
+            try
+            {
+                vpWin._iTaskType = 2;          // 单次运行模式
+                vpWin.bMainTaskFinished = false;
+
+                // 调用现有的单次运行方法（注意：RunOneTimeSplite 是同步方法，但内部有线程等待）
+                if (vpWin.RunOneTimeSplite(jobIndex))
+                {
+                    // 等待运行完成（超时保护）
+                    int count = 0;
+                    while (vpWin._bRunOneTimeFinished[jobIndex] != 2 && count < 200)
+                    {
+                        await Task.Delay(10);
+                        count++;
+                    }
+                }
+
+                vpWin.bMainTaskFinished = true;
+
+                // 强制更新 UI（内部会触发 UpdateUIExeForJob，此时标志为 true，跳过累加）
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => UpdateUIExeForJob(jobIndex)));
+                else
+                    UpdateUIExeForJob(jobIndex);
+            }
+            catch (Exception ex)
+            {
+                // 异常时也要重置标志
+                _skipStatUpdateForCurrentRun = false;
+                vpWin.SkipImageUpdateForCurrentRun = false;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"静默运行异常(工位{jobIndex + 1})";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                // 双重保险：确保标志被复位（防止因异常导致卡死）
+                _skipStatUpdateForCurrentRun = false;
+                vpWin.SkipImageUpdateForCurrentRun = false;
+            }
+        }
+
         private bool UpdateLaserVisionCalibParam2VPFromUI()
         {
             bool bNormal = true;
@@ -4743,6 +4815,9 @@ namespace VisionApplication
         /// <param name="jobIndex">Job索引（对应板卡号）</param>
         private void OnJobResultReady(int jobIndex)
         {
+            if (_skipStatUpdateForCurrentRun)  //静默运行，不更新状态
+                return;
+
             pmaRes[jobIndex] = vpWin.GetJobResult(jobIndex);
 
             UpdateStatisticsForJob(jobIndex);
