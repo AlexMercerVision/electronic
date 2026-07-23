@@ -2061,7 +2061,7 @@ namespace VisionApplication
                 if (gpu_id_str.Length != 0)
                 {
                     last_gpu_id = gpu_id;
-                    try
+               /*     try
                     {
                         gpu_id = Int32.Parse(gpu_id_str);
                     }
@@ -2070,7 +2070,7 @@ namespace VisionApplication
                         gpu_id = last_gpu_id;
                         tbModelPath.Text = $"{gpu_id}";
                         MessageBox.Show("GPU_ID只能输入数字!");
-                    }
+                    }*/
                 }
             }
 

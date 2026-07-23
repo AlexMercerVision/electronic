@@ -80,8 +80,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>
-    </ApplicationIcon>
+    <ApplicationIcon>APPM.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PipeChanel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -154,6 +153,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="APPM.ico" />
     <Content Include="JCZServer.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

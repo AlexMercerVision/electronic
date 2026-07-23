@@ -2826,6 +2826,10 @@ namespace VisionApplication
                 }
                 
             }
+            else
+            {
+                rts.initStatus.bModelRoleCert = false;
+            }
             operLog.iEventStatus = iModelRole;
             operLog.strOperEvent = "身份验证";
             operLog.strFailReason = iModelRole.ToString();
@@ -4330,6 +4334,14 @@ namespace VisionApplication
 
         private void toolBtSta_FromCam_Click(object sender, EventArgs e)
         {
+            if (rts.onLS.bTrigg)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "修改数据源";
+                operLog.strFailReason = "自动模式禁止操作";
+                AddLog();
+                return;
+            }
             //toolBtSta_FromCam.Checked = !toolBtSta_FromCam.Checked;
             cup.p_VPPRTP.bAcqFromCam = !cup.p_VPPRTP.bAcqFromCam;
             toolBtSta_FromCam.Checked = cup.p_VPPRTP.bAcqFromCam;
@@ -6547,20 +6559,28 @@ namespace VisionApplication
         /// <summary>
         /// 从缓存中循环解析完整的数据包，直到缓存不足一个包为止。
         /// </summary>
+        /// 
+        private int packLen = 25;
         private void ProcessSerialBuffer() 
         {
-            while (_rxBuffer.Count >= 10)  // 至少能容纳一个完整主动上报包（最短10字节）
+            while (_rxBuffer.Count >= packLen)  // 至少能容纳一个完整主动上报包（最短10字节）
             {
+              //  toolStripStatus_ExcuteTimes.Text = "接收缓存长度：" + _rxBuffer.Count.ToString();
                 // ---- 1. 尝试解析主动上报帧（固定10字节） ----
                 if (_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01)
+                    _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
                 {
-                    if (_rxBuffer.Count < 10)
+                    if (_rxBuffer.Count < packLen)
                         break;   // 数据不够，等待下次接收
+                   
 
-                    byte[] packet = _rxBuffer.GetRange(0, 10).ToArray();
-                    _rxBuffer.RemoveRange(0, 10);
+                    byte[] packet = _rxBuffer.GetRange(0, packLen).ToArray();
+                    _rxBuffer.RemoveRange(0, packLen);
 
+                   /* operLog.iEventStatus = 0;
+                    operLog.strOperEvent = BitConverter.ToString(packet);
+                    operLog.strFailReason = "-";
+                    AddLog();*/
                     // 处理该主动上报包（内部会判断触发）
                     ProcessActiveReport(packet);
                     continue;
@@ -6608,7 +6628,7 @@ namespace VisionApplication
 
             // 收集所有触发的类型
             List<int> triggerTypes = new List<int>();
-            byte diByte = packet[4];   // DI状态字节
+            byte diByte = packet[5];   // DI状态字节
 
             // A面触发
             if (cup.p_IOPP.APlane > 0)
@@ -6787,7 +6807,14 @@ namespace VisionApplication
                         //  (this.Controls.Find("toolStripStatus_" + (i + 1).ToString(), true)[0]).ForeColor = Color.Gray;
                     }
                 }
-
+              
+                {
+                    operLog.iEventStatus =0;
+                    operLog.strOperEvent = "全部串口关闭";
+                  //  operLog.strFailReason = "自动模式禁止操作";
+                    AddLog();
+ 
+                }
                 toolStripStatus_Ser.Text = "串口未连接";
                 toolStripStatus_Ser.ForeColor = Color.Red;
                  

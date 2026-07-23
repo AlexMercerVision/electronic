@@ -118,7 +118,7 @@ namespace VisionApplication
             this.groupBox_Supervisor.Size = new System.Drawing.Size(480, 112);
             this.groupBox_Supervisor.TabIndex = 0;
             this.groupBox_Supervisor.TabStop = false;
-            this.groupBox_Supervisor.Text = "主管";
+            this.groupBox_Supervisor.Text = "管理员";
             // 
             // textBox_SupervisorConfirm
             // 
@@ -167,7 +167,7 @@ namespace VisionApplication
             this.groupBox_Administrator.Size = new System.Drawing.Size(480, 112);
             this.groupBox_Administrator.TabIndex = 1;
             this.groupBox_Administrator.TabStop = false;
-            this.groupBox_Administrator.Text = "管理员";
+            this.groupBox_Administrator.Text = "工程师";
             // 
             // textBox_AdministratorConfirm
             // 
@@ -216,7 +216,7 @@ namespace VisionApplication
             this.groupBox1.Size = new System.Drawing.Size(480, 112);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "运维员";
+            this.groupBox1.Text = "操作人团";
             // 
             // textBox_OperaterPasswordConfirm
             // 

@@ -162,7 +162,9 @@ namespace VisionControl
             CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoor.Length / 4;
             calib_NP2NP.Calibration.NumPoints = nP;
-            //  calib_NP2NP.Calibration.
+            calib_NP2NP.CalibrationImage=acqFIFO.ci8gAcq[cup.p_CD.camInd[jobIndex]];  //设置标定图像
+          
+            //设置9点坐标
             for (int i = 0; i < nP; i++)
             {
                 //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
@@ -173,6 +175,7 @@ namespace VisionControl
             }
             try
             {
+                //执行标定
                 calib_NP2NP.Calibration.Calibrate();
                 CalibRes calibRes = new CalibRes();
                 calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
@@ -435,14 +438,14 @@ namespace VisionControl
                 if (cup.p_CD.bListProcess[wsInd])  //启用的检测面才做采集
                 {
                     bTaskFinish[wsInd] = false;
-                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(wsInd,iCamIndex);
+                    ci8gAcq[iCamIndex] = acqFIFO.GrabOneFrameCog(wsInd,iCamIndex);  //已镜像采集
                 }
 
-             if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
-                {  
-                    SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd); 
+                if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  
+                {
+                    SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd);  // 镜像图像blob分析
                 }
-                //存储 
+                //存储 镜像
                 if (bRecord)
                 {
                     //  cup.p_LI.strPrefix[i]
@@ -456,7 +459,8 @@ namespace VisionControl
                         if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)
                         {
                             mImageFile.Open(strImageFileS[wsInd], CogImageFileModeConstants.Write);
-                            mImageFile.Append(ci8gAcq[iCamIndex]);
+                           // mImageFile.Append(ci8gAcq[iCamIndex]);
+                            mImageFile.Append(acqFIFO.CogFlipRotateIm(ci8gAcq[iCamIndex], wsInd)); //镜像恢复保存
                             mImageFile.Close();
                         }
                     }
@@ -519,7 +523,7 @@ namespace VisionControl
                     OnVisionError(iJobIndex, strErrInfo[wsInd]);
                     return false;
                 }
-                  acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex, fileName);
+                  acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex, fileName);  //读取文件的时候进行了镜像
                 if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq != null && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
                 {
                     SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd);
@@ -549,7 +553,7 @@ namespace VisionControl
                     OnVisionError(iJobIndex, strErrInfo[wsInd]);
                     return null;
                 }
-                return acqFIFO.GrabOneFrameCogFromFilePMA(fileName, wsInd);
+                return acqFIFO.GrabOneFrameCogFromFilePMA(fileName, wsInd); //读取后镜像
                 
 
             }

@@ -1674,6 +1674,8 @@ namespace BJJCZ_BaseDevelop
                         break;
 
                     case 4:
+                        AddMsg($"卡{card + 1} 加载文件夹{param.strFileName}");
+
                         nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
                         if (nErr == 0 && !bSimulateMode[card])
                         {
@@ -1781,7 +1783,7 @@ namespace BJJCZ_BaseDevelop
                         if (!bInMark[card])
                         {
                             CleanupPreviewAnchorEntities(card);
-                            ClearRotateMoveParamForManualOperation(card, param.cmdType == 12 ? "红光预览边界" : "红光预览轮廓");
+                       //     ClearRotateMoveParamForManualOperation(card, param.cmdType == 12 ? "红光预览边界" : "红光预览轮廓");
                             if (bInRed[card]) { StopRedPreview(card, null); Thread.Sleep(50); }
                             if (param.bOpen)
                             {
@@ -1862,7 +1864,7 @@ namespace BJJCZ_BaseDevelop
                                 {
                                     AddMsg($"卡{card + 1} 对象 {entName} 存在填充，加工目标切换为 {markEntName}");
                                 }
-                                ClearRotateMoveParamForManualOperation(card, $"加工对象 {markEntName}");
+                              //  ClearRotateMoveParamForManualOperation(card, $"加工对象 {markEntName}");
                                 nErr = JczLmc.lmc1_MarkEntity(phyCardSN[card], markEntName);
                             }
                             else
@@ -1898,7 +1900,7 @@ namespace BJJCZ_BaseDevelop
                                         AddMsg($"卡{card + 1} 红光预览对象失败: 对象名称为空");
                                         break;
                                     }
-                                    ClearRotateMoveParamForManualOperation(card, $"红光预览对象 {previewEntName}");
+                                  //  ClearRotateMoveParamForManualOperation(card, $"红光预览对象 {previewEntName}");
                                     bool continuousRed = IsRedPreviewContinuous();
                                     var workerEntRed = new BackgroundWorker();
                                     workerEntRed.DoWork += (s, ev) =>
@@ -2593,7 +2595,33 @@ namespace BJJCZ_BaseDevelop
                         }
                         break;
 
-
+                    case 45:  // 加载9点标定模板文件
+                              //  nErr = JczLmc.lmc1_LoadEzdFile(phyCardSN[card], param.strFileName);
+                        AddMsg($"加载文件: {param.strFileName}");
+                        LCZControlParam paramLF = new LCZControlParam
+                        {
+                            cardSN = param.cardSN,
+                            cmdType = 4,  // 加载文件
+                            strFileName = param.strFileName,
+                            ind3 = 0
+                        };
+                        CMDAna(paramLF);
+                          
+                        if (param.bOpen)                      //判断主程序是否要求生成后直接加工
+                        {
+                            nErr = StartMarkAllObjects(
+                                card,
+                                param.cmdType,
+                                clientSeq,
+                                false,
+                                null,
+                                "阵列填充圆模板加工");
+                            if (nErr == 0)
+                            {
+                                needResponse = false;
+                            }
+                        }
+                        break;
 
                     case 90:
                         bool showLog = (param.dParam1 != 0);
@@ -10487,23 +10515,7 @@ namespace BJJCZ_BaseDevelop
         /// </summary>
         private string FindEZcadExecutable()
         {
-            // 策略1：常见默认安装路径
-            string[] commonPaths = new string[]
-            {
-        @"C:\Program Files\EZCAD2\EzCad2.exe",
-        @"C:\Program Files (x86)\EZCAD2\EzCad2.exe",
-        @"D:\EZCAD2\EzCad2.exe",
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "EZCAD2", "EzCad2.exe"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "EZCAD2", "EzCad2.exe")
-            };
-
-            foreach (string path in commonPaths)
-            {
-                if (File.Exists(path))
-                {
-                    return path;
-                }
-            }
+           
             // 策略2：搜索当前程序运行目录及上级目录（可能 EZcad 被放置在项目附近）
             string[] searchDirs = new string[]
             {

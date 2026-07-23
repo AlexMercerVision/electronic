@@ -384,7 +384,9 @@ namespace VisionApplication
             this.label57 = new System.Windows.Forms.Label();
             this.label60 = new System.Windows.Forms.Label();
             this.cmbCLPEdgeLeft = new System.Windows.Forms.ComboBox();
+            this.label70 = new System.Windows.Forms.Label();
             this.label61 = new System.Windows.Forms.Label();
+            this.cmbCLPPol2 = new System.Windows.Forms.ComboBox();
             this.cmbCLPPol = new System.Windows.Forms.ComboBox();
             this.btLocateEdge = new System.Windows.Forms.Button();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
@@ -435,8 +437,8 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
-            this.label70 = new System.Windows.Forms.Label();
-            this.cmbCLPPol2 = new System.Windows.Forms.ComboBox();
+            this.label71 = new System.Windows.Forms.Label();
+            this.label72 = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -512,6 +514,7 @@ namespace VisionApplication
             this.splitContainer4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
             this.splitContainer6.Panel1.SuspendLayout();
+            this.splitContainer6.Panel2.SuspendLayout();
             this.splitContainer6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).BeginInit();
             this.groupBox1.SuspendLayout();
@@ -2051,6 +2054,7 @@ namespace VisionApplication
             // 
             // btFunMark
             // 
+            this.btFunMark.BackColor = System.Drawing.SystemColors.ButtonHighlight;
             this.btFunMark.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btFunMark.FlatAppearance.BorderSize = 4;
             this.btFunMark.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
@@ -2063,7 +2067,7 @@ namespace VisionApplication
             this.btFunMark.TabIndex = 5;
             this.btFunMark.Text = "激光标刻";
             this.btFunMark.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btFunMark.UseVisualStyleBackColor = true;
+            this.btFunMark.UseVisualStyleBackColor = false;
             this.btFunMark.Click += new System.EventHandler(this.btFunMark_Click);
             // 
             // btRedLight_Preview
@@ -2118,6 +2122,7 @@ namespace VisionApplication
             // 
             // btFunSet
             // 
+            this.btFunSet.BackColor = System.Drawing.SystemColors.ButtonHighlight;
             this.btFunSet.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btFunSet.FlatAppearance.BorderSize = 4;
             this.btFunSet.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
@@ -2130,7 +2135,7 @@ namespace VisionApplication
             this.btFunSet.TabIndex = 0;
             this.btFunSet.Text = "流程构建";
             this.btFunSet.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btFunSet.UseVisualStyleBackColor = true;
+            this.btFunSet.UseVisualStyleBackColor = false;
             this.btFunSet.Visible = false;
             this.btFunSet.Click += new System.EventHandler(this.btFun_Click);
             // 
@@ -2250,7 +2255,7 @@ namespace VisionApplication
             // 
             // tabPageCam
             // 
-            this.tabPageCam.BackColor = System.Drawing.Color.Transparent;
+            this.tabPageCam.BackColor = System.Drawing.Color.White;
             this.tabPageCam.Controls.Add(this.label63);
             this.tabPageCam.Controls.Add(this.cbDeviceList);
             this.tabPageCam.Controls.Add(this.groupBox4);
@@ -2268,7 +2273,7 @@ namespace VisionApplication
             // 
             this.label63.AutoSize = true;
             this.label63.ForeColor = System.Drawing.Color.Salmon;
-            this.label63.Location = new System.Drawing.Point(1, 355);
+            this.label63.Location = new System.Drawing.Point(7, 373);
             this.label63.Name = "label63";
             this.label63.Size = new System.Drawing.Size(52, 12);
             this.label63.TabIndex = 94;
@@ -2298,7 +2303,7 @@ namespace VisionApplication
             this.groupBox4.Controls.Add(this.label21);
             this.groupBox4.Controls.Add(this.label22);
             this.groupBox4.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.groupBox4.Location = new System.Drawing.Point(0, 370);
+            this.groupBox4.Location = new System.Drawing.Point(3, 388);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(336, 124);
             this.groupBox4.TabIndex = 22;
@@ -2492,7 +2497,7 @@ namespace VisionApplication
             this.groupBox2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.groupBox2.Location = new System.Drawing.Point(3, 36);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(346, 316);
+            this.groupBox2.Size = new System.Drawing.Size(346, 334);
             this.groupBox2.TabIndex = 21;
             this.groupBox2.TabStop = false;
             // 
@@ -2502,7 +2507,7 @@ namespace VisionApplication
             this.panel3.Controls.Add(this.rdFlipVer);
             this.panel3.Controls.Add(this.rdFlipHor);
             this.panel3.Controls.Add(this.rdNoneFlip);
-            this.panel3.Location = new System.Drawing.Point(6, 232);
+            this.panel3.Location = new System.Drawing.Point(7, 260);
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(324, 37);
             this.panel3.TabIndex = 92;
@@ -2549,7 +2554,7 @@ namespace VisionApplication
             this.panel2.Controls.Add(this.rbRot180);
             this.panel2.Controls.Add(this.rbRot90);
             this.panel2.Controls.Add(this.rbNoneRotate);
-            this.panel2.Location = new System.Drawing.Point(7, 189);
+            this.panel2.Location = new System.Drawing.Point(7, 217);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(324, 37);
             this.panel2.TabIndex = 92;
@@ -2834,7 +2839,7 @@ namespace VisionApplication
             // bnSetCamParam
             // 
             this.bnSetCamParam.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.bnSetCamParam.Location = new System.Drawing.Point(141, 272);
+            this.bnSetCamParam.Location = new System.Drawing.Point(131, 303);
             this.bnSetCamParam.Name = "bnSetCamParam";
             this.bnSetCamParam.Size = new System.Drawing.Size(100, 25);
             this.bnSetCamParam.TabIndex = 8;
@@ -2856,7 +2861,7 @@ namespace VisionApplication
             // bnGetCamParam
             // 
             this.bnGetCamParam.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.bnGetCamParam.Location = new System.Drawing.Point(9, 275);
+            this.bnGetCamParam.Location = new System.Drawing.Point(7, 303);
             this.bnGetCamParam.Name = "bnGetCamParam";
             this.bnGetCamParam.Size = new System.Drawing.Size(100, 25);
             this.bnGetCamParam.TabIndex = 7;
@@ -2965,7 +2970,7 @@ namespace VisionApplication
             // 
             // tabPageCalib
             // 
-            this.tabPageCalib.BackColor = System.Drawing.Color.Transparent;
+            this.tabPageCalib.BackColor = System.Drawing.Color.White;
             this.tabPageCalib.Controls.Add(this.btMarkSquare);
             this.tabPageCalib.Controls.Add(this.panel7);
             this.tabPageCalib.Controls.Add(this.btMarkCross);
@@ -3741,7 +3746,7 @@ namespace VisionApplication
             // 
             // tabPageBase
             // 
-            this.tabPageBase.BackColor = System.Drawing.Color.Transparent;
+            this.tabPageBase.BackColor = System.Drawing.Color.White;
             this.tabPageBase.Controls.Add(this.btGetPMAParam);
             this.tabPageBase.Controls.Add(this.btSetPMAParam);
             this.tabPageBase.Controls.Add(this.label50);
@@ -4334,12 +4339,14 @@ namespace VisionApplication
             // 
             // tabPageFindLine
             // 
+            this.tabPageFindLine.BackColor = System.Drawing.Color.White;
             this.tabPageFindLine.Controls.Add(this.rdBT_Caliper);
             this.tabPageFindLine.Controls.Add(this.rdBT_FindLine);
             this.tabPageFindLine.Controls.Add(this.chkUseTuneLocation);
             this.tabPageFindLine.Controls.Add(this.btGetCalipFLParam);
             this.tabPageFindLine.Controls.Add(this.btExtractCaliperBase);
             this.tabPageFindLine.Controls.Add(this.btSetCalipFLParam);
+            this.tabPageFindLine.Controls.Add(this.label72);
             this.tabPageFindLine.Controls.Add(this.label16);
             this.tabPageFindLine.Controls.Add(this.panel6);
             this.tabPageFindLine.Controls.Add(this.btLocateEdge);
@@ -4348,13 +4355,12 @@ namespace VisionApplication
             this.tabPageFindLine.Size = new System.Drawing.Size(349, 515);
             this.tabPageFindLine.TabIndex = 5;
             this.tabPageFindLine.Text = "精定位";
-            this.tabPageFindLine.UseVisualStyleBackColor = true;
             // 
             // rdBT_Caliper
             // 
             this.rdBT_Caliper.AutoSize = true;
             this.rdBT_Caliper.Checked = true;
-            this.rdBT_Caliper.Location = new System.Drawing.Point(235, 16);
+            this.rdBT_Caliper.Location = new System.Drawing.Point(230, 39);
             this.rdBT_Caliper.Name = "rdBT_Caliper";
             this.rdBT_Caliper.Size = new System.Drawing.Size(70, 18);
             this.rdBT_Caliper.TabIndex = 102;
@@ -4366,7 +4372,7 @@ namespace VisionApplication
             // rdBT_FindLine
             // 
             this.rdBT_FindLine.AutoSize = true;
-            this.rdBT_FindLine.Location = new System.Drawing.Point(145, 16);
+            this.rdBT_FindLine.Location = new System.Drawing.Point(108, 39);
             this.rdBT_FindLine.Name = "rdBT_FindLine";
             this.rdBT_FindLine.Size = new System.Drawing.Size(70, 18);
             this.rdBT_FindLine.TabIndex = 102;
@@ -4377,17 +4383,17 @@ namespace VisionApplication
             // chkUseTuneLocation
             // 
             this.chkUseTuneLocation.AutoSize = true;
-            this.chkUseTuneLocation.Location = new System.Drawing.Point(71, 16);
+            this.chkUseTuneLocation.Location = new System.Drawing.Point(10, 7);
             this.chkUseTuneLocation.Name = "chkUseTuneLocation";
-            this.chkUseTuneLocation.Size = new System.Drawing.Size(56, 18);
+            this.chkUseTuneLocation.Size = new System.Drawing.Size(101, 18);
             this.chkUseTuneLocation.TabIndex = 101;
-            this.chkUseTuneLocation.Text = "启用";
+            this.chkUseTuneLocation.Text = "启用精定位";
             this.chkUseTuneLocation.UseVisualStyleBackColor = true;
             this.chkUseTuneLocation.CheckedChanged += new System.EventHandler(this.chkUseTuneLocation_CheckedChanged);
             // 
             // btGetCalipFLParam
             // 
-            this.btGetCalipFLParam.Location = new System.Drawing.Point(11, 284);
+            this.btGetCalipFLParam.Location = new System.Drawing.Point(10, 320);
             this.btGetCalipFLParam.Name = "btGetCalipFLParam";
             this.btGetCalipFLParam.Size = new System.Drawing.Size(76, 29);
             this.btGetCalipFLParam.TabIndex = 99;
@@ -4398,7 +4404,7 @@ namespace VisionApplication
             // btExtractCaliperBase
             // 
             this.btExtractCaliperBase.ForeColor = System.Drawing.Color.Red;
-            this.btExtractCaliperBase.Location = new System.Drawing.Point(264, 284);
+            this.btExtractCaliperBase.Location = new System.Drawing.Point(263, 320);
             this.btExtractCaliperBase.Name = "btExtractCaliperBase";
             this.btExtractCaliperBase.Size = new System.Drawing.Size(76, 29);
             this.btExtractCaliperBase.TabIndex = 100;
@@ -4408,7 +4414,7 @@ namespace VisionApplication
             // 
             // btSetCalipFLParam
             // 
-            this.btSetCalipFLParam.Location = new System.Drawing.Point(93, 284);
+            this.btSetCalipFLParam.Location = new System.Drawing.Point(92, 320);
             this.btSetCalipFLParam.Name = "btSetCalipFLParam";
             this.btSetCalipFLParam.Size = new System.Drawing.Size(76, 29);
             this.btSetCalipFLParam.TabIndex = 100;
@@ -4420,7 +4426,7 @@ namespace VisionApplication
             // 
             this.label16.AutoSize = true;
             this.label16.ForeColor = System.Drawing.Color.Salmon;
-            this.label16.Location = new System.Drawing.Point(15, 16);
+            this.label16.Location = new System.Drawing.Point(11, 73);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(37, 14);
             this.label16.TabIndex = 97;
@@ -4445,7 +4451,7 @@ namespace VisionApplication
             this.panel6.Controls.Add(this.label61);
             this.panel6.Controls.Add(this.cmbCLPPol2);
             this.panel6.Controls.Add(this.cmbCLPPol);
-            this.panel6.Location = new System.Drawing.Point(11, 55);
+            this.panel6.Location = new System.Drawing.Point(10, 91);
             this.panel6.Name = "panel6";
             this.panel6.Size = new System.Drawing.Size(335, 223);
             this.panel6.TabIndex = 98;
@@ -4608,6 +4614,16 @@ namespace VisionApplication
             this.cmbCLPEdgeLeft.TabIndex = 94;
             this.cmbCLPEdgeLeft.SelectedIndexChanged += new System.EventHandler(this.cmbCLPEdgeLeft_SelectedIndexChanged);
             // 
+            // label70
+            // 
+            this.label70.AutoSize = true;
+            this.label70.ForeColor = System.Drawing.Color.Blue;
+            this.label70.Location = new System.Drawing.Point(169, 41);
+            this.label70.Name = "label70";
+            this.label70.Size = new System.Drawing.Size(75, 14);
+            this.label70.TabIndex = 93;
+            this.label70.Text = "边缘2极性";
+            // 
             // label61
             // 
             this.label61.AutoSize = true;
@@ -4617,6 +4633,18 @@ namespace VisionApplication
             this.label61.Size = new System.Drawing.Size(75, 14);
             this.label61.TabIndex = 93;
             this.label61.Text = "边缘1极性";
+            // 
+            // cmbCLPPol2
+            // 
+            this.cmbCLPPol2.FormattingEnabled = true;
+            this.cmbCLPPol2.Items.AddRange(new object[] {
+            "由暗到明",
+            "由明到暗",
+            "任何极性"});
+            this.cmbCLPPol2.Location = new System.Drawing.Point(244, 38);
+            this.cmbCLPPol2.Name = "cmbCLPPol2";
+            this.cmbCLPPol2.Size = new System.Drawing.Size(86, 22);
+            this.cmbCLPPol2.TabIndex = 94;
             // 
             // cmbCLPPol
             // 
@@ -4636,7 +4664,7 @@ namespace VisionApplication
             this.btLocateEdge.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btLocateEdge.ForeColor = System.Drawing.Color.Red;
             this.btLocateEdge.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btLocateEdge.Location = new System.Drawing.Point(18, 333);
+            this.btLocateEdge.Location = new System.Drawing.Point(14, 365);
             this.btLocateEdge.Name = "btLocateEdge";
             this.btLocateEdge.Size = new System.Drawing.Size(78, 90);
             this.btLocateEdge.TabIndex = 11;
@@ -4875,9 +4903,13 @@ namespace VisionApplication
             // 
             // splitContainer6.Panel2
             // 
+            this.splitContainer6.Panel2.BackColor = System.Drawing.Color.White;
+            this.splitContainer6.Panel2.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("splitContainer6.Panel2.BackgroundImage")));
+            this.splitContainer6.Panel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.splitContainer6.Panel2.Controls.Add(this.label71);
             this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
             this.splitContainer6.Size = new System.Drawing.Size(748, 175);
-            this.splitContainer6.SplitterDistance = 524;
+            this.splitContainer6.SplitterDistance = 557;
             this.splitContainer6.TabIndex = 0;
             // 
             // dgvLog
@@ -4897,7 +4929,7 @@ namespace VisionApplication
             this.dgvLog.RowHeadersWidth = 62;
             this.dgvLog.RowTemplate.Height = 23;
             this.dgvLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.dgvLog.Size = new System.Drawing.Size(524, 175);
+            this.dgvLog.Size = new System.Drawing.Size(557, 175);
             this.dgvLog.TabIndex = 0;
             // 
             // ClmnTime
@@ -5150,27 +5182,27 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
-            // label70
+            // label71
             // 
-            this.label70.AutoSize = true;
-            this.label70.ForeColor = System.Drawing.Color.Blue;
-            this.label70.Location = new System.Drawing.Point(169, 41);
-            this.label70.Name = "label70";
-            this.label70.Size = new System.Drawing.Size(75, 14);
-            this.label70.TabIndex = 93;
-            this.label70.Text = "边缘2极性";
+            this.label71.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label71.Font = new System.Drawing.Font("微软雅黑", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label71.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label71.Location = new System.Drawing.Point(90, 130);
+            this.label71.Name = "label71";
+            this.label71.Size = new System.Drawing.Size(142, 38);
+            this.label71.TabIndex = 0;
+            this.label71.Text = "博奕精工 ";
             // 
-            // cmbCLPPol2
+            // label72
             // 
-            this.cmbCLPPol2.FormattingEnabled = true;
-            this.cmbCLPPol2.Items.AddRange(new object[] {
-            "由暗到明",
-            "由明到暗",
-            "任何极性"});
-            this.cmbCLPPol2.Location = new System.Drawing.Point(244, 38);
-            this.cmbCLPPol2.Name = "cmbCLPPol2";
-            this.cmbCLPPol2.Size = new System.Drawing.Size(86, 22);
-            this.cmbCLPPol2.TabIndex = 94;
+            this.label72.AutoSize = true;
+            this.label72.ForeColor = System.Drawing.Color.Salmon;
+            this.label72.Location = new System.Drawing.Point(10, 43);
+            this.label72.Name = "label72";
+            this.label72.Size = new System.Drawing.Size(67, 14);
+            this.label72.TabIndex = 97;
+            this.label72.Text = "定位方法";
             // 
             // FrmMainUI
             // 
@@ -5281,6 +5313,7 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
             this.splitContainer4.ResumeLayout(false);
             this.splitContainer6.Panel1.ResumeLayout(false);
+            this.splitContainer6.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
             this.splitContainer6.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).EndInit();
@@ -5699,5 +5732,7 @@ namespace VisionApplication
         private System.Windows.Forms.RadioButton rdBT_FindLine;
         private System.Windows.Forms.Label label70;
         private System.Windows.Forms.ComboBox cmbCLPPol2;
+        private System.Windows.Forms.Label label71;
+        private System.Windows.Forms.Label label72;
     }
 }

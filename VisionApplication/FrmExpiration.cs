@@ -58,15 +58,12 @@ namespace VisionApplication
             if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
             { 
                 DateVerify(iModelRole);
-                if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")   //调试专用功能
+                if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A632" || strMAC == "8C32233F2B85")   //调试专用功能
                 {
                     iModelRole = 9;
 
                 }
-                else if (IsBetween(DateTime.Now.ToString("yyyyMMdd")))  //临时使用
-                {
-                    iModelRole = 8;
-                }
+                
                 else
                 {
                     iModelRole = 0;
@@ -74,7 +71,11 @@ namespace VisionApplication
                 }
                
             }
-         
+            else if (IsBetween(DateTime.Now.ToString("yyyyMMdd")))  //临时使用
+            {
+                iModelRole = 8;
+            }
+
         }
 
         private  bool IsBetween(string dateStr)

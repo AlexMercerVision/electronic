@@ -1658,9 +1658,9 @@ namespace VisionApplication
             this.label34.AutoSize = true;
             this.label34.Location = new System.Drawing.Point(22, 129);
             this.label34.Name = "label34";
-            this.label34.Size = new System.Drawing.Size(101, 12);
+            this.label34.Size = new System.Drawing.Size(59, 12);
             this.label34.TabIndex = 0;
-            this.label34.Text = "9点标定模板路径:";
+            this.label34.Text = "模板路径:";
             // 
             // tbResultSave
             // 

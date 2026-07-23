@@ -1164,7 +1164,7 @@ namespace VisionControl
             {
                 CogPMAlignTool pma = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 CogCalibNPointToNPointTool nPointTool = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
-                nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
+                nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex); //读取PMA原训练图像
                 nPointTool.Run();
                 pma.Pattern.TrainImage = nPointTool.OutputImage;
                 pma.Pattern.Train();
@@ -1205,7 +1205,7 @@ namespace VisionControl
                     //重新采集一帧图像
                     if (bLock)
                     {
-                       bool ret = PreViewOneImage(iJobIndex);
+                        bool ret = PreViewOneImage(iJobIndex);
                     }
                     else
                     {
@@ -1214,7 +1214,17 @@ namespace VisionControl
                     nPointTool.InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
                 }
                 else
-                    nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
+                {
+                    if (bLock)
+                    {
+                        nPointTool.InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
+                    }
+                    else
+                    {
+                        nPointTool.InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+                    }
+                    
+                }
 
 
                 nPointTool.Run();
@@ -1270,7 +1280,7 @@ namespace VisionControl
             bRecordWithInteractiveGraphics[iJobIndex] = true;
         }
 
-        private void SaveTrainImage(int iJobIndex, CogPMAlignTool pma)
+        public void SaveTrainImage(int iJobIndex, CogPMAlignTool pma)
         {
           //  if (bRecord)
             {

@@ -3116,6 +3116,8 @@ namespace VisionApplication
                 else
                 {
                     bool bSetPMA = vpWin.setPMA(pmaV2.Subject,iJobIndex);
+                    vpWin.SaveTrainImage(iJobIndex, pmaV2.Subject);  //保存模板图像
+
                     splitContainer2.Panel1.Controls.Remove(pmaV2);
                     pmaV2.Dispose();
 
@@ -3147,6 +3149,7 @@ namespace VisionApplication
                     if (jobIndex >= 0 && jobIndex < MaxLaserCards)
                     {
                         int card = GetCardSNByJob(jobIndex);
+                       
                         vpWin.GetAlignRegion(ref alImParam[card], card);
                         await SendAlignParamToJCZServer(card);
                     }
@@ -4030,7 +4033,7 @@ namespace VisionApplication
             double centerY = (double)numUDCenY.Value;
             string namePrefix = "CalibPoint";           // 对象名前缀，可自定义
             string savePath = GetCalibTemplatePath();   // 保存生成的模板文件路径
-
+            string savecalilbPath=Path.Combine(cup.p_Paf.ManuMarkPath, "calibTemplate.ezd");
             // 3. 设置激光工作状态
             iLaserWorkingTypes[card] = 1;
             UpdateButtonStyle(btFunMark, true);
@@ -4040,7 +4043,7 @@ namespace VisionApplication
                 // 4. 构建命令参数（命令 44）
                 var param = new LCZControlParam
                 {
-                    cmdType = 44,                       // 生成阵列填充圆模板并标刻
+                    cmdType = 45,                       // 生成阵列填充圆模板并标刻
                     cardSN = card,
                     ind1 = rows,
                     ind2 = cols,
@@ -4050,7 +4053,7 @@ namespace VisionApplication
                     dParam4 = spacingX,
                     dParam5 = spacingY,
                     strEntyName = namePrefix,
-                    strFileName = savePath,
+                    strFileName = savecalilbPath,
                     bOpen = true,                       // 生成后直接加工
                     ind3 = 1                            // 标记为标定模板标刻
                 };
@@ -4162,7 +4165,7 @@ namespace VisionApplication
                     // 采集图像
                     CaptureCalibImage();
 
-                    //更新图像坐标
+                    //更新图像坐标（包括激光坐标和图像坐标）
                     bool success = UpdateCalibData();
                     if(success)
                         success &= ExeNPointCalib();
@@ -4304,6 +4307,7 @@ namespace VisionApplication
                 string crossPath = Path.Combine(cup.p_Paf.ManuMarkPath, "Cross.ezd");
                 if (!File.Exists(crossPath))
                 {
+                    iLaserWorkingTypes[currentCardSN] = 0;
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "标刻十字";
                     operLog.strFailReason = "十字线文件不存在";
@@ -4320,8 +4324,10 @@ namespace VisionApplication
                     ind3 = 2
                 };
                 var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
+               
                 if (loadResult.nErr != 0)
                 {
+
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "标刻十字";
                     operLog.strFailReason = $"加载十字线文件失败: {GetErrorText(loadResult.nErr)}";
@@ -4338,7 +4344,7 @@ namespace VisionApplication
                         cardSN = card,
                         ind3 = 2
                     };
-                    var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
+                    var markResult = await dispatcher.SendCommandAsync(markParam, 3000);
                     if (markResult.nErr != 0)
                     {
                         throw new Exception($"标刻失败: {GetErrorText(markResult.nErr)}");
@@ -4346,6 +4352,7 @@ namespace VisionApplication
                 });
 
                 // 等待激光稳定后采集图像
+                iLaserWorkingTypes[currentCardSN] = 0;
                 await Task.Delay(200);
                 CaptureCrossImage();
 
@@ -4499,6 +4506,7 @@ namespace VisionApplication
                 var loadResult = await dispatcher.SendCommandAsync(loadParam, 5000);
                 if (loadResult.nErr != 0)
                 {
+                    iLaserWorkingTypes[currentCardSN] = 0;
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "标刻方框";
                     operLog.strFailReason = $"加载方框文件失败: {GetErrorText(loadResult.nErr)}";
@@ -4517,16 +4525,18 @@ namespace VisionApplication
                     };
 
                     // ✅ 关键：等待标刻完成的响应
-                    var markResult = await dispatcher.SendCommandAsync(markParam, 30000);
+                    var markResult = await dispatcher.SendCommandAsync(markParam, 3000);
 
                     if (markResult.nErr != 0)
                     {
+                        
                         throw new Exception($"标刻失败: {GetErrorText(markResult.nErr)}");
                     }
                 });
 
                 // 6. 标刻完成后，等待激光稳定（短时间内置延时是合理的）
-                await Task.Delay(200);
+                iLaserWorkingTypes[currentCardSN] = 0;
+                await Task.Delay(500);
 
                 // 7. 采集图像（如果需要）
                 // 注意：方框标定通常不需要自动采集图像，如果不需要可以注释
