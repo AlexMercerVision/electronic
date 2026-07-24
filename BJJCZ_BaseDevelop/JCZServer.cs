@@ -7386,7 +7386,8 @@ namespace BJJCZ_BaseDevelop
                             byte g = srcRow[x * 3 + 1];
                             byte r = srcRow[x * 3 + 2];
 
-                            if (IsPreviewAnchorRgb(r, g, b))
+                            if (IsPreviewAnchorRgb(r, g, b) &&
+                                IsPreviewAnchorPixelOnCropBorder(x, y, img.Width, img.Height, r, g, b))
                             {
                                 dstRow[x * 4] = 0;
                                 dstRow[x * 4 + 1] = 0;
@@ -7405,10 +7406,10 @@ namespace BJJCZ_BaseDevelop
                                     dstRow[x * 4 + 3] = overlayAlpha;
                                     continue;
 
-                                   /* dstRow[x * 4] = 0;
+                                    dstRow[x * 4] = 0;
                                     dstRow[x * 4 + 1] = 0;
                                     dstRow[x * 4 + 2] = 0;
-                                    dstRow[x * 4 + 3] = 0;*/ //不是红色加工线的像素全部透明，避免SDK预览图的杂色叠加到背景图上
+                                    dstRow[x * 4 + 3] = 0; //不是红色加工线的像素全部透明，避免SDK预览图的杂色叠加到背景图上
                                 }
 
                                 byte alpha = ComputePreviewNonWhiteAlpha(r, g, b);

@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,7 +29,7 @@ namespace BJJCZ_BaseDevelop
             this.DrawMode = DrawMode.OwnerDrawFixed;
             this.DropDownStyle = ComboBoxStyle.DropDownList;
 
-            // æ·»åŠ å¸¸ç”¨é¢œè‰²
+            // Ìí¼Ó³£ÓÃÑÕÉ«
             ResetPenColors();
 
             this.DrawItem += new DrawItemEventHandler(ColorComboBox_DrawItem);
@@ -38,15 +38,34 @@ namespace BJJCZ_BaseDevelop
 
         public void ResetPenColors()
         {
+            Color[] ezcadColors = new Color[]
+            {
+                Color.Black,                  // 0
+                Color.Blue,                   // 1
+                Color.Red,                    // 2
+                Color.Lime,                   // 3
+                Color.Fuchsia,                // 4
+                Color.Yellow,                 // 5
+                Color.FromArgb(255, 128, 96), // 6
+                Color.Maroon,                 // 7
+                Color.Purple,                 // 8
+                Color.Teal,                   // 9
+                Color.FromArgb(192, 96, 0),   // 10
+                Color.DodgerBlue,             // 11
+                Color.DeepPink,               // 12
+                Color.RoyalBlue,              // 13
+                Color.Olive,                  // 14
+                Color.FromArgb(120, 132, 255),// 15
+                Color.Black,                  // 16
+                Color.Black,                  // 17
+                Color.Black                   // 18
+            };
+
             this.Items.Clear();
-            this.Items.Add(Color.Black);
-            this.Items.Add(Color.Blue);
-            this.Items.Add(Color.Red);
-            this.Items.Add(Color.Green);
-            this.Items.Add(Color.Pink);
-            this.Items.Add(Color.Yellow);
-            this.Items.Add(Color.FromArgb(255, 125, 125));
-            this.Items.Add(Color.FromArgb(125, 0, 0));
+            foreach (Color color in ezcadColors)
+            {
+                this.Items.Add(color);
+            }
         }
         private void ColorComboBox_DrawItem(object sender, DrawItemEventArgs e)
         {

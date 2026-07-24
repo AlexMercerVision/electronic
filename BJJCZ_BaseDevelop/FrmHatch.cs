@@ -313,6 +313,7 @@ namespace BJJCZ_BaseDevelop
         public FrmHatch()
         {
             InitializeComponent();
+            InitPenNumberItems();
             ccbPenNum.ResetPenColors();
             LoadImage();
             WireHatchIndexEvents();
@@ -322,6 +323,7 @@ namespace BJJCZ_BaseDevelop
         public FrmHatch(HatchParam hp)
         {
             InitializeComponent();
+            InitPenNumberItems();
             ccbPenNum.ResetPenColors();
             this.hp = hp;
             LoadImage();
@@ -331,6 +333,7 @@ namespace BJJCZ_BaseDevelop
         public FrmHatch(HatchParam hp, TryLoadHatchParamHandler tryLoadHatchParam)
         {
             InitializeComponent();
+            InitPenNumberItems();
             ccbPenNum.ResetPenColors();
             this.hp = hp;
             this.tryLoadHatchParam = tryLoadHatchParam;
@@ -339,6 +342,10 @@ namespace BJJCZ_BaseDevelop
             SetParam(hp);
         }
 
+        private void InitPenNumberItems()
+        {
+            ccbPenNum.MaxDropDownItems = 16;
+        }
         private void WireHatchIndexEvents()
         {
             rbHatch1.CheckedChanged += rbHatch_CheckedChanged;
