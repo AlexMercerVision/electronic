@@ -912,13 +912,13 @@ namespace CommonCls
             if (cup.p_Cam[jobIndex].iMonoType == 0 && ci8gAcq[iCamIndex] != null)
             {
                 mImageFile[jobIndex].Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile[jobIndex].Append(ci8gAcq[iCamIndex]);
+                mImageFile[jobIndex].Append(CogFlipRotateIm(ci8gAcq[iCamIndex],jobIndex));
                 mImageFile[jobIndex].Close();
             }
             else if (ci24ColorAcq[iCamIndex] != null)
             {
                 mImageFile[jobIndex].Open(strImageFile, CogImageFileModeConstants.Write);
-                mImageFile[jobIndex].Append(ci24ColorAcq[iCamIndex]);
+                mImageFile[jobIndex].Append(CogFlipRotateIm(ci24ColorAcq[iCamIndex],jobIndex));
                 mImageFile[jobIndex].Close();
             }
         }
@@ -1214,9 +1214,9 @@ namespace CommonCls
                         {
                             mImageFile[wsInd].Open(strImageFile, CogImageFileModeConstants.Write);
                             if (cup.p_Cam[wsInd].iMonoType == 0 && ci8gAcq[iCamIndex] != null)
-                                mImageFile[wsInd].Append(ci8gAcq[iCamIndex]);
+                                mImageFile[wsInd].Append(CogFlipRotateIm(ci8gAcq[iCamIndex],wsInd));  
                             else if (ci24ColorAcq[iCamIndex] != null)
-                                mImageFile[wsInd].Append(ci24ColorAcq[iCamIndex]);
+                                mImageFile[wsInd].Append(CogFlipRotateIm(ci24ColorAcq[iCamIndex], wsInd));
                             mImageFile[wsInd].Close();
                         }
                     }

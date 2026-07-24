@@ -3296,9 +3296,9 @@ namespace VisionControl
                             mImageFile.Open(strImageFileS[wsInd], CogImageFileModeConstants.Write);
                             // 保存时也必须按实际相机索引取图，避免工位索引和相机索引不一致时写错槽位。
                             if (cup.p_Cam[iCamIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
-                                mImageFile.Append(acqFIFO.ci8gAcq[iCamIndex]);
+                                mImageFile.Append(acqFIFO.CogFlipRotateIm(acqFIFO.ci8gAcq[iCamIndex],wsInd)); 
                             else if (acqFIFO.ci24ColorAcq[iCamIndex] != null)
-                                mImageFile.Append(acqFIFO.ci24ColorAcq[iCamIndex]);
+                                mImageFile.Append(acqFIFO.CogFlipRotateIm(acqFIFO.ci8gAcq[iCamIndex], wsInd));
 
                             mImageFile.Close();
                         }
