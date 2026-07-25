@@ -6631,7 +6631,7 @@ namespace VisionApplication
 
             // 收集所有触发的类型
             List<int> triggerTypes = new List<int>();
-            byte diByte = packet[4];   // DI状态字节
+            byte diByte = packet[5];   // DI状态字节
 
             // A面触发
             if (cup.p_IOPP.APlane > 0)
