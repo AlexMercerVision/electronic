@@ -1,0 +1,15 @@
+{
+  "mode": "plc",
+  "plc": {
+    "driver": "mxcomponent",
+    "logicalStationNumber": 1,
+    "timeoutMs": 1000,
+    "serial": {
+      "portName": "COM12",
+      "baudRate": 9600,
+      "dataBits": 7,
+      "parity": "Even",
+      "stopBits": "One"
+    }
+  }
+}
