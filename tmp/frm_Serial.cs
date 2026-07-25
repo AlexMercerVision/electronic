@@ -12,10 +12,6 @@ namespace VisionApplication
 {
     public partial class frm_Serial : Form
     {
-        //  static frm_Serial frm;
-        //    SerialPortTool serialPortTool = new SerialPortTool();
-        //    public delegate void HandledSetVal(SerialPortTool fixtureTool);
-        //HandledSetVal handleSetval;
         CUserParam cup = new CUserParam();
         CSerialDef csd = new CSerialDef();
 
@@ -23,18 +19,18 @@ namespace VisionApplication
         SerialPort[] sPortSub = new SerialPort[2];
         StringBuilder sb = new StringBuilder();
         bool[] bTurnON = new bool[5];
-        bool[,] bTurnON2 = new bool[2,5];
-       
-        public LSParam p_LS;//= new LSParam();
-        public LSParam[] p_LS2=new LSParam[2];
-    //    public bool bUseSTC;
+        bool[,] bTurnON2 = new bool[2, 5];
+
+        public LSParam p_LS;                // 主光源参数
+        public LSParam[] p_LS2 = new LSParam[2]; // 侧面光源参数（可扩展）
         int iLastFXLightSourceIndex = 0;
         bool bDependExe = false;
         FileOper fo = new FileOper();
+
         public frm_Serial()
         {
             InitializeComponent();
-            Control.CheckForIllegalCrossThreadCalls = false;//加载时取消跨线程检查
+            Control.CheckForIllegalCrossThreadCalls = false;
             bDependExe = true;
             bool bStatus = fo.ReadUserParam(ref cup);
             if (bStatus)
@@ -45,7 +41,6 @@ namespace VisionApplication
                 sPortSub = csd._sPortSub;
                 p_LS = csd.p_LS;
                 p_LS2 = csd.p_LS2;
-            //    bUseSTC = csd.bUseSTC;
 
                 if (sPortMain != null)
                     sPortMain.DataReceived += new SerialDataReceivedEventHandler(PortGet);
@@ -53,13 +48,14 @@ namespace VisionApplication
                 {
                     sPortSub[0].DataReceived += new SerialDataReceivedEventHandler(PortGet2);
                 }
-               
+                 
             }
         }
+
         public frm_Serial(CSerialDef csd)
         {
             InitializeComponent();
-            Control.CheckForIllegalCrossThreadCalls = false;//加载时取消跨线程检查 
+            Control.CheckForIllegalCrossThreadCalls = false;
             try
             {
                 bool bStatus = fo.ReadUserParam(ref cup);
@@ -74,45 +70,139 @@ namespace VisionApplication
                 {
                     sPortSub[0].DataReceived += new SerialDataReceivedEventHandler(PortGet2);
                 }
+                 
             }
-            catch 
-            { } 
+            catch { }
         }
 
 
-        private void btn_sure_Click(object sender, EventArgs e)
+        private void frm_Serial_Load(object sender, EventArgs e)
         {
-            // 1. 获取界面上的亮度值，更新到内部 p_LS2 对象
-            GetParam();
+            this.MinimizeBox = false;
+            this.MaximizeBox = false;
+            this.CenterToScreen();
 
-            // 2. 如果 cup 对象存在，则将其同步并保存到文件
+            string[] strPortName = SerialPort.GetPortNames();
+            for (int i = 0; i < strPortName.Length; i++)
+            {
+                cbxPortName1.Items.Add(strPortName[i]);
+                cbxPortName2.Items.Add(strPortName[i]);
+            }
+
+            // 加载保存的亮度值到界面
+            SetMainIntensityText();
+            SetSubIntensityText();
+           
+        }
+
+        // ---------- 亮度保存与加载核心方法 ----------
+        private int ClampIntensity(int intensity)
+        {
+            if (intensity < 0) return 0;
+            if (intensity > 255) return 255;
+            return intensity;
+        }
+
+        private void SaveLightIntensity()
+        {
             if (cup != null)
             {
-                // 同步 cup 中的 p_LS2（因为 cup 与 csd 可能引用不同的对象）
-                cup.p_LS2[0] = this.p_LS2[0];
-                cup.p_LS2[1] = this.p_LS2[1];
-
-                // 保存用户参数到文件
-                bool saveResult = FileOper.SaveUserParam(cup);
-                if (!saveResult)
-                {
-                    MessageBox.Show("保存光源参数到配置文件失败！", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                cup.p_LS = p_LS;
+                cup.p_LS2 = p_LS2;
+                FileOper.SaveUserParam(cup);
             }
-            else
+        }
+
+        private void SetMainIntensityText()
+        {
+            if ( p_LS.indent == null || p_LS.indent.Length < 5)
+                return;
+            txtIntensity1.Text = p_LS.indent[1].ToString();
+            txtIntensity2.Text = p_LS.indent[2].ToString();
+            txtIntensity3.Text = p_LS.indent[3].ToString();
+            txtIntensity4.Text = p_LS.indent[4].ToString();
+        }
+
+        private void SetSubIntensityText()
+        {
+            int idx =0;
+            if (p_LS2 == null)
+                return;
+            if (p_LS2[idx].indent == null || p_LS2[idx].indent.Length < 5)
+                return;
+            txtIntensity2_1.Text = p_LS2[idx].indent[1].ToString();
+            txtIntensity2_2.Text = p_LS2[idx].indent[2].ToString();
+            txtIntensity2_3.Text = p_LS2[idx].indent[3].ToString();
+            txtIntensity2_4.Text = p_LS2[idx].indent[4].ToString();
+        }
+
+        private void SaveMainIntensity(int channel, int intensity)
+        {
+            if (p_LS.indent == null || p_LS.indent.Length < 5 || channel < 1 || channel > 4)
+                return;
+            p_LS.indent[channel] = ClampIntensity(intensity);
+            SaveLightIntensity();
+        }
+
+        private void SaveSubIntensity(int channel, int intensity)
+        {
+            int idx = 0;
+            if (p_LS2 == null || idx >= p_LS2.Length )
+                return;
+            if (p_LS2[idx].indent == null || p_LS2[idx].indent.Length < 5 || channel < 1 || channel > 4)
+                return;
+            p_LS2[idx].indent[channel] = ClampIntensity(intensity);
+            SaveLightIntensity();
+        }
+
+        private void SaveMainIntensityFromText()
+        {
+            if ( p_LS.indent == null || p_LS.indent.Length < 5)
+                return;
+            TextBox[] boxes = { txtIntensity1, txtIntensity2, txtIntensity3, txtIntensity4 };
+            for (int i = 0; i < boxes.Length; i++)
             {
-                // 如果没有 cup 对象（理论上不会发生），则尝试从 csd 同步并保存
-                if (csd != null)
+                if (int.TryParse(boxes[i].Text, out int val))
                 {
-                    csd.p_LS2[0] = this.p_LS2[0];
-                    csd.p_LS2[1] = this.p_LS2[1];
-                    // 注意：csd 中没有直接保存文件的方法，这里需要从 csd 获取 cup？
-                    // 实际上在调用方（FrmMainUI）中，会在 DialogResult.OK 后再次保存，
-                    // 因此这里可以只修改 csd，不保存文件，由调用方统一保存。
+                    val = ClampIntensity(val);
+                    boxes[i].Text = val.ToString();
+                    p_LS.indent[i + 1] = val;
                 }
             }
+            SaveLightIntensity();
+        }
 
-            // 3. 设置对话框结果为 OK，关闭窗体
+        private void SaveSubIntensityFromText()
+        {
+            int idx =0;
+            if (p_LS2 == null || idx >= p_LS2.Length )
+                return;
+            if (p_LS2[idx].indent == null || p_LS2[idx].indent.Length < 5)
+                return;
+            TextBox[] boxes = { txtIntensity2_1, txtIntensity2_2, txtIntensity2_3, txtIntensity2_4 };
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                if (int.TryParse(boxes[i].Text, out int val))
+                {
+                    val = ClampIntensity(val);
+                    boxes[i].Text = val.ToString();
+                    p_LS2[idx].indent[i + 1] = val;
+                }
+            }
+            SaveLightIntensity();
+        }
+
+        private void btn_sure_Click(object sender, EventArgs e)
+        {
+            // 获取界面亮度并保存
+            SaveMainIntensityFromText();
+            SaveSubIntensityFromText();
+            // 若需要同步到csd，可在此处处理
+            if (csd != null)
+            {
+                csd.p_LS = p_LS;
+                csd.p_LS2 = p_LS2;
+            }
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
@@ -140,22 +230,6 @@ namespace VisionApplication
         }
       
 
-        private void frm_Serial_Load(object sender, EventArgs e)
-        {
-            this.MinimizeBox = false;
-            this.MaximizeBox = false;
-            this.CenterToScreen();
-           
-            string[] strPortName = SerialPort.GetPortNames();
-            for (int i = 0; i < strPortName.Length; i++)
-            {
-                cbxPortName1.Items.Add(strPortName[i]);
-                cbxPortName2.Items.Add(strPortName[i]);
-            }
-          
-            LoadLightIntensity();
-        }
-         
 
         private void btnCom1_Click(object sender, EventArgs e)
         {
@@ -751,27 +825,18 @@ namespace VisionApplication
         {
             TextBox tb = (TextBox)sender;
             int iCh = 1;
-            int iIntensity = 0;
-            if (!Int32.TryParse(tb.Text, out iIntensity))
+            if (!int.TryParse(tb.Text, out int iIntensity))
                 return;
             switch (tb.Name)
             {
-                case "txtIntensity1":
-                    iCh = 1;
-
-                    break;
-                case "txtIntensity2":
-                    iCh = 2;
-                    break;
-                case "txtIntensity3":
-                    iCh = 3;
-                    break;
-                case "txtIntensity4":
-                    iCh = 4;
-                    break;
+                case "txtIntensity1": iCh = 1; break;
+                case "txtIntensity2": iCh = 2; break;
+                case "txtIntensity3": iCh = 3; break;
+                case "txtIntensity4": iCh = 4; break;
+                default: return;
             }
-
             SetIntensity(iCh, iIntensity);
+            SaveMainIntensity(iCh, iIntensity);
         }
          
         private void txtIntensity_KeyPress(object sender, KeyPressEventArgs e)
@@ -780,27 +845,18 @@ namespace VisionApplication
             {
                 TextBox tb = (TextBox)sender;
                 int iCh = 1;
-                int iIntensity = 0;
-                if (!Int32.TryParse(tb.Text, out iIntensity))
+                if (!int.TryParse(tb.Text, out int iIntensity))
                     return;
                 switch (tb.Name)
                 {
-                    case "txtIntensity1":
-                        iCh = 1;
-
-                        break;
-                    case "txtIntensity2":
-                        iCh = 2;
-                        break;
-                    case "txtIntensity3":
-                        iCh = 3;
-                        break;
-                    case "txtIntensity4":
-                        iCh = 4;
-                        break;
+                    case "txtIntensity1": iCh = 1; break;
+                    case "txtIntensity2": iCh = 2; break;
+                    case "txtIntensity3": iCh = 3; break;
+                    case "txtIntensity4": iCh = 4; break;
+                    default: return;
                 }
-
                 SetIntensity(iCh, iIntensity);
+                SaveMainIntensity(iCh, iIntensity);
             }
         }
   
@@ -840,14 +896,17 @@ namespace VisionApplication
             if (textBox == null || string.IsNullOrWhiteSpace(textBox.Text))
                 return 0;
             if (int.TryParse(textBox.Text, out int value))
-                return Math.Max(0, Math.Min(255, value));
+                return ClampIntensity(value);
             return 0;
         }
 
         private void frm_Serial_FormClosing(object sender, FormClosingEventArgs e)
         {
+            SaveMainIntensityFromText();
+            SaveSubIntensityFromText();
+
             sPortMain.DataReceived -= new SerialDataReceivedEventHandler(PortGet);
-            if(sPortSub[0]!=null)
+            if (sPortSub[0] != null)
                 sPortSub[0].DataReceived -= new SerialDataReceivedEventHandler(PortGet2);
           
         }
@@ -881,12 +940,7 @@ namespace VisionApplication
                 ((CheckBox)this.Controls.Find("ckb2_" + (i + 1).ToString(), true)[0]).Checked = p_LS2[iLastFXLightSourceIndex].bExe[i];
             }
         }
-        private void cmbFXLightSource_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            GetFXLightSourceParam();
-            iLastFXLightSourceIndex = 0;
-            SetFXLightSourceParam();
-        }
+       
 
         private void txtIntensity2_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -894,27 +948,18 @@ namespace VisionApplication
             {
                 TextBox tb = (TextBox)sender;
                 int iCh = 1;
-                int iIntensity = 0;
-                if (!Int32.TryParse(tb.Text, out iIntensity))
+                if (!int.TryParse(tb.Text, out int iIntensity))
                     return;
                 switch (tb.Name)
                 {
-                    case "txtIntensity2_1":
-                        iCh = 1;
-
-                        break;
-                    case "txtIntensity2_2":
-                        iCh = 2;
-                        break;
-                    case "txtIntensity2_3":
-                        iCh = 3;
-                        break;
-                    case "txtIntensity2_4":
-                        iCh = 4;
-                        break;
+                    case "txtIntensity2_1": iCh = 1; break;
+                    case "txtIntensity2_2": iCh = 2; break;
+                    case "txtIntensity2_3": iCh = 3; break;
+                    case "txtIntensity2_4": iCh = 4; break;
+                    default: return;
                 }
-
                 SetIntensitySub(iCh, iIntensity);
+                SaveSubIntensity(iCh, iIntensity);
             }
         }
 
@@ -922,27 +967,18 @@ namespace VisionApplication
         {
             TextBox tb = (TextBox)sender;
             int iCh = 1;
-            int iIntensity = 0;
-            if (!Int32.TryParse(tb.Text, out iIntensity))
+            if (!int.TryParse(tb.Text, out int iIntensity))
                 return;
             switch (tb.Name)
             {
-                case "txtIntensity2_1":
-                    iCh = 1;
-
-                    break;
-                case "txtIntensity2_2":
-                    iCh = 2;
-                    break;
-                case "txtIntensity2_3":
-                    iCh = 3;
-                    break;
-                case "txtIntensity2_4":
-                    iCh = 4;
-                    break;
+                case "txtIntensity2_1": iCh = 1; break;
+                case "txtIntensity2_2": iCh = 2; break;
+                case "txtIntensity2_3": iCh = 3; break;
+                case "txtIntensity2_4": iCh = 4; break;
+                default: return;
             }
-
             SetIntensitySub(iCh, iIntensity);
+            SaveSubIntensity(iCh, iIntensity);
         }
 
         private void cbxPortName1_SelectedIndexChanged(object sender, EventArgs e)
@@ -980,8 +1016,6 @@ namespace VisionApplication
             UpdateMainLightOrder();
             TextBox tb = sender as TextBox;
             if (tb == null) return;
-
-            // 确定是哪个通道（0~3）
             int channel = -1;
             switch (tb.Name)
             {
@@ -990,10 +1024,10 @@ namespace VisionApplication
                 case "txtIntensity3": channel = 2; break;
                 case "txtIntensity4": channel = 3; break;
             }
-            if (channel >= 0 && p_LS2 != null && p_LS2.Length > 0)
+            if (channel >= 0 &&  p_LS.indent != null && p_LS.indent.Length > channel)
             {
                 int newValue = GetIntensityFromTextBox(tb);
-                p_LS2[0].indent[channel] = newValue;
+                p_LS.indent[channel + 1] = newValue;
             }
         }
 
@@ -1002,7 +1036,9 @@ namespace VisionApplication
             UpdateSideLightOrder();
             TextBox tb = sender as TextBox;
             if (tb == null) return;
-
+            int idx = 0;
+            if (p_LS2 == null || idx >= p_LS2.Length)
+                return;
             int channel = -1;
             switch (tb.Name)
             {
@@ -1011,10 +1047,10 @@ namespace VisionApplication
                 case "txtIntensity2_3": channel = 2; break;
                 case "txtIntensity2_4": channel = 3; break;
             }
-            if (channel >= 0 && p_LS2 != null && p_LS2.Length > 1)
+            if (channel >= 0 && p_LS2[idx].indent != null && p_LS2[idx].indent.Length > channel)
             {
                 int newValue = GetIntensityFromTextBox(tb);
-                p_LS2[1].indent[channel] = newValue;
+                p_LS2[idx].indent[channel + 1] = newValue;
             }
         }
 
@@ -1059,31 +1095,14 @@ namespace VisionApplication
         {
             try
             {
-                // 获取4个通道的亮度值
                 int ch1 = GetIntensityFromTextBox(txtIntensity1);
                 int ch2 = GetIntensityFromTextBox(txtIntensity2);
                 int ch3 = GetIntensityFromTextBox(txtIntensity3);
                 int ch4 = GetIntensityFromTextBox(txtIntensity4);
-
-                // 生成命令字符串
-                // 格式: S{通道1}T{通道2}F{通道3}T{通道4}C#
                 string command = $"S{ch1:D3}T{ch2:D3}T{ch3:D3}T{ch4:D3}TC#";
-
-                // 更新文本框
                 txtOrder1.Text = command;
-
-
-            
-                // 可选：如果串口已打开，自动发送命令
-                // if (sPortMain != null && sPortMain.IsOpen)
-                // {
-                //     sPortMain.Write(command);
-                // }
             }
-            catch (Exception ex)
-            {
-                // 忽略转换错误
-            }
+            catch { }
         }
 
         /// <summary>
@@ -1093,29 +1112,14 @@ namespace VisionApplication
         {
             try
             {
-                // 获取4个通道的亮度值
                 int ch1 = GetIntensityFromTextBox(txtIntensity2_1);
                 int ch2 = GetIntensityFromTextBox(txtIntensity2_2);
                 int ch3 = GetIntensityFromTextBox(txtIntensity2_3);
                 int ch4 = GetIntensityFromTextBox(txtIntensity2_4);
-
-                // 生成命令字符串
                 string command = $"S{ch1:D3}T{ch2:D3}T{ch3:D3}T{ch4:D3}TC#";
-
-                // 更新文本框
                 txtOrderSubPort.Text = command;
-                 
-                // 可选：如果串口已打开，自动发送命令
-                // if (sPortSub[0] != null && 
-                //     sPortSub[0].IsOpen)
-                // {
-                //     sPortSub[0].Write(command);
-                // }
             }
-            catch (Exception ex)
-            {
-                // 忽略转换错误
-            }
+            catch { }
         }
 
         /// <summary>
