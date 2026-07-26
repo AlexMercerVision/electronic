@@ -398,7 +398,7 @@
             this.txtIntensity2_4.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_4.TabIndex = 1;
             this.txtIntensity2_4.Text = "255";
-            this.txtIntensity2_4.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
+            this.txtIntensity2_4.TextChanged += new System.EventHandler(this.txtIntensityCh2_TextChanged);
             this.txtIntensity2_4.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             // 
             // txtIntensity2_3
@@ -408,7 +408,7 @@
             this.txtIntensity2_3.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_3.TabIndex = 1;
             this.txtIntensity2_3.Text = "255";
-            this.txtIntensity2_3.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
+            this.txtIntensity2_3.TextChanged += new System.EventHandler(this.txtIntensityCh2_TextChanged);
             this.txtIntensity2_3.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             // 
             // txtIntensity2_2
@@ -418,7 +418,7 @@
             this.txtIntensity2_2.Size = new System.Drawing.Size(50, 21);
             this.txtIntensity2_2.TabIndex = 1;
             this.txtIntensity2_2.Text = "255";
-            this.txtIntensity2_2.TextChanged += new System.EventHandler(this.txtIntensityCh1_TextChanged);
+            this.txtIntensity2_2.TextChanged += new System.EventHandler(this.txtIntensityCh2_TextChanged);
             this.txtIntensity2_2.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtIntensity2_KeyPress);
             // 
             // txtIntensity2_1

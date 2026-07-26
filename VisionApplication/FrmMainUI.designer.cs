@@ -250,8 +250,10 @@ namespace VisionApplication
             this.tbExposure = new System.Windows.Forms.TrackBar();
             this.chkGamma_UserMode = new System.Windows.Forms.CheckBox();
             this.chkGamma_Enable = new System.Windows.Forms.CheckBox();
+            this.chkLS_Sync = new System.Windows.Forms.CheckBox();
             this.chkAutoExposure = new System.Windows.Forms.CheckBox();
             this.cmbResulation = new System.Windows.Forms.ComboBox();
+            this.cmbLs_Channel = new System.Windows.Forms.ComboBox();
             this.cmbPixelFormat = new System.Windows.Forms.ComboBox();
             this.bnSetCamParam = new System.Windows.Forms.Button();
             this.label14 = new System.Windows.Forms.Label();
@@ -370,6 +372,7 @@ namespace VisionApplication
             this.btGetCalipFLParam = new System.Windows.Forms.Button();
             this.btExtractCaliperBase = new System.Windows.Forms.Button();
             this.btSetCalipFLParam = new System.Windows.Forms.Button();
+            this.label72 = new System.Windows.Forms.Label();
             this.label16 = new System.Windows.Forms.Label();
             this.panel6 = new System.Windows.Forms.Panel();
             this.nudCLPEdgeThre = new System.Windows.Forms.NumericUpDown();
@@ -415,6 +418,7 @@ namespace VisionApplication
             this.ClmnStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ClmnReason = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ClmnUser = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.label71 = new System.Windows.Forms.Label();
             this.label_JobResults_Percent = new System.Windows.Forms.Label();
             this.textBox_JobN_TotalAccept_Percent = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -437,8 +441,6 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
-            this.label71 = new System.Windows.Forms.Label();
-            this.label72 = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -2480,8 +2482,10 @@ namespace VisionApplication
             this.groupBox2.Controls.Add(this.tbExposure);
             this.groupBox2.Controls.Add(this.chkGamma_UserMode);
             this.groupBox2.Controls.Add(this.chkGamma_Enable);
+            this.groupBox2.Controls.Add(this.chkLS_Sync);
             this.groupBox2.Controls.Add(this.chkAutoExposure);
             this.groupBox2.Controls.Add(this.cmbResulation);
+            this.groupBox2.Controls.Add(this.cmbLs_Channel);
             this.groupBox2.Controls.Add(this.cmbPixelFormat);
             this.groupBox2.Controls.Add(this.bnSetCamParam);
             this.groupBox2.Controls.Add(this.label14);
@@ -2495,7 +2499,7 @@ namespace VisionApplication
             this.groupBox2.Controls.Add(this.label23);
             this.groupBox2.Controls.Add(this.label18);
             this.groupBox2.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.groupBox2.Location = new System.Drawing.Point(3, 36);
+            this.groupBox2.Location = new System.Drawing.Point(2, 36);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(346, 334);
             this.groupBox2.TabIndex = 21;
@@ -2613,7 +2617,7 @@ namespace VisionApplication
             0,
             0,
             131072});
-            this.nudGamma.Location = new System.Drawing.Point(221, 102);
+            this.nudGamma.Location = new System.Drawing.Point(179, 104);
             this.nudGamma.Maximum = new decimal(new int[] {
             4,
             0,
@@ -2631,7 +2635,7 @@ namespace VisionApplication
             // 
             // nudSharp
             // 
-            this.nudSharp.Location = new System.Drawing.Point(221, 78);
+            this.nudSharp.Location = new System.Drawing.Point(178, 80);
             this.nudSharp.Name = "nudSharp";
             this.nudSharp.Size = new System.Drawing.Size(63, 23);
             this.nudSharp.TabIndex = 91;
@@ -2644,7 +2648,7 @@ namespace VisionApplication
             // 
             // nudContrast
             // 
-            this.nudContrast.Location = new System.Drawing.Point(221, 130);
+            this.nudContrast.Location = new System.Drawing.Point(180, 132);
             this.nudContrast.Maximum = new decimal(new int[] {
             255,
             0,
@@ -2668,7 +2672,7 @@ namespace VisionApplication
             0,
             0,
             65536});
-            this.nudGain.Location = new System.Drawing.Point(217, 49);
+            this.nudGain.Location = new System.Drawing.Point(179, 51);
             this.nudGain.Maximum = new decimal(new int[] {
             20,
             0,
@@ -2686,7 +2690,7 @@ namespace VisionApplication
             // 
             // nudExposure
             // 
-            this.nudExposure.Location = new System.Drawing.Point(217, 21);
+            this.nudExposure.Location = new System.Drawing.Point(178, 23);
             this.nudExposure.Maximum = new decimal(new int[] {
             100000,
             0,
@@ -2714,7 +2718,7 @@ namespace VisionApplication
             this.tbGamma.Location = new System.Drawing.Point(63, 104);
             this.tbGamma.Maximum = 40;
             this.tbGamma.Name = "tbGamma";
-            this.tbGamma.Size = new System.Drawing.Size(151, 19);
+            this.tbGamma.Size = new System.Drawing.Size(116, 19);
             this.tbGamma.TabIndex = 15;
             this.tbGamma.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbGamma.Value = 1;
@@ -2727,7 +2731,7 @@ namespace VisionApplication
             this.tbSharp.Location = new System.Drawing.Point(63, 80);
             this.tbSharp.Maximum = 100;
             this.tbSharp.Name = "tbSharp";
-            this.tbSharp.Size = new System.Drawing.Size(151, 19);
+            this.tbSharp.Size = new System.Drawing.Size(116, 19);
             this.tbSharp.TabIndex = 15;
             this.tbSharp.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbSharp.Value = 1;
@@ -2740,7 +2744,7 @@ namespace VisionApplication
             this.tbBirghtness.Location = new System.Drawing.Point(65, 132);
             this.tbBirghtness.Maximum = 255;
             this.tbBirghtness.Name = "tbBirghtness";
-            this.tbBirghtness.Size = new System.Drawing.Size(151, 19);
+            this.tbBirghtness.Size = new System.Drawing.Size(114, 19);
             this.tbBirghtness.TabIndex = 15;
             this.tbBirghtness.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbBirghtness.Value = 250;
@@ -2753,7 +2757,7 @@ namespace VisionApplication
             this.tbGain.Location = new System.Drawing.Point(61, 51);
             this.tbGain.Maximum = 200;
             this.tbGain.Name = "tbGain";
-            this.tbGain.Size = new System.Drawing.Size(151, 19);
+            this.tbGain.Size = new System.Drawing.Size(118, 19);
             this.tbGain.TabIndex = 15;
             this.tbGain.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbGain.ValueChanged += new System.EventHandler(this.tbGain_ValueChanged);
@@ -2766,7 +2770,7 @@ namespace VisionApplication
             this.tbExposure.Maximum = 100000;
             this.tbExposure.Minimum = 1000;
             this.tbExposure.Name = "tbExposure";
-            this.tbExposure.Size = new System.Drawing.Size(151, 19);
+            this.tbExposure.Size = new System.Drawing.Size(118, 19);
             this.tbExposure.SmallChange = 100;
             this.tbExposure.TabIndex = 15;
             this.tbExposure.TickStyle = System.Windows.Forms.TickStyle.None;
@@ -2776,7 +2780,7 @@ namespace VisionApplication
             // chkGamma_UserMode
             // 
             this.chkGamma_UserMode.AutoSize = true;
-            this.chkGamma_UserMode.Location = new System.Drawing.Point(292, 112);
+            this.chkGamma_UserMode.Location = new System.Drawing.Point(296, 106);
             this.chkGamma_UserMode.Name = "chkGamma_UserMode";
             this.chkGamma_UserMode.Size = new System.Drawing.Size(54, 18);
             this.chkGamma_UserMode.TabIndex = 14;
@@ -2788,7 +2792,7 @@ namespace VisionApplication
             // chkGamma_Enable
             // 
             this.chkGamma_Enable.AutoSize = true;
-            this.chkGamma_Enable.Location = new System.Drawing.Point(292, 91);
+            this.chkGamma_Enable.Location = new System.Drawing.Point(248, 105);
             this.chkGamma_Enable.Name = "chkGamma_Enable";
             this.chkGamma_Enable.Size = new System.Drawing.Size(54, 18);
             this.chkGamma_Enable.TabIndex = 14;
@@ -2797,10 +2801,21 @@ namespace VisionApplication
             this.chkGamma_Enable.CheckedChanged += new System.EventHandler(this.chkGamma_Enable_CheckedChanged);
             this.chkGamma_Enable.Click += new System.EventHandler(this.chkAutoExposure_Click);
             // 
+            // chkLS_Sync
+            // 
+            this.chkLS_Sync.AutoSize = true;
+            this.chkLS_Sync.Location = new System.Drawing.Point(297, 136);
+            this.chkLS_Sync.Name = "chkLS_Sync";
+            this.chkLS_Sync.Size = new System.Drawing.Size(54, 18);
+            this.chkLS_Sync.TabIndex = 14;
+            this.chkLS_Sync.Text = "同步";
+            this.chkLS_Sync.UseVisualStyleBackColor = true;
+            this.chkLS_Sync.Click += new System.EventHandler(this.chkLS_Sync_Click);
+            // 
             // chkAutoExposure
             // 
             this.chkAutoExposure.AutoSize = true;
-            this.chkAutoExposure.Location = new System.Drawing.Point(296, 21);
+            this.chkAutoExposure.Location = new System.Drawing.Point(284, 25);
             this.chkAutoExposure.Name = "chkAutoExposure";
             this.chkAutoExposure.Size = new System.Drawing.Size(54, 18);
             this.chkAutoExposure.TabIndex = 14;
@@ -2818,11 +2833,25 @@ namespace VisionApplication
             "1536*1024",
             "1024*768",
             "768*512"});
-            this.cmbResulation.Location = new System.Drawing.Point(240, 161);
+            this.cmbResulation.Location = new System.Drawing.Point(241, 183);
             this.cmbResulation.Name = "cmbResulation";
             this.cmbResulation.Size = new System.Drawing.Size(93, 22);
             this.cmbResulation.TabIndex = 13;
             this.cmbResulation.SelectedIndexChanged += new System.EventHandler(this.cmbResulation_SelectedIndexChanged);
+            // 
+            // cmbLs_Channel
+            // 
+            this.cmbLs_Channel.FormattingEnabled = true;
+            this.cmbLs_Channel.Items.AddRange(new object[] {
+            "Ch1",
+            "Ch2",
+            "Ch3",
+            "Ch4"});
+            this.cmbLs_Channel.Location = new System.Drawing.Point(247, 134);
+            this.cmbLs_Channel.Name = "cmbLs_Channel";
+            this.cmbLs_Channel.Size = new System.Drawing.Size(46, 22);
+            this.cmbLs_Channel.TabIndex = 13;
+            this.cmbLs_Channel.SelectedIndexChanged += new System.EventHandler(this.cmbLs_Channel_SelectedIndexChanged);
             // 
             // cmbPixelFormat
             // 
@@ -2830,7 +2859,7 @@ namespace VisionApplication
             this.cmbPixelFormat.Items.AddRange(new object[] {
             "黑白",
             "彩色"});
-            this.cmbPixelFormat.Location = new System.Drawing.Point(75, 161);
+            this.cmbPixelFormat.Location = new System.Drawing.Point(76, 183);
             this.cmbPixelFormat.Name = "cmbPixelFormat";
             this.cmbPixelFormat.Size = new System.Drawing.Size(93, 22);
             this.cmbPixelFormat.TabIndex = 13;
@@ -2852,7 +2881,7 @@ namespace VisionApplication
             this.label14.AutoSize = true;
             this.label14.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label14.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label14.Location = new System.Drawing.Point(185, 165);
+            this.label14.Location = new System.Drawing.Point(186, 187);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(49, 14);
             this.label14.TabIndex = 11;
@@ -2874,7 +2903,7 @@ namespace VisionApplication
             this.图像格式.AutoSize = true;
             this.图像格式.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.图像格式.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.图像格式.Location = new System.Drawing.Point(6, 164);
+            this.图像格式.Location = new System.Drawing.Point(7, 186);
             this.图像格式.Name = "图像格式";
             this.图像格式.Size = new System.Drawing.Size(63, 14);
             this.图像格式.TabIndex = 11;
@@ -2929,7 +2958,7 @@ namespace VisionApplication
             this.label24.AutoSize = true;
             this.label24.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label24.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label24.Location = new System.Drawing.Point(276, 54);
+            this.label24.Location = new System.Drawing.Point(248, 56);
             this.label24.Name = "label24";
             this.label24.Size = new System.Drawing.Size(21, 14);
             this.label24.TabIndex = 9;
@@ -2940,7 +2969,7 @@ namespace VisionApplication
             this.label23.AutoSize = true;
             this.label23.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label23.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.label23.Location = new System.Drawing.Point(276, 22);
+            this.label23.Location = new System.Drawing.Point(248, 24);
             this.label23.Name = "label23";
             this.label23.Size = new System.Drawing.Size(21, 14);
             this.label23.TabIndex = 9;
@@ -4422,6 +4451,16 @@ namespace VisionApplication
             this.btSetCalipFLParam.UseVisualStyleBackColor = true;
             this.btSetCalipFLParam.Click += new System.EventHandler(this.btSetCalipFLParam_Click);
             // 
+            // label72
+            // 
+            this.label72.AutoSize = true;
+            this.label72.ForeColor = System.Drawing.Color.Salmon;
+            this.label72.Location = new System.Drawing.Point(10, 43);
+            this.label72.Name = "label72";
+            this.label72.Size = new System.Drawing.Size(67, 14);
+            this.label72.TabIndex = 97;
+            this.label72.Text = "定位方法";
+            // 
             // label16
             // 
             this.label16.AutoSize = true;
@@ -4967,6 +5006,18 @@ namespace VisionApplication
             this.ClmnUser.Name = "ClmnUser";
             this.ClmnUser.Width = 60;
             // 
+            // label71
+            // 
+            this.label71.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label71.Font = new System.Drawing.Font("微软雅黑", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label71.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.label71.Location = new System.Drawing.Point(90, 130);
+            this.label71.Name = "label71";
+            this.label71.Size = new System.Drawing.Size(142, 38);
+            this.label71.TabIndex = 0;
+            this.label71.Text = "博奕精工 ";
+            // 
             // label_JobResults_Percent
             // 
             this.label_JobResults_Percent.Location = new System.Drawing.Point(216, 0);
@@ -5181,28 +5232,6 @@ namespace VisionApplication
             this.timerIOOut.Enabled = true;
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
-            // 
-            // label71
-            // 
-            this.label71.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label71.Font = new System.Drawing.Font("微软雅黑", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label71.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label71.Location = new System.Drawing.Point(90, 130);
-            this.label71.Name = "label71";
-            this.label71.Size = new System.Drawing.Size(142, 38);
-            this.label71.TabIndex = 0;
-            this.label71.Text = "博奕精工 ";
-            // 
-            // label72
-            // 
-            this.label72.AutoSize = true;
-            this.label72.ForeColor = System.Drawing.Color.Salmon;
-            this.label72.Location = new System.Drawing.Point(10, 43);
-            this.label72.Name = "label72";
-            this.label72.Size = new System.Drawing.Size(67, 14);
-            this.label72.TabIndex = 97;
-            this.label72.Text = "定位方法";
             // 
             // FrmMainUI
             // 
@@ -5734,5 +5763,7 @@ namespace VisionApplication
         private System.Windows.Forms.ComboBox cmbCLPPol2;
         private System.Windows.Forms.Label label71;
         private System.Windows.Forms.Label label72;
+        private System.Windows.Forms.ComboBox cmbLs_Channel;
+        private System.Windows.Forms.CheckBox chkLS_Sync;
     }
 }

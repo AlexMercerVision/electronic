@@ -4779,9 +4779,9 @@ namespace VisionApplication
                 UpdateUIFromPMAParam();
             }
             UpdateCamParam2UI();
-
+            InitializeLightBrightness();
             //精定位界面初始化
-            if(cup.p_DL.gpuID==1)
+            if (cup.p_DL.gpuID==1)
             {
                 rdBT_Caliper.Checked = true;
             }

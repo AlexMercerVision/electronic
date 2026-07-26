@@ -523,12 +523,16 @@ namespace VisionApplication
                 {
                     cup.p_Paf.strConSavePath = tmppath;
                 }
-                tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1);
+                try { tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1); }
+                catch { };
+                
                 if (File.Exists(tmppath))
                 {
                     cup.p_Paf.strErrPath = tmppath;
                 }
-                tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1);
+                try { tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1); }
+                catch { }  ;
+             
                 if (File.Exists(tmppath))
                 {
                     cup.p_Paf.strExportPath = tmppath;
@@ -8137,7 +8141,39 @@ namespace VisionApplication
             }
         }
 
-      
+        private void cmbLs_Channel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(iJobIndex==0)
+            {
+                tbBirghtness.Value = (int)cup.p_LS.indent[cmbLs_Channel.SelectedIndex+1];
+                nudContrast.Value = (decimal)cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1];
+            }
+            else
+            {
+                tbBirghtness.Value = (int)cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1];
+                nudContrast.Value = (decimal)cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1];
+            }         
+          
+        }
+
+        private void chkLS_Sync_Click(object sender, EventArgs e)
+        {
+             
+            bool bSucc = true;
+            bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)tbBirghtness.Value);
+
+            
+            if (bSucc)
+            { 
+            }
+            else
+            {
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = "";
+                operLog.strOperEvent = "修改光源亮度参数";
+                AddLog();
+            }
+        }
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {
