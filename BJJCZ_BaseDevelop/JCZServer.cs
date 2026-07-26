@@ -7566,6 +7566,51 @@ namespace BJJCZ_BaseDevelop
 
             return thickened;
         }
+
+        /// <summary>
+        /// 强制重新加载指定卡片的背景图，从磁盘读取最新的图片并更新显示。
+        /// 无论当前是否已加载，都会重新读取文件（若文件不存在则保留旧图）。
+        /// </summary>
+        /// <param name="card">卡片索引（0 或 1）</param>
+        public void ForceReloadBackground(int card)
+        {
+            if (card < 0 || card >= originalImage.Length)
+                return;
+
+            // 释放旧图
+            if (originalImage[card] != null)
+            {
+                originalImage[card].Dispose();
+                originalImage[card] = null;
+            }
+
+            // 强制加载（EnsurePreviewBackgroundLoaded 会根据文件是否存在加载）
+            EnsurePreviewBackgroundLoaded(card);
+
+            // 更新到对应的 PictureBox
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+            if (originalImage[card] != null)
+            {
+                RectangleF bgBounds = GetBackgroundWorldBounds(card);
+                targetBox.SetWorldImage(originalImage[card],
+                    bgBounds.Left, bgBounds.Right,
+                    bgBounds.Top, bgBounds.Bottom,
+                    autoFit: false);
+                targetBox.Invalidate();
+                AddMsg($"卡{card + 1} 更新模板图");
+            }
+            else
+            {
+                AddMsg($"卡{card + 1} 更新背景失败");
+            }
+        }
+
+        //强制更新背景
+        private void Win_ReloadBGImg_Click(object sender, EventArgs e)
+        {
+            ForceReloadBackground(0);
+            ForceReloadBackground(1);
+        }
         #endregion
 
         #region 实体表格与对象信息
@@ -10630,5 +10675,6 @@ namespace BJJCZ_BaseDevelop
         // 可选：添加一个窗口布局重置菜单项
         #endregion
 
+     
     }
 }

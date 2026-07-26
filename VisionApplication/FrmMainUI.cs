@@ -3154,7 +3154,9 @@ namespace VisionApplication
                         }
                     case "btFun_Preview":   // 实时预览  2024年7月11日 待验证
                         {
-                            //     AddLog();
+                            //需要添加条件
+                            /*if (!bRunCondiction(0))
+                                return;*/
                             operLog.strOperEvent = "预览图像";
                             PreviewImage(0);
                             break;
@@ -6937,6 +6939,10 @@ namespace VisionApplication
         private void StartPreview()
         {
             if (vpWin._iTaskType == 1 && !vpWin.bMainTaskFinished)  //已经在实时预览
+            {
+                return;
+            }
+            else if (vpWin._iTaskType == 5)  //VP相关设置
             {
                 return;
             }

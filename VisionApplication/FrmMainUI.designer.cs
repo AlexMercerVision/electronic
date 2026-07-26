@@ -3735,7 +3735,7 @@ namespace VisionApplication
             this.btCalib.Name = "btCalib";
             this.btCalib.Size = new System.Drawing.Size(64, 62);
             this.btCalib.TabIndex = 10;
-            this.btCalib.Text = "标定";
+            this.btCalib.Text = "重标定";
             this.btCalib.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.toolTip1.SetToolTip(this.btCalib, "不标刻，不更新坐标，标定工具直接标定");
             this.btCalib.UseVisualStyleBackColor = true;
@@ -3751,7 +3751,7 @@ namespace VisionApplication
             this.btUpdateCalibDate.Name = "btUpdateCalibDate";
             this.btUpdateCalibDate.Size = new System.Drawing.Size(62, 62);
             this.btUpdateCalibDate.TabIndex = 10;
-            this.btUpdateCalibDate.Text = "更新坐标";
+            this.btUpdateCalibDate.Text = "采图标定";
             this.btUpdateCalibDate.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.toolTip1.SetToolTip(this.btUpdateCalibDate, "不标刻模板，更新坐标后标定");
             this.btUpdateCalibDate.UseVisualStyleBackColor = true;
@@ -3767,7 +3767,7 @@ namespace VisionApplication
             this.btMarkTemplate.Name = "btMarkTemplate";
             this.btMarkTemplate.Size = new System.Drawing.Size(64, 62);
             this.btMarkTemplate.TabIndex = 10;
-            this.btMarkTemplate.Text = "标刻模版";
+            this.btMarkTemplate.Text = "标刻标定";
             this.btMarkTemplate.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.toolTip1.SetToolTip(this.btMarkTemplate, "标刻模板后再标定");
             this.btMarkTemplate.UseVisualStyleBackColor = true;

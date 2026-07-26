@@ -3148,6 +3148,7 @@ namespace VisionApplication
                     int jobIndex = iJobIndex;
                     if (jobIndex >= 0 && jobIndex < MaxLaserCards)
                     {
+                        bReLoadBGImg = true;
                         int card = GetCardSNByJob(jobIndex);
                        
                         vpWin.GetAlignRegion(ref alImParam[card], card);
@@ -3191,8 +3192,10 @@ namespace VisionApplication
                 if (!CheckPMATrainedWithPrompt(iJobIndex))
                     return;
                 int jobIndex = iJobIndex;
+                
                 if (jobIndex >= 0 && jobIndex < MaxLaserCards)
                 {
+                    bReLoadBGImg = true;
                     int card = GetCardSNByJob(jobIndex);
                     vpWin.GetAlignRegion(ref alImParam[card], card);
                     await SendAlignParamToJCZServer(card);
@@ -4779,7 +4782,7 @@ namespace VisionApplication
                 UpdateUIFromPMAParam();
             }
             UpdateCamParam2UI();
-            InitializeLightBrightness();
+           
             //精定位界面初始化
             if (cup.p_DL.gpuID==1)
             {

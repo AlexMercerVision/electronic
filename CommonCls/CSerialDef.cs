@@ -233,18 +233,11 @@ namespace CommonCls
             return true;
         }
         //设置通道亮度
-        public bool SetChIntensity(int iJobIndex,int channel, int intensity)
+        public bool SetChIntensity( int channel, int intensity, SerialPort sPort)
         {
             try {
-                switch (iJobIndex)
-                {
-                    case 0:
-                        SetIntensity(channel, intensity, sPortMain);
-                        break;
-                    case 1:
-                        SetIntensity(channel, intensity, sPortSub[0]);
-                        break;
-                }
+                SetIntensity(channel, intensity, sPort);
+                 
                 return true;
             }
             catch
