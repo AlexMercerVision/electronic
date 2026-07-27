@@ -10521,6 +10521,108 @@ namespace BJJCZ_BaseDevelop
         }*/
         private void File_OpenEZCad_Click(object sender, EventArgs e)
         {
+            int card = currentCard;  // 仍以当前选中卡作为打开EZcad时的默认加载文件
+
+            try
+            {
+                // ===== 新增：先保存两块板卡的所有数据 =====
+                AddMsg("正在保存 A 面（卡1）和 B 面（卡2）的当前模板...");
+                bool allSaved = true;
+
+                for (int i = 0; i < 2; i++)
+                {
+                    // 如果当前卡没有有效文件路径，尝试给出默认路径（可选）
+                    if (string.IsNullOrWhiteSpace(currentFilePath[i]))
+                    {
+                        string defaultPath = Path.Combine(@"D:\EZDModel", i == 0 ? "route0.ezd" : "route1.ezd");
+                        AddMsg($"卡{i + 1} 无原始路径，使用默认路径: {defaultPath}");
+                        currentFilePath[i] = defaultPath;
+                    }
+
+                    // 调用保存方法（内部会处理预览锚点清理、等待空闲等）
+                    int saveErr = SaveEntLibToFileWithoutPreviewAnchor(i, currentFilePath[i]);
+                    if (saveErr != 0)
+                    {
+                        AddMsg($"保存卡{i + 1} 模板失败: {JczLmc.GetErrorText(saveErr)}");
+                        allSaved = false;
+                    }
+                    else
+                    {
+                        AddMsg($"卡{i + 1} 模板已保存至: {currentFilePath[i]}");
+                    }
+                }
+
+                if (!allSaved)
+                {
+                    MessageBox.Show("保存模板失败，请检查文件路径或权限。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;  // 保存失败则中止打开EZcad
+                }
+
+                // ===== 以下为原逻辑：关闭板卡，启动EZcad =====
+                AddMsg($"正在关闭卡{card + 1}板卡连接，为启动EZcad做准备...");
+
+                // 停止任何正在进行的加工或红预览
+                if (bInMark[card]) { JczLmc.lmc1_StopMark(phyCardSN[card]); bInMark[card] = false; }
+                if (bInRed[card]) { JczLmc.lmc1_StopMark(phyCardSN[card]); bInRed[card] = false; }
+
+                // 关闭当前板卡（通过SDK）
+                int closeErr = JczLmc.lmc1_Close();  // 注意原代码用CMDAna case2，但这里直接调用更可靠
+                if (closeErr != 0)
+                {
+                    AddMsg($"关闭板卡失败: {JczLmc.GetErrorText(closeErr)}");
+                }
+                // 更新状态标志
+                JczInitErrs[card] = closeErr;
+                AddMsg($"卡{card + 1}板卡已关闭");
+
+                // 查找EZcad可执行文件
+                string ezcadPath = FindEZcadExecutable();
+                if (string.IsNullOrEmpty(ezcadPath) || !File.Exists(ezcadPath))
+                {
+                    AddMsg("未找到EZcad软件（EzCad2.exe），请确认安装");
+                    ReinitializeBothCards();  // 恢复板卡
+                    return;
+                }
+
+                // 启动EZcad，传入当前卡的文件路径（也可以不传，让用户手动打开）
+                string fileToOpen = currentFilePath[card];
+                Process ezcadProcess = new Process();
+                ezcadProcess.StartInfo.FileName = ezcadPath;
+                ezcadProcess.StartInfo.UseShellExecute = true;
+                ezcadProcess.StartInfo.WorkingDirectory = Path.GetDirectoryName(ezcadPath);
+                if (!string.IsNullOrEmpty(fileToOpen) && File.Exists(fileToOpen))
+                {
+                    ezcadProcess.StartInfo.Arguments = $"\"{fileToOpen}\"";
+                    AddMsg($"将打开文件: {fileToOpen}");
+                }
+                else
+                {
+                    AddMsg("当前卡没有有效的文件路径，EZcad将以空文档启动");
+                }
+
+                ezcadProcess.Start();
+                AddMsg("EZcad已启动，请在编辑完成后关闭EZcad，服务端将自动重新连接板卡");
+
+                // 后台线程等待EZcad退出后重新初始化板卡
+                Task.Run(() =>
+                {
+                    ezcadProcess.WaitForExit();
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        AddMsg("EZcad已关闭，正在重新初始化板卡...");
+                        ReinitializeBothCards();
+                        // 可选：重新加载之前保存的模板（但ReinitializeBothCards内部已加载）
+                    }));
+                });
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"打开EZcad时发生异常: {ex.Message}");
+                ReinitializeBothCards();
+            }
+        }
+        /*private void File_OpenEZCad_Click(object sender, EventArgs e)
+        {
             int card = currentCard;  // 使用当前选中的板卡
 
             try
@@ -10588,7 +10690,7 @@ namespace BJJCZ_BaseDevelop
                 // 发生异常时也要尝试恢复板卡连接，保证服务端可用
                 ReinitializeBothCards();
             }
-        }
+        }*/
         /// <summary>
         /// 查找 EZcad 可执行文件路径（EzCad2.exe）
         /// </summary>

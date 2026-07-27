@@ -336,7 +336,10 @@ namespace VisionApplication
                         operLog.strFailReason =  VPPinitErr(rts.initStatus.iVPPStatus);
                         AddLog();
                     }
-                   
+                    strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
+                    toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
+                    this.Text = "镭射除胶 " + strEngineerName;
+
                 }
                 catch
                 {
@@ -8042,8 +8045,12 @@ namespace VisionApplication
                 strLaserParamDirDest = Path.Combine(LaserParamDir, "EZCAD.CFG"); ;
                 strLaserParamDirSrc = Path.Combine(".\\JCZ\\", "EZCAD.CFG");
                 File.Copy(strLaserParamDirSrc, strLaserParamDirDest, true);
-
                 CopyFolderToParent(".\\JCZ\\plug", LaserParamDir);
+
+                cup.p_DL.modelPath = rootDir;
+                strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
+                toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
+             //   FrmMainUI.
 
             }
             catch (Exception ex)

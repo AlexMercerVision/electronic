@@ -891,9 +891,7 @@ namespace VisionControl
         
         public CogCalibNPointToNPointTool _NpointCalibTool
         {
-            get
-            {
-                // 假设 9 点标定工具位于 Job 0 的 CogToolBlock 中
+            get {                // 假设 9 点标定工具位于 Job 0 的 CogToolBlock 中
                   return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool); 
 
             }
@@ -1195,6 +1193,8 @@ namespace VisionControl
               //  MessageBox.Show(ex.Message);
             }
         }
+
+        CogCalibNPointToNPointTool[] nPointTool = new CogCalibNPointToNPointTool[2];
 
         public void ExtraTrainImage(int iJobIndex,bool bFrmCam,bool bLock)
         {
