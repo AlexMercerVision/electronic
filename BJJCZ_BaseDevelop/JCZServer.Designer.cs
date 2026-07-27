@@ -35,6 +35,8 @@
             this.Win_Route = new System.Windows.Forms.ToolStripMenuItem();
             this.Win_Oper = new System.Windows.Forms.ToolStripMenuItem();
             this.win_Reset = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.Win_ReloadBGImg = new System.Windows.Forms.ToolStripMenuItem();
             this.File_OpenEZCad = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
@@ -97,8 +99,7 @@
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
-            this.Win_ReloadBGImg = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.Win_RecorevyView = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.panelImage.SuspendLayout();
@@ -169,28 +170,28 @@
             // File_LoadEZD
             // 
             this.File_LoadEZD.Name = "File_LoadEZD";
-            this.File_LoadEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_LoadEZD.Size = new System.Drawing.Size(159, 22);
             this.File_LoadEZD.Text = "加载EZD文件";
             this.File_LoadEZD.Click += new System.EventHandler(this.File_LoadEZD_Click);
             // 
             // File_QuickSaveEZD
             // 
             this.File_QuickSaveEZD.Name = "File_QuickSaveEZD";
-            this.File_QuickSaveEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_QuickSaveEZD.Size = new System.Drawing.Size(159, 22);
             this.File_QuickSaveEZD.Text = "保存EZD文件";
             this.File_QuickSaveEZD.Click += new System.EventHandler(this.File_QuickSaveEZD_Click);
             // 
             // File_SaveEZD
             // 
             this.File_SaveEZD.Name = "File_SaveEZD";
-            this.File_SaveEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_SaveEZD.Size = new System.Drawing.Size(159, 22);
             this.File_SaveEZD.Text = "另存为EZD文件";
             this.File_SaveEZD.Click += new System.EventHandler(this.File_SaveEZD_Click);
             // 
             // File_ExportFigure
             // 
             this.File_ExportFigure.Name = "File_ExportFigure";
-            this.File_ExportFigure.Size = new System.Drawing.Size(180, 22);
+            this.File_ExportFigure.Size = new System.Drawing.Size(159, 22);
             this.File_ExportFigure.Text = "导出图像";
             this.File_ExportFigure.Click += new System.EventHandler(this.File_ExportFigure_Click);
             // 
@@ -228,7 +229,8 @@
             this.Win_Oper,
             this.win_Reset,
             this.toolStripSeparator1,
-            this.Win_ReloadBGImg});
+            this.Win_ReloadBGImg,
+            this.Win_RecorevyView});
             this.Win.Name = "Win";
             this.Win.Size = new System.Drawing.Size(44, 22);
             this.Win.Text = "窗口";
@@ -275,6 +277,18 @@
             this.win_Reset.Size = new System.Drawing.Size(180, 22);
             this.win_Reset.Text = "重置";
             this.win_Reset.Click += new System.EventHandler(this.Win_Reset_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            // 
+            // Win_ReloadBGImg
+            // 
+            this.Win_ReloadBGImg.Name = "Win_ReloadBGImg";
+            this.Win_ReloadBGImg.Size = new System.Drawing.Size(180, 22);
+            this.Win_ReloadBGImg.Text = "更新背景";
+            this.Win_ReloadBGImg.Click += new System.EventHandler(this.Win_ReloadBGImg_Click);
             // 
             // File_OpenEZCad
             // 
@@ -972,17 +986,12 @@
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
             // 
-            // Win_ReloadBGImg
+            // Win_RecorevyView
             // 
-            this.Win_ReloadBGImg.Name = "Win_ReloadBGImg";
-            this.Win_ReloadBGImg.Size = new System.Drawing.Size(180, 22);
-            this.Win_ReloadBGImg.Text = "更新背景";
-            this.Win_ReloadBGImg.Click += new System.EventHandler(this.Win_ReloadBGImg_Click);
-            // 
-            // toolStripSeparator1
-            // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            this.Win_RecorevyView.Name = "Win_RecorevyView";
+            this.Win_RecorevyView.Size = new System.Drawing.Size(180, 22);
+            this.Win_RecorevyView.Text = "恢复视角";
+            this.Win_RecorevyView.Click += new System.EventHandler(this.Win_RecorevyView_Click);
             // 
             // JCZServer
             // 
@@ -1111,5 +1120,6 @@
         private System.Windows.Forms.TextBox txtMv_Value;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem Win_ReloadBGImg;
+        private System.Windows.Forms.ToolStripMenuItem Win_RecorevyView;
     }
 }

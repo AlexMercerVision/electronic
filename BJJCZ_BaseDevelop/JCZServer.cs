@@ -7611,6 +7611,39 @@ namespace BJJCZ_BaseDevelop
             ForceReloadBackground(0);
             ForceReloadBackground(1);
         }
+
+
+        /// <summary>
+        /// 恢复指定卡片的预览视图到初始化视角（重置缩放与平移）
+        /// </summary>
+        /// <param name="card">卡片索引（0 或 1）</param>
+        public void RestoreDefaultView(int card)
+        {
+            if (card < 0 || card >= 2)
+                return;
+
+            CoordPictureBox targetBox = (card == 0) ? pictureBox1 : pictureBox2;
+            if (targetBox == null || targetBox.IsDisposed)
+                return;
+
+            // 重新设置世界视图边界为初始化时的默认值（-35, -50, 60, 90）
+            targetBox.SetWorldViewBounds(PreviewViewBounds);
+
+            // 可选：重新设置画布边界（虽然不会变化，但确保一致性）
+            targetBox.SetCanvasBounds(EzcadCanvasBounds);
+
+            // 强制刷新控件
+            targetBox.Invalidate();
+            targetBox.Update();
+
+            AddMsg($"卡{card + 1} 恢复视图");
+        }
+
+        private void Win_RecorevyView_Click(object sender, EventArgs e)
+        {
+            RestoreDefaultView(0);
+            RestoreDefaultView(1);
+        }
         #endregion
 
         #region 实体表格与对象信息
@@ -10672,9 +10705,10 @@ namespace BJJCZ_BaseDevelop
         }
 
 
+
         // 可选：添加一个窗口布局重置菜单项
         #endregion
 
-     
+      
     }
 }
