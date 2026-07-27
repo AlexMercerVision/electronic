@@ -40,18 +40,19 @@ namespace VisionControl
         {
             try
             {
-                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
-                int nP = calib_NP2NP.Calibration.NumPoints;
+
+                nPointTool[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                int nP = nPointTool[jobIndex].Calibration.NumPoints;
                 if (dCoor == null || dCoor.Length != nP * 4)
                 {
                     dCoor = new double[nP * 4];
                 }
                 for (int i = 0; i < nP; i++)
                 {
-                    dCoor[i * 4] = calib_NP2NP.Calibration.GetUncalibratedPointX(i);
-                    dCoor[i * 4 + 1] = calib_NP2NP.Calibration.GetUncalibratedPointY(i);
-                    dCoor[i * 4 + 2] = calib_NP2NP.Calibration.GetRawCalibratedPointX(i);
-                    dCoor[i * 4 + 3] = calib_NP2NP.Calibration.GetRawCalibratedPointY(i);
+                    dCoor[i * 4] = nPointTool[jobIndex].Calibration.GetUncalibratedPointX(i);
+                    dCoor[i * 4 + 1] = nPointTool[jobIndex].Calibration.GetUncalibratedPointY(i);
+                    dCoor[i * 4 + 2] = nPointTool[jobIndex].Calibration.GetRawCalibratedPointX(i);
+                    dCoor[i * 4 + 3] = nPointTool[jobIndex].Calibration.GetRawCalibratedPointY(i);
                 }
                 return true;
             }
@@ -70,17 +71,17 @@ namespace VisionControl
         {
             try
             {
-                CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                nPointTool[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
                 int nP = dCoor.Length / 4;
-                calib_NP2NP.Calibration.NumPoints = nP;
+                nPointTool[jobIndex].Calibration.NumPoints = nP;
                 //  calib_NP2NP.Calibration.
                 for (int i = 0; i < nP; i++)
                 {
                     //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
-                    calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
-                    calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
-                    calib_NP2NP.Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
-                    calib_NP2NP.Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
+                    nPointTool[jobIndex].Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
+                    nPointTool[jobIndex].Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
+                    nPointTool[jobIndex].Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
+                    nPointTool[jobIndex].Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
                 }
             }
             catch (Exception ex)
@@ -131,13 +132,13 @@ namespace VisionControl
         //2026年6月17日
         public bool Get9PointCalibRes(ref CalibRes calibRes, int jobIndex = 0)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+            nPointTool[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             try
             {
                 //  CalibRes calibRes = new CalibRes();
-                calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
-                calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
-                CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
+                calibRes.bCalib = nPointTool[jobIndex].Calibration.Calibrated;
+                calibRes.dErr = nPointTool[jobIndex].Calibration.ComputedRMSError;
+                CogTransform2DLinear calibrationTransform = nPointTool[jobIndex].Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
                 if (calibrationTransform != null)
                 {
                     calibRes.dTR = calibrationTransform.Rotation;
@@ -159,28 +160,28 @@ namespace VisionControl
         //使用VP9点标定工具进行9点标定
         public CalibRes _9PointCalib(double[] dCoor, int jobIndex = 0)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+            nPointTool[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoor.Length / 4;
-            calib_NP2NP.Calibration.NumPoints = nP;
-            calib_NP2NP.CalibrationImage=acqFIFO.ci8gAcq[cup.p_CD.camInd[jobIndex]];  //设置标定图像
+            nPointTool[jobIndex].Calibration.NumPoints = nP;
+            nPointTool[jobIndex].CalibrationImage=acqFIFO.ci8gAcq[cup.p_CD.camInd[jobIndex]];  //设置标定图像
           
             //设置9点坐标
             for (int i = 0; i < nP; i++)
             {
                 //  calib_NP2NP.Calibration.AddPointPair(dCoor[i * 4], dCoor[i * 4 + 1], dCoor[i * 4 + 2], dCoor[i * 4 + 3]);
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
-                calib_NP2NP.Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
-                calib_NP2NP.Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
+                nPointTool[jobIndex].Calibration.SetUncalibratedPointX(i, dCoor[i * 4]);
+                nPointTool[jobIndex].Calibration.SetUncalibratedPointY(i, dCoor[i * 4 + 1]);
+                nPointTool[jobIndex].Calibration.SetRawCalibratedPointX(i, dCoor[i * 4 + 2]);
+                nPointTool[jobIndex].Calibration.SetRawCalibratedPointY(i, dCoor[i * 4 + 3]);
             }
             try
             {
                 //执行标定
-                calib_NP2NP.Calibration.Calibrate();
+                nPointTool[jobIndex].Calibration.Calibrate();
                 CalibRes calibRes = new CalibRes();
-                calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
-                calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
-                CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
+                calibRes.bCalib = nPointTool[jobIndex].Calibration.Calibrated;
+                calibRes.dErr = nPointTool[jobIndex].Calibration.ComputedRMSError;
+                CogTransform2DLinear calibrationTransform = nPointTool[jobIndex].Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
 
                 calibRes.dTR = calibrationTransform.Rotation;
                 calibRes.dTX = calibrationTransform.TranslationX;
@@ -202,22 +203,22 @@ namespace VisionControl
         //使用VP9点标定工具进行9点标定，图像坐标与激光坐标分开传入
         public CalibRes _9PointCalib2(double[] dCoorIm, double[] dCoorLaser, int jobIndex = 0)
         {
-            CogCalibNPointToNPointTool calib_NP2NP = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+            nPointTool[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
             int nP = dCoorIm.Length / 2;
-            calib_NP2NP.Calibration.NumPoints = nP;
+            nPointTool[jobIndex].Calibration.NumPoints = nP;
             for (int i = 0; i < nP; i++)
             {
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoorIm[i * 2]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorIm[i * 2 + 1]);
-                calib_NP2NP.Calibration.SetUncalibratedPointX(i, dCoorLaser[i * 2]);
-                calib_NP2NP.Calibration.SetUncalibratedPointY(i, dCoorLaser[i * 2 + 1]);
+                nPointTool[jobIndex].Calibration.SetUncalibratedPointX(i, dCoorIm[i * 2]);
+                nPointTool[jobIndex].Calibration.SetUncalibratedPointY(i, dCoorIm[i * 2 + 1]);
+                nPointTool[jobIndex].Calibration.SetUncalibratedPointX(i, dCoorLaser[i * 2]);
+                nPointTool[jobIndex].Calibration.SetUncalibratedPointY(i, dCoorLaser[i * 2 + 1]);
             }
 
-            calib_NP2NP.Calibration.Calibrate();
+            nPointTool[jobIndex].Calibration.Calibrate();
             CalibRes calibRes = new CalibRes();
-            calibRes.bCalib = calib_NP2NP.Calibration.Calibrated;
-            calibRes.dErr = calib_NP2NP.Calibration.ComputedRMSError;
-            CogTransform2DLinear calibrationTransform = calib_NP2NP.Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
+            calibRes.bCalib = nPointTool[jobIndex].Calibration.Calibrated;
+            calibRes.dErr = nPointTool[jobIndex].Calibration.ComputedRMSError;
+            CogTransform2DLinear calibrationTransform = nPointTool[jobIndex].Calibration.GetComputedUncalibratedFromCalibratedTransform() as CogTransform2DLinear;
             calibRes.dTR = calibrationTransform.Rotation;
             calibRes.dTX = calibrationTransform.TranslationX;
             calibRes.dTY = calibrationTransform.TranslationY;

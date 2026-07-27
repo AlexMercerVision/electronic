@@ -418,7 +418,6 @@ namespace VisionApplication
             this.ClmnStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ClmnReason = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ClmnUser = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.label71 = new System.Windows.Forms.Label();
             this.label_JobResults_Percent = new System.Windows.Forms.Label();
             this.textBox_JobN_TotalAccept_Percent = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -516,7 +515,6 @@ namespace VisionApplication
             this.splitContainer4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
             this.splitContainer6.Panel1.SuspendLayout();
-            this.splitContainer6.Panel2.SuspendLayout();
             this.splitContainer6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).BeginInit();
             this.groupBox1.SuspendLayout();
@@ -4945,7 +4943,6 @@ namespace VisionApplication
             this.splitContainer6.Panel2.BackColor = System.Drawing.Color.White;
             this.splitContainer6.Panel2.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("splitContainer6.Panel2.BackgroundImage")));
             this.splitContainer6.Panel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.splitContainer6.Panel2.Controls.Add(this.label71);
             this.splitContainer6.Panel2.Resize += new System.EventHandler(this.splitContainer6_Panel2_Resize);
             this.splitContainer6.Size = new System.Drawing.Size(748, 175);
             this.splitContainer6.SplitterDistance = 557;
@@ -5005,18 +5002,6 @@ namespace VisionApplication
             this.ClmnUser.MinimumWidth = 8;
             this.ClmnUser.Name = "ClmnUser";
             this.ClmnUser.Width = 60;
-            // 
-            // label71
-            // 
-            this.label71.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label71.Font = new System.Drawing.Font("微软雅黑", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label71.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.label71.Location = new System.Drawing.Point(90, 130);
-            this.label71.Name = "label71";
-            this.label71.Size = new System.Drawing.Size(142, 38);
-            this.label71.TabIndex = 0;
-            this.label71.Text = "博奕精工 ";
             // 
             // label_JobResults_Percent
             // 
@@ -5342,7 +5327,6 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
             this.splitContainer4.ResumeLayout(false);
             this.splitContainer6.Panel1.ResumeLayout(false);
-            this.splitContainer6.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
             this.splitContainer6.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvLog)).EndInit();
@@ -5761,7 +5745,6 @@ namespace VisionApplication
         private System.Windows.Forms.RadioButton rdBT_FindLine;
         private System.Windows.Forms.Label label70;
         private System.Windows.Forms.ComboBox cmbCLPPol2;
-        private System.Windows.Forms.Label label71;
         private System.Windows.Forms.Label label72;
         private System.Windows.Forms.ComboBox cmbLs_Channel;
         private System.Windows.Forms.CheckBox chkLS_Sync;

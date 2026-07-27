@@ -338,7 +338,7 @@ namespace VisionApplication
                     }
                     strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
                     toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-                    this.Text = "镭射除胶 " + strEngineerName;
+                    this.Text = "镭射除胶   " +cup.p_DL.modelPath;
 
                 }
                 catch
@@ -4397,7 +4397,7 @@ namespace VisionApplication
                 if (iNextFileIndex < 0)
                     iNextFileIndex = 0;
                 // iFileIndex = iNextFileIndex;
-                toolStripStatus_No.Text = iFileIndex.ToString() + "|" + iNextFileIndex.ToString() + "||" + iFileGroupLen + "  Time:" + acqFIFO.strTime;
+                toolStripStatus_No.Text = iFileIndex.ToString() + "|" + iNextFileIndex.ToString() + "||" + iFileGroupLen;
             }
         }
 
@@ -6929,7 +6929,7 @@ namespace VisionApplication
             }
             else if (!cup.p_VPPRTP.bAcqFromCam && !cup.p_VPPRTP.bAcqFromIDB)
             {
-                toolStripStatus_No.Text = iFileIndex.ToString() + "|" + iNextFileIndex.ToString() + "||" + iFileGroupLen + "  Time:" + acqFIFO.strTime;
+                toolStripStatus_No.Text = iFileIndex.ToString() + "|" + iNextFileIndex.ToString() + "||" + iFileGroupLen;
             }
             if (!bRet)
                 iErrAcquisitionsTimes++;
@@ -7841,7 +7841,8 @@ namespace VisionApplication
             bVPPParamChanged = true;
             strEngineerDir = rootDir;
             strEngineerName = Path.GetFileName(rootDir);
-            toolStripStatus_Engineer.Text = "机种:" + strEngineerName; ;
+            toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
+            this.Text = "镭射除胶   " + cup.p_DL.modelPath;
             try
             {
                 // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
@@ -8050,7 +8051,8 @@ namespace VisionApplication
                 cup.p_DL.modelPath = rootDir;
                 strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
                 toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-             //   FrmMainUI.
+                this.Text = "镭射除胶   " + cup.p_DL.modelPath;
+                //   FrmMainUI.
 
             }
             catch (Exception ex)
