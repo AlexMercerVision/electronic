@@ -1552,9 +1552,14 @@ namespace BJJCZ_BaseDevelop
             AddMsg(logMsg);
             
             if (bSimulateMode[card])
-            {
-                SimulateCommand(param);
-                //    return;
+            {  // 加工类命令才走模拟延迟响应
+                if (param.cmdType == 10 || param.cmdType == 110 || 
+                    param.cmdType == 21 || param.cmdType == 44 ||
+                    param.cmdType == 45)
+                {
+                    SimulateCommand(param);
+                    return;
+                }
             }
 
             if (JczInitErrs[card] != 0 &&
@@ -6235,6 +6240,15 @@ namespace BJJCZ_BaseDevelop
             string cmdDesc = GetCmdDescription(param.cmdType);
             AddMsg($"卡{card+1} [模拟] {cmdDesc}");
 
+            // ---- 加工类命令：异步延迟响应 ----
+            if (param.cmdType == 10 || param.cmdType == 110 ||
+                param.cmdType == 21 || param.cmdType == 44 || param.cmdType == 45)
+            {
+                SimulateMarkCommand(param);
+                return; // 不立即发送响应，由异步任务发送
+            }
+
+
             switch (param.cmdType)
             {
                 case 0:
@@ -6257,6 +6271,47 @@ namespace BJJCZ_BaseDevelop
                 param.ind3 = clientSeq;
                 SendResponse(param);
             }
+        }
+        private void SimulateMarkCommand(LCZControlParam param)
+        {
+            int card = param.cardSN;
+            int clientSeq = param.ind3;
+
+            // 标记加工状态（UI 可据此显示“加工中”）
+            bInMark[card] = true;
+            AddMsg($"卡{card + 1} [模拟] 开始加工，预计3秒后完成");
+
+            // 异步延迟任务
+            Task.Run(() =>
+            {
+                try
+                {
+                    Thread.Sleep(3000); // 等待3秒
+
+                    // 构造成功响应
+                    LCZControlParam response = new LCZControlParam
+                    {
+                        cardSN = card,
+                        cmdType = param.cmdType,
+                        nErr = 0,
+                        bOpen = true,
+                        ind3 = clientSeq
+                    };
+
+                    // 发送响应（管道发送是线程安全的）
+                    SendResponse(response);
+                    AddMsg($"卡{card + 1} [模拟] 加工完成");
+                }
+                catch (Exception ex)
+                {
+                    AddMsg($"卡{card + 1} [模拟] 加工模拟异常: {ex.Message}");
+                }
+                finally
+                {
+                    // 无论是否异常，都清除加工状态
+                    bInMark[card] = false;
+                }
+            });
         }
         private void SendResponse(LCZControlParam param)
         {

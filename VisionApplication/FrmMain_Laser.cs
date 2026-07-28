@@ -3153,6 +3153,9 @@ namespace VisionApplication
                        
                         vpWin.GetAlignRegion(ref alImParam[card], card);
                         await SendAlignParamToJCZServer(card);
+
+                        // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
+                        await RunSilentOnceForJob(iJobIndex);
                     }
 
                 }
