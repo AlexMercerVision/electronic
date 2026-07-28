@@ -37,6 +37,7 @@
             this.win_Reset = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.Win_ReloadBGImg = new System.Windows.Forms.ToolStripMenuItem();
+            this.Win_RecorevyView = new System.Windows.Forms.ToolStripMenuItem();
             this.File_OpenEZCad = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
@@ -99,7 +100,6 @@
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
-            this.Win_RecorevyView = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.panelImage.SuspendLayout();
@@ -170,28 +170,28 @@
             // File_LoadEZD
             // 
             this.File_LoadEZD.Name = "File_LoadEZD";
-            this.File_LoadEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_LoadEZD.Size = new System.Drawing.Size(180, 22);
             this.File_LoadEZD.Text = "加载EZD文件";
             this.File_LoadEZD.Click += new System.EventHandler(this.File_LoadEZD_Click);
             // 
             // File_QuickSaveEZD
             // 
             this.File_QuickSaveEZD.Name = "File_QuickSaveEZD";
-            this.File_QuickSaveEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_QuickSaveEZD.Size = new System.Drawing.Size(180, 22);
             this.File_QuickSaveEZD.Text = "保存EZD文件";
             this.File_QuickSaveEZD.Click += new System.EventHandler(this.File_QuickSaveEZD_Click);
             // 
             // File_SaveEZD
             // 
             this.File_SaveEZD.Name = "File_SaveEZD";
-            this.File_SaveEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_SaveEZD.Size = new System.Drawing.Size(180, 22);
             this.File_SaveEZD.Text = "另存为EZD文件";
             this.File_SaveEZD.Click += new System.EventHandler(this.File_SaveEZD_Click);
             // 
             // File_ExportFigure
             // 
             this.File_ExportFigure.Name = "File_ExportFigure";
-            this.File_ExportFigure.Size = new System.Drawing.Size(159, 22);
+            this.File_ExportFigure.Size = new System.Drawing.Size(180, 22);
             this.File_ExportFigure.Text = "导出图像";
             this.File_ExportFigure.Click += new System.EventHandler(this.File_ExportFigure_Click);
             // 
@@ -209,14 +209,14 @@
             this.Card_NO1.Checked = true;
             this.Card_NO1.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Card_NO1.Name = "Card_NO1";
-            this.Card_NO1.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO1.Size = new System.Drawing.Size(180, 22);
             this.Card_NO1.Text = "卡1";
             this.Card_NO1.Click += new System.EventHandler(this.Card_NO1_Click);
             // 
             // Card_NO2
             // 
             this.Card_NO2.Name = "Card_NO2";
-            this.Card_NO2.Size = new System.Drawing.Size(95, 22);
+            this.Card_NO2.Size = new System.Drawing.Size(180, 22);
             this.Card_NO2.Text = "卡2";
             this.Card_NO2.Click += new System.EventHandler(this.Card_NO2_Click);
             // 
@@ -242,6 +242,7 @@
             this.Win_Log.Name = "Win_Log";
             this.Win_Log.Size = new System.Drawing.Size(180, 22);
             this.Win_Log.Text = "日志窗口";
+            this.Win_Log.Visible = false;
             this.Win_Log.Click += new System.EventHandler(this.Win_Log_Click);
             // 
             // Win_Entity
@@ -251,6 +252,7 @@
             this.Win_Entity.Name = "Win_Entity";
             this.Win_Entity.Size = new System.Drawing.Size(180, 22);
             this.Win_Entity.Text = "对象清单窗口";
+            this.Win_Entity.Visible = false;
             this.Win_Entity.Click += new System.EventHandler(this.Win_Entity_Click);
             // 
             // Win_Route
@@ -260,6 +262,7 @@
             this.Win_Route.Name = "Win_Route";
             this.Win_Route.Size = new System.Drawing.Size(180, 22);
             this.Win_Route.Text = "路径图窗口";
+            this.Win_Route.Visible = false;
             this.Win_Route.Click += new System.EventHandler(this.Win_Route_Click);
             // 
             // Win_Oper
@@ -269,6 +272,7 @@
             this.Win_Oper.Name = "Win_Oper";
             this.Win_Oper.Size = new System.Drawing.Size(180, 22);
             this.Win_Oper.Text = "操作窗口";
+            this.Win_Oper.Visible = false;
             this.Win_Oper.Click += new System.EventHandler(this.Win_Oper_Click);
             // 
             // win_Reset
@@ -289,6 +293,13 @@
             this.Win_ReloadBGImg.Size = new System.Drawing.Size(180, 22);
             this.Win_ReloadBGImg.Text = "更新背景";
             this.Win_ReloadBGImg.Click += new System.EventHandler(this.Win_ReloadBGImg_Click);
+            // 
+            // Win_RecorevyView
+            // 
+            this.Win_RecorevyView.Name = "Win_RecorevyView";
+            this.Win_RecorevyView.Size = new System.Drawing.Size(180, 22);
+            this.Win_RecorevyView.Text = "恢复视角";
+            this.Win_RecorevyView.Click += new System.EventHandler(this.Win_RecorevyView_Click);
             // 
             // File_OpenEZCad
             // 
@@ -985,13 +996,6 @@
             this.txtMv_Value.Size = new System.Drawing.Size(30, 21);
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
-            // 
-            // Win_RecorevyView
-            // 
-            this.Win_RecorevyView.Name = "Win_RecorevyView";
-            this.Win_RecorevyView.Size = new System.Drawing.Size(180, 22);
-            this.Win_RecorevyView.Text = "恢复视角";
-            this.Win_RecorevyView.Click += new System.EventHandler(this.Win_RecorevyView_Click);
             // 
             // JCZServer
             // 

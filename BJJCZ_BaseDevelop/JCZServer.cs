@@ -93,6 +93,11 @@ namespace BJJCZ_BaseDevelop
         private bool[] pendingDeferredSave = new bool[2];      // 延迟保存标志
         private bool _isSavingEzd = false;                     // 防止自动保存重入
         private readonly object _previewSaveLock = new object(); // 预览刷新和保存不能同时操作JCZ SDK
+
+        private static readonly object _sdkLock0 = new object();
+        private static readonly object _sdkLock1 = new object();
+
+
         private bool[] _isReplayingFallbackAdjustments = new bool[2]; // 重放兜底参数时避免重复记录
         private bool[] userGroupMode = new bool[2]; // 只有本次点击“组群”后才按grpEnt整体操作，避免EZD残留grpEnt影响单对象移动
         private bool[] preserveUserGroupOnSave = new bool[2]; // 保存时是否保留当前grpEnt；与整体移动模式分开
@@ -1372,46 +1377,49 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 阻塞等待标刻完成（同步版本，适合 BackgroundWorker）
         /// </summary>
-        public   int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 600000)
+        public int lmc1_MarkBlocking(int cardSN, bool bFlyMark, int timeoutMs = 600000)
         {
-            if (!CanStartLaserMark(cardSN))
+            lock (_previewSaveLock) // 整个加工过程必须独占SDK
             {
-                return 19;
-            }
-            // 开始标刻
-            AddMsg($"卡{cardSN + 1} 调用lmc1_Mark: SDK卡槽={phyCardSN[cardSN]} Fly={bFlyMark}");
-            int nErr = JczLmc.lmc1_Mark(phyCardSN[cardSN], bFlyMark);
-            AddMsg($"卡{cardSN + 1} lmc1_Mark返回: {JczLmc.GetErrorText(nErr)}");
-            if (nErr != 0)
-            {
-                return nErr;
-            }
-
-            // 轮询等待标刻完成
-            int elapsedMs = 0;
-            int checkInterval = 10;  // 每10ms检查一次
-
-            while (elapsedMs < timeoutMs)
-            {
-                if (markStopRequested[cardSN])
+                if (!CanStartLaserMark(cardSN))
                 {
-                    SendStopMark(cardSN);
-                    return 8;
+                    return 19;
                 }
-                int finishStatus = JczLmc.lmc1_IsMarkFinish(phyCardSN[cardSN]);
-                // IsMarkFinish 返回值：1=待机（完成），0=加工中
-                if (finishStatus == 1)
+                // 开始标刻
+                AddMsg($"卡{cardSN + 1} 调用lmc1_Mark: SDK卡槽={phyCardSN[cardSN]} Fly={bFlyMark}");
+                int nErr = JczLmc.lmc1_Mark(phyCardSN[cardSN], bFlyMark);
+                AddMsg($"卡{cardSN + 1} lmc1_Mark返回: {JczLmc.GetErrorText(nErr)}");
+                if (nErr != 0)
                 {
-                    return 0;
+                    return nErr;
                 }
 
-                Thread.Sleep(checkInterval);
-                elapsedMs += checkInterval;
-            }
+                // 轮询等待标刻完成
+                int elapsedMs = 0;
+                int checkInterval = 10;  // 每10ms检查一次
 
-            // 超时，尝试停止
-            JczLmc.lmc1_StopMark(phyCardSN[cardSN]);
-            return 10;  // 返回超时错误码
+                while (elapsedMs < timeoutMs)
+                {
+                    if (markStopRequested[cardSN])
+                    {
+                        SendStopMark(cardSN);
+                        return 8;
+                    }
+                    int finishStatus = JczLmc.lmc1_IsMarkFinish(phyCardSN[cardSN]);
+                    // IsMarkFinish 返回值：1=待机（完成），0=加工中
+                    if (finishStatus == 1)
+                    {
+                        return 0;
+                    }
+
+                    Thread.Sleep(checkInterval);
+                    elapsedMs += checkInterval;
+                }
+
+                // 超时，尝试停止
+                JczLmc.lmc1_StopMark(phyCardSN[cardSN]);
+                return 10;  // 返回超时错误码
+            }
         }
 
         private int StartMarkAllObjects(int card, int responseCmdType, int clientSeq, bool useVisualRotateMove, string visualStage, string markLabel)
@@ -10866,6 +10874,8 @@ namespace BJJCZ_BaseDevelop
         // 可选：添加一个窗口布局重置菜单项
         #endregion
 
-      
+
+
+        private object GetSdkLock(int card) => card == 0 ? _sdkLock0 : _sdkLock1;
     }
 }
