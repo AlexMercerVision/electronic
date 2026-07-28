@@ -1369,7 +1369,7 @@ namespace VisionControl
                 pmaRes[iJobIndex].dTX = pma[iJobIndex].Results[0].GetPose().TranslationX;
                 pmaRes[iJobIndex].dTY = pma[iJobIndex].Results[0].GetPose().TranslationY;
                 pmaRes[iJobIndex].dTR = pma[iJobIndex].Results[0].GetPose().Rotation;
-                if (pmaRes[iJobIndex].dPMAScore < 0.8)
+                if (pmaRes[iJobIndex].dPMAScore < pma[iJobIndex].RunParams.AcceptThreshold+0.3)
                 {   pmaRes[iJobIndex].bLocated = false;
                     pmaRes[iJobIndex].dPMAScore -= 0.3;
                 }
@@ -1846,6 +1846,15 @@ namespace VisionControl
         /// </summary>
         /// <param name="iJobIndex">任务编号（0 或 1）</param>
         /// <param name="filePath">完整保存路径</param>
+
+        #region PMA 工具
+        public void SaveAllPMAlignTools(string filePath)
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                SavePMAlignTool(i, filePath);
+            }
+        }
         private void SavePMAlignTool(int iJobIndex, string filePath)
         {
             if (mJM == null)
@@ -1906,6 +1915,179 @@ namespace VisionControl
             }
         }
 
+        public void LoadAllPMAlignTools(string filePath)
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                LoadPMAlignTool(i, filePath);
+            }
+        }
+        private void LoadPMAlignTool(int iJobIndex, string filePath)
+        {
+            if (mJM == null)
+            {
+                OnVisionError(iJobIndex, "工程未加载");
+                return;
+            }
+
+            // 1. 从文件加载工具
+            CogPMAlignTool loadedTool = null;
+            try
+            {
+                // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
+                string fileName = $"PMA{iJobIndex}.vpp";
+                string fullPath = Path.Combine(filePath, fileName);
+
+                loadedTool = CogSerializer.LoadObjectFromFile(fullPath) as CogPMAlignTool;
+
+                CogPMAlignTool existingTool = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+
+                // 复制训练特征数据（包含模板、特征等）
+                existingTool.Pattern = loadedTool.Pattern;
+                // 复制运行参数（搜索区域、分数阈值等）
+                existingTool.RunParams = loadedTool.RunParams;
+                // 复制其他配置（可选）
+                //   existingTool.Params = loadedTool.Params;            // 一般和Pattern关联
+                //   existingTool.Enabled = loadedTool.Enabled;
+                //   existingTool.Region = loadedTool.Region;
+                // 不要复制 Results、LastRun 等运行时结果
+
+
+            }
+            catch (Exception ex)
+            {
+                OnVisionError(iJobIndex, $"加载文件失败: {ex.Message}");
+                return;
+            }
+
+        }
+        #endregion PMA 工具
+
+
+        #region  9点标定工具
+        public void SaveAllCalibTools(string filePath)
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                SaveCalibTool(i, filePath);
+            }
+        }
+        private void SaveCalibTool(int iJobIndex, string filePath)
+        {
+            if (mJM == null)
+            {
+                OnVisionError(iJobIndex, "工程未加载");
+                return;
+            }
+
+            CogJob job = null;
+            try
+            {
+                job = mJM.Job(iJobIndex);
+            }
+            catch (Exception ex)
+            {
+                OnVisionError(iJobIndex, $"获取Job失败: {ex.Message}");
+                return;
+            }
+
+            if (job == null)
+            {
+                OnVisionError(iJobIndex, $"Job {iJobIndex} 不存在");
+                return;
+            }
+
+            // 按名称获取工具（请确保名称一致）
+            //  CogPMAlignTool tool = null;
+            try
+            {
+                nPointTool[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+               
+            }
+            catch (Exception ex)
+            {
+                OnVisionError(iJobIndex, $"获取工具失败: {ex.Message}");
+                return;
+            }
+
+            if (pma[iJobIndex] == null)
+            {
+                OnVisionError(iJobIndex, $"Job {iJobIndex} 中未找到 CogPMAlignTool1");
+                return;
+            }
+
+            try
+            {
+                // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
+                string fileName = $"CalibNPoint{iJobIndex}.vpp";
+                string fullPath = Path.Combine(filePath, fileName);
+
+                CogSerializer.SaveObjectToFile(nPointTool[iJobIndex], fullPath);
+                // 保存成功可以记录日志（可选）
+                // Console.WriteLine($"工具已保存至：{filePath}");
+            }
+            catch (Exception ex)
+            {
+                OnVisionError(iJobIndex, $"保存工具失败: {ex.Message}");
+            }
+        }
+        public void LoadAllCalibTools(string filePath)
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                LoadCalibTool(i, filePath);
+            }
+        }
+        private void LoadCalibTool(int iJobIndex, string filePath)
+        {
+            if (mJM == null)
+            {
+                OnVisionError(iJobIndex, "工程未加载");
+                return;
+            }
+
+            // 1. 从文件加载工具
+            CogCalibNPointToNPointTool loadedTool = null;
+            try
+            {
+                // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
+                string fileName = $"CalibNPoint{iJobIndex}.vpp";
+                string fullPath = Path.Combine(filePath, fileName);
+
+                loadedTool = CogSerializer.LoadObjectFromFile(fullPath) as CogCalibNPointToNPointTool;
+
+                CogCalibNPointToNPointTool existingTool = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+
+                // 复制训练特征数据（包含模板、特征等）
+                //  existingTool.Pattern = loadedTool.Pattern;
+                // 复制运行参数（搜索区域、分数阈值等）
+                existingTool.Calibration = loadedTool.Calibration;
+                existingTool.RunParams = loadedTool.RunParams;
+                // 复制其他配置（可选）
+                //   existingTool.Params = loadedTool.Params;            // 一般和Pattern关联
+                //   existingTool.Enabled = loadedTool.Enabled;
+                //   existingTool.Region = loadedTool.Region;
+                // 不要复制 Results、LastRun 等运行时结果
+
+
+            }
+            catch (Exception ex)
+            {
+                OnVisionError(iJobIndex, $"加载文件失败: {ex.Message}");
+                return;
+            }
+
+        }
+        #endregion  9点标定工具
+
+        #region 精定位工具
+        public void SaveAllFindLineTools(string filePath)
+        {
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                SaveCaliperFindLineTool(i, filePath);
+            }
+        }
         /// <summary>
         /// 保存指定 Job 中的CogFindLine 工具为 .vpp 文件
         /// </summary>
@@ -1995,47 +2177,13 @@ namespace VisionControl
         /// </summary>
         /// <param name="iJobIndex">任务编号（0 或 1）</param>
         /// <param name="filePath">要加载的 .vpp 文件路径</param>
-        private void LoadPMAlignTool(int iJobIndex, string filePath)
+        public void LoadAllFindLineTools(string filePath)
         {
-            if (mJM == null)
+            for (int i = 0; i < maxCameraNum; i++)
             {
-                OnVisionError(iJobIndex, "工程未加载");
-                return;
+                LoadCaliperFindLineTool(i, filePath);
             }
-
-            // 1. 从文件加载工具
-            CogPMAlignTool loadedTool = null;
-            try
-            {
-                // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"PMA{iJobIndex}.vpp";
-                string fullPath = Path.Combine(filePath, fileName);
-
-                loadedTool = CogSerializer.LoadObjectFromFile(fullPath) as CogPMAlignTool;
-
-                CogPMAlignTool existingTool =   (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"]  as CogPMAlignTool;
-
-                // 复制训练特征数据（包含模板、特征等）
-                existingTool.Pattern = loadedTool.Pattern;
-                // 复制运行参数（搜索区域、分数阈值等）
-                existingTool.RunParams = loadedTool.RunParams;
-                // 复制其他配置（可选）
-             //   existingTool.Params = loadedTool.Params;            // 一般和Pattern关联
-             //   existingTool.Enabled = loadedTool.Enabled;
-             //   existingTool.Region = loadedTool.Region;
-                // 不要复制 Results、LastRun 等运行时结果
-
-
-            }
-            catch (Exception ex)
-            {
-                OnVisionError(iJobIndex, $"加载文件失败: {ex.Message}");
-                return;
-            } 
-            
         }
-
-
         private void LoadCaliperFindLineTool(int iJobIndex, string filePath)
         {
             if (mJM == null)
@@ -2127,39 +2275,11 @@ namespace VisionControl
             }
 
         }
+        #endregion 精定位工具
 
 
-        public void SaveAllPMAlignTools(string filePath)
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                SavePMAlignTool(i, filePath);
-            }
-        }
-
-        public void SaveAllFindLineTools(string filePath)
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                SaveCaliperFindLineTool(i, filePath);
-            }
-        }
 
 
-        public void LoadAllPMAlignTools(string filePath)
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                LoadPMAlignTool(i, filePath);
-            }
-        }
-        public void LoadAllFindLineTools(string filePath)
-        {
-            for (int i = 0; i < maxCameraNum; i++)
-            {
-                LoadCaliperFindLineTool(i, filePath);
-            }
-        }
         #endregion
 
         //功能尚未实现，2026年6月19日

@@ -7818,12 +7818,13 @@ namespace VisionApplication
             // 2. 选择工程根目录
             FolderBrowserDialog folderDialog = new FolderBrowserDialog();
             folderDialog.Description = "选择工程根目录";
-            folderDialog.SelectedPath = cup.p_Paf.strResSavePath; // 默认上次结果保存路径
+            folderDialog.SelectedPath = cup.p_DL.modelPath; // 默认上次结果保存路径
             if (folderDialog.ShowDialog() != DialogResult.OK) return;
             string rootDir = folderDialog.SelectedPath;
-
+            cup.p_DL.modelPath = rootDir;
             // 3. 检查必需的子目录和文件
             string pmaDir = Path.Combine(rootDir, "PMAlignTools");
+            string calibDir= Path.Combine(rootDir, "CalibTools");
             string findlineDir = Path.Combine(rootDir, "FindLineTools");
             string trainDir = Path.Combine(rootDir, "TrainImages");
             string laserDir = Path.Combine(rootDir, "LaserFiles");
@@ -7852,11 +7853,17 @@ namespace VisionApplication
                 operLog.strFailReason = $"从 {pmaDir} 加载";
                 AddLog();
 
-                vpWin.LoadAllFindLineTools(findlineDir);
+                vpWin.LoadAllCalibTools(calibDir);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "加载标定工具";
+                operLog.strFailReason = $"从 {calibDir} 加载";
+                AddLog();
+
+               /* vpWin.LoadAllFindLineTools(findlineDir);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "加载边缘定位工具";
                 operLog.strFailReason = $"从 {findlineDir} 加载";
-                AddLog();
+                AddLog();*/
 
                 vpWin.ExtractLocateBase(0,cup.p_DL.gpuID);
                 vpWin.ExtractLocateBase(1, cup.p_DL.gpuID);
@@ -7970,14 +7977,14 @@ namespace VisionApplication
             // 2. 选择目标文件夹
             FolderBrowserDialog folderDialog = new FolderBrowserDialog();
             folderDialog.Description = "请选择或创建工程保存目录";
-            folderDialog.SelectedPath = cup.p_Paf.strResSavePath;
+            folderDialog.SelectedPath = cup.p_DL.modelPath;
             folderDialog.ShowNewFolderButton = true;
             if (folderDialog.ShowDialog() != DialogResult.OK) return;
             string rootDir = folderDialog.SelectedPath;
 
             // 3. 创建子目录
-
             string PMADir = Path.Combine(rootDir, "PMAlignTools");
+            string calibDir = Path.Combine(rootDir, "calibTools");
             string trainDir = Path.Combine(rootDir, "TrainImages");
             string laserDir = Path.Combine(rootDir, "LaserFiles");
             string FindLineDir= Path.Combine(rootDir, "FindLineTools");
@@ -7986,7 +7993,9 @@ namespace VisionApplication
                 Directory.CreateDirectory(rootDir);
             if(!Directory.Exists(PMADir))
                 Directory.CreateDirectory(trainDir);
-            if(!Directory.Exists(laserDir))
+            if (!Directory.Exists(calibDir))
+                Directory.CreateDirectory(calibDir);
+            if (!Directory.Exists(laserDir))
                 Directory.CreateDirectory(laserDir);
             if(!Directory.Exists(PMADir))
                 Directory.CreateDirectory(PMADir);
@@ -7999,9 +8008,10 @@ namespace VisionApplication
             {
                 //保存    PMA 工具
                 vpWin.SaveAllPMAlignTools(PMADir);
-
+                //保存    PMA 工具
+                vpWin.SaveAllCalibTools(calibDir);
                 //保存    精定位 工具
-                vpWin.SaveAllFindLineTools(FindLineDir);
+               /* vpWin.SaveAllFindLineTools(FindLineDir);*/
 
                 // 4. 保存训练背景图像（使用 VisionControl 中已有的 SaveTrainImage 方法）
                 vpWin.SaveBGTrainImageFiles(trainDir);   // 需要实现
