@@ -1,21 +1,9 @@
-using Cognex.VisionPro.Blob;
-using Cognex.VisionPro.CalibFix;
-//using PipeChanel;
-using Cognex.VisionPro.PMAlign;
-using CommonCls;
-using HalconDotNet;
-/*using System.IO.Pipes;
-
-using OpenCvSharp;
-using OpenCvSharp.Extensions;*/
-
-using MvCamCtrl.NET;  // 海康相机
-using PipeChanel;
+ 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-//using gRPC_ClientAPP;
+ 
 using System.Diagnostics;
 using System.Drawing;
  
@@ -24,21 +12,26 @@ using System.IO;
 using System.IO.Pipes;
 using System.IO.Ports;
 using System.Linq;
-using System.Management;
-//using HOperatorSet_EX;
+using System.Management; 
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
-using System.Threading;
-   
+using System.Threading;   
 using System.Threading.Tasks;   // 可选，如果使用 Task.Run 则需要，上述代码未使用 Task
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml;
- 
+using System.Xml; 
 using CameraHandle = System.Int32;
+
+using Cognex.VisionPro.Blob;
+using Cognex.VisionPro.CalibFix;
+using Cognex.VisionPro.PMAlign;
+using MvCamCtrl.NET;  // 海康相机
+
+using CommonCls;
+using PipeChanel;
 
 namespace VisionApplication
 {
@@ -100,8 +93,7 @@ namespace VisionApplication
         private UInt32[] m_nBufSizeForDriver = new UInt32[maxCameraNum]; // 每个相机缓冲区大小数组
         private int mainWindWidth, mainWindHeight;              // 主窗口显示区域尺寸
         private IntPtr m_BufForDriver;                          // 单相机驱动缓冲区指针（未使用）
-        private HObject hobjImg = new HObject();                // Halcon图像对象
-
+        
         private DateTime _lastReconnectAttempt = DateTime.MinValue;
         private bool _isReconnecting = false;
         private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(30); // 重试间隔
@@ -2225,40 +2217,7 @@ namespace VisionApplication
         #endregion Hik摄像头相关 
 
         #region 自义定功能函数去
-        //采集到的图像数据转为halcon 的Object格式
-        public void PtrToObj(IntPtr ptr, int iFormat)
-        {
-            if (iFormat == 1)  //彩色
-            {
-                try
-                {
-                    //  HOperatorSet.GenImage3(out hobjImg, "byte", stFrameInfo.nWidth, stFrameInfo.nHeight, ptr, new IntPtr(ptr.ToInt64() + stFrameInfo.nWidth * stFrameInfo.nHeight), new IntPtr(ptr.ToInt64() + stFrameInfo.nWidth * stFrameInfo.nHeight * 2));
-
-                    HOperatorSet.GenImageInterleaved(out hobjImg, ptr, "bgr", (HTuple)stFrameInfo.nWidth, stFrameInfo.nHeight, 0, "byte", 0, 0, 0, 0, -1, 0);
-                }
-                catch
-                {
-                    //  MessageBox.Show(ex.ToString());
-
-                    return;
-                }
-            }
-            else if (iFormat == 0)      //灰色
-            {
-
-                try
-                {
-                    HOperatorSet.GenImage1Extern(out hobjImg, "byte", stFrameInfo.nWidth, stFrameInfo.nHeight, ptr, IntPtr.Zero);
-                }
-                catch (System.Exception ex)
-                {
-                    MessageBox.Show("转换图像格式失败：" + ex);
-
-                    return;
-                }
-            }
-        }
-         
+       
         
         #endregion
 

@@ -6911,7 +6911,7 @@ namespace BJJCZ_BaseDevelop
         {
             ScheduleRoutePreviewRefresh(card, RoutePreviewRefreshDelayMs);
         }
-
+        private bool _batchOperationInProgress = false;
         private void ScheduleRoutePreviewRefresh(int card, int delayMs)
         {
             if (card < 0 || card >= _pendingRoutePreviewRefresh.Length)
@@ -6920,6 +6920,11 @@ namespace BJJCZ_BaseDevelop
             }
 
             _pendingRoutePreviewRefresh[card] = true;
+
+            // 批量操作期间，不启动定时器
+            if (_batchOperationInProgress)
+                return;
+
             if (_routePreviewRefreshTimer == null)
             {
                 _routePreviewRefreshTimer = new System.Windows.Forms.Timer();
@@ -6937,7 +6942,9 @@ namespace BJJCZ_BaseDevelop
             {
                 _routePreviewRefreshTimer.Stop();
             }
-
+            // 批量操作中不执行刷新
+            if (_batchOperationInProgress)
+                return;
             bool hasDeferredBusyCard = false;
             for (int card = 0; card < _pendingRoutePreviewRefresh.Length; card++)
             {
@@ -8639,27 +8646,87 @@ namespace BJJCZ_BaseDevelop
 
 
 
+        /* private void EntMvRoSc_Click(object sender, EventArgs e)
+         {
+
+             int card = currentCard;
+             lock (GetSdkLock(card))
+             {
+                 if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
+
+                 PictureBox pic = sender as PictureBox;
+                 if (pic == null) return;
+                 string btnName = pic.Name;
+
+                 bool isGroupOperation = userGroupMode[card] && EntityExists(card, "grpEnt");
+                 if (!isGroupOperation)
+                 {
+                     CleanupUserGroupEntity(card);
+                 }
+
+                 LCZControlParam cmd = new LCZControlParam { cardSN = card, ind1 = iEntIndices[card] };
+                 cmd.strEntyName = isGroupOperation ? "grpEnt" : GetSdkEntityNameForOperation(card, iEntIndices[card]);
+
+                 double moveVal = 0, rotateVal = 0, scaleVal = 0, cenX = 0, cenY = 0;
+                 double.TryParse(txtMv_Value.Text, out moveVal);
+                 double.TryParse(txtRo_Value.Text, out rotateVal);
+                 double.TryParse(txtScale_Value.Text, out scaleVal);
+                 double.TryParse(txtRo_cenX.Text, out cenX);
+                 double.TryParse(txtRo_cenY.Text, out cenY);
+
+                 switch (btnName)
+                 {
+                     case "picMvLeft": cmd.cmdType = 24; cmd.dParam1 = -moveVal; cmd.dParam2 = 0; break;
+                     case "picMvRight": cmd.cmdType = 24; cmd.dParam1 = moveVal; cmd.dParam2 = 0; break;
+                     case "picMvUp": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = moveVal; break;
+                     case "picMvDown": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = -moveVal; break;
+                     case "picRoClock":
+                         cmd.cmdType = 23;
+                         if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
+                         cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = -rotateVal;
+                         break;
+                     case "picRoCrossClock":
+                         cmd.cmdType = 23;
+                         if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
+                         cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = rotateVal;
+                         break;
+                     case "picScaleX": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
+                     case "picScaleY": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
+                 }
+                 CMDAna(cmd);
+             }
+         }*/
         private void EntMvRoSc_Click(object sender, EventArgs e)
         {
-           
             int card = currentCard;
             lock (GetSdkLock(card))
             {
-                if (iEntIndices[card] < 0 || iEntIndices[card] >= strEntNames[card]?.Length) return;
-
                 PictureBox pic = sender as PictureBox;
                 if (pic == null) return;
                 string btnName = pic.Name;
 
-                bool isGroupOperation = userGroupMode[card] && EntityExists(card, "grpEnt");
-                if (!isGroupOperation)
+                // 获取选中的行
+                List<int> selectedIndices = new List<int>();
+                foreach (DataGridViewRow row in dgvEnt.SelectedRows)
                 {
-                    CleanupUserGroupEntity(card);
+                    if (row.Index >= 0 && row.Index < nEntNums[card])
+                        selectedIndices.Add(row.Index);
                 }
 
-                LCZControlParam cmd = new LCZControlParam { cardSN = card, ind1 = iEntIndices[card] };
-                cmd.strEntyName = isGroupOperation ? "grpEnt" : GetSdkEntityNameForOperation(card, iEntIndices[card]);
+                if (selectedIndices.Count == 0)
+                {
+                    AddMsg($"卡{card + 1} 请先选择要操作的对象");
+                    return;
+                }
 
+                bool isGroupOperation = userGroupMode[card] && EntityExists(card, "grpEnt");
+                if (isGroupOperation)
+                {
+                    selectedIndices.Clear();
+                    selectedIndices.Add(-1);
+                }
+
+                // 解析参数
                 double moveVal = 0, rotateVal = 0, scaleVal = 0, cenX = 0, cenY = 0;
                 double.TryParse(txtMv_Value.Text, out moveVal);
                 double.TryParse(txtRo_Value.Text, out rotateVal);
@@ -8667,26 +8734,93 @@ namespace BJJCZ_BaseDevelop
                 double.TryParse(txtRo_cenX.Text, out cenX);
                 double.TryParse(txtRo_cenY.Text, out cenY);
 
-                switch (btnName)
+                // ★ 开始批量操作，禁用预览刷新
+                _batchOperationInProgress = true;
+                try
                 {
-                    case "picMvLeft": cmd.cmdType = 24; cmd.dParam1 = -moveVal; cmd.dParam2 = 0; break;
-                    case "picMvRight": cmd.cmdType = 24; cmd.dParam1 = moveVal; cmd.dParam2 = 0; break;
-                    case "picMvUp": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = moveVal; break;
-                    case "picMvDown": cmd.cmdType = 24; cmd.dParam1 = 0; cmd.dParam2 = -moveVal; break;
-                    case "picRoClock":
-                        cmd.cmdType = 23;
-                        if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
-                        cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = -rotateVal;
-                        break;
-                    case "picRoCrossClock":
-                        cmd.cmdType = 23;
-                        if (!isGroupOperation && !TryGetEntityCenter(card, cmd.strEntyName, out cenX, out cenY)) return;
-                        cmd.dParam3 = cenX; cmd.dParam4 = cenY; cmd.dParam5 = rotateVal;
-                        break;
-                    case "picScaleX": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
-                    case "picScaleY": if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd)) return; break;
+                    foreach (int index in selectedIndices)
+                    {
+                        string entName;
+                        if (isGroupOperation)
+                            entName = "grpEnt";
+                        else
+                            entName = GetSdkEntityNameForOperation(card, index);
+
+                        if (string.IsNullOrEmpty(entName) || !EntityExists(card, entName))
+                            continue;
+
+                        LCZControlParam cmd = new LCZControlParam
+                        {
+                            cardSN = card,
+                            ind1 = index,
+                            strEntyName = entName
+                        };
+
+                        switch (btnName)
+                        {
+                            case "picMvLeft":
+                                cmd.cmdType = 24;
+                                cmd.dParam1 = -moveVal;
+                                cmd.dParam2 = 0;
+                                break;
+                            case "picMvRight":
+                                cmd.cmdType = 24;
+                                cmd.dParam1 = moveVal;
+                                cmd.dParam2 = 0;
+                                break;
+                            case "picMvUp":
+                                cmd.cmdType = 24;
+                                cmd.dParam1 = 0;
+                                cmd.dParam2 = moveVal;
+                                break;
+                            case "picMvDown":
+                                cmd.cmdType = 24;
+                                cmd.dParam1 = 0;
+                                cmd.dParam2 = -moveVal;
+                                break;
+                            case "picRoClock":
+                                cmd.cmdType = 23;
+                                if (!TryGetEntityCenter(card, entName, out cenX, out cenY))
+                                    continue;
+                                cmd.dParam3 = cenX;
+                                cmd.dParam4 = cenY;
+                                cmd.dParam5 = -rotateVal;
+                                break;
+                            case "picRoCrossClock":
+                                cmd.cmdType = 23;
+                                if (!TryGetEntityCenter(card, entName, out cenX, out cenY))
+                                    continue;
+                                cmd.dParam3 = cenX;
+                                cmd.dParam4 = cenY;
+                                cmd.dParam5 = rotateVal;
+                                break;
+                            case "picScaleX":
+                                if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd))
+                                    continue;
+                                break;
+                            case "picScaleY":
+                                if (!TryApplyAbsoluteScaleToCommand(card, btnName, scaleVal, ref cmd))
+                                    continue;
+                                break;
+                            default:
+                                continue;
+                        }
+
+                        // 执行命令（内部会调用 ScheduleRoutePreviewRefresh，但被批量标志阻止）
+                        CMDAna(cmd);
+                    }
                 }
-                CMDAna(cmd);
+                finally
+                {
+                    // ★ 结束批量操作，恢复刷新并立即执行一次刷新
+                    _batchOperationInProgress = false;
+                    // 手动刷新所有待刷新卡片
+                    for (int c = 0; c < _pendingRoutePreviewRefresh.Length; c++)
+                    {
+                        if (_pendingRoutePreviewRefresh[c])
+                            RefreshPreview(c);
+                    }
+                }
             }
         }
 
