@@ -2066,7 +2066,13 @@ namespace VisionApplication
             "500",
             "1000",
             "1500",
-            "2000"});
+            "2000",
+            "2500",
+            "3000",
+            "3500",
+            "4000",
+            "4500",
+            "5000"});
             this.cmbRunTimeOut.Location = new System.Drawing.Point(78, 227);
             this.cmbRunTimeOut.Name = "cmbRunTimeOut";
             this.cmbRunTimeOut.Size = new System.Drawing.Size(69, 20);

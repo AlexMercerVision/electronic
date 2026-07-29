@@ -4922,6 +4922,8 @@ namespace VisionApplication
                         }
                         else
                         {
+                            pmaRes[faceIndex].bLocated = false;
+                            visionOk = false;
                             operLog.iEventStatus = -1;
                             operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测";
                             operLog.strFailReason = "视觉检测超时，未收到完成结果";
