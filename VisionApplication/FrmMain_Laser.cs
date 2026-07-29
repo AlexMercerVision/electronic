@@ -4880,7 +4880,127 @@ namespace VisionApplication
         /// 单个工位的一次运行（视觉检测 + 激光标刻）
         /// </summary>
         /// <param name="faceIndex">工位索引：0 = A面，1 = B面</param>
+
+        /// <summary>
+        /// 单个工位的一次运行（视觉检测 + 激光标刻）
+        /// </summary>
+        /// <param name="faceIndex">工位索引：0 = A面，1 = B面</param>
         private async Task RunOneTimeForFace(int faceIndex)
+        {
+            bool reservationReleased = false;
+            bool visionBusyEntered = false;
+            DateTime startTime = DateTime.Now;   // 记录开始时间
+
+            try
+            {
+                vpWin.ClearRDRecord(faceIndex);
+
+                // ★★★ 关键修改：不再修改 vpWin._iJobIndex，所有操作直接使用 faceIndex ★★★
+                bool visionOk = false;
+                try
+                {
+                    vpWin._iTaskType = 2;
+                    EnterFaceVisionRun(faceIndex);
+                    visionBusyEntered = true;
+                    ReleaseAutoTriggerReservation(faceIndex);
+                    reservationReleased = true;
+
+                    // 执行视觉检测（同步等待）
+                    if (vpWin.RunOneTimeSplite(faceIndex))
+                    {
+                        int maxWait = cup.p_RTSP.runTimeOut / 10;
+                        int count = 0;
+                        while (vpWin._bRunOneTimeFinished[faceIndex] != 2 && count < maxWait)
+                        {
+                            await Task.Delay(10);
+                            count++;
+                        }
+
+                        if (vpWin._bRunOneTimeFinished[faceIndex] == 2)
+                        {
+                            pmaRes[faceIndex] = vpWin._PMARes[faceIndex];
+                            visionOk = true;
+                        }
+                        else
+                        {
+                            pmaRes[faceIndex].bLocated = false;
+                            visionOk = false;
+                            operLog.iEventStatus = -1;
+                            operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测";
+                            operLog.strFailReason = "视觉检测超时，未收到完成结果";
+                            AddLog();
+                        }
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测";
+                        operLog.strFailReason = vpWin.strErrInfo[faceIndex];
+                        AddLog();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测异常";
+                    operLog.strFailReason = ex.Message;
+                    AddLog();
+                }
+                finally
+                {
+                    vpWin._bRunOneTimeFinished[faceIndex] = 2;
+                }
+
+                // 视觉检测成功后，若满足条件则激光标刻
+                if (visionOk && rts.onLS.bLock && pmaRes[faceIndex].bLocated)
+                {
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}标刻中";
+                    operLog.strFailReason = "";
+                    AddLog();
+                    await LaserMarkAfterVisionDetAsync(faceIndex);
+                    operLog.iEventStatus = 0;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}结束";
+                    operLog.strFailReason = vpWin.strErrInfo[faceIndex];
+                    AddLog();
+                }
+
+                // IO 输出（如果启用）
+                if (cup.p_RTSP.bUpdateIO && pmaRes[faceIndex].bLocated)
+                {
+                    ExeIOOut(faceIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"工位{faceIndex + 1}一次运行失败";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                // 释放资源与标志
+                if (!reservationReleased)
+                    ReleaseAutoTriggerReservation(faceIndex);
+
+                FinishFaceVisionRun(faceIndex);
+
+                // ★★★ 移除 RestoreVisionExecutionContext(previousVisionJobIndex) ★★★
+                // 不再恢复 vpWin._iJobIndex，因为我们从未修改它
+
+                SetFaceTriggerIndicator(faceIndex, false);
+
+                // 记录本次运行耗时
+                TimeSpan elapsed = DateTime.Now - startTime;
+                string faceName = (faceIndex == 0) ? "A面" : "B面";
+                operLog.iEventStatus = 2;
+                operLog.strOperEvent = $"{faceName} 单次运行完成";
+                operLog.strFailReason = $"总耗时 {elapsed.TotalMilliseconds:F0} ms";
+                AddLog();
+            }
+        }
+        /*private async Task RunOneTimeForFace(int faceIndex)
         {
             bool reservationReleased = false;
             bool visionBusyEntered = false;
@@ -4951,7 +5071,7 @@ namespace VisionApplication
                 }
 
                 // 如果视觉检测需要激光标刻（例如结果 OK 且锁标刻开启）
-                if (visionOk && rts.onLS.bLock  && pmaRes[faceIndex].bLocated/*&& rts.initStatus.bJCZ == 0*/)
+                if (visionOk && rts.onLS.bLock  && pmaRes[faceIndex].bLocated*//*&& rts.initStatus.bJCZ == 0*//*)
                 {
                     operLog.iEventStatus = 0;
                     operLog.strOperEvent = $"工位{faceIndex + 1}标刻中";
@@ -4999,7 +5119,7 @@ namespace VisionApplication
                 operLog.strFailReason = $"总耗时 {elapsed.TotalMilliseconds:F0} ms";
                 AddLog();
             }
-        }
+        }*/
 
         private async Task LaserMarkAfterVisionDetAsync(int faceIndex)
         {

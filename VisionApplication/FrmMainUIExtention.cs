@@ -297,50 +297,131 @@ namespace VisionApplication
         /// 初始化A、B面的4分区光源亮度（分别设置每个通道）
         /// </summary>
         private bool _isUpdatingLightUI = false;  // 防止程序化更新控件时触发事件
+        private void SendAllChannelsCommand(int jobIndex, int ch1, int ch2, int ch3, int ch4)
+        {
+            // 限制亮度范围 0-255
+            ch1 = Math.Max(0, Math.Min(255, ch1));
+            ch2 = Math.Max(0, Math.Min(255, ch2));
+            ch3 = Math.Max(0, Math.Min(255, ch3));
+            ch4 = Math.Max(0, Math.Min(255, ch4));
 
+            string command = $"S{ch1:D3}T{ch2:D3}T{ch3:D3}T{ch4:D3}TC#";
+            // 选择串口
+            SerialPort port = null;
+            if (jobIndex == 0)
+                port = sPortMain;
+            else if (jobIndex == 1)
+                port = sPortSub[0];
+            // 可扩展更多
+
+            if (port == null || !port.IsOpen)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "光源设置";
+                operLog.strFailReason = "串口未打开";
+                AddLog();
+                return;
+            }
+
+            try
+            {
+                port.Write(command);
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = "光源设置";
+                operLog.strFailReason = $"工位{jobIndex + 1} 命令:{command}";
+                AddLog();
+            }
+            catch (Exception ex)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "光源设置";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+        }
         private void ApplyLightBrightness(int jobIndex, int? channel = null, int? brightness = null)
         {
-            int targetChannel = channel ?? (cmbLs_Channel.SelectedIndex + 1);
-            if (targetChannel < 1 || targetChannel > 4) return;
-
-            int targetBrightness = brightness ?? tbBirghtness.Value;
+            int ch1, ch2, ch3, ch4;
             bool sync = chkLS_Sync.Checked;
+            int targetBrightness = brightness ?? tbBirghtness.Value;
 
-            // 根据 jobIndex 选择光源配置和串口
             if (jobIndex == 0) // 主光源
             {
                 if (sync)
                 {
-                    for (int ch = 1; ch <= 4; ch++) cup.p_LS.indent[ch] = targetBrightness;
-                    csd.SetLightBrightnessByJob(jobIndex, targetBrightness);
+                    ch1 = ch2 = ch3 = ch4 = targetBrightness;
                 }
                 else
                 {
-                    cup.p_LS.indent[targetChannel] = targetBrightness;
-                    csd.SetChIntensity(targetChannel, targetBrightness, sPortMain);
+                    // 独立模式：从配置读取各通道当前值，只修改指定通道（如果指定）
+                    ch1 = cup.p_LS.indent[1];
+                    ch2 = cup.p_LS.indent[2];
+                    ch3 = cup.p_LS.indent[3];
+                    ch4 = cup.p_LS.indent[4];
+                    if (channel.HasValue && channel >= 1 && channel <= 4)
+                    {
+                        // 更新对应通道
+                        switch (channel.Value)
+                        {
+                            case 1: ch1 = targetBrightness; break;
+                            case 2: ch2 = targetBrightness; break;
+                            case 3: ch3 = targetBrightness; break;
+                            case 4: ch4 = targetBrightness; break;
+                        }
+                    }
+                    // 保存更新后的值到配置
+                    cup.p_LS.indent[1] = ch1;
+                    cup.p_LS.indent[2] = ch2;
+                    cup.p_LS.indent[3] = ch3;
+                    cup.p_LS.indent[4] = ch4;
                 }
             }
             else if (jobIndex == 1) // 侧光源1
             {
-                // 类似逻辑，使用 cup.p_LS2[0] 和 sPortSub[0]
+                // 类似，使用 cup.p_LS2[0]
+                if (sync)
+                {
+                    ch1 = ch2 = ch3 = ch4 = targetBrightness;
+                }
+                else
+                {
+                    ch1 = cup.p_LS2[0].indent[1];
+                    ch2 = cup.p_LS2[0].indent[2];
+                    ch3 = cup.p_LS2[0].indent[3];
+                    ch4 = cup.p_LS2[0].indent[4];
+                    if (channel.HasValue && channel >= 1 && channel <= 4)
+                    {
+                        switch (channel.Value)
+                        {
+                            case 1: ch1 = targetBrightness; break;
+                            case 2: ch2 = targetBrightness; break;
+                            case 3: ch3 = targetBrightness; break;
+                            case 4: ch4 = targetBrightness; break;
+                        }
+                    }
+                    cup.p_LS2[0].indent[1] = ch1;
+                    cup.p_LS2[0].indent[2] = ch2;
+                    cup.p_LS2[0].indent[3] = ch3;
+                    cup.p_LS2[0].indent[4] = ch4;
+                }
             }
-            // 可扩展更多工位
+            else
+            {
+                // 其他工位...
+                return;
+            }
 
-            // 同步 cup.p_Cam 仅用于 UI 显示一致性（非必须）
+            // 发送一条命令设置所有通道
+            SendAllChannelsCommand(jobIndex, ch1, ch2, ch3, ch4);
+
+            // 同步更新 cup.p_Cam 以便 UI 显示（可选）
             int camIndex = cup.p_CD.camInd[jobIndex];
             if (camIndex >= 0 && camIndex < cup.p_Cam.Length)
-                cup.p_Cam[camIndex].iBrightness = (uint)targetBrightness;
-
-            // 日志记录（可选）
-            operLog.iEventStatus = 0;
-            operLog.strOperEvent = "光源亮度设置";
-            operLog.strFailReason = $"工位{jobIndex + 1} 通道{(sync ? "全部" : targetChannel.ToString())} 亮度={targetBrightness}";
-            AddLog();
+                cup.p_Cam[camIndex].iBrightness = (uint)targetBrightness; // 或者显示第一个通道
         }
         private void InitializeLightBrightness()
         {
-            // 检查主光源串口是否打开
-            if (csd._sPort == null || !csd._sPort.IsOpen)
+            if (sPortMain == null || !sPortMain.IsOpen)
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "初始化光源亮度";
@@ -349,49 +430,26 @@ namespace VisionApplication
                 return;
             }
 
-            // ---- 主光源（工位0，A面） ----
-            // cup.p_LS.indent 数组索引1~4分别对应通道1~4
-            for (int ch = 1; ch <= 4; ch++)
+            // 主光源
+            if (cup.p_LS.indent != null && cup.p_LS.indent.Length >= 5)
             {
-                int brightness = cup.p_LS.indent[ch]; // 从配置中读取亮度值
-                if (!csd.SetChIntensity(ch, brightness,sPortMain))
-                {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = "初始化光源亮度";
-                    operLog.strFailReason = $"主光源通道{ch}设置失败";
-                    AddLog();
-                }
+                int ch1 = cup.p_LS.indent[1];
+                int ch2 = cup.p_LS.indent[2];
+                int ch3 = cup.p_LS.indent[3];
+                int ch4 = cup.p_LS.indent[4];
+                SendAllChannelsCommand(0, ch1, ch2, ch3, ch4);
             }
 
-            // ---- 侧光源1（工位1，B面） ----
-            // 检查侧光源串口是否打开（csd._sPortSub[0]）
-            if (csd._sPortSub != null && csd._sPortSub.Length > 0 &&
-                csd._sPortSub[0] != null && csd._sPortSub[0].IsOpen)
+            // 侧光源1
+            if (sPortSub[0] != null && sPortSub[0].IsOpen && cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
+                cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length >= 5)
             {
-                for (int ch = 1; ch <= 4; ch++)
-                {
-                    int brightness = cup.p_LS2[0].indent[ch];
-                    if (!csd.SetChIntensity(ch, brightness, sPortSub[0]))
-                    {
-                        operLog.iEventStatus = -1;
-                        operLog.strOperEvent = "初始化光源亮度";
-                        operLog.strFailReason = $"侧光源通道{ch}设置失败";
-                        AddLog();
-                    }
-                }
+                int ch1 = cup.p_LS2[0].indent[1];
+                int ch2 = cup.p_LS2[0].indent[2];
+                int ch3 = cup.p_LS2[0].indent[3];
+                int ch4 = cup.p_LS2[0].indent[4];
+                SendAllChannelsCommand(1, ch1, ch2, ch3, ch4);
             }
-            else
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "初始化光源亮度";
-                operLog.strFailReason = "侧光源串口未打开";
-                AddLog();
-                // 不return，主光源可能已成功，继续记录日志
-            }
-
-            operLog.iEventStatus = 0;
-            operLog.strOperEvent = "光源亮度初始化完成";
-            AddLog();
         }
         //修改亮度参数
         private void tbContrast_ValueChanged(object sender, EventArgs e)

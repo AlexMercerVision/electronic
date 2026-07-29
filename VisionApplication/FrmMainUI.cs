@@ -104,7 +104,7 @@ namespace VisionApplication
 
         private DateTime _lastReconnectAttempt = DateTime.MinValue;
         private bool _isReconnecting = false;
-        private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(5); // 重试间隔
+        private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(30); // 重试间隔
 
         // 7. 字段 - 状态标志
         private uint cameraNum = 0;                             // 实际搜索到的相机数量
@@ -1236,8 +1236,27 @@ namespace VisionApplication
         /// <returns>是否初始化成功</returns>
         private bool InitCamInd(int ind)
         {
+
+           
+
             bool bSucc = false;
             int iCamInd = cup.p_CD.camInd[ind];          // 物理相机索引
+
+
+            // 在 InitCamInd 开头增加
+            if (camera2[iCamInd] == null)
+                return false;
+
+            // 先尝试获取一个简单参数（如设备型号），若失败则视为离线
+            MyCamera.MVCC_STRINGVALUE stStr = new MyCamera.MVCC_STRINGVALUE();
+            int ret = camera2[iCamInd].MV_CC_GetStringValue_NET("DeviceModelName", ref stStr);
+            if (ret != MyCamera.MV_OK)
+            {
+                // 相机可能已断开，清理资源后返回
+                camera2[iCamInd] = null;
+                SyncCameraStatus(iCamInd, 0);
+                return false;
+            }
 
             // 1. 检查相机名称是否发生变化，若变化则记录日志
             if (cup.p_Cam[iCamInd].strCamName != items[iCamInd])
@@ -1270,7 +1289,7 @@ namespace VisionApplication
             {
                 // 部分相机无法直接获取 PayloadSize，采用抓一帧的方式
                 MyCamera.MV_FRAME_OUT stFrameInfo1 = new MyCamera.MV_FRAME_OUT();
-                int nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 10000);
+                int nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 2000);
                 if (nRet == MyCamera.MV_OK)
                 {
                     nPayloadSize = stFrameInfo1.stFrameInfo.nFrameLen;
@@ -5353,65 +5372,46 @@ namespace VisionApplication
             for (int i = 0; i < maxCameraNum; i++)
             {
                 int iCamInd = cup.p_CD.camInd[i];
+                // 在 TipInfo 中，发现相机状态异常时
                 if (cup.p_VPPRTP.bAcqFromCam && cup.p_CD.bListProcess[i] && rts.cs.iStatus[iCamInd] < 2)
                 {
-                    SearchCam();
-                    items = hIKVisionCamera.EnumDevices();
-                    if (cameraNum > iCamInd)
+                    // 如果尚未在重连且距离上次重连尝试超过间隔
+                    if (!_isReconnecting && (DateTime.Now - _lastReconnectAttempt) > _reconnectInterval)
                     {
-                        if (!InitCamInd(iCamInd))
+                        _lastReconnectAttempt = DateTime.Now;
+                        // 启动后台线程尝试重连
+                        ThreadPool.QueueUserWorkItem(state =>
                         {
-                            iCamFailNum++;
-                            switch (i)
+                            _isReconnecting = true;
+                            try
                             {
-                                case 0:
-                                    toolStripStatus_Cam1.ForeColor = Color.Orange;
-                                    break;
-                                case 1:
-                                    toolStripStatus_Cam2.ForeColor = Color.Orange;
-                                    break;
-                                case 2:
-                                    toolStripStatus_Cam3.ForeColor = Color.Orange;
-                                    break;
-                                case 3:
-                                    toolStripStatus_Cam4.ForeColor = Color.Orange;
-                                    break;
-                                case 4:
-                                    toolStripStatus_Cam5.ForeColor = Color.Orange;
-                                    break;
+                                int index = (int)state;
+                                // 重新枚举相机（可选）
+                                // 调用 InitCamInd 或更轻量的重连方法
+                                bool success = InitCamInd(index);
+                                if (success)
+                                {
+                                    // 重连成功，恢复采集
+                                    StartGrab(cup.p_CD.camInd[index]);
+                                    // 更新状态栏颜色等
+                                }
                             }
-                        }
-                        else
-                        {
-                            StartGrab(iCamInd);
-                            InitVisionControl();
-                        }
-
+                            catch (Exception ex)
+                            {
+                                // 记录日志，但不影响主线程
+                                operLog.iEventStatus = -1;
+                                operLog.strOperEvent = "相机后台重连";
+                                operLog.strFailReason = ex.Message;
+                                AddLog();
+                            }
+                            finally
+                            {
+                                _isReconnecting = false;
+                            }
+                        }, i);
                     }
-                    else
-                    {
-                        iCamFailNum++;
-                        switch (i)
-                        {
-                            case 0:
-                                toolStripStatus_Cam1.ForeColor = Color.Red;
-                                break;
-                            case 1:
-                                toolStripStatus_Cam2.ForeColor = Color.Red;
-                                break;
-                            case 2:
-                                toolStripStatus_Cam3.ForeColor = Color.Red;
-                                break;
-                            case 3:
-                                toolStripStatus_Cam4.ForeColor = Color.Red;
-                                break;
-                            case 4:
-                                toolStripStatus_Cam5.ForeColor = Color.Red;
-                                break;
-                        }
-                    }
-
                 }
+
                 if (rts.cs.iStatus[iCamInd] >= 2)
                 {
                     iCamSuccNum++;
