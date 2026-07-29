@@ -297,6 +297,46 @@ namespace VisionApplication
         /// 初始化A、B面的4分区光源亮度（分别设置每个通道）
         /// </summary>
         private bool _isUpdatingLightUI = false;  // 防止程序化更新控件时触发事件
+
+        private void ApplyLightBrightness(int jobIndex, int? channel = null, int? brightness = null)
+        {
+            int targetChannel = channel ?? (cmbLs_Channel.SelectedIndex + 1);
+            if (targetChannel < 1 || targetChannel > 4) return;
+
+            int targetBrightness = brightness ?? tbBirghtness.Value;
+            bool sync = chkLS_Sync.Checked;
+
+            // 根据 jobIndex 选择光源配置和串口
+            if (jobIndex == 0) // 主光源
+            {
+                if (sync)
+                {
+                    for (int ch = 1; ch <= 4; ch++) cup.p_LS.indent[ch] = targetBrightness;
+                    csd.SetLightBrightnessByJob(jobIndex, targetBrightness);
+                }
+                else
+                {
+                    cup.p_LS.indent[targetChannel] = targetBrightness;
+                    csd.SetChIntensity(targetChannel, targetBrightness, sPortMain);
+                }
+            }
+            else if (jobIndex == 1) // 侧光源1
+            {
+                // 类似逻辑，使用 cup.p_LS2[0] 和 sPortSub[0]
+            }
+            // 可扩展更多工位
+
+            // 同步 cup.p_Cam 仅用于 UI 显示一致性（非必须）
+            int camIndex = cup.p_CD.camInd[jobIndex];
+            if (camIndex >= 0 && camIndex < cup.p_Cam.Length)
+                cup.p_Cam[camIndex].iBrightness = (uint)targetBrightness;
+
+            // 日志记录（可选）
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "光源亮度设置";
+            operLog.strFailReason = $"工位{jobIndex + 1} 通道{(sync ? "全部" : targetChannel.ToString())} 亮度={targetBrightness}";
+            AddLog();
+        }
         private void InitializeLightBrightness()
         {
             // 检查主光源串口是否打开
@@ -357,7 +397,7 @@ namespace VisionApplication
         private void tbContrast_ValueChanged(object sender, EventArgs e)
         {
             if (_isUpdatingLightUI) return;
-            SetLightBrightnessFromUI(tbBirghtness.Value);
+            ApplyLightBrightness(iJobIndex);
             /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
              int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
 
@@ -422,7 +462,7 @@ namespace VisionApplication
         private void nudContrast_ValueChanged(object sender, EventArgs e)
         {
             if (_isUpdatingLightUI) return;
-            SetLightBrightnessFromUI((int)nudContrast.Value);
+            ApplyLightBrightness(iJobIndex);
 
             /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
                int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
@@ -1035,26 +1075,20 @@ namespace VisionApplication
                         cmbPixelFormat.SelectedIndex = cup.p_Cam[icamInd].iMonoType;
 
                     // ---- 光源亮度：从光源配置读取 ----
-                    _isUpdatingLightUI = true;  // 禁止事件触发
+                    _isUpdatingLightUI = true;
                     try
                     {
+                        int channel = cmbLs_Channel.SelectedIndex + 1;
                         int brightness = 0;
-                        int channelIndex = cmbLs_Channel.SelectedIndex; // 0~3
-                        if (channelIndex >= 0 && channelIndex < 4)
-                        {
-                            if (iJobIndex == 0 && cup.p_LS.indent != null && cup.p_LS.indent.Length > channelIndex + 1)
-                                brightness = cup.p_LS.indent[channelIndex + 1];
-                            else if (iJobIndex == 1 && cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
-                                     cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length > channelIndex + 1)
-                                brightness = cup.p_LS2[0].indent[channelIndex + 1];
-                        }
+                        if (iJobIndex == 0 && cup.p_LS.indent != null && cup.p_LS.indent.Length > channel)
+                            brightness = cup.p_LS.indent[channel];
+                        else if (iJobIndex == 1 && cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
+                                 cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length > channel)
+                            brightness = cup.p_LS2[0].indent[channel];
                         nudContrast.Value = brightness;
                         tbBirghtness.Value = brightness;
                     }
-                    finally
-                    {
-                        _isUpdatingLightUI = false;
-                    }
+                    finally { _isUpdatingLightUI = false; }
 
                     // ROI、旋转、镜像等保持不变
                     // ...（原有代码）

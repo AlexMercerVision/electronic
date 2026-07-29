@@ -102,6 +102,10 @@ namespace VisionApplication
         private IntPtr m_BufForDriver;                          // 单相机驱动缓冲区指针（未使用）
         private HObject hobjImg = new HObject();                // Halcon图像对象
 
+        private DateTime _lastReconnectAttempt = DateTime.MinValue;
+        private bool _isReconnecting = false;
+        private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(5); // 重试间隔
+
         // 7. 字段 - 状态标志
         private uint cameraNum = 0;                             // 实际搜索到的相机数量
         private int iUsedCamraNum = 2;                          // 实际启用的相机数量
@@ -4649,10 +4653,16 @@ namespace VisionApplication
                 operLog.strOperEvent = "光源控制";
                 operLog.strFailReason = "未选择相机";
                 AddLog();
-                return;
+               // return;
             }
 
-            bool bSucc;
+            bool open = !toolBtSta_Triggle.Checked;
+            int brightness = open ? tbBirghtness.Value : 0;
+            ApplyLightBrightness(iJobIndex, null, brightness);
+            // 切换按钮状态和图标
+            toolBtSta_Triggle.Checked = open;
+            toolBtSta_Triggle.Image = open ? global::VisionApplication.Properties.Resources.LightOn : global::VisionApplication.Properties.Resources.LightOff;
+            /*bool bSucc;
             int targetBrightness;
 
             // 根据当前按钮状态决定开关
@@ -4705,7 +4715,7 @@ namespace VisionApplication
                 operLog.strOperEvent = "光源控制";
                 operLog.strFailReason = "串口通信失败";
                 AddLog();
-            }
+            }*/
         }
         /// <summary>
         /// 获取当前工位对应的光源亮度配置值
@@ -8183,21 +8193,8 @@ namespace VisionApplication
 
         private void chkLS_Sync_Click(object sender, EventArgs e)
         {
-             
-            bool bSucc = true;
-            bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)tbBirghtness.Value);
 
-            
-            if (bSucc)
-            { 
-            }
-            else
-            {
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "";
-                operLog.strOperEvent = "修改光源亮度参数";
-                AddLog();
-            }
+            ApplyLightBrightness(iJobIndex);
         }
 
         private void timerIOIn_Tick(object sender, EventArgs e)
