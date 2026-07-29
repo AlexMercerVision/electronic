@@ -296,6 +296,7 @@ namespace VisionApplication
         /// <summary>
         /// 初始化A、B面的4分区光源亮度（分别设置每个通道）
         /// </summary>
+        private bool _isUpdatingLightUI = false;  // 防止程序化更新控件时触发事件
         private void InitializeLightBrightness()
         {
             // 检查主光源串口是否打开
@@ -355,127 +356,132 @@ namespace VisionApplication
         //修改亮度参数
         private void tbContrast_ValueChanged(object sender, EventArgs e)
         {
-            //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
-            int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
+            if (_isUpdatingLightUI) return;
+            SetLightBrightnessFromUI(tbBirghtness.Value);
+            /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
+             int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
 
-            if (icamSelectInd < 0)
-                icamSelectInd=0;
-           /* if (camera2 == null || camera2[icamSelectInd] == null)
-                return;*/
-            cup.p_Cam[icamSelectInd].iBrightness = (uint)tbBirghtness.Value;
-            //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
-            //  bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
-          
-            bool bSucc = true;
+             if (icamSelectInd < 0)
+                 icamSelectInd=0;
+            *//* if (camera2 == null || camera2[icamSelectInd] == null)
+                 return;*//*
+             cup.p_Cam[icamSelectInd].iBrightness = (uint)tbBirghtness.Value;
+             //  bool bSucc = hIKVisionCamera.SetBrightness(ref cup.p_Cam[icamSelectInd].iBrightness, camera2[icamSelectInd]);
+             //  bool bSucc = csd.AdjBright((int)cup.p_Cam[icamSelectInd].iBrightness);
 
-            if (!chkLS_Sync.Checked)  //单通道控制
-            {
-                if(iJobIndex==0)
-                {
-                    cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1]= tbBirghtness.Value;
-                    bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex + 1, cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1], sPortMain);
-                }
-                else
-                {
-                    cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1] = tbBirghtness.Value;
-                    bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex + 1, cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1], sPortSub[0]);
-                }
+             bool bSucc = true;
 
-                
-            }
-            else  //多通道同步控制
-            {
-
-                if (iJobIndex == 0)
-                {
-                    for(int i=1;i<=4;i++)
-                        cup.p_LS.indent[i] = tbBirghtness.Value;
-                }
-                else
-                {
-                    for (int i = 1; i <= 4; i++)
-                        cup.p_LS2[0].indent[i] = tbBirghtness.Value;
-                }
+             if (!chkLS_Sync.Checked)  //单通道控制
+             {
+                 if(iJobIndex==0)
+                 {
+                     cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1]= tbBirghtness.Value;
+                     bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex + 1, cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1], sPortMain);
+                 }
+                 else
+                 {
+                     cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1] = tbBirghtness.Value;
+                     bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex + 1, cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1], sPortSub[0]);
+                 }
 
 
-                bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
-            }
-            if (bSucc)
-            {
-              //  tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
-                nudContrast.Value = (decimal)cup.p_Cam[icamSelectInd].iBrightness;
-            }
-            else
-            {
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "";
-                operLog.strOperEvent = "修改光源亮度参数";
-                AddLog();
-            }
+             }
+             else  //多通道同步控制
+             {
+
+                 if (iJobIndex == 0)
+                 {
+                     for(int i=1;i<=4;i++)
+                         cup.p_LS.indent[i] = tbBirghtness.Value;
+                 }
+                 else
+                 {
+                     for (int i = 1; i <= 4; i++)
+                         cup.p_LS2[0].indent[i] = tbBirghtness.Value;
+                 }
+
+
+                 bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
+             }
+             if (bSucc)
+             {
+               //  tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
+                 nudContrast.Value = (decimal)cup.p_Cam[icamSelectInd].iBrightness;
+             }
+             else
+             {
+                 operLog.iEventStatus = -1;
+                 operLog.strFailReason = "";
+                 operLog.strOperEvent = "修改光源亮度参数";
+                 AddLog();
+             }*/
 
 
         }
         //修改亮度参数
         private void nudContrast_ValueChanged(object sender, EventArgs e)
         {
-          //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
-            int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
-           
-            // tbBirghtness.Value = (int)nudContrast.Value;
-            if (icamSelectInd < 0)
-                icamSelectInd=0;
-           /* if (camera2 == null || camera2[icamSelectInd] == null)
-                return;*/
-            cup.p_Cam[icamSelectInd].iBrightness = (uint)nudContrast.Value;
+            if (_isUpdatingLightUI) return;
+            SetLightBrightnessFromUI((int)nudContrast.Value);
 
-            bool bSucc = true;
+            /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
+               int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
 
+               // tbBirghtness.Value = (int)nudContrast.Value;
+               if (icamSelectInd < 0)
+                   icamSelectInd=0;
+              *//* if (camera2 == null || camera2[icamSelectInd] == null)
+                   return;*//*
+               cup.p_Cam[icamSelectInd].iBrightness = (uint)nudContrast.Value;
 
-            if (!chkLS_Sync.Checked)  //单通道控制
-            {
-                if (iJobIndex == 0)
-                {
-                    cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1] = (int)nudContrast.Value;
-                    bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex+1, cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1], sPortMain);
-
-                }
-                else
-                {
-                    cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1] = (int)nudContrast.Value;
-                    bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex+1, cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1], sPortSub[0]);
-
-                }
-               
-            }
-            else  //多通道同步控制
-            {
-                if (iJobIndex == 0)
-                {
-                    for (int i = 1; i <= 4; i++)
-                        cup.p_LS.indent[i] = (int)nudContrast.Value;
-                }
-                else
-                {
-                    for (int i = 1; i <= 4; i++)
-                        cup.p_LS2[0].indent[i] = (int)nudContrast.Value;
-                }
-
-                bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
-            }
+               bool bSucc = true;
 
 
-            if (bSucc)
-            {
-                tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
-                nudContrast.Value = (decimal)cup.p_Cam[icamSelectInd].iBrightness;
-            }
-            else
-            {
-                /*operLog.iEventStatus = -1;
-                operLog.strFailReason = "";
-                operLog.strOperEvent = "修改相机亮度参数";
-                AddLog();*/
-            }
+               if (!chkLS_Sync.Checked)  //单通道控制
+               {
+                   if (iJobIndex == 0)
+                   {
+                       cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1] = (int)nudContrast.Value;
+                       bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex+1, cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1], sPortMain);
+
+                   }
+                   else
+                   {
+                       cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1] = (int)nudContrast.Value;
+                       bSucc = csd.SetChIntensity(cmbLs_Channel.SelectedIndex+1, cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1], sPortSub[0]);
+
+                   }
+
+               }
+               else  //多通道同步控制
+               {
+                   if (iJobIndex == 0)
+                   {
+                       for (int i = 1; i <= 4; i++)
+                           cup.p_LS.indent[i] = (int)nudContrast.Value;
+                   }
+                   else
+                   {
+                       for (int i = 1; i <= 4; i++)
+                           cup.p_LS2[0].indent[i] = (int)nudContrast.Value;
+                   }
+
+                   bSucc = csd.SetLightBrightnessByJob(iJobIndex, (int)cup.p_Cam[icamSelectInd].iBrightness);
+               }
+
+
+               if (bSucc)
+               {
+                   tbBirghtness.Value = (int)cup.p_Cam[icamSelectInd].iBrightness;
+                   nudContrast.Value = (decimal)cup.p_Cam[icamSelectInd].iBrightness;
+               }
+               else
+               {
+                   *//*operLog.iEventStatus = -1;
+                   operLog.strFailReason = "";
+                   operLog.strOperEvent = "修改相机亮度参数";
+                   AddLog();*//*
+               }*/
 
         }
         //修改图像格式
@@ -919,7 +925,7 @@ namespace VisionApplication
 
         private bool _isUpdatingUI = false;
         //根据相机参数更新UI
-        private void UpdateCamParamToUI()
+        /*private void UpdateCamParamToUI()
         {
             if (cbDeviceList.Items.Count == 0) return;
 
@@ -933,7 +939,11 @@ namespace VisionApplication
                 {
                     if (icamInd >= 0)
                     {
-                        nudContrast.Value = cup.p_Cam[icamInd].iBrightness;
+                        cmbLs_Channel.SelectedIndex = 0;
+                       *//* if(iJobIndex==0)
+                            nudContrast.Value = cup.p_LS.indent[0]; // cup.p_Cam[icamInd].iBrightness;
+                        else
+                            nudContrast.Value = cup.p_LS.indent[0];*//*
                         //  LightControlTurnOn();
 
                         nudSharp.Value = cup.p_Cam[icamInd].iSharp;
@@ -1003,8 +1013,102 @@ namespace VisionApplication
                     _isUpdatingUI = false;  // 恢复事件响应
                 }
             }
+        }*/
+        private void UpdateCamParamToUI()
+        {
+            if (cbDeviceList.Items.Count == 0) return;
+
+            _isUpdatingUI = true;
+            try
+            {
+                int icamInd = cbDeviceList.SelectedIndex;
+                if (icamInd >= 0)
+                {
+                    // 其他参数（曝光、增益等）保持不变
+                    nudSharp.Value = cup.p_Cam[icamInd].iSharp;
+                    nudExposure.Value = (decimal)cup.p_Cam[icamInd].iExposeTime;
+                    nudGain.Value = (decimal)cup.p_Cam[icamInd].dGain;
+                    nudGamma.Value = (decimal)cup.p_Cam[icamInd].dGamma;
+                    string strRes = cup.p_Cam[icamInd].iWidth.ToString() + "*" + cup.p_Cam[icamInd].iHeight.ToString();
+                    cmbResulation.Text = strRes;
+                    if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)
+                        cmbPixelFormat.SelectedIndex = cup.p_Cam[icamInd].iMonoType;
+
+                    // ---- 光源亮度：从光源配置读取 ----
+                    _isUpdatingLightUI = true;  // 禁止事件触发
+                    try
+                    {
+                        int brightness = 0;
+                        int channelIndex = cmbLs_Channel.SelectedIndex; // 0~3
+                        if (channelIndex >= 0 && channelIndex < 4)
+                        {
+                            if (iJobIndex == 0 && cup.p_LS.indent != null && cup.p_LS.indent.Length > channelIndex + 1)
+                                brightness = cup.p_LS.indent[channelIndex + 1];
+                            else if (iJobIndex == 1 && cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
+                                     cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length > channelIndex + 1)
+                                brightness = cup.p_LS2[0].indent[channelIndex + 1];
+                        }
+                        nudContrast.Value = brightness;
+                        tbBirghtness.Value = brightness;
+                    }
+                    finally
+                    {
+                        _isUpdatingLightUI = false;
+                    }
+
+                    // ROI、旋转、镜像等保持不变
+                    // ...（原有代码）
+                }
+            }
+            finally
+            {
+                _isUpdatingUI = false;
+            }
         }
-      
+
+        private void SetLightBrightnessFromUI(int newBrightness)
+        {
+            int channel = cmbLs_Channel.SelectedIndex + 1; // 1~4
+            if (channel < 1 || channel > 4) return;
+
+            bool sync = chkLS_Sync.Checked;
+
+            if (iJobIndex == 0) // 主光源（A面）
+            {
+                if (sync)
+                {
+                    for (int ch = 1; ch <= 4; ch++)
+                        cup.p_LS.indent[ch] = newBrightness;
+                    csd.SetLightBrightnessByJob(iJobIndex, newBrightness);
+                }
+                else
+                {
+                    cup.p_LS.indent[channel] = newBrightness;
+                    csd.SetChIntensity(channel, newBrightness, sPortMain);
+                }
+            }
+            else if (iJobIndex == 1) // 侧光源1（B面）
+            {
+                if (sync)
+                {
+                    for (int ch = 1; ch <= 4; ch++)
+                        cup.p_LS2[0].indent[ch] = newBrightness;
+                    csd.SetLightBrightnessByJob(iJobIndex, newBrightness);
+                }
+                else
+                {
+                    cup.p_LS2[0].indent[channel] = newBrightness;
+                    csd.SetChIntensity(channel, newBrightness, sPortSub[0]);
+                }
+            }
+            // 可根据实际工位数量扩展（如 iJobIndex == 2 对应侧光源2）
+
+            // 记录日志（可选）
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = "修改光源亮度";
+            operLog.strFailReason = $"工位{iJobIndex + 1} 通道{channel} 亮度={newBrightness} {(sync ? "同步" : "独立")}";
+            AddLog();
+        }
         //手动设置相机参数，（可去掉）
         private void bnSetParam_Click(object sender, EventArgs e)
         {
