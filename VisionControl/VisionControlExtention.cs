@@ -605,11 +605,11 @@ namespace VisionControl
 
             int iCount = 0;
             int maxTimes = cup.p_RTSP.runTimeOut / 5;
-           /* while (bActivateRun && iCount < maxTimes)
+            while (bActivateRun && iCount < maxTimes)
             {
                 Thread.Sleep(5);
                 iCount++;
-            }*/
+            }
 
             inactiveTime = 0;       //只要运行了，就将不活跃次数置零
             bRunOneTimeFinished[iJobIndex] = 0;
