@@ -3959,9 +3959,10 @@ namespace VisionApplication
             bool open = !toolBtSta_Triggle.Checked;
             int brightness = open ? tbBirghtness.Value : 0;
             ApplyLightBrightness(iJobIndex, null, brightness);
-            // 切换按钮状态和图标
             toolBtSta_Triggle.Checked = open;
-            toolBtSta_Triggle.Image = open ? global::VisionApplication.Properties.Resources.LightOn : global::VisionApplication.Properties.Resources.LightOff;
+            toolBtSta_Triggle.Image = open ? global::VisionApplication.Properties.Resources.LightOn
+                                            : global::VisionApplication.Properties.Resources.LightOff;
+            
             /*bool bSucc;
             int targetBrightness;
 
@@ -7459,23 +7460,29 @@ namespace VisionApplication
 
         private void cmbLs_Channel_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if(iJobIndex==0)
+            if (iJobIndex < 0 || iJobIndex > 1) return;
+            _isUpdatingUI = true;   // 阻止事件触发
+            try
             {
-                tbBirghtness.Value = (int)cup.p_LS.indent[cmbLs_Channel.SelectedIndex+1];
-                nudContrast.Value = (decimal)cup.p_LS.indent[cmbLs_Channel.SelectedIndex + 1];
+                int channel = cmbLs_Channel.SelectedIndex + 1;
+                int brightness = cup.p_LS2[iJobIndex].indent[channel];
+                tbBirghtness.Value = brightness;
+                nudContrast.Value = brightness;
             }
-            else
+            finally
             {
-                tbBirghtness.Value = (int)cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1];
-                nudContrast.Value = (decimal)cup.p_LS2[0].indent[cmbLs_Channel.SelectedIndex + 1];
-            }         
-          
+                _isUpdatingUI = false;
+            }
+
         }
 
         private void chkLS_Sync_Click(object sender, EventArgs e)
         {
-
-            ApplyLightBrightness(iJobIndex);
+            if (chkLS_Sync.Checked)
+            {
+                ApplyLightBrightness(iJobIndex, null, tbBirghtness.Value);
+            }
+          //  ApplyLightBrightness(iJobIndex);
         }
 
         private void timerIOIn_Tick(object sender, EventArgs e)

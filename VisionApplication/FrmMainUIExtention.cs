@@ -454,8 +454,13 @@ namespace VisionApplication
         //修改亮度参数
         private void tbContrast_ValueChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingLightUI) return;
+            if (_isUpdatingUI) return;
+            // 同步数字框
+            if ((int)nudContrast.Value != tbBirghtness.Value)
+                nudContrast.Value = tbBirghtness.Value;
+            // 应用亮度（当前选中通道）
             ApplyLightBrightness(iJobIndex);
+
             /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
              int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
 
@@ -519,7 +524,9 @@ namespace VisionApplication
         //修改亮度参数
         private void nudContrast_ValueChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingLightUI) return;
+            if (_isUpdatingUI) return;
+            if (tbBirghtness.Value != (int)nudContrast.Value)
+                tbBirghtness.Value = (int)nudContrast.Value;
             ApplyLightBrightness(iJobIndex);
 
             /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
