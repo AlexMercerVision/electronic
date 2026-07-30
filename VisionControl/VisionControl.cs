@@ -976,39 +976,39 @@ namespace VisionControl
         public bool bLoadVPRes = true;
         public VPRes vpRes = new VPRes();  //xb项目的结果存储结构体
         //   CogBlobResultCollection[] blobColl = new CogBlobResultCollection[maxCameraNum];
-        private void RunOneTimeFinished(int iJobIndex)
+        private void RunOneTimeFinished(int jobIndex)
         {
             try
             {
                 
-                pmaRes[iJobIndex].bLocated = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
+                pmaRes[jobIndex].bLocated = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
                 
-                if (!pmaRes[iJobIndex].bLocated)
+                if (!pmaRes[jobIndex].bLocated)
                 {
                     iReject++;
-                    pmaRes[iJobIndex].dPMAScore = 0;
-                    pmaRes[iJobIndex].dTX = 0;
-                    pmaRes[iJobIndex].dTY = 0;
+                    pmaRes[jobIndex].dPMAScore = 0;
+                    pmaRes[jobIndex].dTX = 0;
+                    pmaRes[jobIndex].dTY = 0;
                 }
                 else
                 {
-                    pmaRes[iJobIndex].dTX = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TX");
-                    pmaRes[iJobIndex].dTY = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TY");
-                    pmaRes[iJobIndex].dTR = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TR");
-                    pmaRes[iJobIndex].dPMAScore = (double)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("PMAScore");
-                    if (pmaRes[iJobIndex].dPMAScore < pma[iJobIndex].RunParams.AcceptThreshold + 0.3)
+                    pmaRes[jobIndex].dTX = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TX");
+                    pmaRes[jobIndex].dTY = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TY");
+                    pmaRes[jobIndex].dTR = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("TR");
+                    pmaRes[jobIndex].dPMAScore = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("PMAScore");
+                    if (pmaRes[jobIndex].dPMAScore < pma[jobIndex].RunParams.AcceptThreshold + 0.3)
                     {
-                        pmaRes[iJobIndex].bLocated = false;
-                        pmaRes[iJobIndex].dPMAScore -= 0.3;
+                        pmaRes[jobIndex].bLocated = false;
+                        pmaRes[jobIndex].dPMAScore -= 0.3;
                     }
 
-                    /*if (pmaRes[iJobIndex].dPMAScore < 0.8)
+                    /*if (pmaRes[jobIndex].dPMAScore < 0.8)
                     {
-                        pmaRes[iJobIndex].bLocated = false;
-                        pmaRes[iJobIndex].dPMAScore -= 0.3;
+                        pmaRes[jobIndex].bLocated = false;
+                        pmaRes[jobIndex].dPMAScore -= 0.3;
                     }*/
                 }
-                bRunOneTimeFinished[iJobIndex] = 2;
+                bRunOneTimeFinished[jobIndex] = 2;
             }
             catch
             { }

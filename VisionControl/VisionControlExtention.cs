@@ -490,61 +490,61 @@ namespace VisionControl
             }
         }
 
-        private void DLInfer(int iJobIndex)
+        private void DLInfer(int jobIndex)
         {
-            DL_result[iJobIndex].AL_Rect.Clear();
-            DL_result[iJobIndex].AL_score.Clear();
-            DL_result[iJobIndex].AL_Type.Clear();
-            DL_result[iJobIndex].Al_bDiff.Clear();
+            DL_result[jobIndex].AL_Rect.Clear();
+            DL_result[jobIndex].AL_score.Clear();
+            DL_result[jobIndex].AL_Type.Clear();
+            DL_result[jobIndex].Al_bDiff.Clear();
 
-            // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[iJobIndex].Width, ci8gAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
-            if(cup.p_Cam[iJobIndex].iMonoType==0 && acqFIFO.bImgSrcData[iJobIndex]!=null)  //灰度图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[iJobIndex], acqFIFO.ci8gAcq[iJobIndex].Width, acqFIFO.ci8gAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
-            else if(acqFIFO.bImgSrcData[iJobIndex] != null) //彩色图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[iJobIndex], acqFIFO.ci24ColorAcq[iJobIndex].Width, acqFIFO.ci24ColorAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
+            // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            if(cup.p_Cam[jobIndex].iMonoType==0 && acqFIFO.bImgSrcData[jobIndex]!=null)  //灰度图推理
+                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci8gAcq[jobIndex].Width, acqFIFO.ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            else if(acqFIFO.bImgSrcData[jobIndex] != null) //彩色图推理
+                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci24ColorAcq[jobIndex].Width, acqFIFO.ci24ColorAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
 
-            if (DL_result[iJobIndex].AL_Rect.Count > 0)
+            if (DL_result[jobIndex].AL_Rect.Count > 0)
             {
-                pmaRes[iJobIndex].bOk = false;
+                pmaRes[jobIndex].bOk = false;
             }
             else
             {
-                pmaRes[iJobIndex].bOk = true;
+                pmaRes[jobIndex].bOk = true;
             }
             //连续运行只更新NG图像和信号
             //  if ( iTaskType!=3 || !pmaRes.bOk)
             {
-                DirectShowImage(iJobIndex);
+                DirectShowImage(jobIndex);
 
             }
                 
         }
         //离线文件推理
-        private void DLInferOffLine(int iJobIndex)
+        private void DLInferOffLine(int jobIndex)
         {
-            DL_result[iJobIndex].AL_Rect.Clear();
-            DL_result[iJobIndex].AL_score.Clear();
-            DL_result[iJobIndex].AL_Type.Clear();
-            DL_result[iJobIndex].Al_bDiff.Clear();
+            DL_result[jobIndex].AL_Rect.Clear();
+            DL_result[jobIndex].AL_score.Clear();
+            DL_result[jobIndex].AL_Type.Clear();
+            DL_result[jobIndex].Al_bDiff.Clear();
 
-            // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[iJobIndex].Width, ci8gAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
-            if (cup.p_Cam[iJobIndex].iMonoType == 0 && acqFIFO.bImgSrcData[iJobIndex] != null)  //灰度图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[iJobIndex], acqFIFO.ci8gAcq[iJobIndex].Width, acqFIFO.ci8gAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
-            else if (acqFIFO.bImgSrcData[iJobIndex] != null) //彩色图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[iJobIndex], acqFIFO.ci24ColorAcq[iJobIndex].Width, acqFIFO.ci24ColorAcq[iJobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[iJobIndex]);
+            // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            if (cup.p_Cam[jobIndex].iMonoType == 0 && acqFIFO.bImgSrcData[jobIndex] != null)  //灰度图推理
+                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci8gAcq[jobIndex].Width, acqFIFO.ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            else if (acqFIFO.bImgSrcData[jobIndex] != null) //彩色图推理
+                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci24ColorAcq[jobIndex].Width, acqFIFO.ci24ColorAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
 
-            if (DL_result[iJobIndex].AL_Rect.Count > 0)
+            if (DL_result[jobIndex].AL_Rect.Count > 0)
             {
-                pmaRes[iJobIndex].bOk = false;
+                pmaRes[jobIndex].bOk = false;
             }
             else
             {
-                pmaRes[iJobIndex].bOk = true;
+                pmaRes[jobIndex].bOk = true;
             }
             //连续运行只更新NG图像和信号
             //  if ( iTaskType!=3 || !pmaRes.bOk)
             {
-                DirectShowImage(iJobIndex);
+                DirectShowImage(jobIndex);
 
             }
 
@@ -585,18 +585,18 @@ namespace VisionControl
       //  public string strErrReson = "";
 
         //每通道独立执行运行
-        public bool RunOneTimeSplite(int iJobIndex)
+        public bool RunOneTimeSplite(int jobIndex)
         {            
-            if (iJobIndex < 0 || iJobIndex >= maxCameraNum)
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
             {
-                OnVisionError(iJobIndex, $"运行失败: 任务序号超出范围");
+                OnVisionError(jobIndex, $"运行失败: 任务序号超出范围");
                 return false;
             }
 
-            if (IsJobBusy(iJobIndex))
+            if (IsJobBusy(jobIndex))
             {
-                strErrInfo[iJobIndex] = "当前工位视觉任务未结束";
-                OnVisionError(iJobIndex, strErrInfo[iJobIndex]); // ✅ 添加
+                strErrInfo[jobIndex] = "当前工位视觉任务未结束";
+                OnVisionError(jobIndex, strErrInfo[jobIndex]); // ✅ 添加
                 return false;
             }
 
@@ -612,18 +612,18 @@ namespace VisionControl
             }
 
             inactiveTime = 0;       //只要运行了，就将不活跃次数置零
-            bRunOneTimeFinished[iJobIndex] = 0;
-            SetJobBusy(iJobIndex, true);
+            bRunOneTimeFinished[jobIndex] = 0;
+            SetJobBusy(jobIndex, true);
 
             //2026年6月20日
        
 
             //2026年4月12日 设置线程运行  
-            if (!RunOneTime(iJobIndex))
+            if (!RunOneTime(jobIndex))
             {
-                SetJobBusy(iJobIndex, false);
-                bRunOneTimeFinished[iJobIndex] = 2;
-                OnVisionError(iJobIndex, strErrInfo[iJobIndex]); // ✅ 添加此处
+                SetJobBusy(jobIndex, false);
+                bRunOneTimeFinished[jobIndex] = 2;
+                OnVisionError(jobIndex, strErrInfo[jobIndex]); // ✅ 添加此处
                 return false;
             }
             
@@ -631,16 +631,16 @@ namespace VisionControl
             return true;
         }
 
-        public bool RunOneTime(int iJobIndex)
+        public bool RunOneTime(int jobIndex)
         {            
             try
             {  
-                if (iJobIndex >= 0)
+                if (jobIndex >= 0)
                 {
                     
                     //2026年4月12日 修改了采集图像函数
-                    if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) ||
-                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFile(iFileIndex, cup.p_CD.bListProcess[iJobIndex], iJobIndex, cup.p_CD.camInd[iJobIndex]) >=0)
+                    if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) ||
+                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFile(iFileIndex, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) >=0)
                     {
                         ci8gAcq = acqFIFO._ci8gAcq;
                       //  ci8gFX = acqFIFO.ci8gAcqFX;
@@ -648,23 +648,23 @@ namespace VisionControl
                         if (cup.p_VPPRTP.bDeepInfer)   //从GPU实时推理
                         {
                             if (cup.p_VPPRTP.bAcqFromCam)
-                                DLInfer(iJobIndex);
+                                DLInfer(jobIndex);
                             else
-                                DLInferOffLine(iJobIndex);
-                            pmaRes[iJobIndex].bLocated = true;
+                                DLInferOffLine(jobIndex);
+                            pmaRes[jobIndex].bLocated = true;
                         }
                         else if(cup.p_VPPRTP.bVisionInfer)
                         {
                             {
-                                SetVPPImage(iJobIndex);
+                                SetVPPImage(jobIndex);
                                 Thread.Sleep(10);  //st** 20220804 
-                                mJM.Job(iJobIndex).Run();
+                                mJM.Job(jobIndex).Run();
                             }
                         }
                     }
                     else
                     {
-                        strErrInfo[iJobIndex] = "图像采集异常:"+ acqFIFO.strErrInfo;
+                        strErrInfo[jobIndex] = "图像采集异常:"+ acqFIFO.strErrInfo;
                         return false;
                     }
                 }
@@ -673,7 +673,7 @@ namespace VisionControl
             catch (Cognex.VisionPro.Exceptions.CogNotStoppedException ex)
             {
                 // do nothing in this case - we're already running
-                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                strErrInfo[jobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
               
                 return false;
             }
@@ -681,7 +681,7 @@ namespace VisionControl
             {
                 if (mCurrentRunState != RunState.RunningContinuous)
                     mCurrentRunState = RunState.Stopped;
-                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                strErrInfo[jobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
                 
                 return false;
             }          
@@ -748,13 +748,13 @@ namespace VisionControl
         }
 
         //设置VP的输入图像
-        public void SetVPPImage(int iJobIndex)
+        public void SetVPPImage(int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            if (cup.p_Cam[iJobIndex].iMonoType==0 && acqFIFO.ci8gAcq[iCamIndex] !=null)
-                ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci8gAcq[iCamIndex];
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            if (cup.p_Cam[jobIndex].iMonoType==0 && acqFIFO.ci8gAcq[iCamIndex] !=null)
+                ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci8gAcq[iCamIndex];
             else
-                ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci24ColorAcq[iCamIndex];
+                ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci24ColorAcq[iCamIndex];
         }
 
 
@@ -896,29 +896,29 @@ namespace VisionControl
 
             }
         }
-        public bool setNpointCalibTool(CogCalibNPointToNPointTool NPointTool, int iJobIndex)
+        public bool setNpointCalibTool(CogCalibNPointToNPointTool NPointTool, int jobIndex)
         {
 
             try
             {
-                CogCalibNPointToNPointTool current = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                CogCalibNPointToNPointTool current = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
                 if (object.ReferenceEquals(current, NPointTool))
                     return true;
                 //     var clonedTool = CogSerializer.(NPointTool) as CogCalibNPointToNPointTool;
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] = NPointTool;
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] = NPointTool;
                 return true;
             }
             catch(Exception ex)
             {
-                OnVisionError(iJobIndex, $"9点标定失败: {ex.Message}");
+                OnVisionError(jobIndex, $"9点标定失败: {ex.Message}");
                 return false;
             }
         }
-        public bool setBlob(CogBlobTool blobT,int iJobIndex)
+        public bool setBlob(CogBlobTool blobT,int jobIndex)
         {
             try
             {
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] = blobT;
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogBlobTool1"] = blobT;
                 return true;
             }
             catch
@@ -930,26 +930,26 @@ namespace VisionControl
 
         #region PMA 相关设置与操作
         public bool SkipImageUpdateForCurrentRun { get; set; } = false;
-        public bool setPMA(CogPMAlignTool pma,int iJobIndex)
+        public bool setPMA(CogPMAlignTool pma,int jobIndex)
         {
             try
             {
-                CogToolGroup toolGroup = mJM.Job(iJobIndex).VisionTool as CogToolGroup;
+                CogToolGroup toolGroup = mJM.Job(jobIndex).VisionTool as CogToolGroup;
                 if (toolGroup == null)
                 {
-                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                    if (jobIndex >= 0 && jobIndex < strErrInfo.Length)
                     {
-                        strErrInfo[iJobIndex] = "PMA写回失败: 当前Job不是CogToolGroup";
-                        OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                        strErrInfo[jobIndex] = "PMA写回失败: 当前Job不是CogToolGroup";
+                        OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                     }
                     return false;
                 }
                 if (pma == null)
                 {
-                    if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+                    if (jobIndex >= 0 && jobIndex < strErrInfo.Length)
                     {
-                        strErrInfo[iJobIndex] = "PMA写回失败: CogPMAlignTool为空";
-                        OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                        strErrInfo[jobIndex] = "PMA写回失败: CogPMAlignTool为空";
+                        OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                     }
                         return false;
                 }
@@ -965,59 +965,59 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length) { 
-                    strErrInfo[iJobIndex] = "PMA写回异常: " + ex.Message;
-                    OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                if (jobIndex >= 0 && jobIndex < strErrInfo.Length) { 
+                    strErrInfo[jobIndex] = "PMA写回异常: " + ex.Message;
+                    OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                 }
                 return false;
             }
         }
 
         //设置PMA训练参数
-        private void SetPMAErrInfo(int iJobIndex, string message)
+        private void SetPMAErrInfo(int jobIndex, string message)
         {
-            if (iJobIndex >= 0 && iJobIndex < strErrInfo.Length)
+            if (jobIndex >= 0 && jobIndex < strErrInfo.Length)
             {
-                strErrInfo[iJobIndex] = message;
+                strErrInfo[jobIndex] = message;
             }
                
         }
 
         CogPMAlignTool[] pma = new CogPMAlignTool[2]; 
-        private CogPMAlignTool GetPMATool(int iJobIndex)
+        private CogPMAlignTool GetPMATool(int jobIndex)
         {
             try
             {
-                if (iJobIndex < 0 || iJobIndex >= maxCameraNum)
+                if (jobIndex < 0 || jobIndex >= maxCameraNum)
                 {
-                    SetPMAErrInfo(iJobIndex, "PMA job index is invalid");
+                    SetPMAErrInfo(jobIndex, "PMA job index is invalid");
                     return null;
                 }
 
-                CogToolGroup toolGroup = mJM.Job(iJobIndex).VisionTool as CogToolGroup;
+                CogToolGroup toolGroup = mJM.Job(jobIndex).VisionTool as CogToolGroup;
                 if (toolGroup == null)
                 {
-                    SetPMAErrInfo(iJobIndex, "Current Job is not CogToolGroup, cannot check PMA");
+                    SetPMAErrInfo(jobIndex, "Current Job is not CogToolGroup, cannot check PMA");
                     return null;
                 }
 
-                pma[iJobIndex] = toolGroup.Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex] = toolGroup.Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 if (pma == null)
                 {
-                    SetPMAErrInfo(iJobIndex, "CogPMAlignTool1 not found, cannot check PMA");
+                    SetPMAErrInfo(jobIndex, "CogPMAlignTool1 not found, cannot check PMA");
                     return null;
                 }
 
-                return pma[iJobIndex];
+                return pma[jobIndex];
             }
             catch (Exception ex)
             {
-                SetPMAErrInfo(iJobIndex, "PMA train state check exception: " + ex.Message);
+                SetPMAErrInfo(jobIndex, "PMA train state check exception: " + ex.Message);
                 return null;
             }
         }
 
-        private bool IsPMARunAlgorithmMatched(CogPMAlignTool pma, int iJobIndex)
+        private bool IsPMARunAlgorithmMatched(CogPMAlignTool pma, int jobIndex)
         {
             CogPMAlignTrainAlgorithmConstants trainAlg = pma.Pattern.TrainAlgorithm;
             CogPMAlignRunAlgorithmConstants runAlg = pma.RunParams.RunAlgorithm;
@@ -1025,192 +1025,192 @@ namespace VisionControl
             if (runAlg == CogPMAlignRunAlgorithmConstants.PatMax &&
                 trainAlg == CogPMAlignTrainAlgorithmConstants.PatQuick)
             {
-                SetPMAErrInfo(iJobIndex, "PMA was not trained for PatMax. Set TrainAlg to PatMaxAndPatQuick, retrain and save VPP");
-                OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                SetPMAErrInfo(jobIndex, "PMA was not trained for PatMax. Set TrainAlg to PatMaxAndPatQuick, retrain and save VPP");
+                OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                 return false;
             }
 
             if (runAlg == CogPMAlignRunAlgorithmConstants.PatQuick &&
                 trainAlg == CogPMAlignTrainAlgorithmConstants.PatMax)
             {
-                SetPMAErrInfo(iJobIndex, "PMA was not trained for PatQuick. Set TrainAlg to PatMaxAndPatQuick, retrain and save VPP");
-                OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                SetPMAErrInfo(jobIndex, "PMA was not trained for PatQuick. Set TrainAlg to PatMaxAndPatQuick, retrain and save VPP");
+                OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                 return false;
             }
 
             return true;
         }
 
-        private bool IsPMATrained(int iJobIndex)
+        private bool IsPMATrained(int jobIndex)
         {
-            CogPMAlignTool pma = GetPMATool(iJobIndex);
+            CogPMAlignTool pma = GetPMATool(jobIndex);
             if (pma == null)
             {
-                OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                 return false; 
             }
 
             if (pma.Pattern == null)
             {
-                SetPMAErrInfo(iJobIndex, "PMA Pattern is null, cannot run");
-                OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                SetPMAErrInfo(jobIndex, "PMA Pattern is null, cannot run");
+                OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                 return false;
             }
 
             if (!pma.Pattern.Trained)
             {
-                SetPMAErrInfo(iJobIndex, "PMA pattern is not trained. Retrain and save VPP");
-                OnVisionError(iJobIndex, $"{strErrInfo[iJobIndex]}");
+                SetPMAErrInfo(jobIndex, "PMA pattern is not trained. Retrain and save VPP");
+                OnVisionError(jobIndex, $"{strErrInfo[jobIndex]}");
                 return false;
             }
 
-            return IsPMARunAlgorithmMatched(pma, iJobIndex);
+            return IsPMARunAlgorithmMatched(pma, jobIndex);
         }
 
-        public bool CheckPMATrained(int iJobIndex)
+        public bool CheckPMATrained(int jobIndex)
         {
-            return IsPMATrained(iJobIndex);
+            return IsPMATrained(jobIndex);
         }
 
-        public void SetPMATrainParam(PMAlignParam pmaParam, int iJobIndex)
+        public void SetPMATrainParam(PMAlignParam pmaParam, int jobIndex)
         {
             try
             {
                 //设置训练参数
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                pma[iJobIndex].Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
-                pma[iJobIndex].Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
-                pma[iJobIndex].Pattern.GrainLimitFine = pmaParam.TrainFine;
-                pma[iJobIndex].Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
-                pma[iJobIndex].Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
-                pma[iJobIndex].Pattern.IgnorePolarity = pmaParam.TrainPolarity;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex].Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
+                pma[jobIndex].Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
+                pma[jobIndex].Pattern.GrainLimitFine = pmaParam.TrainFine;
+                pma[jobIndex].Pattern.EdgeThreshold = pmaParam.TrainEdgeThre;
+                pma[jobIndex].Pattern.AutoEdgeThresholdEnabled = pmaParam.TrainAutoEdgeThre;
+                pma[jobIndex].Pattern.IgnorePolarity = pmaParam.TrainPolarity;
                 switch (pmaParam.TrainAlg)
                 {
                     case 0:
-                        pma[iJobIndex].Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
+                        pma[jobIndex].Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMax;
                         break;
                     case 1:
-                        pma[iJobIndex].Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
+                        pma[jobIndex].Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatQuick;
                         break;
                     case 2:
-                        pma[iJobIndex].Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
+                        pma[jobIndex].Pattern.TrainAlgorithm = CogPMAlignTrainAlgorithmConstants.PatMaxAndPatQuick;
                         break;
                 } 
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"设置PMA失败: {ex.Message}");
+                OnVisionError(jobIndex, $"设置PMA失败: {ex.Message}");
             //    MessageBox.Show(ex.Message.ToString());
             }
         }
 
         //设置PMA训练参数
-        public void SetPMARunParam(PMAlignParam pmaParam, int iJobIndex)
+        public void SetPMARunParam(PMAlignParam pmaParam, int jobIndex)
         {
             try
             {
                 //设置训练参数
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 
                 //设置运行参数
 
                 switch (pmaParam.RunAlg)
                 {
                     case 0:
-                        pma[iJobIndex].RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
+                        pma[jobIndex].RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatMax;
                         break;
                     case 1:
-                        pma[iJobIndex].RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
+                        pma[jobIndex].RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.PatQuick;
                         break;
                     case 2:
-                        pma[iJobIndex].RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
+                        pma[jobIndex].RunParams.RunAlgorithm = CogPMAlignRunAlgorithmConstants.BestTrained;
                         break;
                 }
-                pma[iJobIndex].RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
-                pma[iJobIndex].RunParams.ScoreUsingClutter = pmaParam.RunArt;
-                pma[iJobIndex].RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
-                pma[iJobIndex].RunParams.ContrastThreshold = pmaParam.RunConstractThre;
-                pma[iJobIndex].RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
+                pma[jobIndex].RunParams.AutoEdgeThresholdEnabled = pmaParam.RunAutoEdgeThre;
+                pma[jobIndex].RunParams.ScoreUsingClutter = pmaParam.RunArt;
+                pma[jobIndex].RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
+                pma[jobIndex].RunParams.ContrastThreshold = pmaParam.RunConstractThre;
+                pma[jobIndex].RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
                 if(pmaParam.RunScoreThre>0.6)
-                    pma[iJobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre-0.3;
+                    pma[jobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre-0.3;
                 else
-                    pma[iJobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre;
+                    pma[jobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre;
                 if (pmaParam.RunEnableAngle)
                 {
-                    pma[iJobIndex].RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
+                    pma[jobIndex].RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
                 }
                 else
                 {
-                    pma[iJobIndex].RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
+                    pma[jobIndex].RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.Nominal;
                 }
-                pma[iJobIndex].RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
-                pma[iJobIndex].RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
+                pma[jobIndex].RunParams.ZoneAngle.Low = pmaParam.RunAngleD * Math.PI / 180;
+                pma[jobIndex].RunParams.ZoneAngle.High = pmaParam.RunAngleU * Math.PI / 180;
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"PMA操作失败: {ex.Message}");
+                OnVisionError(jobIndex, $"PMA操作失败: {ex.Message}");
             //    MessageBox.Show(ex.Message.ToString());
             }
         }
 
-        public void SetPMAParam(PMAlignParam pmaParam, int iJobIndex)
+        public void SetPMAParam(PMAlignParam pmaParam, int jobIndex)
         {
-            SetPMATrainParam(pmaParam, iJobIndex);
-            SetPMARunParam(pmaParam, iJobIndex);
+            SetPMATrainParam(pmaParam, jobIndex);
+            SetPMARunParam(pmaParam, jobIndex);
 
         }
 
         //2026年6月19日 更新九点标定坐标系后重新模式训练
-        public bool ReTrainPMAWithUpdateCS(int iJobIndex)
+        public bool ReTrainPMAWithUpdateCS(int jobIndex)
         {
             try
             {
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                nPointTool[iJobIndex] = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
-                nPointTool[iJobIndex].InputImage = PreViewOnePMATrainImageFromFile(iJobIndex); //读取PMA原训练图像
-                nPointTool[iJobIndex].Run();
-                pma[iJobIndex].Pattern.TrainImage = nPointTool[iJobIndex].OutputImage;
-                pma[iJobIndex].Pattern.Train();
-               //  mJM.Job(iJobIndex).Run();
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                nPointTool[jobIndex] = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+                nPointTool[jobIndex].InputImage = PreViewOnePMATrainImageFromFile(jobIndex); //读取PMA原训练图像
+                nPointTool[jobIndex].Run();
+                pma[jobIndex].Pattern.TrainImage = nPointTool[jobIndex].OutputImage;
+                pma[jobIndex].Pattern.Train();
+               //  mJM.Job(jobIndex).Run();
                 return true;
             }
             catch(Exception ex)
             {
-                OnVisionError(iJobIndex, $"模板训练失败: {ex.Message}");
+                OnVisionError(jobIndex, $"模板训练失败: {ex.Message}");
                 return false;
             }
         }
       //  CogPMAlignTool[] pma = new CogPMAlignTool[maxCameraNum];
-        public void ReTrainPMA(int iJobIndex)
+        public void ReTrainPMA(int jobIndex)
         {
             try
             {
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                pma[iJobIndex].Pattern.Train();
-               //  mJM.Job(iJobIndex).Run();
-                SaveTrainImage(iJobIndex, pma[iJobIndex]);
-                ShowPMATrainImage(pma[iJobIndex], iJobIndex);
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex].Pattern.Train();
+               //  mJM.Job(jobIndex).Run();
+                SaveTrainImage(jobIndex, pma[jobIndex]);
+                ShowPMATrainImage(pma[jobIndex], jobIndex);
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"模板训练失败: {ex.Message}");
+                OnVisionError(jobIndex, $"模板训练失败: {ex.Message}");
               //  MessageBox.Show(ex.Message);
             }
         }
 
         CogCalibNPointToNPointTool[] nPointTool = new CogCalibNPointToNPointTool[2];
 
-        public void ExtraTrainImage(int iJobIndex,bool bFrmCam,bool bLock)
+        public void ExtraTrainImage(int jobIndex,bool bFrmCam,bool bLock)
         {
             try
             {
-                nPointTool[iJobIndex] = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+                nPointTool[jobIndex] = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
 
                 //实采图像
                 if (bFrmCam)
                 {
                     //重新采集一帧图像，不管是否Lock都重新抓取
-                    bool ret = PreViewOneImage(iJobIndex);
+                    bool ret = PreViewOneImage(jobIndex);
                     if (bLock)
                     {
                        
@@ -1219,39 +1219,39 @@ namespace VisionControl
                     {
 
                     }
-                    nPointTool[iJobIndex].InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+                    nPointTool[jobIndex].InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[jobIndex]];
                 }
                 else
                 {
                     if (bLock)
                     {
-                        nPointTool[iJobIndex].InputImage = PreViewOnePMATrainImageFromFile(iJobIndex);
+                        nPointTool[jobIndex].InputImage = PreViewOnePMATrainImageFromFile(jobIndex);
                     }
                     else
                     {
-                        nPointTool[iJobIndex].InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+                        nPointTool[jobIndex].InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[jobIndex]];
                     }
                     
                 }
 
 
-                nPointTool[iJobIndex].Run();
+                nPointTool[jobIndex].Run();
 
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                //pma[iJobIndex].InputImage= nPointTool[iJobIndex].OutputImage;
-                pma[iJobIndex].Pattern.TrainImage = nPointTool[iJobIndex].OutputImage;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                //pma[jobIndex].InputImage= nPointTool[jobIndex].OutputImage;
+                pma[jobIndex].Pattern.TrainImage = nPointTool[jobIndex].OutputImage;
                 //pma.InputImage = nPointTool.OutputImage;
-                ShowPMAInputImage(pma[iJobIndex], iJobIndex);
+                ShowPMAInputImage(pma[jobIndex], jobIndex);
             }
             catch(Exception ex)
             {
-                OnVisionError(iJobIndex, $"提取定位训练图像: {ex.Message}");
+                OnVisionError(jobIndex, $"提取定位训练图像: {ex.Message}");
             }
         }
-        private void ShowPMAInputImage(CogPMAlignTool pma, int iJobIndex)
+        private void ShowPMAInputImage(CogPMAlignTool pma, int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            switch (iJobIndex)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1266,13 +1266,13 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
 
-        private void ShowPMATrainImage(CogPMAlignTool pma,int iJobIndex)
+        private void ShowPMATrainImage(CogPMAlignTool pma,int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            switch (iJobIndex)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            switch (jobIndex)
             {
                 case 0: 
                     {                       
@@ -1286,18 +1286,18 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
 
-        public void SaveTrainImage(int iJobIndex, CogPMAlignTool pma)
+        public void SaveTrainImage(int jobIndex, CogPMAlignTool pma)
         {
           //  if (bRecord)
             {
-                string strFile = cup.p_Paf.strResSavePath + "\\PMATrain_" + iJobIndex.ToString() + ".jpg";
-                if (cup.p_CD.bListProcess[iJobIndex] && pma.Pattern.TrainImage != null)
+                string strFile = cup.p_Paf.strResSavePath + "\\PMATrain_" + jobIndex.ToString() + ".jpg";
+                if (cup.p_CD.bListProcess[jobIndex] && pma.Pattern.TrainImage != null)
                 {
                     mImageFile.Open(strFile, CogImageFileModeConstants.Write);                   
-                    mImageFile.Append(acqFIFO.CogFlipRotateIm(pma.Pattern.TrainImage,iJobIndex));
+                    mImageFile.Append(acqFIFO.CogFlipRotateIm(pma.Pattern.TrainImage,jobIndex));
                     mImageFile.Close();
                 }
             }
@@ -1305,28 +1305,28 @@ namespace VisionControl
 
         public void SaveTrainImageFiles(string folderPath)
         {
-            for (int iJobIndex = 0; iJobIndex < maxCameraNum; iJobIndex++)
+            for (int jobIndex = 0; jobIndex < maxCameraNum; jobIndex++)
             {
-                if (!cup.p_CD.bListProcess[iJobIndex]) continue;
+                if (!cup.p_CD.bListProcess[jobIndex]) continue;
                 try
                 {
-                    pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                    if (pma == null || pma[iJobIndex].Pattern == null || pma[iJobIndex].Pattern.TrainImage == null)
+                    pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                    if (pma == null || pma[jobIndex].Pattern == null || pma[jobIndex].Pattern.TrainImage == null)
                         continue;
 
-                    string fileName = $"Job{iJobIndex}_Train.jpg";
+                    string fileName = $"Job{jobIndex}_Train.jpg";
                     string fullPath = Path.Combine(folderPath, fileName);
                     using (CogImageFile imgFile = new CogImageFile())
                     {
                         imgFile.Open(fullPath, CogImageFileModeConstants.Write);
                         // 保存时可选旋转/翻转，这里直接保存原图
-                        imgFile.Append(pma[iJobIndex].Pattern.TrainImage);
+                        imgFile.Append(pma[jobIndex].Pattern.TrainImage);
                         imgFile.Close();
                     }
                 }
                 catch (Exception ex)
                 {
-                    OnVisionError(iJobIndex, $"保存训练图像失败: {ex.Message}");
+                    OnVisionError(jobIndex, $"保存训练图像失败: {ex.Message}");
                 }
             }
         }
@@ -1361,56 +1361,56 @@ namespace VisionControl
 
         }
 
-        public bool ReRunPMA(int iJobIndex)
+        public bool ReRunPMA(int jobIndex)
         {
-            pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-            if (!IsPMATrained(iJobIndex))
+            pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            if (!IsPMATrained(jobIndex))
                 return false;
-            pma[iJobIndex].Run();
-            if (pma[iJobIndex].Results.Count > 0)
+            pma[jobIndex].Run();
+            if (pma[jobIndex].Results.Count > 0)
             {
-                pmaRes[iJobIndex].bLocated = true;
-                pmaRes[iJobIndex].dPMAScore = pma[iJobIndex].Results[0].Score;
-                pmaRes[iJobIndex].dTX = pma[iJobIndex].Results[0].GetPose().TranslationX;
-                pmaRes[iJobIndex].dTY = pma[iJobIndex].Results[0].GetPose().TranslationY;
-                pmaRes[iJobIndex].dTR = pma[iJobIndex].Results[0].GetPose().Rotation;
-                if (pmaRes[iJobIndex].dPMAScore < pma[iJobIndex].RunParams.AcceptThreshold+0.3)
-                {   pmaRes[iJobIndex].bLocated = false;
-                    pmaRes[iJobIndex].dPMAScore -= 0.3;
+                pmaRes[jobIndex].bLocated = true;
+                pmaRes[jobIndex].dPMAScore = pma[jobIndex].Results[0].Score;
+                pmaRes[jobIndex].dTX = pma[jobIndex].Results[0].GetPose().TranslationX;
+                pmaRes[jobIndex].dTY = pma[jobIndex].Results[0].GetPose().TranslationY;
+                pmaRes[jobIndex].dTR = pma[jobIndex].Results[0].GetPose().Rotation;
+                if (pmaRes[jobIndex].dPMAScore < pma[jobIndex].RunParams.AcceptThreshold+0.3)
+                {   pmaRes[jobIndex].bLocated = false;
+                    pmaRes[jobIndex].dPMAScore -= 0.3;
                 }
                     
             } 
 
-            ShowPMARunImage(pma[iJobIndex], iJobIndex);
-           return pmaRes[iJobIndex].bLocated;
+            ShowPMARunImage(pma[jobIndex], jobIndex);
+           return pmaRes[jobIndex].bLocated;
         }
 
-        public void SetPMASearchRegion(int iJobIndex)
+        public void SetPMASearchRegion(int jobIndex)
         {
             try
             {
-                nPointTool[iJobIndex] = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+                nPointTool[jobIndex] = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
 
 
-                nPointTool[iJobIndex].InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
+                nPointTool[jobIndex].InputImage = acqFIFO.ci8gAcq[cup.p_CD.camInd[jobIndex]];
 
 
-                nPointTool[iJobIndex].Run();
+                nPointTool[jobIndex].Run();
 
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
 
-                ShowPMACurrentInputImage(pma[iJobIndex], iJobIndex);
+                ShowPMACurrentInputImage(pma[jobIndex], jobIndex);
             }
             catch(Exception ex)
-            { OnVisionError(iJobIndex, $"提取定位测试图像失败: {ex.Message}"); }
+            { OnVisionError(jobIndex, $"提取定位测试图像失败: {ex.Message}"); }
         }
         #endregion
 
         #region  精定位相关设置
-        private void ShowPMARunImage(CogPMAlignTool pma, int iJobIndex)
+        private void ShowPMARunImage(CogPMAlignTool pma, int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            switch (iJobIndex)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1425,12 +1425,12 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
-        private void ShowPMACurrentInputImage(CogPMAlignTool pma, int iJobIndex)
+        private void ShowPMACurrentInputImage(CogPMAlignTool pma, int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            switch (iJobIndex)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1445,34 +1445,34 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
 
         //显示边缘定位工具的输入图像，可编辑边缘搜索区域
-        public void SetFindLineSearchRegion(int iJobIndex, int iLineIndex,int iTuneType)
+        public void SetFindLineSearchRegion(int jobIndex, int iLineIndex,int iTuneType)
         {
             try
             {
                 if (iTuneType == 0)
                 {
-                    CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
-                    ShowCFLCurrentInputImage(cfl, iJobIndex);
+                    CogFindLineTool cfl = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
+                    ShowCFLCurrentInputImage(cfl, jobIndex);
                 }
                 else if (iTuneType == 1)
                 {
-                    CogCaliperTool cc = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool" + iLineIndex.ToString()] as CogCaliperTool);
-                    ShowCCCurrentInputImage(cc, iJobIndex);
+                    CogCaliperTool cc = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool" + iLineIndex.ToString()] as CogCaliperTool);
+                    ShowCCCurrentInputImage(cc, jobIndex);
                 }
             }
             catch (Exception ex)
-            { OnVisionError(iJobIndex, $"边缘图像显示: {ex.Message}"); }
+            { OnVisionError(jobIndex, $"边缘图像显示: {ex.Message}"); }
         }
 
         //显示边缘定位工具的输入图像，可编辑边缘搜索区域
-        private void ShowCFLCurrentInputImage(CogFindLineTool cfl, int iJobIndex)
+        private void ShowCFLCurrentInputImage(CogFindLineTool cfl, int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            switch (iJobIndex)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1487,13 +1487,13 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
 
-        private void ShowCCCurrentInputImage(CogCaliperTool cc, int iJobIndex)
+        private void ShowCCCurrentInputImage(CogCaliperTool cc, int jobIndex)
         {
              
-            switch (iJobIndex)
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1509,35 +1509,35 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
         //显示边缘定位工具的输出图像
-        public void GetFindLineSearchRes(int iJobIndex, int iLineIndex,int iTuneType)
+        public void GetFindLineSearchRes(int jobIndex, int iLineIndex,int iTuneType)
         {
             try
             {
                 if (iTuneType == 0)
                 {
-                    CogFindLineTool cfl = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
+                    CogFindLineTool cfl = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool" + iLineIndex.ToString()] as CogFindLineTool);
                     cfl.Run();
-                    ShowCFLCurrentOutputImage(cfl, iJobIndex);
+                    ShowCFLCurrentOutputImage(cfl, jobIndex);
                 }
                 else if (iTuneType == 1)
                 {
-                    CogCaliperTool cc = ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool" + iLineIndex.ToString()] as CogCaliperTool);
+                    CogCaliperTool cc = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool" + iLineIndex.ToString()] as CogCaliperTool);
                     cc.Run();
-                    ShowCCCurrentOutputImage(cc, iJobIndex);
+                    ShowCCCurrentOutputImage(cc, jobIndex);
                 }
             }
             catch (Exception ex)
-            { OnVisionError(iJobIndex, $"边缘图像显示: {ex.Message}"); }
+            { OnVisionError(jobIndex, $"边缘图像显示: {ex.Message}"); }
         }
 
         //  显示边缘定位工具的输出图像 
-        private void ShowCFLCurrentOutputImage(CogFindLineTool cfl, int iJobIndex)
+        private void ShowCFLCurrentOutputImage(CogFindLineTool cfl, int jobIndex)
         {
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            switch (iJobIndex)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1552,14 +1552,14 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
 
         //  显示边缘定位工具的输出图像 
-        private void ShowCCCurrentOutputImage(CogCaliperTool cc, int iJobIndex)
+        private void ShowCCCurrentOutputImage(CogCaliperTool cc, int jobIndex)
         {
             
-            switch (iJobIndex)
+            switch (jobIndex)
             {
                 case 0:
                     {
@@ -1574,18 +1574,18 @@ namespace VisionControl
                     cogRDSub1.Fit(true);
                     break;
             }
-            bRecordWithInteractiveGraphics[iJobIndex] = true;
+            bRecordWithInteractiveGraphics[jobIndex] = true;
         }
 
         //  从VP中获取边缘定位工具
-        public CogFindLineTool getCLP(int iJobIndex, bool bLeft)
+        public CogFindLineTool getCLP(int jobIndex, bool bLeft)
         {
             try
             {
                 if (bLeft)
-                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"]) as CogFindLineTool;
+                    return ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"]) as CogFindLineTool;
                 else
-                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"]) as CogFindLineTool;
+                    return ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"]) as CogFindLineTool;
 
             }
             catch
@@ -1594,14 +1594,14 @@ namespace VisionControl
             }
         }
 
-        public CogCaliperTool getCC(int iJobIndex, bool bLeft)
+        public CogCaliperTool getCC(int jobIndex, bool bLeft)
         {
             try
             {
                 if (bLeft)
-                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"]) as CogCaliperTool;
+                    return ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"]) as CogCaliperTool;
                 else
-                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"]) as CogCaliperTool;
+                    return ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"]) as CogCaliperTool;
 
             }
             catch
@@ -1611,15 +1611,15 @@ namespace VisionControl
         }
 
         //将界面上设置的边缘定位参数写回到VP中
-        public bool setCLP(CogFindLineTool cfl, int iJobIndex, bool bLeft)
+        public bool setCLP(CogFindLineTool cfl, int jobIndex, bool bLeft)
         {
 
             try
             {
                 if (bLeft)
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] = cfl;
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] = cfl;
                 else
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] = cfl;
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] = cfl;
                 return true;
             }
             catch
@@ -1629,14 +1629,14 @@ namespace VisionControl
         }
 
 
-        public bool setCC(CogCaliperTool cc, int iJobIndex, bool bLeft)
+        public bool setCC(CogCaliperTool cc, int jobIndex, bool bLeft)
         {
             try
             {
                 if (bLeft)
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] = cc;
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] = cc;
                 else
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] = cc;
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] = cc;
                 return true;
             }
             catch
@@ -1647,7 +1647,7 @@ namespace VisionControl
 
 
         //  获取边缘定位参数
-        public void GetCLPParam(ref calipFindLineParam cflParam, int iJobIndex, int iTuneType,bool bLeft)
+        public void GetCLPParam(ref calipFindLineParam cflParam, int jobIndex, int iTuneType,bool bLeft)
         {
             //获取训练参数
             try
@@ -1655,8 +1655,8 @@ namespace VisionControl
                 if (iTuneType == 0)
                 {
                     string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
-                    CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
-                    cflParam.bUseTuneLocation = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
+                    CogFindLineTool cfl = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
+                    cflParam.bUseTuneLocation = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
 
                     cflParam.bPolarity = (int)cfl.RunParams.CaliperRunParams.Edge0Polarity - 1;
                     cflParam.dThre = cfl.RunParams.CaliperRunParams.ContrastThreshold;
@@ -1667,8 +1667,8 @@ namespace VisionControl
                 else if (iTuneType == 1)
                 {
                     string calipName = bLeft ? "CogCaliperTool1" : "CogCaliperTool2";
-                    CogCaliperTool ccT= (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
-                    cflParam.bUseTuneLocation = (bool)(mJM.Job(iJobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
+                    CogCaliperTool ccT= (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
+                    cflParam.bUseTuneLocation = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
 
                     cflParam.bPolarity = (int)ccT.RunParams.Edge0Polarity - 1;
                     cflParam.iCaliperNum = (int)ccT.RunParams.Edge1Polarity - 1; //边缘对右边缘
@@ -1679,13 +1679,13 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"设置定位参数失败: {ex.Message}");
+                OnVisionError(jobIndex, $"设置定位参数失败: {ex.Message}");
                // MessageBox.Show(ex.Message.ToString());
             }
         }
         //  设置边缘定位参数
 
-        public void SetCLPParam(calipFindLineParam clpParam, int iJobIndex,int iTuneType, bool bLeft)
+        public void SetCLPParam(calipFindLineParam clpParam, int jobIndex,int iTuneType, bool bLeft)
         {
             //获取训练参数
             try
@@ -1693,9 +1693,9 @@ namespace VisionControl
                 if (iTuneType == 0)
                 {
                     string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
-                    CogFindLineTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
+                    CogFindLineTool cfl = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
 
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
                     cfl.RunParams.CaliperRunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
                     cfl.RunParams.CaliperRunParams.ContrastThreshold = clpParam.dThre;
                     cfl.RunParams.CaliperRunParams.FilterHalfSizeInPixels = clpParam.iRadius;
@@ -1705,9 +1705,9 @@ namespace VisionControl
                 else if (iTuneType == 1)
                 {
                     string calipName = bLeft ? "CogCaliperTool1" : "CogCaliperTool2";
-                    CogCaliperTool cfl = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
+                    CogCaliperTool cfl = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
 
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
                     cfl.RunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
                     cfl.RunParams.Edge1Polarity= (CogCaliperPolarityConstants)(clpParam.iCaliperNum +1);
                     cfl.RunParams.ContrastThreshold = clpParam.dThre;
@@ -1715,30 +1715,30 @@ namespace VisionControl
                     
                 }
 
-                //  (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.iRes1);
+                //  (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.iRes1);
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取定位参数失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取定位参数失败: {ex.Message}");
               //  MessageBox.Show(ex.Message.ToString());
             }
         }
 
         //  提取边缘定位基准
-        public void ExtractLocateBase(int iJobIndex,int iTuneType)
+        public void ExtractLocateBase(int jobIndex,int iTuneType)
         {
             try
             {
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 double dX=0, dY=0, dR=0;
                 switch(iTuneType)
                 {
                     case 0:
-                        CogFindLineTool cflLeft = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                        cflLeft.InputImage = pma[iJobIndex].Pattern.TrainImage as CogImage8Grey;
+                        CogFindLineTool cflLeft = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+                        cflLeft.InputImage = pma[jobIndex].Pattern.TrainImage as CogImage8Grey;
                         cflLeft.Run();
-                        CogFindLineTool cflRight = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
-                        cflRight.InputImage = pma[iJobIndex].Pattern.TrainImage as CogImage8Grey;
+                        CogFindLineTool cflRight = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+                        cflRight.InputImage = pma[jobIndex].Pattern.TrainImage as CogImage8Grey;
                         cflRight.Run();
                         dR = (cflLeft.Results.GetLine().Rotation + cflRight.Results.GetLine().Rotation) / 2;
                         dX = (cflLeft.Results.GetLine().X + cflRight.Results.GetLine().X) / 2;
@@ -1746,11 +1746,11 @@ namespace VisionControl
                         break;
 
                     case 1:
-                        CogCaliperTool cctUp = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
-                        cctUp.InputImage = pma[iJobIndex].Pattern.TrainImage as CogImage8Grey;
+                        CogCaliperTool cctUp = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                        cctUp.InputImage = pma[jobIndex].Pattern.TrainImage as CogImage8Grey;
                         cctUp.Run();
-                        CogCaliperTool cctDown = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
-                        cctDown.InputImage = pma[iJobIndex].Pattern.TrainImage as CogImage8Grey;
+                        CogCaliperTool cctDown = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+                        cctDown.InputImage = pma[jobIndex].Pattern.TrainImage as CogImage8Grey;
                         cctDown.Run();
                         double dX1 = cctUp.Results[0].PositionX;
                         double dY1 = cctUp.Results[0].PositionY;
@@ -1766,11 +1766,11 @@ namespace VisionControl
                
 
 
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dRBase", dR);
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dXBase", dX);
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dYBase", dY);
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dRBase", dR);
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dXBase", dX);
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("dYBase", dY);
            
-            //    CogFixtureTool cft= (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFixtureTool1"] as CogFixtureTool;
+            //    CogFixtureTool cft= (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFixtureTool1"] as CogFixtureTool;
 
             //    cflLeft.InputImage = cft.OutputImage as CogImage8Grey;
             //    cflRight.InputImage = cft.OutputImage as CogImage8Grey;
@@ -1778,26 +1778,26 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"提取定位基准: {ex.Message}");
+                OnVisionError(jobIndex, $"提取定位基准: {ex.Message}");
             }  
         }
         // 2026年6月19日  设置是否使用精定位
-        public void SetUseTuneLocation(int iJobIndex,bool bUseTureLocation,int iTuneType)
+        public void SetUseTuneLocation(int jobIndex,bool bUseTureLocation,int iTuneType)
         {
             try
             {
 
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", bUseTureLocation);
-                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("tuneType", iTuneType);
-                CogFindLineTool cf1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                CogFindLineTool cf2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
-                CogCaliperTool cct1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
-                CogCaliperTool cct2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", bUseTureLocation);
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("tuneType", iTuneType);
+                CogFindLineTool cf1 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+                CogFindLineTool cf2 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+                CogCaliperTool cct1 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                CogCaliperTool cct2 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
 
                 try
                 {
                    
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf1);
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf1);
                 }
                 catch 
                 { }
@@ -1805,20 +1805,20 @@ namespace VisionControl
                 try
                 {
                     
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf2);
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf2);
                 }
                 catch 
                 { }
                 try
                 {
                   
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct1);
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct1);
                 }
                 catch { }
                 try
                 {
                    
-                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct2);
+                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct2);
                 }
                 catch 
                 { }
@@ -1827,19 +1827,19 @@ namespace VisionControl
                 {
                     if (iTuneType == 0)
                     {
-                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf1);
-                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf2);
+                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf1);
+                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf2);
                     }
                     else if (iTuneType == 1)
                     {
-                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct1);
-                        (mJM.Job(iJobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct2);
+                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct1);
+                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct2);
                     }
                 }                
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"启用/禁用精定位失败: {ex.Message}");
+                OnVisionError(jobIndex, $"启用/禁用精定位失败: {ex.Message}");
             } 
         }
         #endregion
@@ -1860,28 +1860,28 @@ namespace VisionControl
                 SavePMAlignTool(i, filePath);
             }
         }
-        private void SavePMAlignTool(int iJobIndex, string filePath)
+        private void SavePMAlignTool(int jobIndex, string filePath)
         {
             if (mJM == null)
             {
-                OnVisionError(iJobIndex, "工程未加载");
+                OnVisionError(jobIndex, "工程未加载");
                 return;
             }
 
             CogJob job = null;
             try
             {
-                job = mJM.Job(iJobIndex);
+                job = mJM.Job(jobIndex);
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取Job失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取Job失败: {ex.Message}");
                 return;
             }
 
             if (job == null)
             {
-                OnVisionError(iJobIndex, $"Job {iJobIndex} 不存在");
+                OnVisionError(jobIndex, $"Job {jobIndex} 不存在");
                 return;
             }
 
@@ -1889,34 +1889,34 @@ namespace VisionControl
           //  CogPMAlignTool tool = null;
             try
             {
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
               //  tool = job.Tools["CogPMAlignTool1"] as CogPMAlignTool;
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取工具失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取工具失败: {ex.Message}");
                 return;
             }
 
-            if (pma[iJobIndex] == null)
+            if (pma[jobIndex] == null)
             {
-                OnVisionError(iJobIndex, $"Job {iJobIndex} 中未找到 CogPMAlignTool1");
+                OnVisionError(jobIndex, $"Job {jobIndex} 中未找到 CogPMAlignTool1");
                 return;
             }
 
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"PMA{iJobIndex}.vpp";
+                string fileName = $"PMA{jobIndex}.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
-                CogSerializer.SaveObjectToFile(pma[iJobIndex], fullPath);
+                CogSerializer.SaveObjectToFile(pma[jobIndex], fullPath);
                 // 保存成功可以记录日志（可选）
                 // Console.WriteLine($"工具已保存至：{filePath}");
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"保存工具失败: {ex.Message}");
+                OnVisionError(jobIndex, $"保存工具失败: {ex.Message}");
             }
         }
 
@@ -1927,11 +1927,11 @@ namespace VisionControl
                 LoadPMAlignTool(i, filePath);
             }
         }
-        private void LoadPMAlignTool(int iJobIndex, string filePath)
+        private void LoadPMAlignTool(int jobIndex, string filePath)
         {
             if (mJM == null)
             {
-                OnVisionError(iJobIndex, "工程未加载");
+                OnVisionError(jobIndex, "工程未加载");
                 return;
             }
 
@@ -1940,12 +1940,12 @@ namespace VisionControl
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"PMA{iJobIndex}.vpp";
+                string fileName = $"PMA{jobIndex}.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
                 loadedTool = CogSerializer.LoadObjectFromFile(fullPath) as CogPMAlignTool;
 
-                CogPMAlignTool existingTool = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                CogPMAlignTool existingTool = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
 
                 // 复制训练特征数据（包含模板、特征等）
                 existingTool.Pattern = loadedTool.Pattern;
@@ -1961,7 +1961,7 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"加载文件失败: {ex.Message}");
+                OnVisionError(jobIndex, $"加载文件失败: {ex.Message}");
                 return;
             }
 
@@ -1977,28 +1977,28 @@ namespace VisionControl
                 SaveCalibTool(i, filePath);
             }
         }
-        private void SaveCalibTool(int iJobIndex, string filePath)
+        private void SaveCalibTool(int jobIndex, string filePath)
         {
             if (mJM == null)
             {
-                OnVisionError(iJobIndex, "工程未加载");
+                OnVisionError(jobIndex, "工程未加载");
                 return;
             }
 
             CogJob job = null;
             try
             {
-                job = mJM.Job(iJobIndex);
+                job = mJM.Job(jobIndex);
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取Job失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取Job失败: {ex.Message}");
                 return;
             }
 
             if (job == null)
             {
-                OnVisionError(iJobIndex, $"Job {iJobIndex} 不存在");
+                OnVisionError(jobIndex, $"Job {jobIndex} 不存在");
                 return;
             }
 
@@ -2006,34 +2006,34 @@ namespace VisionControl
             //  CogPMAlignTool tool = null;
             try
             {
-                nPointTool[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                nPointTool[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
                
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取工具失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取工具失败: {ex.Message}");
                 return;
             }
 
-            if (pma[iJobIndex] == null)
+            if (pma[jobIndex] == null)
             {
-                OnVisionError(iJobIndex, $"Job {iJobIndex} 中未找到 CogPMAlignTool1");
+                OnVisionError(jobIndex, $"Job {jobIndex} 中未找到 CogPMAlignTool1");
                 return;
             }
 
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"CalibNPoint{iJobIndex}.vpp";
+                string fileName = $"CalibNPoint{jobIndex}.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
-                CogSerializer.SaveObjectToFile(nPointTool[iJobIndex], fullPath);
+                CogSerializer.SaveObjectToFile(nPointTool[jobIndex], fullPath);
                 // 保存成功可以记录日志（可选）
                 // Console.WriteLine($"工具已保存至：{filePath}");
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"保存工具失败: {ex.Message}");
+                OnVisionError(jobIndex, $"保存工具失败: {ex.Message}");
             }
         }
         public void LoadAllCalibTools(string filePath)
@@ -2043,11 +2043,11 @@ namespace VisionControl
                 LoadCalibTool(i, filePath);
             }
         }
-        private void LoadCalibTool(int iJobIndex, string filePath)
+        private void LoadCalibTool(int jobIndex, string filePath)
         {
             if (mJM == null)
             {
-                OnVisionError(iJobIndex, "工程未加载");
+                OnVisionError(jobIndex, "工程未加载");
                 return;
             }
 
@@ -2056,12 +2056,12 @@ namespace VisionControl
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"CalibNPoint{iJobIndex}.vpp";
+                string fileName = $"CalibNPoint{jobIndex}.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
                 loadedTool = CogSerializer.LoadObjectFromFile(fullPath) as CogCalibNPointToNPointTool;
 
-                CogCalibNPointToNPointTool existingTool = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
+                CogCalibNPointToNPointTool existingTool = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool;
 
                 // 复制训练特征数据（包含模板、特征等）
                 //  existingTool.Pattern = loadedTool.Pattern;
@@ -2078,7 +2078,7 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"加载文件失败: {ex.Message}");
+                OnVisionError(jobIndex, $"加载文件失败: {ex.Message}");
                 return;
             }
 
@@ -2098,28 +2098,28 @@ namespace VisionControl
         /// </summary>
         /// <param name="iJobIndex">任务编号（0 或 1）</param>
         /// <param name="filePath">完整保存路径</param>
-        private void SaveCaliperFindLineTool(int iJobIndex, string filePath)
+        private void SaveCaliperFindLineTool(int jobIndex, string filePath)
         {
             if (mJM == null)
             {
-                OnVisionError(iJobIndex, "工程未加载");
+                OnVisionError(jobIndex, "工程未加载");
                 return;
             }
 
             CogJob job = null;
             try
             {
-                job = mJM.Job(iJobIndex);
+                job = mJM.Job(jobIndex);
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取Job失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取Job失败: {ex.Message}");
                 return;
             }
 
             if (job == null)
             {
-                OnVisionError(iJobIndex, $"Job {iJobIndex} 不存在");
+                OnVisionError(jobIndex, $"Job {jobIndex} 不存在");
                 return;
             }
 
@@ -2130,42 +2130,42 @@ namespace VisionControl
             CogCaliperTool tool4 = null;
             try
             {
-                tool1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                tool2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+                tool1 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+                tool2 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
 
-                tool3 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
-                tool4 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+                tool3 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                tool4 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
                 
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"获取工具失败: {ex.Message}");
+                OnVisionError(jobIndex, $"获取工具失败: {ex.Message}");
                 return;
             }
 
             if (tool1 == null || tool2 == null)
             {
-                OnVisionError(iJobIndex, $"Job {iJobIndex} 中未找到 CogFindLineTool");
+                OnVisionError(jobIndex, $"Job {jobIndex} 中未找到 CogFindLineTool");
                 return;
             }
 
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"CFL{iJobIndex}_1.vpp";
+                string fileName = $"CFL{jobIndex}_1.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
                 CogSerializer.SaveObjectToFile(tool1, fullPath);
 
-                fileName = $"CFL{iJobIndex}_2.vpp";
+                fileName = $"CFL{jobIndex}_2.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 CogSerializer.SaveObjectToFile(tool2, fullPath);
 
-                fileName = $"CC{iJobIndex}_1.vpp";
+                fileName = $"CC{jobIndex}_1.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 CogSerializer.SaveObjectToFile(tool3, fullPath);
 
-                fileName = $"CC{iJobIndex}_2.vpp";
+                fileName = $"CC{jobIndex}_2.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 CogSerializer.SaveObjectToFile(tool4, fullPath);
 
@@ -2174,7 +2174,7 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"保存边缘定位工具失败: {ex.Message}");
+                OnVisionError(jobIndex, $"保存边缘定位工具失败: {ex.Message}");
             }
         }
         /// <summary>
@@ -2189,11 +2189,11 @@ namespace VisionControl
                 LoadCaliperFindLineTool(i, filePath);
             }
         }
-        private void LoadCaliperFindLineTool(int iJobIndex, string filePath)
+        private void LoadCaliperFindLineTool(int jobIndex, string filePath)
         {
             if (mJM == null)
             {
-                OnVisionError(iJobIndex, "工程未加载");
+                OnVisionError(jobIndex, "工程未加载");
                 return;
             }
 
@@ -2207,37 +2207,37 @@ namespace VisionControl
             try
             {
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-             /*   string fileName = $"CFL{iJobIndex}_1.vpp";
+             /*   string fileName = $"CFL{jobIndex}_1.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
                 CogSerializer.SaveObjectToFile(tool1, fullPath);
 
-                fileName = $"CFL{iJobIndex}_2.vpp";
+                fileName = $"CFL{jobIndex}_2.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 CogSerializer.SaveObjectToFile(tool2, fullPath);*/
 
 
                 // 根据任务编号生成文件名 PMA0.vpp / PMA1.vpp
-                string fileName = $"CFL{iJobIndex}_1.vpp";
+                string fileName = $"CFL{jobIndex}_1.vpp";
                 string fullPath = Path.Combine(filePath, fileName);
 
                 loadedTool1 = CogSerializer.LoadObjectFromFile(fullPath) as CogFindLineTool;
 
-                fileName = $"CFL{iJobIndex}_2.vpp";
+                fileName = $"CFL{jobIndex}_2.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 loadedTool2 = CogSerializer.LoadObjectFromFile(fullPath) as CogFindLineTool;
 
-                fileName = $"CC{iJobIndex}_1.vpp";
+                fileName = $"CC{jobIndex}_1.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 loadedTool3 = CogSerializer.LoadObjectFromFile(fullPath) as CogCaliperTool;
-                fileName = $"CC{iJobIndex}_2.vpp";
+                fileName = $"CC{jobIndex}_2.vpp";
                 fullPath = Path.Combine(filePath, fileName);
                 loadedTool4 = CogSerializer.LoadObjectFromFile(fullPath) as CogCaliperTool;
 
 
 
-                CogFindLineTool existingTool1 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
-                CogFindLineTool existingTool2 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+                CogFindLineTool existingTool1 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+                CogFindLineTool existingTool2 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
 
                 // 复制训练特征数据（包含模板、特征等）
            
@@ -2251,8 +2251,8 @@ namespace VisionControl
 
 
 
-                CogCaliperTool existingTool3 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
-                CogCaliperTool existingTool4 = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
+                CogCaliperTool existingTool3 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+                CogCaliperTool existingTool4 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
 
                 // 复制训练特征数据（包含模板、特征等）
 
@@ -2275,7 +2275,7 @@ namespace VisionControl
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"加载边缘定位失败: {ex.Message}");
+                OnVisionError(jobIndex, $"加载边缘定位失败: {ex.Message}");
                 return;
             }
 
@@ -2288,63 +2288,63 @@ namespace VisionControl
         #endregion
 
         //功能尚未实现，2026年6月19日
-        public void SetPMAMaskRegion(int iJobIndex)
+        public void SetPMAMaskRegion(int jobIndex)
         {
-            pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+            pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
             //  pma.Pattern.GetTrainedPatternImageMask
         //    CogPMAlignEditV2
 
-            ShowPMACurrentInputImage(pma[iJobIndex], iJobIndex);
+            ShowPMACurrentInputImage(pma[jobIndex], jobIndex);
         }
-        public void GetPMAParam(ref PMAlignParam pmaParam, int iJobIndex)
+        public void GetPMAParam(ref PMAlignParam pmaParam, int jobIndex)
         {
             //获取训练参数
             try
             {
-                pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
-                pmaParam.TrainAutoGrun = pma[iJobIndex].Pattern.GrainLimitAutoSelect;
-                pmaParam.TrainCoarse = pma[iJobIndex].Pattern.GrainLimitCoarse;
-                pmaParam.TrainFine = pma[iJobIndex].Pattern.GrainLimitFine;
-                pmaParam.TrainEdgeThre = pma[iJobIndex].Pattern.EdgeThreshold;
-                pmaParam.TrainAutoEdgeThre = pma[iJobIndex].Pattern.AutoEdgeThresholdEnabled;
-                pmaParam.TrainPolarity = pma[iJobIndex].Pattern.IgnorePolarity;
-                pmaParam.TrainAlg = (int)pma[iJobIndex].Pattern.TrainAlgorithm;
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                pmaParam.TrainAutoGrun = pma[jobIndex].Pattern.GrainLimitAutoSelect;
+                pmaParam.TrainCoarse = pma[jobIndex].Pattern.GrainLimitCoarse;
+                pmaParam.TrainFine = pma[jobIndex].Pattern.GrainLimitFine;
+                pmaParam.TrainEdgeThre = pma[jobIndex].Pattern.EdgeThreshold;
+                pmaParam.TrainAutoEdgeThre = pma[jobIndex].Pattern.AutoEdgeThresholdEnabled;
+                pmaParam.TrainPolarity = pma[jobIndex].Pattern.IgnorePolarity;
+                pmaParam.TrainAlg = (int)pma[jobIndex].Pattern.TrainAlgorithm;
                 if (pmaParam.TrainAlg > 2 || pmaParam.TrainAlg < 0)
                     pmaParam.TrainAlg = 2;
 
                 //获取运行参数
-                pmaParam.RunAlg = (int)pma[iJobIndex].RunParams.RunAlgorithm;
+                pmaParam.RunAlg = (int)pma[jobIndex].RunParams.RunAlgorithm;
                 if (pmaParam.RunAlg > 2 || pmaParam.RunAlg < 0)
                     pmaParam.RunAlg = 2;
 
-                pmaParam.RunAutoEdgeThre = pma[iJobIndex].RunParams.AutoEdgeThresholdEnabled;
-                pmaParam.RunArt = pma[iJobIndex].RunParams.ScoreUsingClutter;
-                pmaParam.RunEdgeThre = pma[iJobIndex].RunParams.EdgeThreshold;
-                pmaParam.RunConstractThre = pma[iJobIndex].RunParams.ContrastThreshold;
-                pmaParam.RunSearchNum = pma[iJobIndex].RunParams.ApproximateNumberToFind;
-                pmaParam.RunScoreThre = pma[iJobIndex].RunParams.AcceptThreshold;
+                pmaParam.RunAutoEdgeThre = pma[jobIndex].RunParams.AutoEdgeThresholdEnabled;
+                pmaParam.RunArt = pma[jobIndex].RunParams.ScoreUsingClutter;
+                pmaParam.RunEdgeThre = pma[jobIndex].RunParams.EdgeThreshold;
+                pmaParam.RunConstractThre = pma[jobIndex].RunParams.ContrastThreshold;
+                pmaParam.RunSearchNum = pma[jobIndex].RunParams.ApproximateNumberToFind;
+                pmaParam.RunScoreThre = pma[jobIndex].RunParams.AcceptThreshold;
 
-                if (pma[iJobIndex].RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
+                if (pma[jobIndex].RunParams.ZoneAngle.Configuration == CogPMAlignZoneConstants.LowHigh)
                     pmaParam.RunEnableAngle = true;
                 else
                     pmaParam.RunEnableAngle = false;
-                pmaParam.RunAngleD = pma[iJobIndex].RunParams.ZoneAngle.Low * 180 / Math.PI;
-                pmaParam.RunAngleU = pma[iJobIndex].RunParams.ZoneAngle.High * 180 / Math.PI;
+                pmaParam.RunAngleD = pma[jobIndex].RunParams.ZoneAngle.Low * 180 / Math.PI;
+                pmaParam.RunAngleU = pma[jobIndex].RunParams.ZoneAngle.High * 180 / Math.PI;
             }
             catch (Exception ex)
             {
-                OnVisionError(iJobIndex, $"PMA操作失败: {ex.Message}");
+                OnVisionError(jobIndex, $"PMA操作失败: {ex.Message}");
             //    MessageBox.Show(ex.Message.ToString());
             }
         }
 
         //清楚记录显示
         bool[] bRecordWithInteractiveGraphics = new bool[maxCameraNum];
-        public void ClearRDRecord(int iJobIndex)
+        public void ClearRDRecord(int jobIndex)
         {
-            if(bRecordWithInteractiveGraphics[iJobIndex])
+            if(bRecordWithInteractiveGraphics[jobIndex])
             {
-                switch (iJobIndex)
+                switch (jobIndex)
                 {
                     case 0:
                         {
@@ -2358,7 +2358,7 @@ namespace VisionControl
                        // cogRDSub1.Fit(true);
                         break;
                 }
-                bRecordWithInteractiveGraphics[iJobIndex] = false;
+                bRecordWithInteractiveGraphics[jobIndex] = false;
             }
         }
         
@@ -2931,7 +2931,7 @@ namespace VisionControl
             }
         }
 
-        private void AdjustPictureBoxSize(Control pic, int imgW, int imgH,int iJobIndex)
+        private void AdjustPictureBoxSize(Control pic, int imgW, int imgH,int jobIndex)
         {
             if (pic == null || pic.Parent == null) return;
 
@@ -2965,7 +2965,7 @@ namespace VisionControl
             pic.Left = (parentW - newW) / 2;
             pic.Top = (parentH - newH) / 2;
             pic.ResumeLayout();
-            if (iJobIndex == 1)
+            if (jobIndex == 1)
                 pic.Left += parentW ;
         }
         public void previewOnliveAll(bool bOpen)
@@ -4260,48 +4260,48 @@ namespace VisionControl
             //  g.DrawString(.strHeadInfo, ft, brCoor[index], m_RectArea[index].Left + m_nLeftRemain[index] + 25/**/, m_RectArea[index].Top + m_nTopRemain[index] - 30 + sizeTxt.Height * index);
         }
 
-        public void DirectShowImage(int iJobIndex)
+        public void DirectShowImage(int jobIndex)
         {
             ICogImage cogImg=null;
-            int iCamIndex = cup.p_CD.camInd[iJobIndex];
-            if (cup.p_Cam[iJobIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
+            int iCamIndex = cup.p_CD.camInd[jobIndex];
+            if (cup.p_Cam[jobIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
                 cogImg = acqFIFO.ci8gAcq[iCamIndex];
             else if(acqFIFO.ci24ColorAcq[iCamIndex] != null)
                 cogImg = acqFIFO.ci24ColorAcq[iCamIndex];
 
             {
                  
-                if (cup.p_CD.bListProcess[iJobIndex] )  //启用的检测面才做采集
+                if (cup.p_CD.bListProcess[jobIndex] )  //启用的检测面才做采集
                 {
-                    switch (iJobIndex)
+                    switch (jobIndex)
                     {
                         case 0:
                             if (iModelRole == 10)
                             {
                                 cogRDMain.Display.Image = cogImg;
-                                AddGrap(cogRDMain, DL_result[iJobIndex]);
-                                AddGrapOkNg(cogRDMain, pmaRes[iJobIndex].bOk);
+                                AddGrap(cogRDMain, DL_result[jobIndex]);
+                                AddGrapOkNg(cogRDMain, pmaRes[jobIndex].bOk);
 
                                 cogRDMain.Display.Fit(true);
                             }
                             else
                             {
                                 cogRDMainUser.Image = cogImg;
-                            //    AddGrap(cogRDMainUser, DL_result[iJobIndex]);
-                            //    AddGrapOkNg(cogRDMainUser, pmaRes[iJobIndex].bOk);
+                            //    AddGrap(cogRDMainUser, DL_result[jobIndex]);
+                            //    AddGrapOkNg(cogRDMainUser, pmaRes[jobIndex].bOk);
                                 cogRDMainUser.Fit(true);
                             }
                             break;
                         case 1:
                             cogRDSub1.Image = cogImg;
-                        //    AddGrap(cogRDSub1, DL_result[iJobIndex]);
-                        //    AddGrapOkNg(cogRDSub1, pmaRes[iJobIndex].bOk);
+                        //    AddGrap(cogRDSub1, DL_result[jobIndex]);
+                        //    AddGrapOkNg(cogRDSub1, pmaRes[jobIndex].bOk);
                             cogRDSub1.Fit(true);
                             break;
                         case 2:
                             cogRDSub2.Image = cogImg;
-                            AddGrap(cogRDSub2, DL_result[iJobIndex]);
-                            AddGrapOkNg(cogRDSub2, pmaRes[iJobIndex].bOk);
+                            AddGrap(cogRDSub2, DL_result[jobIndex]);
+                            AddGrapOkNg(cogRDSub2, pmaRes[jobIndex].bOk);
                             cogRDSub2.Fit(true);
                             break;
                             /* case 3:

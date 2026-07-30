@@ -272,7 +272,7 @@ namespace VisionApplication
             }
 
         }
-        private bool setBrightness(int iJobIndex)
+        private bool setBrightness(int jobIndex)
         {
             int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
 

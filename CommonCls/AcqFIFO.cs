@@ -327,14 +327,14 @@ namespace CommonCls
 
         #region 图像采集（实时） 
         /// <summary>采集单帧灰度图像转Cog格式,VP 算法使用
-        public CogImage8Grey GrabOneFrameCog(int iJobIndex,int iCamIndex)
+        public CogImage8Grey GrabOneFrameCog(int jobIndex,int iCamIndex)
         {
             try
             {
                 CameraStatus currentStatus = GetCurrentCameraStatus();
                 if (_cameraStatus.iStatus[iCamIndex] < 2)
                     return null;
-                strTime[iJobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+                strTime[jobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
                 if (_cameraType == 0)
                 {
                     nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
@@ -348,7 +348,7 @@ namespace CommonCls
                     }
                     else
                     {
-                        OnErrorOccurred($"GrabOneFrameCog (Job{iJobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
+                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
                         return null;
                     }
                 }
@@ -374,29 +374,29 @@ namespace CommonCls
                     }
                     else
                     {
-                        OnErrorOccurred($"GrabOneFrameCog (Job{iJobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
+                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
                         return null;
                     }
                 }
-                ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey, iJobIndex);
+                ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey, jobIndex);
                 // ci8gAcq[iCamInd] = cogImage8Grey.Copy();
                 return ci8gAcq[iCamIndex];
             }
             catch(Exception ex)
             {
-                OnErrorOccurred($"GrabOneFrameCog (Job{iJobIndex}, Cam{iCamIndex}): {ex.Message}");
+                OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): {ex.Message}");
                 return null;
             }
         }
         /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用     
-        public CogImage24PlanarColor GrabOneFrameCogColor(int iJobIndex,int iCamIndex)
+        public CogImage24PlanarColor GrabOneFrameCogColor(int jobIndex,int iCamIndex)
         {
             try
             {
                 CameraStatus currentStatus = GetCurrentCameraStatus();
                 if (currentStatus.iStatus[iCamIndex] < 2)
                     return null;
-                strTime[iJobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+                strTime[jobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
                 /*if (_cameraStatus.iStatus[iCamIndex] < 2)
                     return null;*/
                 if (_cameraType == 0)
@@ -412,7 +412,7 @@ namespace CommonCls
                     }
                     else
                     {
-                        OnErrorOccurred($"CogImage24PlanarColor (Job{iJobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
+                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
                         return null;
                     }
                 }
@@ -450,16 +450,16 @@ namespace CommonCls
                     }
                     else
                     {
-                        OnErrorOccurred($"CogImage24PlanarColor (Job{iJobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
+                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
                         return null;
                     }
                 }
-                ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)CogFlipRotateIm(ci24ColorAcq[iCamIndex], iJobIndex);
+                ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)CogFlipRotateIm(ci24ColorAcq[iCamIndex], jobIndex);
                 return ci24ColorAcq[iCamIndex];
             }
             catch (Exception ex)
             {
-                OnErrorOccurred($"CogImage24PlanarColor (Job{iJobIndex}, Cam{iCamIndex}): {ex.Message}");
+                OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): {ex.Message}");
                 return null;
             }
 
@@ -551,7 +551,7 @@ namespace CommonCls
             return new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, ptr);
         }
         /// <summary>批量采集所有相机图像（CogImage8Grey数组）</summary>
-        public CogImage8Grey[] GrabOneFrameCog(int iJobIndex)
+        public CogImage8Grey[] GrabOneFrameCog(int jobIndex)
         {
             for (int iCamIndex = 0; iCamIndex < maxCameraNum; iCamIndex++)
             {
@@ -593,7 +593,7 @@ namespace CommonCls
                    
                 }
                 // 应用旋转/镜像（如果需要）               
-                cogImage8Grey = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey, iJobIndex);
+                cogImage8Grey = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey, jobIndex);
                 ci8gAcq[iCamIndex] = cogImage8Grey.Copy();
             }
             return ci8gAcq;
@@ -869,13 +869,13 @@ namespace CommonCls
             }
             return ci8gAcq;
         }
-        public ICogImage GrabOneFrameCogFromFilePMA(string strFile,int iJobIndex)
+        public ICogImage GrabOneFrameCogFromFilePMA(string strFile,int jobIndex)
         {
             try
             {
                 ICogImage ci = ReadCogImage(strFile);  //文件存储是根据工位编号存储 
                  
-                return CogFlipRotateIm(ci,iJobIndex);
+                return CogFlipRotateIm(ci,jobIndex);
 
             }
             catch
@@ -976,26 +976,26 @@ namespace CommonCls
         }
 
         /// <summary>对CogImage8Grey应用旋转/镜像</summary>
-        public ICogImage CogFlipRotateIm(ICogImage inputIm,int iJobIndex)
+        public ICogImage CogFlipRotateIm(ICogImage inputIm,int jobIndex)
         {
             switch (_rotateFlipType)
             {
-                case 0: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.None; break;
-                case 1: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate90Deg; break;
-                case 2: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate180Deg; break;
-                case 3: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate270Deg; break;
-                case 4: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
-                case 5: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
-                case 6: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
-                case 7: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
-                case 8: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
-                case 9: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
-                case 10: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
-                case 11: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
+                case 0: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.None; break;
+                case 1: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate90Deg; break;
+                case 2: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate180Deg; break;
+                case 3: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate270Deg; break;
+                case 4: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
+                case 5: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
+                case 6: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
+                case 7: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
+                case 8: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
+                case 9: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
+                case 10: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
+                case 11: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
             }
-            imgTool[iJobIndex].InputImage = inputIm;
-            imgTool[iJobIndex].Run();
-            return imgTool[iJobIndex].OutputImage;
+            imgTool[jobIndex].InputImage = inputIm;
+            imgTool[jobIndex].Run();
+            return imgTool[jobIndex].OutputImage;
         }
 
         /// <summary>采集单帧并应用旋转/镜像</summary>
@@ -1511,31 +1511,31 @@ namespace CommonCls
             }
         }
         /// <summary>对CogImage8Grey应用旋转/镜像</summary>
-        private CogImage24PlanarColor CogFlipRotateImColor(CogImage24PlanarColor inputIm,int iJobIndex)
+        private CogImage24PlanarColor CogFlipRotateImColor(CogImage24PlanarColor inputIm,int jobIndex)
         {
             try
             {
                 switch (_rotateFlipType)
                 {
-                    case 0: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.None; break;
-                    case 1: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate90Deg; break;
-                    case 2: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate180Deg; break;
-                    case 3: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate270Deg; break;
-                    case 4: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
-                    case 5: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
-                    case 6: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
-                    case 7: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
-                    case 8: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
-                    case 9: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
-                    case 10: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
-                    case 11: cogImFlipRotate[iJobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
+                    case 0: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.None; break;
+                    case 1: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate90Deg; break;
+                    case 2: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate180Deg; break;
+                    case 3: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate270Deg; break;
+                    case 4: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
+                    case 5: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
+                    case 6: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
+                    case 7: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
+                    case 8: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate180Deg; break;
+                    case 9: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate270Deg; break;
+                    case 10: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Flip; break;
+                    case 11: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.FlipAndRotate90Deg; break;
                 }
-                imgTool[iJobIndex].InputImage = inputIm;
-                imgTool[iJobIndex].Run();
-                return (CogImage24PlanarColor)imgTool[iJobIndex].OutputImage;
+                imgTool[jobIndex].InputImage = inputIm;
+                imgTool[jobIndex].Run();
+                return (CogImage24PlanarColor)imgTool[jobIndex].OutputImage;
             }catch(Exception ex)
             {
-                OnErrorOccurred($"CogFlipRotateImColor (Job{iJobIndex}): {ex.Message}");
+                OnErrorOccurred($"CogFlipRotateImColor (Job{jobIndex}): {ex.Message}");
                 return inputIm;
             }
         }

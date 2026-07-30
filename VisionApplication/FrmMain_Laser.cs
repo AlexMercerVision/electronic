@@ -3334,18 +3334,18 @@ namespace VisionApplication
             UpdateCalibResult2UIFromVar(cr);
         }
 
-        private void UpdateBlobParam2VPFromUI(int iJobIndex)
+        private void UpdateBlobParam2VPFromUI(int jobIndex)
         {
             UpdateCalibBlobParam2VarFromUI();
-            vpWin.SetCalibBlobParam(cbp, iJobIndex);
+            vpWin.SetCalibBlobParam(cbp, jobIndex);
         }
-        private bool UpdateLaserVisionCalibParam2VPFromUI(int iJobIndex)
+        private bool UpdateLaserVisionCalibParam2VPFromUI(int jobIndex)
         {
             bool bNormal = true;
             bNormal &= Update9PointCalibPoint2VarFromUI(); //从界面获取9点标定数据
-            vpWin.SetCalibPoint2NPointTool(dCalibPoint, iJobIndex); //将标定数据更新到NPoint标定工具
+            vpWin.SetCalibPoint2NPointTool(dCalibPoint, jobIndex); //将标定数据更新到NPoint标定工具
             UpdateCalibBlobParam2VarFromUI();
-            vpWin.SetCalibBlobParam(cbp, iJobIndex);
+            vpWin.SetCalibBlobParam(cbp, jobIndex);
             return bNormal;
         }
 
@@ -4168,7 +4168,7 @@ namespace VisionApplication
         /// <summary>
         /// 采集并分析标定图像（异步版本）
         /// </summary>
-        private async Task<bool> CaptureAndAnalyzeCalibImageAsync(int iJobIndex)
+        private async Task<bool> CaptureAndAnalyzeCalibImageAsync()
         {
             var tcs = new TaskCompletionSource<bool>();
 

@@ -326,13 +326,13 @@ namespace VisionControl
             }
         }
         //二维数组排序
-        private void _2DCoordSort(int row, int col, double[] dCoor,int iJobIndex)
+        private void _2DCoordSort(int row, int col, double[] dCoor,int jobIndex)
         {
             /*     if (cup.p_Cam[icamSelectInd].iFlipType == 1)
                      dCalibPointLaser[ind * 2] = -j * cup.calTP.dDisX;
                  if (cup.p_Cam[icamSelectInd].iFlipType == 2)
                      dCalibPointLaser[ind * 2 + 1] = -i * cup.calTP.dDisY;*/
-            int flipType = cup.p_Cam[cup.p_CD.camInd[iJobIndex]].iFlipType;
+            int flipType = cup.p_Cam[cup.p_CD.camInd[jobIndex]].iFlipType;
             bool bFlipX = (flipType == 1);   // 水平镜像
             bool bFlipY = (flipType == 2);   // 垂直镜像
             int count = row * col;

@@ -1830,25 +1830,25 @@ namespace VisionApplication
         }
        
         //2025年10月7日  执行一次运算输出IO信号
-        private async void ExeIOOut(int iJobIndex) 
+        private async void ExeIOOut(int jobIndex) 
         {
             
             // 发送 IO 信号（假设此方法不会阻塞）
-            if (csd.SendResultToIO(sPortCy, iJobIndex == 0, cup.p_IOPP))
+            if (csd.SendResultToIO(sPortCy, jobIndex == 0, cup.p_IOPP))
             {
                 // 1. 变红
-                if (iJobIndex == 0)
+                if (jobIndex == 0)
                     lblOut1.ForeColor = Color.Red;
-                else if (iJobIndex == 1)
+                else if (jobIndex == 1)
                     lblOut2.ForeColor = Color.Red;
 
                 // 2. 异步等待 1 秒，不阻塞 UI
                 await Task.Delay(1000);
 
                 // 3. 变绿
-                if (iJobIndex == 0)
+                if (jobIndex == 0)
                     lblOut1.ForeColor = Color.Green;
-                else if (iJobIndex == 1)
+                else if (jobIndex == 1)
                     lblOut2.ForeColor = Color.Green;
             }
         }
