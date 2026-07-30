@@ -344,6 +344,12 @@ namespace VisionApplication
             int ch1, ch2, ch3, ch4;
             bool sync = chkLS_Sync.Checked;
             int targetBrightness = brightness ?? tbBirghtness.Value;
+            // 如果非同步且未指定通道，则使用当前界面选中的通道
+            if (!sync && !channel.HasValue)
+            {
+                channel = cmbLs_Channel.SelectedIndex + 1;
+                if (channel < 1 || channel > 4) channel = 1; // 默认通道1
+            }
 
             if (jobIndex == 0) // 主光源
             {

@@ -117,7 +117,7 @@ namespace VisionApplication
         private bool bPMAEdit = false;                          // PMAlign编辑模式标志
         private int iTmpType = 0;                               // 临时任务类型
         private bool bTrig = false;                             // 触发模式标志
-        private CogPMAlignEditV2 pmaV2 = new CogPMAlignEditV2(); // PMAlign编辑控件
+        private CogPMAlignEditV2[] pmaV2 = new CogPMAlignEditV2[2]; // PMAlign编辑控件
 
         // 9. 字段 - Blob编辑
         private CogBlobEditV2 blobV2;                           // Blob分析编辑控件
@@ -7461,11 +7461,25 @@ namespace VisionApplication
         private void cmbLs_Channel_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (iJobIndex < 0 || iJobIndex > 1) return;
-            _isUpdatingUI = true;   // 阻止事件触发
+            _isUpdatingUI = true;
             try
             {
-                int channel = cmbLs_Channel.SelectedIndex + 1;
-                int brightness = cup.p_LS2[iJobIndex].indent[channel];
+                int channel = cmbLs_Channel.SelectedIndex + 1; // 1~4
+                int brightness = 0;
+
+                // 根据工位选择正确的光源配置
+                if (iJobIndex == 0) // A面 -> 主光源
+                {
+                    if (cup.p_LS.indent != null && cup.p_LS.indent.Length > channel)
+                        brightness = cup.p_LS.indent[channel];
+                }
+                else if (iJobIndex == 1) // B面 -> 侧光源1
+                {
+                    if (cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
+                        cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length > channel)
+                        brightness = cup.p_LS2[0].indent[channel];
+                }
+
                 tbBirghtness.Value = brightness;
                 nudContrast.Value = brightness;
             }
@@ -7473,7 +7487,6 @@ namespace VisionApplication
             {
                 _isUpdatingUI = false;
             }
-
         }
 
         private void chkLS_Sync_Click(object sender, EventArgs e)

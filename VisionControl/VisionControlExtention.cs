@@ -1131,7 +1131,10 @@ namespace VisionControl
                 pma[iJobIndex].RunParams.EdgeThreshold = pmaParam.RunEdgeThre;
                 pma[iJobIndex].RunParams.ContrastThreshold = pmaParam.RunConstractThre;
                 pma[iJobIndex].RunParams.ApproximateNumberToFind = pmaParam.RunSearchNum;
-                pma[iJobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre;
+                if(pmaParam.RunScoreThre>0.6)
+                    pma[iJobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre-0.3;
+                else
+                    pma[iJobIndex].RunParams.AcceptThreshold = pmaParam.RunScoreThre;
                 if (pmaParam.RunEnableAngle)
                 {
                     pma[iJobIndex].RunParams.ZoneAngle.Configuration = CogPMAlignZoneConstants.LowHigh;
@@ -1206,10 +1209,11 @@ namespace VisionControl
                 //实采图像
                 if (bFrmCam)
                 {
-                    //重新采集一帧图像
+                    //重新采集一帧图像，不管是否Lock都重新抓取
+                    bool ret = PreViewOneImage(iJobIndex);
                     if (bLock)
                     {
-                        bool ret = PreViewOneImage(iJobIndex);
+                       
                     }
                     else
                     {
@@ -1234,6 +1238,7 @@ namespace VisionControl
                 nPointTool[iJobIndex].Run();
 
                 pma[iJobIndex] = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                //pma[iJobIndex].InputImage= nPointTool[iJobIndex].OutputImage;
                 pma[iJobIndex].Pattern.TrainImage = nPointTool[iJobIndex].OutputImage;
                 //pma.InputImage = nPointTool.OutputImage;
                 ShowPMAInputImage(pma[iJobIndex], iJobIndex);

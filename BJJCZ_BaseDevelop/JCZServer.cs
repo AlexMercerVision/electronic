@@ -10782,7 +10782,7 @@ namespace BJJCZ_BaseDevelop
             try
             {
                 // ===== 新增：先保存两块板卡的所有数据 =====
-                AddMsg("正在保存 A 面（卡1）和 B 面（卡2）的当前模板...");
+              /*  AddMsg("正在保存 A 面（卡1）和 B 面（卡2）的当前模板...");
                 bool allSaved = true;
 
                 for (int i = 0; i < 2; i++)
@@ -10812,7 +10812,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     MessageBox.Show("保存模板失败，请检查文件路径或权限。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;  // 保存失败则中止打开EZcad
-                }
+                }*/
 
                 // ===== 以下为原逻辑：关闭板卡，启动EZcad =====
                 AddMsg($"正在关闭卡{card + 1}板卡连接，为启动EZcad做准备...");

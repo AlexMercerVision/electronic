@@ -2927,7 +2927,10 @@ namespace VisionApplication
             pmaParam.RunAutoEdgeThre = chkPMARunAutoEdgeThre.Checked;
             pmaParam.RunConstractThre = (double)nudPMAConstractThre.Value;
             pmaParam.RunSearchNum = (int)nudPMASearchNum.Value;
-            pmaParam.RunScoreThre = (double)nudPMAScoreThre.Value;
+            if((double)nudPMAScoreThre.Value<0.6)
+                pmaParam.RunScoreThre = (double)nudPMAScoreThre.Value;
+            else
+                pmaParam.RunScoreThre = (double)nudPMAScoreThre.Value-0.3;
             pmaParam.RunEnableAngle = chkPMARunWithAngle.Checked;
             pmaParam.RunAngleD = (double)nudPMARunAngleD.Value;
             pmaParam.RunAngleU = (double)nudPMARunAngleU.Value;
@@ -3099,11 +3102,12 @@ namespace VisionApplication
                 if (bPMAEdit)
                 {
                     iTmpType = vpWin._iTaskType;
-                    pmaV2 = new CogPMAlignEditV2();
-                    pmaV2.Subject = vpWin._pmaMT;
+                   if (pmaV2[iJobIndex]==null)
+                        pmaV2[iJobIndex] = new CogPMAlignEditV2();
+                    pmaV2[iJobIndex].Subject = vpWin._pmaMT;
                     
-                    splitContainer2.Panel1.Controls.Add(pmaV2);
-                    pmaV2.Dock = DockStyle.Fill;
+                    splitContainer2.Panel1.Controls.Add(pmaV2[iJobIndex]);
+                    pmaV2[iJobIndex].Dock = DockStyle.Fill;
                     vpWin.Visible = false;
                     vpWin._iTaskType = 5;
                     vpWin.bEnableActivate = false;
@@ -3115,11 +3119,11 @@ namespace VisionApplication
                 }
                 else
                 {
-                    bool bSetPMA = vpWin.setPMA(pmaV2.Subject,iJobIndex);
-                    vpWin.SaveTrainImage(iJobIndex, pmaV2.Subject);  //保存模板图像
+                    bool bSetPMA = vpWin.setPMA(pmaV2[iJobIndex].Subject,iJobIndex);
+                    vpWin.SaveTrainImage(iJobIndex, pmaV2[iJobIndex].Subject);  //保存模板图像
 
-                    splitContainer2.Panel1.Controls.Remove(pmaV2);
-                    pmaV2.Dispose();
+                    splitContainer2.Panel1.Controls.Remove(pmaV2[iJobIndex]);
+                    
 
 
                     vpWin._iTaskType = iTmpType;
@@ -3157,7 +3161,7 @@ namespace VisionApplication
                         // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
                         await RunSilentOnceForJob(iJobIndex);
                     }
-
+                 //   pmaV2.Dispose();
                 }
             }
         }
