@@ -333,7 +333,29 @@ namespace BJJCZ_BaseDevelop
                 return;
             }
 
-            for (int card = 0; card < pendingDeferredSave.Length; card++)
+            try
+            {
+                lock (GetSdkLock(0))
+                {
+                    pendingDeferredSave[0] = false;
+                    SaveToOriginalPath(0);
+                }
+                lock (GetSdkLock(1))
+                {
+                    pendingDeferredSave[1] = false;
+                    SaveToOriginalPath(1);
+                }
+            }
+            catch
+            {
+                // 处理异常（可选：记录日志）
+
+            }
+            finally
+            {
+                _deferredSaveTimer.Start();
+            }
+           /* for (int card = 0; card < pendingDeferredSave.Length; card++)
             {
                 if (!pendingDeferredSave[card])
                 {
@@ -342,7 +364,7 @@ namespace BJJCZ_BaseDevelop
 
                 pendingDeferredSave[card] = false;
                 SaveToOriginalPath(card);
-            }
+            }*/
         }
         #endregion
 
