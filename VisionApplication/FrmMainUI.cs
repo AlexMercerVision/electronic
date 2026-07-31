@@ -376,6 +376,7 @@ namespace VisionApplication
                 acqFIFO._csd = csd;
                 // acqFIFO.cdl = cdl;
                 acqFIFO.SetCameraStatusGetter(() => rts.cs);
+                vpWin._iJobIndex = iJobIndex;
                 vpWin._cup = cup;
                 vpWin.SetGUIShow(0);
                 vpWin._cameraNum = cameraNum;
@@ -5913,19 +5914,21 @@ namespace VisionApplication
         private int packLen = 25;
         private void ProcessSerialBuffer() 
         {
-            if(_rxBuffer.Count%25==0)
+           /* if(_rxBuffer.Count%25==0)
                 packLen = 25;
             else
-                packLen = 10;
+                packLen = 10;*/
 
             while (_rxBuffer.Count >= packLen)  // 至少能容纳一个完整主动上报包（最短10字节）
             {
-              //  toolStripStatus_ExcuteTimes.Text = "接收缓存长度：" + _rxBuffer.Count.ToString();
+                //  toolStripStatus_ExcuteTimes.Text = "接收缓存长度：" + _rxBuffer.Count.ToString();
                 // ---- 1. 尝试解析主动上报帧（固定10字节） ----
-                if ((packLen==25 &&_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                /*if ((packLen==25 &&_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
                     _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
                     ||(packLen == 10 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01))
+                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01))*/
+                if ((_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                    _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01))
                 {
                     if (_rxBuffer.Count < packLen)
                         break;   // 数据不够，等待下次接收
@@ -5944,7 +5947,7 @@ namespace VisionApplication
                 }
 
                 // ---- 2. 尝试解析设置输出反馈（长度8或16） ----
-                if (_rxBuffer.Count >= 8 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x0F)
+                else if (_rxBuffer.Count >= 8 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x0F)
                 {
                     // 实际长度可能为8或16，这里根据协议判断（示例中简单取8）
                     int len = 8;
@@ -5952,19 +5955,28 @@ namespace VisionApplication
                     {
                         byte[] packet = _rxBuffer.GetRange(0, len).ToArray();
                         _rxBuffer.RemoveRange(0, len);
-                  //      ProcessSetOutputResponse(packet);
+                        //      ProcessSetOutputResponse(packet);
                         continue;
                     }
                     break;
                 }
 
                 // ---- 3. 尝试解析查询反馈（长度6） ----
-                if (_rxBuffer.Count >= 6 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x02 && _rxBuffer[2] == 0x01)
+                else if (_rxBuffer.Count >= 6 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x02 && _rxBuffer[2] == 0x01)
                 {
                     byte[] packet = _rxBuffer.GetRange(0, 6).ToArray();
                     _rxBuffer.RemoveRange(0, 6);
                     ProcessQueryResponse(packet);
                     continue;
+                }
+                else {                     // 不是已知的包头，可能是噪声或错误数据
+                                           // 可以选择丢弃一个字节，继续解析下一个字节
+                    byte unknownByte = _rxBuffer[0];
+                    string hexStr = BitConverter.ToString(_rxBuffer.Take(Math.Min(10, _rxBuffer.Count)).ToArray());
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "串口未知数据";
+                    operLog.strFailReason = $"跳过字节 0x{unknownByte:X2}，缓存前10字节: {hexStr}";
+                    AddLog();
                 }
 
                 // ---- 4. 无法识别包头，跳过1字节防止死循环 ----

@@ -4801,7 +4801,7 @@ namespace VisionApplication
             }
             cmbCLPEdgeLeft.SelectedIndex = 0;
 
-
+          //  menuWSJobS_Click(menuWS_Job1, null);
             ViewLayout();
             SyncCurrentCardSelection(true);
             toolBtSta_MarkAfterLocated.Checked= rts.onLS.bLock;
@@ -4832,7 +4832,7 @@ namespace VisionApplication
 
             UpdateStatisticsForJob(jobIndex);
             AnaEventForJob(jobIndex);
-
+            vpWin._bRunOneTimeFinished[jobIndex] = 2;
             completedJobCount++;
             if (completedJobCount >= GetEnabledJobCount())
             {
