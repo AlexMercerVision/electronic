@@ -5925,7 +5925,7 @@ namespace VisionApplication
                 if ((packLen==25 &&_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
                     _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
                     ||(packLen == 10 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01))
+                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01))
                 {
                     if (_rxBuffer.Count < packLen)
                         break;   // 数据不够，等待下次接收
@@ -5985,7 +5985,7 @@ namespace VisionApplication
 
             // 收集所有触发的类型
             List<int> triggerTypes = new List<int>();
-            byte diByte = packet[5];   // DI状态字节
+            byte diByte = packet[packLen==25?5:4];   // DI状态字节
 
             // A面触发
             if (cup.p_IOPP.APlane > 0)
