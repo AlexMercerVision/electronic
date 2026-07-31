@@ -42,7 +42,7 @@ namespace VisionApplication
         #region       
         // 1. 常量
         private const int maxCameraNum = 2;                     // 最大支持的相机数量（工位数量）
-
+        private const int maxJobNum = maxCameraNum;
         // 2. 字段 - UI相关
         private Frm_Welcome fw;                                 // 欢迎窗体对象，用于显示启动进度
         private Protect mPasswordFile = new Protect("C:\\Users\\GearDet\\authentication.txt");  // 授权文件保护类
@@ -64,6 +64,9 @@ namespace VisionApplication
         private int iFileGroupLen = 0;                          // 回放文件组的总数量
         private int iPerGroupLen = 1;                           // 每组图像包含的文件数量（普通1，光度立体6）
         private string[][] strFiles = new string[maxCameraNum][]; // 回放文件路径数组
+         // 错误日志缓存（最近20条）
+        private readonly List<string> _recentErrorLogs = new List<string>();
+        private readonly object _errorLogLock = new object();
 
         // 5. 字段 - 线程
         private Thread contThread = null, oneTimeThread = null; // 连续、单次运行线程
@@ -1194,7 +1197,7 @@ namespace VisionApplication
         /// </summary>
         /// <param name="ind">工位索引（逻辑工位）</param>
         /// <returns>是否初始化成功</returns>
-        private bool InitCamInd(int ind)
+        private bool InitJobCamInd(int ind)
         {
             bool bSucc = false;
             int iCamInd = cup.p_CD.camInd[ind];          // 物理相机索引
@@ -1231,7 +1234,7 @@ namespace VisionApplication
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "相机初始化失败";
-                operLog.strFailReason = "异常错误";
+                operLog.strFailReason = "异常错误,相机初始化状态："+ rts.cs.iStatus[iCamInd];
                 AddLog();
 
                 // 更新状态
@@ -1271,7 +1274,8 @@ namespace VisionApplication
             SyncCameraStatus(iCamInd, 1);
 
             // 4. 设置相机参数（曝光、增益、ROI 等）
-            if (!SetCamParam(iCamInd))
+            //取消过程中设置参数
+           /* if (!SetCamParam(iCamInd))
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "设置相机参数";
@@ -1280,7 +1284,7 @@ namespace VisionApplication
 
                 SyncCameraStatus(iCamInd, 0);
                 return false;
-            }
+            }*/
             SyncCameraStatus(iCamInd, 2);
 
             // 5. 分配/调整图像缓冲区（由 AcqFIFO 统一管理）
@@ -1972,7 +1976,42 @@ namespace VisionApplication
             }
 
             // 3. 写入文件（简单捕获异常，不因文件写入失败影响日志功能）
-           /* try
+            // 判断是否为错误日志（状态为"执行失败"、"执行超时"、"执行异常"等）
+            string status = (dgvLog.Rows[0].Cells[2].Value?.ToString() ?? "");
+            bool isError = status != "执行正常" && !string.IsNullOrEmpty(status);
+
+            if (isError)
+            {
+                string errorLine = $"{operLog.dtOperTime:yyyy-MM-dd HH:mm:ss} | {operLog.strOperEvent} | {status} | {operLog.strFailReason}";
+
+                lock (_errorLogLock)
+                {
+                    // 1. 写入文件（追加）
+                    try
+                    {
+                        string logDir = cup.p_Paf.strLogPath;
+                        if (!string.IsNullOrEmpty(logDir))
+                        {
+                            if (!Directory.Exists(logDir))
+                                Directory.CreateDirectory(logDir);
+                            string errorLogFile = Path.Combine(logDir, $"ErrorLog_{DateTime.Now:yyyyMMdd}.txt");
+                            File.AppendAllText(errorLogFile, errorLine + Environment.NewLine);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 避免写入错误日志时再触发异常导致死循环
+                        System.Diagnostics.Debug.WriteLine($"写入错误日志失败: {ex.Message}");
+                    }
+
+                    // 2. 更新内存缓存（最近20条）
+                    _recentErrorLogs.Add(errorLine);
+                    if (_recentErrorLogs.Count > 20)
+                        _recentErrorLogs.RemoveAt(0);
+                }
+            }
+
+            /* try
             {
                 string logDir = cup.p_Paf.strLogPath;
                 if (!string.IsNullOrEmpty(logDir))
@@ -3950,6 +3989,11 @@ namespace VisionApplication
         /// <summary>
         /// 光源控制（根据当前选中的工位控制对应的光源）
         /// </summary>
+        /// <summary>
+        /// 光源控制（根据当前选中的工位控制对应的光源）
+        /// 打开状态：按四个分区各自保存的亮度独立设置
+        /// 关闭状态：所有分区亮度设为 0
+        /// </summary>
         private void LightControlTurnOn()
         {
             // 检查相机是否已选择
@@ -3959,70 +4003,66 @@ namespace VisionApplication
                 operLog.strOperEvent = "光源控制";
                 operLog.strFailReason = "未选择相机";
                 AddLog();
-               // return;
+                return;
             }
 
             bool open = !toolBtSta_Triggle.Checked;
-            int brightness = open ? tbBirghtness.Value : 0;
-            ApplyLightBrightness(iJobIndex, null, brightness);
             toolBtSta_Triggle.Checked = open;
-            toolBtSta_Triggle.Image = open ? global::VisionApplication.Properties.Resources.LightOn
-                                            : global::VisionApplication.Properties.Resources.LightOff;
-            
-            /*bool bSucc;
-            int targetBrightness;
+            toolBtSta_Triggle.Image = open
+                ? global::VisionApplication.Properties.Resources.LightOn
+                : global::VisionApplication.Properties.Resources.LightOff;
 
-            // 根据当前按钮状态决定开关
-            if (!toolBtSta_Triggle.Checked)
+            int ch1, ch2, ch3, ch4;
+
+            if (iJobIndex == 0)  // A面 - 主光源
             {
-                // 打开光源：使用配置的亮度值
-                targetBrightness = GetLightBrightnessForCurrentJob();
-                bSucc = csd.SetLightBrightnessByJob(iJobIndex, targetBrightness);
-
-                if (bSucc)
+                if (open)
                 {
-                    operLog.iEventStatus = 0;
-                    operLog.strOperEvent = $"光源控制-打开(工位{iJobIndex + 1})";
-                    operLog.strFailReason = $"亮度:{targetBrightness}";
-                    AddLog();
-                }
-            }
-            else
-            {
-                // 关闭光源：亮度设为0
-                bSucc = csd.SetLightBrightnessByJob(iJobIndex, 0);
-
-                if (bSucc)
-                {
-                    operLog.iEventStatus = 0;
-                    operLog.strOperEvent = $"光源控制-关闭(工位{iJobIndex + 1})";
-                    AddLog();
-                }
-            }
-
-            if (bSucc)
-            {
-                // 切换按钮状态
-                toolBtSta_Triggle.Checked = !toolBtSta_Triggle.Checked;
-
-                if (toolBtSta_Triggle.Checked)
-                {
-                    toolBtSta_Triggle.Image = global::VisionApplication.Properties.Resources.LightOn;
-                    toolBtSta_Triggle.ToolTipText = "光源开启";
+                    // 从配置读取四个独立通道亮度值（保留上次设置的值）
+                    ch1 = cup.p_LS.indent[1];
+                    ch2 = cup.p_LS.indent[2];
+                    ch3 = cup.p_LS.indent[3];
+                    ch4 = cup.p_LS.indent[4];
                 }
                 else
                 {
-                    toolBtSta_Triggle.Image = global::VisionApplication.Properties.Resources.LightOff;
-                    toolBtSta_Triggle.ToolTipText = "光源关闭";
+                    // 关闭：全部设为0
+                    ch1 = ch2 = ch3 = ch4 = 0;
                 }
+                // 发送一条命令设置所有通道
+                SendAllChannelsCommand(0, ch1, ch2, ch3, ch4);
+            }
+            else if (iJobIndex == 1)  // B面 - 侧光源1
+            {
+                if (open)
+                {
+                    ch1 = cup.p_LS2[0].indent[1];
+                    ch2 = cup.p_LS2[0].indent[2];
+                    ch3 = cup.p_LS2[0].indent[3];
+                    ch4 = cup.p_LS2[0].indent[4];
+                }
+                else
+                {
+                    ch1 = ch2 = ch3 = ch4 = 0;
+                }
+                SendAllChannelsCommand(1, ch1, ch2, ch3, ch4);
             }
             else
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "光源控制";
-                operLog.strFailReason = "串口通信失败";
+                operLog.strFailReason = "不支持的工位索引";
                 AddLog();
-            }*/
+                return;
+            }
+
+            // 记录日志
+            operLog.iEventStatus = 0;
+            operLog.strOperEvent = $"光源控制-{(open ? "打开" : "关闭")}(工位{iJobIndex + 1})";
+            operLog.strFailReason = open
+                ? $"CH1={ch1}, CH2={ch2}, CH3={ch3}, CH4={ch4}"
+                : "全部关闭";
+            AddLog();
         }
         /// <summary>
         /// 获取当前工位对应的光源亮度配置值
@@ -4657,7 +4697,7 @@ namespace VisionApplication
 
             int iCamSuccNum = 0;
             int iCamFailNum = 0;
-            for (int i = 0; i < maxCameraNum; i++)
+            for (int i = 0; i < maxJobNum; i++)
             {
                 int iCamInd = cup.p_CD.camInd[i];
                 // 在 TipInfo 中，发现相机状态异常时
@@ -4673,14 +4713,14 @@ namespace VisionApplication
                             _isReconnecting = true;
                             try
                             {
-                                int index = (int)state;
+                                int index = (int)state;  //jobIndex
                                 // 重新枚举相机（可选）
                                 // 调用 InitCamInd 或更轻量的重连方法
-                                bool success = InitCamInd(index);
+                                bool success = InitJobCamInd(index);
                                 if (success)
                                 {
                                     // 重连成功，恢复采集
-                                    StartGrab(cup.p_CD.camInd[index]);
+                                    StartGrab(iCamInd);
                                     // 更新状态栏颜色等
                                 }
                             }
@@ -7371,6 +7411,38 @@ namespace VisionApplication
                 AddLog();
                 MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
+            // 如果 VPP 参数发生改变，保存 VPP 文件
+            // 如果 VPP 参数发生改变，保存 VPP 文件
+            if (bVPPParamChanged)
+            {
+                try
+                {
+                    int saveResult = vpWin.SaveVPP();
+                    if (saveResult == 0)
+                    {
+                        operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "保存VPP文件";
+                        operLog.strFailReason = $"已保存到 {cup.p_Paf.strVPPFilePath}";
+                        AddLog();
+                        bVPPParamChanged = false;   // 重置标志
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "保存VPP文件";
+                        operLog.strFailReason = $"保存失败，错误码：{saveResult}";
+                        AddLog();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "保存VPP文件";
+                    operLog.strFailReason = ex.Message;
+                    AddLog();
+                }
+            }
         }
 
         private void SaveLaserFile()
@@ -7502,6 +7574,112 @@ namespace VisionApplication
                 ApplyLightBrightness(iJobIndex, null, tbBirghtness.Value);
             }
           //  ApplyLightBrightness(iJobIndex);
+        }
+
+        private void menu_View_ErrLog_Click(object sender, EventArgs e)
+        {
+            List<string> errorList;
+
+            lock (_errorLogLock)
+            {
+                // 如果内存缓存为空，尝试从文件加载最近20条
+                if (_recentErrorLogs.Count == 0)
+                {
+                    errorList = LoadRecentErrorsFromFile();
+                }
+                else
+                {
+                    errorList = new List<string>(_recentErrorLogs);
+                }
+            }
+
+            if (errorList.Count == 0)
+            {
+                MessageBox.Show("暂无错误日志记录。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // 显示错误日志
+            ShowErrorLogDialog(errorList);
+        }
+        private void ShowErrorLogDialog(List<string> errorList)
+        {
+            // 使用对话框展示列表
+            FrmErrorLogViewer frm = new FrmErrorLogViewer(errorList);
+            frm.Show();
+        }
+        private List<string> LoadRecentErrorsFromFile()
+        {
+            List<string> lines = new List<string>();
+            try
+            {
+                string logDir = cup.p_Paf.strLogPath;
+                if (string.IsNullOrEmpty(logDir) || !Directory.Exists(logDir))
+                    return lines;
+
+                // 获取当前日期及前两天的错误日志文件，防止跨天边界
+                string[] files = new string[]
+                {
+            $"ErrorLog_{DateTime.Now:yyyyMMdd}.txt",
+            $"ErrorLog_{DateTime.Now.AddDays(-1):yyyyMMdd}.txt",
+            $"ErrorLog_{DateTime.Now.AddDays(-2):yyyyMMdd}.txt"
+                };
+
+                foreach (var fileName in files)
+                {
+                    string fullPath = Path.Combine(logDir, fileName);
+                    if (File.Exists(fullPath))
+                    {
+                        // 读取所有行并逆序取最后N行
+                        var allLines = File.ReadAllLines(fullPath);
+                        lines.AddRange(allLines.Reverse().Take(20 - lines.Count));
+                        if (lines.Count >= 20) break;
+                    }
+                }
+
+                // 按时间顺序恢复（逆序再反转）
+                lines.Reverse();
+            }
+            catch
+            {
+                // 忽略读取错误
+            }
+            return lines;
+        }
+
+       
+
+        private void btSaveVPP_Click(object sender, EventArgs e)
+        {
+            if (bVPPParamChanged)
+            {
+                try
+                {
+                    int saveResult = vpWin.SaveVPP();
+                    if (saveResult == 0)
+                    {
+                        operLog.iEventStatus = 0;
+                        operLog.strOperEvent = "保存VPP文件";
+                        operLog.strFailReason = $"已保存到 {cup.p_Paf.strVPPFilePath}";
+                        AddLog();
+                        bVPPParamChanged = false;   // 重置标志
+                    }
+                    else
+                    {
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = "保存VPP文件";
+                        operLog.strFailReason = $"保存失败，错误码：{saveResult}";
+                        AddLog();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "保存VPP文件";
+                    operLog.strFailReason = ex.Message;
+                    AddLog();
+                }
+            }
         }
 
         private void timerIOIn_Tick(object sender, EventArgs e)
@@ -7780,4 +7958,5 @@ namespace VisionApplication
  
 
     }
+
 }

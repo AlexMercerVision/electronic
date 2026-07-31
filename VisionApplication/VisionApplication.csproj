@@ -206,6 +206,12 @@
     <Compile Include="FrmCam_Debug.designer.cs">
       <DependentUpon>FrmCam_Debug.cs</DependentUpon>
     </Compile>
+    <Compile Include="FrmErrorLogViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmErrorLogViewer.Designer.cs">
+      <DependentUpon>FrmErrorLogViewer.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmExpiration.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -259,6 +265,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FrmCam_Debug.resx">
       <DependentUpon>FrmCam_Debug.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FrmErrorLogViewer.resx">
+      <DependentUpon>FrmErrorLogViewer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FrmExpiration.resx">
       <DependentUpon>FrmExpiration.cs</DependentUpon>

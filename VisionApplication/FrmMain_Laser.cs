@@ -3003,12 +3003,12 @@ namespace VisionApplication
                 else
                     nudPMASearchNum.Value = (decimal)pmaParam.RunSearchNum;
 
-                if (pmaParam.RunScoreThre > (double)nudPMAScoreThre.Maximum)
+                if (pmaParam.RunScoreThre+0.3 > (double)nudPMAScoreThre.Maximum)
                     nudPMAScoreThre.Value = nudPMAScoreThre.Maximum;
-                else if (pmaParam.RunScoreThre < (double)nudPMAScoreThre.Minimum)
+                else if (pmaParam.RunScoreThre+0.3 < (double)nudPMAScoreThre.Minimum)
                     nudPMAScoreThre.Value = nudPMAScoreThre.Minimum;
                 else
-                    nudPMAScoreThre.Value = (decimal)pmaParam.RunScoreThre;
+                    nudPMAScoreThre.Value = (decimal)(pmaParam.RunScoreThre+0.3);
 
                 chkPMARunWithAngle.Checked = pmaParam.RunEnableAngle;
                 if (pmaParam.RunAngleD > (double)nudPMARunAngleD.Maximum)

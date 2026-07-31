@@ -74,6 +74,7 @@ namespace VisionApplication
             this.menu_View_Layout5 = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_LayoutEq = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_View_Fit = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_View_ErrLog = new System.Windows.Forms.ToolStripMenuItem();
             this.menuUnion = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTask_FeedBack = new System.Windows.Forms.ToolStripMenuItem();
             this.menuTask_FeedBack_Det = new System.Windows.Forms.ToolStripMenuItem();
@@ -440,6 +441,7 @@ namespace VisionApplication
             this.dataGridViewImageColumn6 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn7 = new System.Windows.Forms.DataGridViewImageColumn();
             this.timerIOOut = new System.Windows.Forms.Timer(this.components);
+            this.btSaveVPP = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -781,7 +783,8 @@ namespace VisionApplication
             this.menu_View_LaserWin,
             this.menu_View_ResultStatics,
             this.menu_View_Layout,
-            this.menu_View_Fit});
+            this.menu_View_Fit,
+            this.menu_View_ErrLog});
             this.menuWin.Name = "menuWin";
             this.menuWin.Size = new System.Drawing.Size(44, 22);
             this.menuWin.Text = "窗口";
@@ -791,7 +794,7 @@ namespace VisionApplication
             this.menu_View_EventStatus.Checked = true;
             this.menu_View_EventStatus.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_EventStatus.Name = "menu_View_EventStatus";
-            this.menu_View_EventStatus.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_EventStatus.Size = new System.Drawing.Size(180, 22);
             this.menu_View_EventStatus.Text = "状态标志";
             this.menu_View_EventStatus.Click += new System.EventHandler(this.menu_View_EventStatus_Click);
             // 
@@ -800,7 +803,7 @@ namespace VisionApplication
             this.menu_View_SystemLog.Checked = true;
             this.menu_View_SystemLog.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_SystemLog.Name = "menu_View_SystemLog";
-            this.menu_View_SystemLog.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_SystemLog.Size = new System.Drawing.Size(180, 22);
             this.menu_View_SystemLog.Text = "操作日志";
             this.menu_View_SystemLog.Click += new System.EventHandler(this.menu_View_SystemLog_Click);
             // 
@@ -809,7 +812,7 @@ namespace VisionApplication
             this.menu_View_LaserWin.Checked = true;
             this.menu_View_LaserWin.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_LaserWin.Name = "menu_View_LaserWin";
-            this.menu_View_LaserWin.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_LaserWin.Size = new System.Drawing.Size(180, 22);
             this.menu_View_LaserWin.Text = "激光标刻服务端";
             this.menu_View_LaserWin.Click += new System.EventHandler(this.menu_View_LaserWin_Click);
             // 
@@ -818,7 +821,7 @@ namespace VisionApplication
             this.menu_View_ResultStatics.Checked = true;
             this.menu_View_ResultStatics.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menu_View_ResultStatics.Name = "menu_View_ResultStatics";
-            this.menu_View_ResultStatics.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_ResultStatics.Size = new System.Drawing.Size(180, 22);
             this.menu_View_ResultStatics.Text = "参数设置";
             this.menu_View_ResultStatics.Click += new System.EventHandler(this.menu_View_ResultStatics_Click);
             // 
@@ -832,7 +835,7 @@ namespace VisionApplication
             this.menu_View_Layout5,
             this.menu_View_LayoutEq});
             this.menu_View_Layout.Name = "menu_View_Layout";
-            this.menu_View_Layout.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_Layout.Size = new System.Drawing.Size(180, 22);
             this.menu_View_Layout.Text = "窗口布局";
             // 
             // menu_View_Layout1
@@ -880,9 +883,16 @@ namespace VisionApplication
             // menu_View_Fit
             // 
             this.menu_View_Fit.Name = "menu_View_Fit";
-            this.menu_View_Fit.Size = new System.Drawing.Size(160, 22);
+            this.menu_View_Fit.Size = new System.Drawing.Size(180, 22);
             this.menu_View_Fit.Text = "图像适应窗口";
             this.menu_View_Fit.Click += new System.EventHandler(this.menu_View_Fit_Click);
+            // 
+            // menu_View_ErrLog
+            // 
+            this.menu_View_ErrLog.Name = "menu_View_ErrLog";
+            this.menu_View_ErrLog.Size = new System.Drawing.Size(180, 22);
+            this.menu_View_ErrLog.Text = "异常记录";
+            this.menu_View_ErrLog.Click += new System.EventHandler(this.menu_View_ErrLog_Click);
             // 
             // menuUnion
             // 
@@ -3774,6 +3784,7 @@ namespace VisionApplication
             // tabPageBase
             // 
             this.tabPageBase.BackColor = System.Drawing.Color.White;
+            this.tabPageBase.Controls.Add(this.btSaveVPP);
             this.tabPageBase.Controls.Add(this.btGetPMAParam);
             this.tabPageBase.Controls.Add(this.btSetPMAParam);
             this.tabPageBase.Controls.Add(this.label50);
@@ -3792,7 +3803,7 @@ namespace VisionApplication
             // 
             // btGetPMAParam
             // 
-            this.btGetPMAParam.Location = new System.Drawing.Point(187, 480);
+            this.btGetPMAParam.Location = new System.Drawing.Point(265, 446);
             this.btGetPMAParam.Name = "btGetPMAParam";
             this.btGetPMAParam.Size = new System.Drawing.Size(76, 29);
             this.btGetPMAParam.TabIndex = 96;
@@ -5218,6 +5229,16 @@ namespace VisionApplication
             this.timerIOOut.Interval = 300;
             this.timerIOOut.Tick += new System.EventHandler(this.timerIOOut_Tick);
             // 
+            // btSaveVPP
+            // 
+            this.btSaveVPP.Location = new System.Drawing.Point(110, 418);
+            this.btSaveVPP.Name = "btSaveVPP";
+            this.btSaveVPP.Size = new System.Drawing.Size(88, 79);
+            this.btSaveVPP.TabIndex = 96;
+            this.btSaveVPP.Text = "保存";
+            this.btSaveVPP.UseVisualStyleBackColor = true;
+            this.btSaveVPP.Click += new System.EventHandler(this.btSaveVPP_Click);
+            // 
             // FrmMainUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -5748,5 +5769,7 @@ namespace VisionApplication
         private System.Windows.Forms.Label label72;
         private System.Windows.Forms.ComboBox cmbLs_Channel;
         private System.Windows.Forms.CheckBox chkLS_Sync;
+        private System.Windows.Forms.ToolStripMenuItem menu_View_ErrLog;
+        private System.Windows.Forms.Button btSaveVPP;
     }
 }
