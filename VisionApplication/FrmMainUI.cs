@@ -527,6 +527,12 @@ namespace VisionApplication
             FileOper.MigrateOldBinaryIfNeeded();
             ReadUserParam();
 
+            //初始化运行时状态，开机可用
+            {
+                cup.p_VPPRTP.bAcqFromCam = true;
+                cup.p_VPPRTP.bRecord = false;
+                 
+            }
             ReplaceDrive();  //目录不存在时的处理
             //      cup.p_VPPRTP.iXBType = 0;
             iUsedCamraNum = 0;

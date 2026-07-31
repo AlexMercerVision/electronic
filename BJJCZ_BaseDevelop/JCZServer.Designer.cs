@@ -42,8 +42,6 @@
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
             this.panelImage = new System.Windows.Forms.Panel();
-            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
-            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.panel3 = new System.Windows.Forms.Panel();
             this.dgvEnt = new System.Windows.Forms.DataGridView();
             this.Column1 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
@@ -100,11 +98,11 @@
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
+            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
+            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.panelImage.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).BeginInit();
             this.panel1.SuspendLayout();
@@ -116,6 +114,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // JCZServerIcon
@@ -170,28 +170,28 @@
             // File_LoadEZD
             // 
             this.File_LoadEZD.Name = "File_LoadEZD";
-            this.File_LoadEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_LoadEZD.Size = new System.Drawing.Size(159, 22);
             this.File_LoadEZD.Text = "加载EZD文件";
             this.File_LoadEZD.Click += new System.EventHandler(this.File_LoadEZD_Click);
             // 
             // File_QuickSaveEZD
             // 
             this.File_QuickSaveEZD.Name = "File_QuickSaveEZD";
-            this.File_QuickSaveEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_QuickSaveEZD.Size = new System.Drawing.Size(159, 22);
             this.File_QuickSaveEZD.Text = "保存EZD文件";
             this.File_QuickSaveEZD.Click += new System.EventHandler(this.File_QuickSaveEZD_Click);
             // 
             // File_SaveEZD
             // 
             this.File_SaveEZD.Name = "File_SaveEZD";
-            this.File_SaveEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_SaveEZD.Size = new System.Drawing.Size(159, 22);
             this.File_SaveEZD.Text = "另存为EZD文件";
             this.File_SaveEZD.Click += new System.EventHandler(this.File_SaveEZD_Click);
             // 
             // File_ExportFigure
             // 
             this.File_ExportFigure.Name = "File_ExportFigure";
-            this.File_ExportFigure.Size = new System.Drawing.Size(180, 22);
+            this.File_ExportFigure.Size = new System.Drawing.Size(159, 22);
             this.File_ExportFigure.Text = "导出图像";
             this.File_ExportFigure.Click += new System.EventHandler(this.File_ExportFigure_Click);
             // 
@@ -209,14 +209,14 @@
             this.Card_NO1.Checked = true;
             this.Card_NO1.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Card_NO1.Name = "Card_NO1";
-            this.Card_NO1.Size = new System.Drawing.Size(180, 22);
+            this.Card_NO1.Size = new System.Drawing.Size(95, 22);
             this.Card_NO1.Text = "卡1";
             this.Card_NO1.Click += new System.EventHandler(this.Card_NO1_Click);
             // 
             // Card_NO2
             // 
             this.Card_NO2.Name = "Card_NO2";
-            this.Card_NO2.Size = new System.Drawing.Size(180, 22);
+            this.Card_NO2.Size = new System.Drawing.Size(95, 22);
             this.Card_NO2.Text = "卡2";
             this.Card_NO2.Click += new System.EventHandler(this.Card_NO2_Click);
             // 
@@ -240,7 +240,7 @@
             this.Win_Log.Checked = true;
             this.Win_Log.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Win_Log.Name = "Win_Log";
-            this.Win_Log.Size = new System.Drawing.Size(180, 22);
+            this.Win_Log.Size = new System.Drawing.Size(148, 22);
             this.Win_Log.Text = "日志窗口";
             this.Win_Log.Visible = false;
             this.Win_Log.Click += new System.EventHandler(this.Win_Log_Click);
@@ -250,7 +250,7 @@
             this.Win_Entity.Checked = true;
             this.Win_Entity.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Win_Entity.Name = "Win_Entity";
-            this.Win_Entity.Size = new System.Drawing.Size(180, 22);
+            this.Win_Entity.Size = new System.Drawing.Size(148, 22);
             this.Win_Entity.Text = "对象清单窗口";
             this.Win_Entity.Visible = false;
             this.Win_Entity.Click += new System.EventHandler(this.Win_Entity_Click);
@@ -260,7 +260,7 @@
             this.Win_Route.Checked = true;
             this.Win_Route.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Win_Route.Name = "Win_Route";
-            this.Win_Route.Size = new System.Drawing.Size(180, 22);
+            this.Win_Route.Size = new System.Drawing.Size(148, 22);
             this.Win_Route.Text = "路径图窗口";
             this.Win_Route.Visible = false;
             this.Win_Route.Click += new System.EventHandler(this.Win_Route_Click);
@@ -270,7 +270,7 @@
             this.Win_Oper.Checked = true;
             this.Win_Oper.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Win_Oper.Name = "Win_Oper";
-            this.Win_Oper.Size = new System.Drawing.Size(180, 22);
+            this.Win_Oper.Size = new System.Drawing.Size(148, 22);
             this.Win_Oper.Text = "操作窗口";
             this.Win_Oper.Visible = false;
             this.Win_Oper.Click += new System.EventHandler(this.Win_Oper_Click);
@@ -278,26 +278,26 @@
             // win_Reset
             // 
             this.win_Reset.Name = "win_Reset";
-            this.win_Reset.Size = new System.Drawing.Size(180, 22);
+            this.win_Reset.Size = new System.Drawing.Size(148, 22);
             this.win_Reset.Text = "重置";
             this.win_Reset.Click += new System.EventHandler(this.Win_Reset_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(145, 6);
             // 
             // Win_ReloadBGImg
             // 
             this.Win_ReloadBGImg.Name = "Win_ReloadBGImg";
-            this.Win_ReloadBGImg.Size = new System.Drawing.Size(180, 22);
+            this.Win_ReloadBGImg.Size = new System.Drawing.Size(148, 22);
             this.Win_ReloadBGImg.Text = "更新背景";
             this.Win_ReloadBGImg.Click += new System.EventHandler(this.Win_ReloadBGImg_Click);
             // 
             // Win_RecorevyView
             // 
             this.Win_RecorevyView.Name = "Win_RecorevyView";
-            this.Win_RecorevyView.Size = new System.Drawing.Size(180, 22);
+            this.Win_RecorevyView.Size = new System.Drawing.Size(148, 22);
             this.Win_RecorevyView.Text = "恢复视角";
             this.Win_RecorevyView.Click += new System.EventHandler(this.Win_RecorevyView_Click);
             // 
@@ -330,26 +330,6 @@
             this.panelImage.Name = "panelImage";
             this.panelImage.Size = new System.Drawing.Size(828, 219);
             this.panelImage.TabIndex = 120;
-            // 
-            // pictureBox2
-            // 
-            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox2.Location = new System.Drawing.Point(261, 3);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(250, 213);
-            this.pictureBox2.TabIndex = 8;
-            this.pictureBox2.TabStop = false;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(5, 3);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(250, 214);
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
             // 
             // panel3
             // 
@@ -448,6 +428,7 @@
             // 
             // btGroupEnt
             // 
+            this.btGroupEnt.Enabled = false;
             this.btGroupEnt.Location = new System.Drawing.Point(299, 117);
             this.btGroupEnt.Name = "btGroupEnt";
             this.btGroupEnt.Size = new System.Drawing.Size(44, 34);
@@ -458,6 +439,7 @@
             // 
             // btUnGroupEnt
             // 
+            this.btUnGroupEnt.Enabled = false;
             this.btUnGroupEnt.Location = new System.Drawing.Point(299, 156);
             this.btUnGroupEnt.Name = "btUnGroupEnt";
             this.btUnGroupEnt.Size = new System.Drawing.Size(44, 34);
@@ -804,6 +786,7 @@
             // 
             // btRedPreview
             // 
+            this.btRedPreview.Enabled = false;
             this.btRedPreview.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.btRedPreview.ForeColor = System.Drawing.Color.Blue;
             this.btRedPreview.Location = new System.Drawing.Point(277, 136);
@@ -997,6 +980,26 @@
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
             // 
+            // pictureBox2
+            // 
+            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox2.Location = new System.Drawing.Point(261, 3);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(250, 213);
+            this.pictureBox2.TabIndex = 8;
+            this.pictureBox2.TabStop = false;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Location = new System.Drawing.Point(5, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(250, 214);
+            this.pictureBox1.TabIndex = 7;
+            this.pictureBox1.TabStop = false;
+            // 
             // JCZServer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -1012,7 +1015,7 @@
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "JCZServer";
             this.ShowInTaskbar = false;
-            this.Text = "JCZServer";
+            this.Text = "激光器控制软件 - 当前卡:1";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.JCZServer_FormClosing);
             this.Load += new System.EventHandler(this.JCZServer_Load);
@@ -1020,8 +1023,6 @@
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.panelImage.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel3.ResumeLayout(false);
             this.panel3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).EndInit();
@@ -1035,6 +1036,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

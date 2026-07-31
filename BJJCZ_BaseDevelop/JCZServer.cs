@@ -4350,8 +4350,7 @@ namespace BJJCZ_BaseDevelop
 
             return lastErr;
         }
-
-        private int SaveEntLibDirectWithBackup(int card, string fullPath)
+        private int SaveEntLibDirectWithBackup(int card, string fullPath, bool isRetry = false)
         {
             string backupPath = fullPath + ".bak";
             string savingPath = fullPath + ".saving";
@@ -4360,9 +4359,7 @@ namespace BJJCZ_BaseDevelop
             try
             {
                 if (File.Exists(fullPath))
-                {
                     File.Copy(fullPath, backupPath, true);
-                }
                 TryDeleteFile(savingPath);
 
                 lastErr = SaveEntLibToFileWithRetry(card, savingPath);
@@ -4391,24 +4388,61 @@ namespace BJJCZ_BaseDevelop
                     }
                 }
 
+                // 保存失败：记录兜底、恢复备份、重建场景（内部会重新初始化板卡）
                 MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
                 RestoreBackupFile(fullPath, backupPath, card, false);
                 int recoverErr = RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
                 if (recoverErr == 0)
                 {
-                    AddMsg($"卡{card + 1} 保存失败，已自动重连并恢复兜底操作，请再次保存");
-                    return lastErr;
+                    AddMsg($"卡{card + 1} 保存失败，已自动重连并恢复兜底操作");
+                    if (!isRetry)   // 未重试过则自动重试一次
+                    {
+                        AddMsg($"卡{card + 1} 自动重试保存...");
+                        int retryResult = SaveEntLibDirectWithBackup(card, fullPath, true);
+                        if (retryResult == 0)
+                        {
+                            AddMsg($"卡{card + 1} 自动重试保存成功");
+                            return 0;
+                        }
+                        else
+                        {
+                            AddMsg($"卡{card + 1} 自动重试保存失败，错误码: {retryResult}");
+                            return retryResult;
+                        }
+                    }
+                    else
+                    {
+                        AddMsg($"卡{card + 1} 已尝试过自动重试保存，仍失败");
+                        return lastErr;
+                    }
                 }
-
-                AddMsg($"卡{card + 1} 保存失败，自动重连恢复失败: {JczLmc.GetErrorText(recoverErr)}");
-                return recoverErr;
+                else
+                {
+                    AddMsg($"卡{card + 1} 保存失败，自动重连恢复失败: {JczLmc.GetErrorText(recoverErr)}");
+                    return recoverErr;
+                }
             }
             catch (Exception ex)
             {
-                AddMsg($"卡{card + 1} 保存EZD失败，操作已保留: {ex.Message}");
+                AddMsg($"卡{card + 1} 保存EZD异常: {ex.Message}");
                 MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
                 RestoreBackupFile(fullPath, backupPath, card, false);
                 RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
+                if (!isRetry)
+                {
+                    AddMsg($"卡{card + 1} 异常后自动重试保存...");
+                    int retryResult = SaveEntLibDirectWithBackup(card, fullPath, true);
+                    if (retryResult == 0)
+                    {
+                        AddMsg($"卡{card + 1} 异常后自动重试保存成功");
+                        return 0;
+                    }
+                    else
+                    {
+                        AddMsg($"卡{card + 1} 异常后自动重试保存失败");
+                        return retryResult;
+                    }
+                }
                 return 12;
             }
             finally
@@ -4416,6 +4450,71 @@ namespace BJJCZ_BaseDevelop
                 TryDeleteFile(savingPath);
             }
         }
+        /*  private int SaveEntLibDirectWithBackup(int card, string fullPath)
+          {
+              string backupPath = fullPath + ".bak";
+              string savingPath = fullPath + ".saving";
+              int lastErr = 12;
+
+              try
+              {
+                  if (File.Exists(fullPath))
+                  {
+                      File.Copy(fullPath, backupPath, true);
+                  }
+                  TryDeleteFile(savingPath);
+
+                  lastErr = SaveEntLibToFileWithRetry(card, savingPath);
+                  if (lastErr == 0)
+                  {
+                      if (!File.Exists(savingPath))
+                      {
+                          AddMsg($"卡{card + 1} 保存EZD失败: 临时文件未生成");
+                          lastErr = 12;
+                      }
+                      else
+                      {
+                          try
+                          {
+                              File.Copy(savingPath, fullPath, true);
+                              TryDeleteFile(savingPath);
+                              return CompleteSuccessfulEzdSave(card, fullPath, backupPath);
+                          }
+                          catch (Exception replaceEx)
+                          {
+                              AddMsg($"卡{card + 1} 替换EZD失败，已尝试恢复原文件: {replaceEx.Message}");
+                              RestoreBackupFile(fullPath, backupPath, card, false);
+                              TryDeleteFile(savingPath);
+                              lastErr = 12;
+                          }
+                      }
+                  }
+
+                  MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
+                  RestoreBackupFile(fullPath, backupPath, card, false);
+                  int recoverErr = RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
+                  if (recoverErr == 0)
+                  {
+                      AddMsg($"卡{card + 1} 保存失败，已自动重连并恢复兜底操作，请再次保存");
+                      return lastErr;
+                  }
+
+                  AddMsg($"卡{card + 1} 保存失败，自动重连恢复失败: {JczLmc.GetErrorText(recoverErr)}");
+                  return recoverErr;
+              }
+              catch (Exception ex)
+              {
+                  AddMsg($"卡{card + 1} 保存EZD失败，操作已保留: {ex.Message}");
+                  MarkFallbackAdjustmentAfterSaveFailure(card, fullPath, false);
+                  RestoreBackupFile(fullPath, backupPath, card, false);
+                  RebuildEzdSaveSceneFromFallback(card, fullPath, backupPath);
+                  return 12;
+              }
+              finally
+              {
+                  TryDeleteFile(savingPath);
+              }
+          }*/
         private int CompleteSuccessfulEzdSave(int card, string fullPath, string backupPath)
         {
             TryDeleteFile(backupPath);
@@ -9464,6 +9563,8 @@ namespace BJJCZ_BaseDevelop
 
             Card_NO1.Checked = currentCard == 0;
             Card_NO2.Checked = currentCard == 1;
+
+            this.Text= "激光器控制软件 - 当前卡: " + (currentCard + 1);
         }
 
         private void PrepareCardBeforeSwitch(int card)

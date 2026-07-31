@@ -265,12 +265,12 @@ namespace VisionControl
                 switch (jobIndex)
                 {
                     case 0:
-                        if (iModelRole == 10)
+                      /*  if (iModelRole == 10)
                         {
                             cogRDMain.Display.Image = ci8gAcq[iCamIndex];  //cbt.CreateLastRunRecord().SubRecords["InputImage"].
                             cogRDMain.Display.Fit(true);
                         }
-                        else
+                        else*/
                         {
                           // cogRDMainUser.Image = ci8gAcq[iCamIndex];
                            cogRDMainUser.Record = cbt.CreateLastRunRecord().SubRecords["InputImage"];
@@ -444,7 +444,7 @@ namespace VisionControl
 
                 if (cup.p_CD.bListProcess[wsInd] && ci8gAcq[iCamIndex] != null)  
                 {
-                    SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd);  // 镜像图像blob分析
+                    SetCalibBlobImage(ci8gAcq[iCamIndex], wsInd);  // 镜像图像blob分析
                 }
                 //存储 镜像
                 if (bRecord)
@@ -524,10 +524,10 @@ namespace VisionControl
                     OnVisionError(iJobIndex, strErrInfo[wsInd]);
                     return false;
                 }
-                  acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex, fileName);  //读取文件的时候进行了镜像
-                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq != null && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
+                ci8gAcq  = acqFIFO.GrabOneFrameCogFromFileCalib(wsInd, iCamIndex, fileName);  //读取文件的时候进行了镜像
+                if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq != null && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
                 {
-                    SetCalibBlobImage(acqFIFO.ci8gAcq[iCamIndex], wsInd);
+                    SetCalibBlobImage(ci8gAcq[iCamIndex], wsInd);
              
                 }
 

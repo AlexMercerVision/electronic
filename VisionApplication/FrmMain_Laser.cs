@@ -1847,8 +1847,8 @@ namespace VisionApplication
         private void UpdateStatusStripForCard(int cardSN)
         {
             // 更新状态栏文本
-            toolStripStatusLabel_CardStatus.Text = $"当前板卡: {cardSN + 1}";
-
+            //toolStripStatusLabel_CardStatus.Text = $"当前工位：{iJobIndex==0?"A面":"B面"}，当前板卡: {cardSN + 1}";
+            toolStripStatusLabel_CardStatus.Text = $"当前工位：{(iJobIndex == 0 ? "A面" : "B面")}，当前板卡: {cardSN + 1}";
             // 更新板卡状态指示器颜色
             if (bInitJCZ[cardSN] == 0)
             {
@@ -4091,7 +4091,7 @@ namespace VisionApplication
                 await Task.Delay(500);
 
                 // 7. 采集图像并分析（Blob 提取特征点坐标）
-                bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync(iJobIndex);
+                bool blobSuccess = await CaptureAndAnalyzeCalibImageAsync();
 
                 if (blobSuccess)
                 {
