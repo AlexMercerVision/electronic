@@ -1163,6 +1163,51 @@ namespace VisionApplication
 
                     // ROI、旋转、镜像等保持不变
                     // ...（原有代码）
+                    if (cup.p_Cam[icamInd].iROI != null && cup.p_Cam[icamInd].iROI.Length >= 4)
+                    {
+                        numROIOffSetX.Value = cup.p_Cam[icamInd].iROI[0];
+                        numROIOffSetY.Value = cup.p_Cam[icamInd].iROI[1];
+                        numROIWidth.Value = cup.p_Cam[icamInd].iROI[2];
+                        numROIHeight.Value = cup.p_Cam[icamInd].iROI[3];
+                    }
+                    else
+                    {
+                        // 若 iROI 数组无效，设置默认全尺寸（可调用获取最大分辨率后赋值）
+                        // 此处可根据实际需求置 0 或保持当前值
+                        numROIOffSetX.Value = 0;
+                        numROIOffSetY.Value = 0;
+                        numROIWidth.Value = 0;
+                        numROIHeight.Value = 0;
+                    }
+                    switch (cup.p_Cam[icamInd].iRotateType)
+                    {
+                        case 0:
+                            rbNoneRotate.Checked = true;
+                            break;
+                        case 1:
+                            rbRot90.Checked = true;
+                            break;
+                        case 2:
+                            rbRot180.Checked = true;
+                            break;
+                        case 3:
+                            rbRot270.Checked = true;
+                            break;
+                    }
+
+                    switch (cup.p_Cam[icamInd].iFlipType)
+                    {
+                        case 0:
+                            rdNoneFlip.Checked = true;
+                            break;
+                        case 1:
+                            rdFlipHor.Checked = true;
+                            break;
+                        case 2:
+                            rdFlipVer.Checked = true;
+                            break;
+                    }
+                    acqFIFO._rtType = cup.p_Cam[icamInd].iFlipType * 4 + cup.p_Cam[icamInd].iRotateType;
                 }
             }
             finally
