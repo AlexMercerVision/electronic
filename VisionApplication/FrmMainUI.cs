@@ -5913,12 +5913,19 @@ namespace VisionApplication
         private int packLen = 25;
         private void ProcessSerialBuffer() 
         {
+            if(_rxBuffer.Count%25==0)
+                packLen = 25;
+            else
+                packLen = 10;
+
             while (_rxBuffer.Count >= packLen)  // 至少能容纳一个完整主动上报包（最短10字节）
             {
               //  toolStripStatus_ExcuteTimes.Text = "接收缓存长度：" + _rxBuffer.Count.ToString();
                 // ---- 1. 尝试解析主动上报帧（固定10字节） ----
-                if (_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                if ((packLen==25 &&_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
                     _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
+                    ||(packLen == 10 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                    _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01))
                 {
                     if (_rxBuffer.Count < packLen)
                         break;   // 数据不够，等待下次接收
