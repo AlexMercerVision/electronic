@@ -48,6 +48,7 @@ namespace VisionControl
         //   CDL_Predict cdl_Predict = new CDL_Predict();
         public int iReject = 0;
         const int maxCameraNum = 2;
+        const int maxJobNum = 2;
         ImgAcqFIFO acqFIFO = new ImgAcqFIFO();
         Thread contThread = null;
         bool bContRun = false;
@@ -762,7 +763,7 @@ namespace VisionControl
         public void SetVPPImage()
         {
 
-            ((mJM.Job(0).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = ci8gAcq[cup.p_VPPRTP.iXBType];
+            ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage =acqFIFO.ci8gAcq[cup.p_CD.camInd[iJobIndex]];
 
         }
      
@@ -2476,244 +2477,13 @@ namespace VisionControl
 
         public bool CallbackProcOneTime()
         {
-            return false;  //暂时没采用触发采集模式
-           /* if (mJM.JobsRunningState != CogJobsRunningStateConstants.None)
-                return false;
-
-            // update control state here to prevent an error from a quick button doubleclick
-            if (mCurrentRunState != RunState.RunningContinuous)
-                mCurrentRunState = RunState.RunningOnce;
-
-            try
-            {
-                //设置输入图像
-                if (acqFIFO._HikCam[cup.p_CD.camInd[0]] != null)  //st 还要添加状态判断,顶面采集
-                {
-                    ci8gAcq[cup.p_CD.camInd[0]] = acqFIFO.FXSurface(cup.p_CD.camInd[0], bRecord);
-
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["底面定位"] as CogToolBlock).Inputs["InputImage"].Value = ci8gAcq[cup.p_CD.camInd[0]];
-                }
-                else
-                {
-
-                }
-
-                if (cup.p_CD.triggleCam == 1)
-                {
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面1定位"] as CogToolBlock).Inputs["InputImage"].Value = ci8gAcq[cup.p_CD.camInd[1]];
-
-                    if (acqFIFO._HikCam[cup.p_CD.camInd[2]] != null)
-                    {
-                        ci8gAcq[cup.p_CD.camInd[2]] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[2]);
-                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["侧面2定位"] as CogToolBlock).Inputs["InputImage"].Value = ci8gAcq[cup.p_CD.camInd[2]];
-
-                    }
-                    else
-                    {
-
-                    }
-                }
-                else if (cup.p_CD.triggleCam == 2)
-                {
-                    ((mJM.Job(0).VisionTool as CogToolGroup).Tools["测面2定位"] as CogToolBlock).Inputs["InputImage"].Value = ci8gAcq[cup.p_CD.camInd[1]];
-
-                    if (acqFIFO._HikCam[cup.p_CD.camInd[1]] != null)
-                    {
-                        ci8gAcq[cup.p_CD.camInd[2]] = acqFIFO.GrabOneFrameCog(cup.p_CD.camInd[2]);
-                        ((mJM.Job(0).VisionTool as CogToolGroup).Tools["测面2定位"] as CogToolBlock).Inputs["InputImage"].Value = ci8gAcq[cup.p_CD.camInd[2]];
-
-                    }
-                    else
-                    {
-
-                    }
-                }
-
-                bRunOneTimeFinished[iJobIndex] = 0;
-                iJobIndex = 0;
-                mJM.Job(iJobIndex).Run();
-
-            }
-            catch (Cognex.VisionPro.Exceptions.CogNotStoppedException)
-            {
-                // do nothing in this case - we're already running
-            }
-            catch (Cognex.VisionPro.Exceptions.CogException ex)
-            {
-                if (mCurrentRunState != RunState.RunningContinuous)
-                    mCurrentRunState = RunState.Stopped;
-                strErrInfo[iJobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
-                return false;
-            }
-            return true;*/
-
-        }
-
-        public void ImageCallBack(IntPtr pData, ref MyCamera.MV_FRAME_OUT_INFO_EX pFrameInfo, IntPtr pUser)
-        {
-            int iCamInd = (int)pUser;
-            if (iTaskType == 0 || iTaskType == 2)
-            {
-                if (bTaskFinish[iCamInd])
-                    return;
-            }
-            bTaskFinish[iCamInd] = true;
-
-
-
-            CogImage8Grey cogImage8Grey = new CogImage8Grey();
-            try
-            {
-
-                CopyMemory(acqFIFO.m_BufForDriverS[iCamInd], pData, pFrameInfo.nFrameLen);
-
-                CogImage8Root cogImage8Root = new CogImage8Root();
-                cogImage8Root.Initialize((Int32)pFrameInfo.nWidth, (Int32)pFrameInfo.nHeight, acqFIFO.m_BufForDriverS[iCamInd], (Int32)pFrameInfo.nWidth, null);
-                cogImage8Grey.SetRoot(cogImage8Root);
-                if (iModelRole == 10)
-                    cogRDMain.Display.Image = cogImage8Grey.Copy();
-                else
-                    cogRDMainUser.Image = cogImage8Grey.Copy();
-
-            }
-            catch
-            {
-                return;
-            }
-            // ch:抓取的帧数 | en:Aquired Frame Number
-            // ++m_nFrames[nIndex];
-
+            return false;  //暂时没采用触发采集模式 
         }
         #endregion
 
 
         #region  运算后处理
-        //更新Record清单
-        public bool UpdateSubRecordsList()
-        {
-
-            ICogRecord result = mHistoryCollection[mSelectedJob].CurrentItem;
-            if (result == null)
-                return false;
-            string[] strSubRecordsName = null;
-            //st** 获取记录清单  cup.p_SRN.strName   cup.p_SRN.count
-            int count = Utility.PickSubRecordsName(result, _updateDisplayStrings, ref strSubRecordsName);
-            bool[] bList = new bool[count];
-
-            string strTmpName;
-            //更新整体记录清单  侧面1检测多模板.模式1分析.侧面裂纹.CogToolBlockWeak.CogBlobTool1.InputImage
-            //侧面1检测多模板.模式2分析.侧面裂纹.CogToolBlockFX.CogHistogramTool2.InputImage
-            //侧面1检测多模板.模式2分析.侧面裂纹.CogToolBlockWeak.CogBlobTool1.InputImage
-            //侧面2检测多模板.模式2分析.侧面裂纹.CogToolBlockWeak.CogBlobTool1.InputImage
-            //侧面2检测多模板.模式1分析.侧面裂纹.CogToolBlockWeak.CogBlobTool1.InputImage
-            //侧面2检测多模板.模式2分析.侧面裂纹.CogToolBlockFX.CogHistogramTool2.InputImage
-            //侧面1检测多模板.模式1分析.侧面裂纹.CogToolBlockFX.CogHistogramTool2.InputImage
-            //侧面1检测多模板.模式1分析.边缘破损.CogIPOneImageTool1.InputImage
-            //侧面2检测多模板.模式1分析.侧面裂纹.CogToolBlockWeak.CogBlobTool1.InputImage
-            //侧面1检测多模板.模式2分析.侧面裂纹.CogToolBlockWeak.CogBlobTool1.InputImage"
-            //侧面2检测多模板.模式2分析.侧面裂纹.分析区域提取.CogAffineTransformToolGreyROI.InputImage
-            //侧面2检测多模板.模式2分析.侧面裂纹.分析区域提取.CogAffineTransformToolFXROI.InputImage
-            for (int i = 0; i < count; i++)
-            {
-                strTmpName = strSubRecordsName[i];
-                bool bFound = false;
-                for (int j = 0; j < cup.p_SRN.strName.Length; j++)
-                {
-                    if (strTmpName == cup.p_SRN.strName[j])
-                    {
-                        bList[i] = cup.p_SRN.bList[j];
-                        bFound = true;
-                        break;
-                    }
-                }
-                if (!bFound)
-                {
-
-                }
-            }
-            cup.p_SRN.strName = strSubRecordsName;
-            cup.p_SRN.bList = bList;
-
-            //更新默认清单 
-            string[] strTmpShowSubs = new string[maxCameraNum];
-            cameraNum = maxCameraNum;
-            for (int i = 0; i < cameraNum; i++)
-            {
-                strTmpName = cup.p_SRN.strDefaultGUIName[i];
-                for (int j = 0; j < count; j++)
-                {
-                    if (strTmpName == cup.p_SRN.strName[j])
-                    {
-                        strTmpShowSubs[i] = strTmpName;
-                        break;
-                    }
-                }
-
-            }
-            strTmpShowSubs.CopyTo(cup.p_SRN.strDefaultGUIName, 0);
-
-            //更新灰度图清单 
-            strTmpShowSubs = new string[maxCameraNum];
-            for (int i = 0; i < cameraNum; i++)
-            {
-                strTmpName = cup.p_SRN.strGreyGUIName[i];
-                for (int j = 0; j < count; j++)
-                {
-                    if (strTmpName == cup.p_SRN.strName[j])
-                    {
-                        strTmpShowSubs[i] = strTmpName;
-                        break;
-                    }
-                }
-
-            }
-            strTmpShowSubs.CopyTo(cup.p_SRN.strGreyGUIName, 0);
-
-
-            //更新光度图清单 
-            strTmpShowSubs = new string[maxCameraNum];
-            for (int i = 0; i < cameraNum; i++)
-            {
-                strTmpName = cup.p_SRN.strFXGUIName[i];
-                for (int j = 0; j < count; j++)
-                {
-                    if (strTmpName == cup.p_SRN.strName[j])
-                    {
-                        strTmpShowSubs[i] = strTmpName;
-                        break;
-                    }
-                }
-
-            }
-            strTmpShowSubs.CopyTo(cup.p_SRN.strFXGUIName, 0);
-
-            //更新光度图清单 
-            strTmpShowSubs = new string[maxCameraNum];
-            for (int i = 0; i < cameraNum; i++)
-            {
-                strTmpName = cup.p_SRN.strPMAGUIName[i];
-                for (int j = 0; j < count; j++)
-                {
-                    if (strTmpName == cup.p_SRN.strName[j])
-                    {
-                        strTmpShowSubs[i] = strTmpName;
-                        break;
-                    }
-                }
-
-            }
-            strTmpShowSubs.CopyTo(cup.p_SRN.strPMAGUIName, 0);
-            cup.p_SRN.count = count;
-            return true;
-        }
-       //判断VP是否已经运行过，运行过将产生图像记录
-        public bool HaveRun()
-        {
-            ICogRecord result = mHistoryCollection[mSelectedJob].CurrentItem;
-            if (result == null)
-                return false;
-            return true;
-        }
+       
         CogJob j;
         public string[] RetStatisticsForJob(int i)
         {
@@ -2788,47 +2558,8 @@ namespace VisionControl
             for (int i = 0; i < maxCameraNum; i++)
                 _previewLocks[i] = new object();
         }
-        /*public void previewOnlive(bool bOpen,int iJobIndex)
-        {
-            int iJobIdx = iJobIndex;
-            int iCamIdx = cup.p_CD.camInd[iJobIdx];
-            MyCamera camera = acqFIFO._HikCam?[iCamIdx];
-            if (camera == null) return;
-
-            if (bOpen)
-            {
-                if (_previewRunning[iJobIndex]) return;
-
-                // 启动取流线程
-                _previewRunning[iJobIndex] = true;
-                _previewThreads[iJobIndex] = new Thread(() => PreviewThreadProcess(iJobIndex,camera, iCamIdx));
-                _previewThreads[iJobIndex].IsBackground = true;
-                _previewThreads[iJobIndex].Start();
-            }
-            else
-            {
-                _previewRunning[iJobIndex] = false;
-                if (_previewThreads[iJobIndex] != null && _previewThreads[iJobIndex].IsAlive)
-                    _previewThreads[iJobIndex].Join(1000);
-                _previewThreads[iJobIndex] = null;
-
-                // 释放缓冲区
-                lock (_previewLocks[iJobIndex])
-                {
-                    if (_previewBuffers[iJobIndex] != IntPtr.Zero)
-                    {
-                        Marshal.FreeHGlobal(_previewBuffers[iJobIndex]);
-                        _previewBuffers[iJobIndex] = IntPtr.Zero;
-                        _previewBufferSizes[iJobIndex] = 0;
-                    }
-                }
-
-                // 清空显示
-            //    cogRDMainUser.Image = null;
-                // 如果还要清空其他子窗口，按需添加
-            }
-        }
-*/// 启动/停止单路预览
+       
+        // 启动/停止单路预览
         public void previewOnlive(bool bOpen, int wsInd)
         {
             if (wsInd < 0 || wsInd >= maxCameraNum) return;
@@ -3437,7 +3168,7 @@ namespace VisionControl
             {
                 // MessageBox.Show(se.Message);
                 // picMain.Image = bitmap;
-                OnVisionError(iJobIndex, $"采集图像失败{ex.Message}");
+                OnVisionError(wsInd, $"采集图像失败{ex.Message}");
             }
            
             return true;
@@ -4094,13 +3825,7 @@ namespace VisionControl
         }
         public void SiftRDMain()
         {
-            /*if (iModelRole == 10)
-            {
-                cogRDMain.Visible = true;
-                cogRDMainUser.Visible = false;
-                cogRDMain.Display.Image = cogRDMainUser.Image;
-            }
-            else*/
+          
             {
                 cogRDMain.Visible = false;
                 cogRDMainUser.Visible = true;
@@ -4264,7 +3989,7 @@ namespace VisionControl
         {
             ICogImage cogImg=null;
             int iCamIndex = cup.p_CD.camInd[jobIndex];
-            if (cup.p_Cam[jobIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
+            if (cup.p_Cam[iCamIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
                 cogImg = acqFIFO.ci8gAcq[iCamIndex];
             else if(acqFIFO.ci24ColorAcq[iCamIndex] != null)
                 cogImg = acqFIFO.ci24ColorAcq[iCamIndex];
@@ -4320,33 +4045,34 @@ namespace VisionControl
         }
         public void DirectShowImage()
         {
-            for (int i = 0; i < maxCameraNum; i++)
+            for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
             {
-                if (cup.p_CD.bListProcess[i] && ci8gAcq[i] != null)  //启用的检测面才做采集
+                int iCamIndex = cup.p_CD.camInd[jobIndex];
+                if (cup.p_CD.bListProcess[iCamIndex] && ci8gAcq[iCamIndex] != null)  //启用的检测面才做采集
                 {
-                    switch (i)
+                    switch (jobIndex)
                     {
                         case 0:
                             if (iModelRole == 10)
                             {
-                                cogRDMain.Display.Image = ci8gAcq[i];
+                                cogRDMain.Display.Image = ci8gAcq[iCamIndex];
                                 cogRDMain.Display.Fit(true);
                             }
                             else
                             {
-                                cogRDMainUser.Image = ci8gAcq[i];
+                                cogRDMainUser.Image = ci8gAcq[iCamIndex];
                                 cogRDMainUser.Fit(true);
                             }
                             break;
                         case 1:
-                            cogRDSub1.Image = ci8gAcq[i];
+                            cogRDSub1.Image = ci8gAcq[iCamIndex];
                             cogRDSub1.Fit(true);
                             break;
-                        case 2:
-                            cogRDSub2.Image = ci8gAcq[i];
+                       /*  case 2:
+                            cogRDSub2.Image = ci8gAcq[iCamIndex];
                             cogRDSub2.Fit(true);
                             break;
-                            /* case 3:
+                            case 3:
                                  cogRDSub3.Image = ci8gAcq[i];
                                  cogRDSub3.Fit(true);
                                  break;

@@ -3327,7 +3327,7 @@ namespace VisionApplication
 
         private void menuDisp_Update_Click(object sender, EventArgs e)
         {
-            InitSubRecordsList();
+          //  InitSubRecordsList();
         }
 
         private void menuManage_Job_Click(object sender, EventArgs e)
@@ -6748,14 +6748,7 @@ namespace VisionApplication
             }
         }
 
-       
-        //更新VP记录，在VP模块发生改变时需要手动更新一次VP图片记录
-        private void InitSubRecordsList()
-        {
-            UpdateThread = new Thread(RunAndUpdateThread);
-            UpdateThread.Start();
-        }
-
+  
        
 
         public void StartService(string serviceName)
@@ -7708,38 +7701,7 @@ namespace VisionApplication
             timerIOIn.Stop();
         }
 
-        //运行一次，产生新的图像列表
-        public void RunAndUpdateThread()
-        {
-            try
-            {
-
-                //    if (!vpWin.HaveRun())
-                {
-                    vpWin.bChkSubrecord = false;
-                    if (vpWin.RunOneTime())
-                    {
-                        while (vpWin._bRunOneTimeFinished[iJobIndex] != 2)
-                        {
-                            Thread.Sleep(10);
-                        }
-                    }
-                }
-                Thread.Sleep(10);
-                vpWin.UpdateSubRecordsList();
-                vpWin.bChkSubrecord = true;
-                cup = vpWin._cup;
-                SaveUserParam();
-                btFunRunOneTime.FlatStyle = FlatStyle.Popup;
-            }
-            catch
-            {
-
-            }
-
-
-
-        }
+       
 
         //Thread UpdateUIThread; 
         //RunOneTime()->   RunOneTimeThread()  ->vpWin.RunOneTime()
