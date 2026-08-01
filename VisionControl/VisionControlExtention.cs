@@ -76,11 +76,11 @@ namespace VisionControl
         CogImageFile mImageFile = new CogImageFile();
         bool bRecord = false;
         int[] iEventStatus = new int[6];
-        int[] bRunOneTimeFinished = new int[maxCameraNum];
-        bool[] jobBusy = new bool[maxCameraNum];
+        int[] bRunOneTimeFinished = new int[maxJobNum];
+        bool[] jobBusy = new bool[maxJobNum];
         private CUserParam cup = new CUserParam();
 
-        public string[] strErrInfo = new string[maxCameraNum];
+        public string[] strErrInfo = new string[maxJobNum];
         int iResCode, iDM0ResCode, iCM1ResCode, iCM2ResCode, iCM3ResCode, iCM4ResCode, xbType;
         public MyCamera.cbOutputExdelegate cbImage;
         //   private string[] strSubRecordsName;
@@ -164,7 +164,7 @@ namespace VisionControl
             return jobIndex >= 0 && jobIndex < maxCameraNum && jobBusy[jobIndex];
         }
 
-        private void SetJobBusy(int jobIndex, bool busy)
+        public void SetJobBusy(int jobIndex, bool busy)
         {
             if (jobIndex < 0 || jobIndex >= maxCameraNum)
                 return;

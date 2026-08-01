@@ -924,6 +924,13 @@ namespace VisionControl
         private int? HandleUserResults()
         {
             ICogRecord result = mJM.UserResult();
+            int count = 0;
+            //防止结果为空
+            while(result==null && count<20)
+            {
+                Thread.Sleep(100);
+                count++;
+            }
             if (result != null)
             {
                 string jobName = (string)result.SubRecords["JobName"].Content;
@@ -937,6 +944,7 @@ namespace VisionControl
                     return jobIndex;
                 }
             }
+           
             return null;
         }
 
@@ -982,7 +990,8 @@ namespace VisionControl
             {
                 
                 pmaRes[jobIndex].bLocated = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result");
-                
+              if(pma[jobIndex] == null)
+                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
                 if (!pmaRes[jobIndex].bLocated)
                 {
                     iReject++;
@@ -1010,8 +1019,11 @@ namespace VisionControl
                 }
                 bRunOneTimeFinished[jobIndex] = 2;
             }
-            catch
-            { }
+            catch(Exception ex)
+            {
+               // bRunOneTimeFinished[jobIndex] = 2;
+                OnVisionError(jobIndex,$"工位{jobIndex+1}提取定位结果异常："+ex.Message); // ✅ 添加此处
+            }
 
 
 

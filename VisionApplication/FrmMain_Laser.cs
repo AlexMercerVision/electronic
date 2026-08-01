@@ -1633,7 +1633,7 @@ namespace VisionApplication
                     _visionRunningByJob[faceIndex] = false;
                     _ioTriggerActiveByJob[faceIndex] = false;
                 }
-
+                vpWin.SetJobBusy(faceIndex, false);
                 UpdateMainVisionTaskFinishedFlag();
             }
         }
@@ -4927,16 +4927,21 @@ namespace VisionApplication
                         }
                         else
                         {
+                            vpWin._bRunOneTimeFinished[faceIndex] = 2;
                             pmaRes[faceIndex].bLocated = false;
                             visionOk = false;
                             operLog.iEventStatus = -1;
                             operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测";
                             operLog.strFailReason = "视觉检测超时，未收到完成结果";
                             AddLog();
+                            
                         }
                     }
                     else
                     {
+                        vpWin._bRunOneTimeFinished[faceIndex] = 2;
+                        pmaRes[faceIndex].bLocated = false;
+                        visionOk = false;
                         operLog.iEventStatus = -1;
                         operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测";
                         operLog.strFailReason = vpWin.strErrInfo[faceIndex];
@@ -4945,6 +4950,9 @@ namespace VisionApplication
                 }
                 catch (Exception ex)
                 {
+                    vpWin._bRunOneTimeFinished[faceIndex] = 2;
+                    pmaRes[faceIndex].bLocated = false;
+                    visionOk = false;
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = $"工位{faceIndex + 1}视觉检测异常";
                     operLog.strFailReason = ex.Message;
@@ -4977,8 +4985,9 @@ namespace VisionApplication
             }
             catch (Exception ex)
             {
+                vpWin._bRunOneTimeFinished[faceIndex] = 2;
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = $"工位{faceIndex + 1}一次运行失败";
+                operLog.strOperEvent = $"工位{faceIndex + 1}运行失败";
                 operLog.strFailReason = ex.Message;
                 AddLog();
             }
