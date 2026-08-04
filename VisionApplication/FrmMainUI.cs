@@ -1,4 +1,11 @@
  
+using Cognex.VisionPro.Blob;
+using Cognex.VisionPro.CalibFix;
+using Cognex.VisionPro.Caliper;
+using Cognex.VisionPro.PMAlign;
+using CommonCls;
+using MvCamCtrl.NET;  // 海康相机
+using PipeChanel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,14 +31,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml; 
 using CameraHandle = System.Int32;
-
-using Cognex.VisionPro.Blob;
-using Cognex.VisionPro.CalibFix;
-using Cognex.VisionPro.PMAlign;
-using MvCamCtrl.NET;  // 海康相机
-
-using CommonCls;
-using PipeChanel;
 
 namespace VisionApplication
 {
@@ -7660,6 +7659,145 @@ namespace VisionApplication
         }
 
        
+
+        calipParam clp = new calipParam();
+        private void btGetCalipEdgeParam_Click(object sender, EventArgs e)
+        {
+            vpWin.GetCLPParam(ref clp, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+
+            UpdateUIFromCLPParam();
+        }
+
+        private void btSetCLPEdgeParam_Click(object sender, EventArgs e)
+        {
+            UpdateCLPParamFromUI();
+
+            vpWin.SetCLPParam(clp, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);
+
+        }
+
+
+        private void UpdateUIFromCLPParam()
+        {
+            cmbCLPPol.SelectedIndex = clp.bPolarity;
+            nudCLPEdgeThre.Value = (decimal)clp.dThre;
+            nudCLPRad.Value = (decimal)clp.iRadius;
+        }
+        private void UpdateCLPParamFromUI()
+        {
+            clp.bPolarity = cmbCLPPol.SelectedIndex;
+            clp.dThre = (double)nudCLPEdgeThre.Value;
+            clp.iRadius = (int)nudCLPRad.Value;
+            clp.iRes1 = (int)nudLenTh.Value;
+        }
+
+
+        private CogCaliperEditV2 clpV2 = new CogCaliperEditV2();
+        bool bCalipEdit = false;
+        private void btEdgeParam_Click(object sender, EventArgs e)
+        {
+            {
+                if (vpWin._iTaskType != 5 && !vpWin.bMainTaskFinished)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "卡尺测量";
+                    operLog.strFailReason = "当前任务未结束";
+                    AddLog();
+                    return;
+                }
+                if (rts.iModelRole < 3)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "卡尺测量";
+                    operLog.strFailReason = "用户权限不够";
+                    AddLog();
+                    return;
+                }
+
+                if (rts.initStatus.iVPPStatus != 0)
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "卡尺测量";
+                    operLog.strFailReason = "流程文件初始化失败";
+                    return;
+                }
+                operLog.strOperEvent = "卡尺测量";
+
+
+                bCalipEdit = !bCalipEdit;
+                if (bCalipEdit)
+                {
+                    iTmpType = vpWin._iTaskType;
+                    clpV2 = new CogCaliperEditV2();
+                    clpV2.Subject = vpWin.getCLPEdge(iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0);  //2026年6月14日 需要修改第二个参数
+                    splitContainer2.Panel1.Controls.Add(clpV2);
+                    clpV2.Dock = DockStyle.Fill;
+
+                    //     pmaV2 = new CogPMAlignEditV2();
+                    //  pmaV2.Subject = vpWin._pmaMT;
+                    //  splitContainer3.Panel1.Controls.Add(pmaV2);
+                    //   pmaV2.Dock = DockStyle.Fill;
+                    vpWin.Visible = false;
+                    bVPPParamChanged = true;
+
+
+                    vpWin._iTaskType = 5;
+                    operLog.iEventStatus = 0;
+                    ((Button)sender).FlatStyle = FlatStyle.Flat;
+                    vpWin.bMainTaskFinished = false;
+                }
+                else
+                {
+                    vpWin.setCLPEdge(clpV2.Subject, iJobIndex, cmbCLPEdgeLeft.SelectedIndex == 0); //2026年6月14日 需要修改第三个参数
+                    splitContainer2.Panel1.Controls.Remove(clpV2);
+                    clpV2.Dispose();
+                    /*  vpWin.setPMA(pmaV2.Subject);
+                      splitContainer3.Panel1.Controls.Remove(pmaV2);
+                      pmaV2.Dispose();*/
+
+
+                    vpWin._iTaskType = iTmpType;
+                    ((Button)sender).FlatStyle = FlatStyle.Popup;
+                    vpWin.bMainTaskFinished = true;
+
+                    vpWin.Visible = true;
+
+                }
+
+            }
+        } 
+
+        private void btMeasEdge_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int index = cmbCLPEdgeInd.SelectedIndex + 1;
+                if (index < 1 || index > 2)
+                {
+                    MessageBox.Show("请选择定位边缘");
+                    return;
+                }
+                vpWin.SetFindLineSearchRegion(iJobIndex, index, 1);
+                bVPPParamChanged = true;
+            }
+            catch { }
+        }
+
+        private void btMeasEdgeExtra_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int index = cmbCLPEdgeInd.SelectedIndex + 1;
+                if (index < 1 || index > 2)
+                {
+                    MessageBox.Show("请选择定位边缘");
+                    return;
+                }
+                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_DL.gpuID);
+                bVPPParamChanged = true;
+            }
+            catch { }
+        }
 
         private void btSaveVPP_Click(object sender, EventArgs e)
         {

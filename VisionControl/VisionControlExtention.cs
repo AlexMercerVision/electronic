@@ -1843,6 +1843,72 @@ namespace VisionControl
                 OnVisionError(jobIndex, $"启用/禁用精定位失败: {ex.Message}");
             } 
         }
+
+        public void GetCLPParam(ref calipParam clpParam, int iJobIndex, bool bLeft)
+        {
+            //获取训练参数
+            try
+            {
+                string calipName = bLeft ? "CogCaliperTool2" : "CogCaliperTool1";
+                CogCaliperTool clp = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
+                clpParam.bPolarity = (int)clp.RunParams.Edge0Polarity - 1;
+                clpParam.dThre = clp.RunParams.ContrastThreshold;
+                clpParam.iRadius = clp.RunParams.FilterHalfSizeInPixels;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+
+        public void SetCLPParam(calipParam clpParam, int iJobIndex, bool bLeft)
+        {
+            //获取训练参数
+            try
+            {
+                string calipName = bLeft ? "CogCaliperTool2" : "CogCaliperTool1";
+                CogCaliperTool clp = (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
+                clp.RunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
+                clp.RunParams.ContrastThreshold = clpParam.dThre;
+                clp.RunParams.FilterHalfSizeInPixels = clpParam.iRadius;
+                (mJM.Job(iJobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.iRes1);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
+        }
+
+        public CogCaliperTool getCLPEdge(int iJobIndex, bool bLeft)
+        {
+            try
+            {
+                if (bLeft)
+                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"]) as CogCaliperTool;
+                else
+                    return ((mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"]) as CogCaliperTool;
+
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        public bool setCLPEdge(CogCaliperTool clp, int iJobIndex, bool bLeft)
+        {
+            try
+            {
+                if (bLeft)
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperToo12"] = clp;
+                else
+                    (mJM.Job(iJobIndex).VisionTool as CogToolGroup).Tools["CogCaliperToo11"] = clp;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         #endregion
 
 
@@ -2281,6 +2347,7 @@ namespace VisionControl
             }
 
         }
+       
         #endregion 精定位工具
 
 

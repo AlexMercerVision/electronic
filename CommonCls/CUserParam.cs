@@ -336,6 +336,19 @@ namespace CommonCls
         public double dRes1;    //预留参数3
         public double dRes2;    //预留参数4
     }
+
+    public struct calipParam
+    {
+        //  public bool bLeft;  //左边缘还是右边缘
+        public int bPolarity;  //边缘极性
+        public double dThre;       //边缘对比度阈值
+        public int iRadius;     //边缘滤波半径
+        public int iRes1;       //预留参数1
+        public int iRes2;       //预留参数2
+        public double dRes1;    //预留参数3
+        public double dRes2;    //预留参数4
+    }
+
     // 主参数类
     [Serializable]
     public class CUserParam
