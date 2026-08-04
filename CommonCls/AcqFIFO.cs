@@ -660,9 +660,10 @@ namespace CommonCls
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return  ;
+                OnErrorOccurred($"GrabOneFrameCogFromFile ( 错误信息：{ex.Message}");
+                return ;
             }
             return  ;
         }
@@ -677,7 +678,7 @@ namespace CommonCls
                 {
 
                     ICogImage ci = ReadCogImage(strFiles[wsInd][iFileInd]);  //文件按照工位编号读取
-                    ci = (CogImage8Grey)CogFlipRotateIm(ci,wsInd);
+                    ci = CogFlipRotateIm(ci,wsInd);
                     if (ci is CogImage24PlanarColor)
                     {
                         ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)ci;
@@ -714,11 +715,13 @@ namespace CommonCls
                 }
                 else
                 {
+                    OnErrorOccurred($"GrabOneFrameCogFromFile 通道未启用");
                     return -1;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                OnErrorOccurred($"GrabOneFrameCogFromFile (JobInd{wsInd}): 错误信息：{ex.Message}");
                 return -1;
             }
 
@@ -769,11 +772,13 @@ namespace CommonCls
                 }
                 else
                 {
+                    OnErrorOccurred($"GrabOneFrameCogFromFileWithSrcData 通道未启用");
                     return -1;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                OnErrorOccurred($"GrabOneFrameCogFromFileWithSrcData (JobInd{wsInd}): 错误信息：{ex.Message}");
                 return -1;
             }
 
@@ -790,7 +795,7 @@ namespace CommonCls
                 {
                    ICogImage ci= ReadCogImage(strFiles[wsInd][iFileInd]);  //文件存储是根据工位编号存储
 
-                    ci = (CogImage8Grey)CogFlipRotateIm(ci,wsInd);
+                    ci = CogFlipRotateIm(ci,wsInd);
                     if (ci is CogImage24PlanarColor)
                     {
                         ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)ci;
@@ -810,11 +815,13 @@ namespace CommonCls
                 }
                 else
                 {
+                    OnErrorOccurred($"GrabOneFrameCogFromFile 通道未启用");
                     return -1;
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                OnErrorOccurred($"GrabOneFrameCogFromFile (JobInd{wsInd}): 错误信息：{ex.Message}");
                 return -1;
             }
             
