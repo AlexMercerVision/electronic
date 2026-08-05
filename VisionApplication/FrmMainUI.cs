@@ -1323,9 +1323,101 @@ namespace VisionApplication
                 // 1. 枚举相机名称
                 items = hIKVisionCamera.EnumDevices();
 
+
+                // ---- 新增：序列号重映射 ----
+                if (items.Count > 0)
+                {
+                    // 1. 建立当前枚举的 序列号→物理索引 映射
+                    Dictionary<string, int> serialToIndex = new Dictionary<string, int>();
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        if (!serialToIndex.ContainsKey(items[i]))
+                            serialToIndex.Add(items[i], i);
+                        else
+                        {
+                            // 理论上序列号唯一，若重复则记录错误
+                            operLog.iEventStatus = -1;
+                            operLog.strOperEvent = "相机序列号重复";
+                            operLog.strFailReason = $"序列号 {items[i]} 出现多次";
+                            AddLog();
+                        }
+                    }
+
+                    // 2. 遍历所有工位，重新映射物理索引
+                    bool mappingChanged = false;
+                    for (int i = 0; i < maxJobNum; i++)
+                    {
+                        if (!cup.p_CD.bListProcess[i]) continue;   // 未启用的工位跳过
+
+                        int oldIdx = cup.p_CD.camInd[i];            // 当前配置的物理索引
+                        string savedSerial = "";
+                        if (oldIdx >= 0 && oldIdx < cup.p_Cam.Length)
+                            savedSerial = cup.p_Cam[oldIdx].strCamName;  // 该索引下保存的序列号
+
+                        if (!string.IsNullOrEmpty(savedSerial) && serialToIndex.TryGetValue(savedSerial, out int newIdx))
+                        {
+                            // 找到匹配，更新物理索引
+                            if (oldIdx != newIdx)
+                            {
+                                // 索引变化：参数应跟随相机（复制参数到新索引）
+                               // CopyCameraParam(cup.p_Cam[oldIdx], ref cup.p_Cam[newIdx]);
+                                // 清空旧索引的序列号，避免后续误用
+                             //   cup.p_Cam[oldIdx].strCamName = "";
+                                cup.p_CD.camInd[i] = newIdx;
+                                mappingChanged = true;
+
+                                operLog.iEventStatus = 0;
+                                operLog.strOperEvent = $"工位{i + 1}相机映射更新";
+                                operLog.strFailReason = $"序列号 {savedSerial} 从索引 {oldIdx} 移至 {newIdx}";
+                                AddLog();
+                            }
+                            // 确保当前索引的序列号正确（防止手动修改）
+                          //  cup.p_Cam[newIdx].strCamName = savedSerial;
+                        }
+                        else
+                        {
+                            // 未找到匹配：可能是新相机或序列号丢失，自动分配一个空闲索引
+                            // 简单策略：从0开始找第一个未被任何工位使用的索引
+                            bool[] used = new bool[cameraNum];
+                            for (int j = 0; j < maxCameraNum; j++)
+                            {
+                                if (cup.p_CD.bListProcess[j] && cup.p_CD.camInd[j] < cameraNum)
+                                    used[cup.p_CD.camInd[j]] = true;
+                            }
+                            int freeIdx = -1;
+                            for (int k = 0; k < cameraNum; k++)
+                            {
+                                if (!used[k]) { freeIdx = k; break; }
+                            }
+                            if (freeIdx >= 0)
+                            {
+                                cup.p_CD.camInd[i] = freeIdx;
+                                // 将该相机的序列号保存到新索引
+                                cup.p_Cam[freeIdx].strCamName = items[freeIdx];
+                                mappingChanged = true;
+                                operLog.iEventStatus = -1;
+                                operLog.strOperEvent = $"工位{i + 1}未匹配序列号，自动分配索引{freeIdx}";
+                                operLog.strFailReason = $"保存序列号:{savedSerial}, 当前可用序列号:{string.Join(",", items)}";
+                                AddLog();
+                            }
+                            else
+                            {
+                                // 无空闲索引，保持原索引（可能越界），但记录错误
+                                operLog.iEventStatus = -1;
+                                operLog.strOperEvent = $"工位{i + 1}映射失败";
+                                operLog.strFailReason = $"无可用相机索引，原序列号:{savedSerial}";
+                                AddLog();
+                            }
+                        }
+                    }
+
+                    // 如果映射发生变化，保存配置
+                    if (mappingChanged)
+                        SaveUserParam();
+                }
                 // 2. 检查每个工位配置的相机编号是否有效，无效则禁用
                 bool bAnyProcessEnabled = false;
-                for (int i = 0; i < maxCameraNum; i++)
+                for (int i = 0; i < maxJobNum; i++)
                 {
                     if (cup.p_CD.bListProcess[i])
                     {

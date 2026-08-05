@@ -2289,7 +2289,63 @@ namespace VisionApplication
             }
             bLoadVPPChange = false;
         }
+        TextBox serialTextBox;
+        private void cmbCamInd_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // 1. 获取触发事件的 ComboBox
+            ComboBox cmb = sender as ComboBox;
+            if (cmb == null) return;
 
+            // 2. 从控件名称提取工位编号（如 "cmbCamInd1" -> 1）
+            string name = cmb.Name;
+            if (!name.StartsWith("cmbCamInd")) return;
+            string numStr = name.Substring("cmbCamInd".Length);
+            if (!int.TryParse(numStr, out int jobNumber)) return;
+            int jobIndex = jobNumber - 1; // 转为0基索引
+
+            // 3. 获取选中的物理相机索引（下拉框的 SelectedIndex）
+            int camIndex = cmb.SelectedIndex;
+
+            // 4. 先查找对应的序列号文本框（只调用一次，避免重复声明相同变量名）
+            TextBox serialTextBox = FindTextBoxByJob(jobIndex);
+
+            if (camIndex < 0 || cup.p_Cam == null || camIndex >= cup.p_Cam.Length)
+            {
+                // 未选择或索引无效，清空对应文本框
+                if (serialTextBox != null) serialTextBox.Text = "";
+                return;
+            }
+
+            // 5. 更新工位映射
+            if (cup.p_CD.camInd != null && jobIndex < cup.p_CD.camInd.Length)
+            {
+                cup.p_CD.camInd[jobIndex] = camIndex;
+
+            }
+
+            // 6. 更新序列号文本框
+            if (serialTextBox != null )
+            {
+                int ind = 0;
+                try { ind = cup.p_Cam[camIndex].strCamName.IndexOf("MV-"); }
+                catch { }
+                 
+                serialTextBox.Text = cup.p_Cam[camIndex].strCamName.Substring(ind); // strCamName 存储序列号
+            }
+
+        }
+        /// <summary>
+        /// 根据工位索引查找对应的序列号文本框
+        /// </summary>
+        private TextBox FindTextBoxByJob(int jobIndex)
+        {
+            string txtName = "txtJobCamSerial" + (jobIndex + 1).ToString();
+            // 注意：文本框可能直接位于 TabPage 或 GroupBox 内，使用 Controls.Find 递归查找
+            var controls = this.Controls.Find(txtName, true);
+            if (controls.Length > 0 && controls[0] is TextBox)
+                return controls[0] as TextBox;
+            return null;
+        }
         private void cmbCrackGroupParamGrey1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (iLstGrey1 >= 0)

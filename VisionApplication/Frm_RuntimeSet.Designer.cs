@@ -50,6 +50,11 @@ namespace VisionApplication
             this.txtSub3Prefix = new System.Windows.Forms.TextBox();
             this.txtSub2Prefix = new System.Windows.Forms.TextBox();
             this.txtSub1Prefix = new System.Windows.Forms.TextBox();
+            this.txtJobCamSerial5 = new System.Windows.Forms.TextBox();
+            this.txtJobCamSerial4 = new System.Windows.Forms.TextBox();
+            this.txtJobCamSerial3 = new System.Windows.Forms.TextBox();
+            this.txtJobCamSerial2 = new System.Windows.Forms.TextBox();
+            this.txtJobCamSerial1 = new System.Windows.Forms.TextBox();
             this.txtMainPrefix = new System.Windows.Forms.TextBox();
             this.chkCam5Used = new System.Windows.Forms.CheckBox();
             this.chkCam4Used = new System.Windows.Forms.CheckBox();
@@ -73,6 +78,7 @@ namespace VisionApplication
             this.label3 = new System.Windows.Forms.Label();
             this.label20 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
+            this.label102 = new System.Windows.Forms.Label();
             this.label78 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabBoard = new System.Windows.Forms.TabPage();
@@ -568,6 +574,11 @@ namespace VisionApplication
             this.tabCam.Controls.Add(this.txtSub3Prefix);
             this.tabCam.Controls.Add(this.txtSub2Prefix);
             this.tabCam.Controls.Add(this.txtSub1Prefix);
+            this.tabCam.Controls.Add(this.txtJobCamSerial5);
+            this.tabCam.Controls.Add(this.txtJobCamSerial4);
+            this.tabCam.Controls.Add(this.txtJobCamSerial3);
+            this.tabCam.Controls.Add(this.txtJobCamSerial2);
+            this.tabCam.Controls.Add(this.txtJobCamSerial1);
             this.tabCam.Controls.Add(this.txtMainPrefix);
             this.tabCam.Controls.Add(this.chkCam5Used);
             this.tabCam.Controls.Add(this.chkCam4Used);
@@ -591,6 +602,7 @@ namespace VisionApplication
             this.tabCam.Controls.Add(this.label3);
             this.tabCam.Controls.Add(this.label20);
             this.tabCam.Controls.Add(this.label2);
+            this.tabCam.Controls.Add(this.label102);
             this.tabCam.Controls.Add(this.label78);
             this.tabCam.Controls.Add(this.label1);
             this.tabCam.Location = new System.Drawing.Point(4, 22);
@@ -602,7 +614,7 @@ namespace VisionApplication
             // 
             // txtSub4Prefix
             // 
-            this.txtSub4Prefix.Location = new System.Drawing.Point(256, 350);
+            this.txtSub4Prefix.Location = new System.Drawing.Point(428, 346);
             this.txtSub4Prefix.Name = "txtSub4Prefix";
             this.txtSub4Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub4Prefix.TabIndex = 18;
@@ -610,7 +622,7 @@ namespace VisionApplication
             // 
             // txtSub3Prefix
             // 
-            this.txtSub3Prefix.Location = new System.Drawing.Point(256, 275);
+            this.txtSub3Prefix.Location = new System.Drawing.Point(428, 271);
             this.txtSub3Prefix.Name = "txtSub3Prefix";
             this.txtSub3Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub3Prefix.TabIndex = 18;
@@ -618,7 +630,7 @@ namespace VisionApplication
             // 
             // txtSub2Prefix
             // 
-            this.txtSub2Prefix.Location = new System.Drawing.Point(256, 200);
+            this.txtSub2Prefix.Location = new System.Drawing.Point(428, 196);
             this.txtSub2Prefix.Name = "txtSub2Prefix";
             this.txtSub2Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub2Prefix.TabIndex = 18;
@@ -626,15 +638,60 @@ namespace VisionApplication
             // 
             // txtSub1Prefix
             // 
-            this.txtSub1Prefix.Location = new System.Drawing.Point(256, 125);
+            this.txtSub1Prefix.Location = new System.Drawing.Point(428, 121);
             this.txtSub1Prefix.Name = "txtSub1Prefix";
             this.txtSub1Prefix.Size = new System.Drawing.Size(100, 21);
             this.txtSub1Prefix.TabIndex = 18;
             this.txtSub1Prefix.Text = "PB";
             // 
+            // txtJobCamSerial5
+            // 
+            this.txtJobCamSerial5.Location = new System.Drawing.Point(206, 346);
+            this.txtJobCamSerial5.Name = "txtJobCamSerial5";
+            this.txtJobCamSerial5.ReadOnly = true;
+            this.txtJobCamSerial5.Size = new System.Drawing.Size(201, 21);
+            this.txtJobCamSerial5.TabIndex = 18;
+            this.txtJobCamSerial5.Text = "PA";
+            // 
+            // txtJobCamSerial4
+            // 
+            this.txtJobCamSerial4.Location = new System.Drawing.Point(206, 275);
+            this.txtJobCamSerial4.Name = "txtJobCamSerial4";
+            this.txtJobCamSerial4.ReadOnly = true;
+            this.txtJobCamSerial4.Size = new System.Drawing.Size(201, 21);
+            this.txtJobCamSerial4.TabIndex = 18;
+            this.txtJobCamSerial4.Text = "PA";
+            // 
+            // txtJobCamSerial3
+            // 
+            this.txtJobCamSerial3.Location = new System.Drawing.Point(206, 199);
+            this.txtJobCamSerial3.Name = "txtJobCamSerial3";
+            this.txtJobCamSerial3.ReadOnly = true;
+            this.txtJobCamSerial3.Size = new System.Drawing.Size(201, 21);
+            this.txtJobCamSerial3.TabIndex = 18;
+            this.txtJobCamSerial3.Text = "PA";
+            // 
+            // txtJobCamSerial2
+            // 
+            this.txtJobCamSerial2.Location = new System.Drawing.Point(206, 123);
+            this.txtJobCamSerial2.Name = "txtJobCamSerial2";
+            this.txtJobCamSerial2.ReadOnly = true;
+            this.txtJobCamSerial2.Size = new System.Drawing.Size(201, 21);
+            this.txtJobCamSerial2.TabIndex = 18;
+            this.txtJobCamSerial2.Text = "PA";
+            // 
+            // txtJobCamSerial1
+            // 
+            this.txtJobCamSerial1.Location = new System.Drawing.Point(206, 50);
+            this.txtJobCamSerial1.Name = "txtJobCamSerial1";
+            this.txtJobCamSerial1.ReadOnly = true;
+            this.txtJobCamSerial1.Size = new System.Drawing.Size(201, 21);
+            this.txtJobCamSerial1.TabIndex = 18;
+            this.txtJobCamSerial1.Text = "PA";
+            // 
             // txtMainPrefix
             // 
-            this.txtMainPrefix.Location = new System.Drawing.Point(256, 50);
+            this.txtMainPrefix.Location = new System.Drawing.Point(428, 46);
             this.txtMainPrefix.Name = "txtMainPrefix";
             this.txtMainPrefix.Size = new System.Drawing.Size(100, 21);
             this.txtMainPrefix.TabIndex = 18;
@@ -643,7 +700,7 @@ namespace VisionApplication
             // chkCam5Used
             // 
             this.chkCam5Used.AutoSize = true;
-            this.chkCam5Used.Location = new System.Drawing.Point(421, 350);
+            this.chkCam5Used.Location = new System.Drawing.Point(564, 352);
             this.chkCam5Used.Name = "chkCam5Used";
             this.chkCam5Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam5Used.TabIndex = 17;
@@ -654,7 +711,7 @@ namespace VisionApplication
             // chkCam4Used
             // 
             this.chkCam4Used.AutoSize = true;
-            this.chkCam4Used.Location = new System.Drawing.Point(421, 275);
+            this.chkCam4Used.Location = new System.Drawing.Point(564, 277);
             this.chkCam4Used.Name = "chkCam4Used";
             this.chkCam4Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam4Used.TabIndex = 17;
@@ -665,7 +722,7 @@ namespace VisionApplication
             // chkCam3Used
             // 
             this.chkCam3Used.AutoSize = true;
-            this.chkCam3Used.Location = new System.Drawing.Point(421, 200);
+            this.chkCam3Used.Location = new System.Drawing.Point(564, 202);
             this.chkCam3Used.Name = "chkCam3Used";
             this.chkCam3Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam3Used.TabIndex = 17;
@@ -676,7 +733,7 @@ namespace VisionApplication
             // chkCam2Used
             // 
             this.chkCam2Used.AutoSize = true;
-            this.chkCam2Used.Location = new System.Drawing.Point(421, 125);
+            this.chkCam2Used.Location = new System.Drawing.Point(564, 127);
             this.chkCam2Used.Name = "chkCam2Used";
             this.chkCam2Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam2Used.TabIndex = 17;
@@ -687,7 +744,7 @@ namespace VisionApplication
             // chkCam1Used
             // 
             this.chkCam1Used.AutoSize = true;
-            this.chkCam1Used.Location = new System.Drawing.Point(421, 50);
+            this.chkCam1Used.Location = new System.Drawing.Point(564, 52);
             this.chkCam1Used.Name = "chkCam1Used";
             this.chkCam1Used.Size = new System.Drawing.Size(48, 16);
             this.chkCam1Used.TabIndex = 17;
@@ -737,7 +794,7 @@ namespace VisionApplication
             // 
             this.rd5.AutoSize = true;
             this.rd5.Enabled = false;
-            this.rd5.Location = new System.Drawing.Point(515, 350);
+            this.rd5.Location = new System.Drawing.Point(658, 352);
             this.rd5.Name = "rd5";
             this.rd5.Size = new System.Drawing.Size(95, 16);
             this.rd5.TabIndex = 2;
@@ -749,7 +806,7 @@ namespace VisionApplication
             // 
             this.rd3.AutoSize = true;
             this.rd3.Enabled = false;
-            this.rd3.Location = new System.Drawing.Point(515, 200);
+            this.rd3.Location = new System.Drawing.Point(658, 202);
             this.rd3.Name = "rd3";
             this.rd3.Size = new System.Drawing.Size(95, 16);
             this.rd3.TabIndex = 2;
@@ -761,7 +818,7 @@ namespace VisionApplication
             // 
             this.rd4.AutoSize = true;
             this.rd4.Enabled = false;
-            this.rd4.Location = new System.Drawing.Point(515, 275);
+            this.rd4.Location = new System.Drawing.Point(658, 277);
             this.rd4.Name = "rd4";
             this.rd4.Size = new System.Drawing.Size(95, 16);
             this.rd4.TabIndex = 2;
@@ -773,7 +830,7 @@ namespace VisionApplication
             // 
             this.rd2.AutoSize = true;
             this.rd2.Enabled = false;
-            this.rd2.Location = new System.Drawing.Point(515, 125);
+            this.rd2.Location = new System.Drawing.Point(658, 127);
             this.rd2.Name = "rd2";
             this.rd2.Size = new System.Drawing.Size(95, 16);
             this.rd2.TabIndex = 2;
@@ -785,7 +842,7 @@ namespace VisionApplication
             // 
             this.rd1.AutoSize = true;
             this.rd1.Enabled = false;
-            this.rd1.Location = new System.Drawing.Point(515, 50);
+            this.rd1.Location = new System.Drawing.Point(658, 52);
             this.rd1.Name = "rd1";
             this.rd1.Size = new System.Drawing.Size(95, 16);
             this.rd1.TabIndex = 2;
@@ -804,8 +861,9 @@ namespace VisionApplication
             "相机5"});
             this.cmbCamInd5.Location = new System.Drawing.Point(96, 350);
             this.cmbCamInd5.Name = "cmbCamInd5";
-            this.cmbCamInd5.Size = new System.Drawing.Size(121, 20);
+            this.cmbCamInd5.Size = new System.Drawing.Size(78, 20);
             this.cmbCamInd5.TabIndex = 1;
+            this.cmbCamInd5.SelectedIndexChanged += new System.EventHandler(this.cmbCamInd_SelectedIndexChanged);
             // 
             // cmbCamInd3
             // 
@@ -818,8 +876,9 @@ namespace VisionApplication
             "相机5"});
             this.cmbCamInd3.Location = new System.Drawing.Point(96, 200);
             this.cmbCamInd3.Name = "cmbCamInd3";
-            this.cmbCamInd3.Size = new System.Drawing.Size(121, 20);
+            this.cmbCamInd3.Size = new System.Drawing.Size(78, 20);
             this.cmbCamInd3.TabIndex = 1;
+            this.cmbCamInd3.SelectedIndexChanged += new System.EventHandler(this.cmbCamInd_SelectedIndexChanged);
             // 
             // cmbCamInd4
             // 
@@ -832,8 +891,9 @@ namespace VisionApplication
             "相机5"});
             this.cmbCamInd4.Location = new System.Drawing.Point(96, 275);
             this.cmbCamInd4.Name = "cmbCamInd4";
-            this.cmbCamInd4.Size = new System.Drawing.Size(121, 20);
+            this.cmbCamInd4.Size = new System.Drawing.Size(78, 20);
             this.cmbCamInd4.TabIndex = 1;
+            this.cmbCamInd4.SelectedIndexChanged += new System.EventHandler(this.cmbCamInd_SelectedIndexChanged);
             // 
             // cmbCamInd2
             // 
@@ -846,8 +906,9 @@ namespace VisionApplication
             "相机5"});
             this.cmbCamInd2.Location = new System.Drawing.Point(96, 125);
             this.cmbCamInd2.Name = "cmbCamInd2";
-            this.cmbCamInd2.Size = new System.Drawing.Size(121, 20);
+            this.cmbCamInd2.Size = new System.Drawing.Size(78, 20);
             this.cmbCamInd2.TabIndex = 1;
+            this.cmbCamInd2.SelectedIndexChanged += new System.EventHandler(this.cmbCamInd_SelectedIndexChanged);
             // 
             // cmbCamInd1
             // 
@@ -860,8 +921,9 @@ namespace VisionApplication
             "相机5"});
             this.cmbCamInd1.Location = new System.Drawing.Point(96, 50);
             this.cmbCamInd1.Name = "cmbCamInd1";
-            this.cmbCamInd1.Size = new System.Drawing.Size(121, 20);
+            this.cmbCamInd1.Size = new System.Drawing.Size(78, 20);
             this.cmbCamInd1.TabIndex = 1;
+            this.cmbCamInd1.SelectedIndexChanged += new System.EventHandler(this.cmbCamInd_SelectedIndexChanged);
             // 
             // label21
             // 
@@ -903,10 +965,19 @@ namespace VisionApplication
             this.label2.TabIndex = 0;
             this.label2.Text = "B面工位";
             // 
+            // label102
+            // 
+            this.label102.AutoSize = true;
+            this.label102.Location = new System.Drawing.Point(206, 17);
+            this.label102.Name = "label102";
+            this.label102.Size = new System.Drawing.Size(53, 12);
+            this.label102.TabIndex = 0;
+            this.label102.Text = "相机序号";
+            // 
             // label78
             // 
             this.label78.AutoSize = true;
-            this.label78.Location = new System.Drawing.Point(252, 20);
+            this.label78.Location = new System.Drawing.Point(424, 16);
             this.label78.Name = "label78";
             this.label78.Size = new System.Drawing.Size(77, 12);
             this.label78.TabIndex = 0;
@@ -4433,5 +4504,11 @@ namespace VisionApplication
         private System.Windows.Forms.Label label95;
         private System.Windows.Forms.Label label96;
         private System.Windows.Forms.Label label99;
+        private System.Windows.Forms.TextBox txtJobCamSerial1;
+        private System.Windows.Forms.Label label102;
+        private System.Windows.Forms.TextBox txtJobCamSerial5;
+        private System.Windows.Forms.TextBox txtJobCamSerial4;
+        private System.Windows.Forms.TextBox txtJobCamSerial3;
+        private System.Windows.Forms.TextBox txtJobCamSerial2;
     }
 }
