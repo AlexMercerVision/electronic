@@ -1848,7 +1848,7 @@ namespace VisionApplication
         {
             // 更新状态栏文本
             //toolStripStatusLabel_CardStatus.Text = $"当前工位：{iJobIndex==0?"A面":"B面"}，当前板卡: {cardSN + 1}";
-            toolStripStatusLabel_CardStatus.Text = $"当前工位：{(iJobIndex == 0 ? "A面" : "B面")}，当前板卡: {cardSN + 1}";
+            toolStripStatusLabel_CardStatus.Text = $"当前工位：{(iJobIndex == 0 ? "A面" : "B面")}";
             // 更新板卡状态指示器颜色
             if (bInitJCZ[cardSN] == 0)
             {
@@ -4775,6 +4775,11 @@ namespace VisionApplication
         /// </summary>
         private void InitParamUI()
         {
+            //隐藏不必要的参数界面
+            for (int i = 0; i < 1; i++)
+                tabControl1.TabPages.Remove(tabControl1.TabPages[4]);
+
+
             if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
                 cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
 
@@ -4783,8 +4788,8 @@ namespace VisionApplication
 
             if (rts.initStatus.bVPPInit)
             {
-                UpdateLaserVisionCalibTemplate2UIFromVar();
-                UpdateLaserVisionCalibParam2UIFromVP();
+               // UpdateLaserVisionCalibTemplate2UIFromVar();
+              //  UpdateLaserVisionCalibParam2UIFromVP();
                 vpWin.GetPMAParam(ref pmaParam, iJobIndex);
                 UpdateUIFromPMAParam();
             }

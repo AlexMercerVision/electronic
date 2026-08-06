@@ -393,15 +393,15 @@ namespace VisionApplication
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.Controls.Add(this.tabLine);
             this.tabControl1.Controls.Add(this.tabCam);
-            this.tabControl1.Controls.Add(this.tabBoard);
             this.tabControl1.Controls.Add(this.tabSer);
             this.tabControl1.Controls.Add(this.tabPath);
-            this.tabControl1.Controls.Add(this.tabImItem);
             this.tabControl1.Controls.Add(this.tabRunTime);
             this.tabControl1.Controls.Add(this.tabIO);
             this.tabControl1.Controls.Add(this.tabDL);
             this.tabControl1.Controls.Add(this.tabDiagnose);
+            this.tabControl1.Controls.Add(this.tabBoard);
             this.tabControl1.Controls.Add(this.tabFX);
+            this.tabControl1.Controls.Add(this.tabImItem);
             this.tabControl1.Location = new System.Drawing.Point(12, 2);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;

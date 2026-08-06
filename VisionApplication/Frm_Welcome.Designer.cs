@@ -57,7 +57,7 @@
             this.lbl_version.BackColor = System.Drawing.Color.Transparent;
             this.lbl_version.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
             this.lbl_version.ForeColor = System.Drawing.Color.White;
-            this.lbl_version.Location = new System.Drawing.Point(97, 9);
+            this.lbl_version.Location = new System.Drawing.Point(108, 9);
             this.lbl_version.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lbl_version.Name = "lbl_version";
             this.lbl_version.Size = new System.Drawing.Size(70, 20);
@@ -126,9 +126,9 @@
             this.label1.Location = new System.Drawing.Point(11, 9);
             this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(77, 20);
+            this.label1.Size = new System.Drawing.Size(94, 20);
             this.label1.TabIndex = 12;
-            this.label1.Text = "镭射除胶";
+            this.label1.Text = "电极帽检测";
             // 
             // Frm_Welcome
             // 

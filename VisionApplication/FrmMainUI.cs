@@ -304,7 +304,7 @@ namespace VisionApplication
                     }
                     strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
                     toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-                    this.Text = "镭射除胶   " +cup.p_DL.modelPath;
+                    this.Text = "电极帽检测   " +cup.p_DL.modelPath;
 
                 }
                 catch
@@ -2308,10 +2308,10 @@ namespace VisionApplication
                 fw.SetProgress(40, "正在加载硬件驱动");
 
                
-                EnsureJCZServerRunning();          // 确保 JCZServer 进程正常
+                /*EnsureJCZServerRunning();          // 确保 JCZServer 进程正常
                 jczPipThread = new Thread(InitJCZ);
                 jczPipThread.IsBackground = true;
-                jczPipThread.Start();
+                jczPipThread.Start();*/
 
 
                 iProcess = 50;
@@ -2328,11 +2328,11 @@ namespace VisionApplication
                 {
                     InitVisionControl();
                     //2025年8月26日
-                    alImParam[0] = new AlignImParam();
+                   /* alImParam[0] = new AlignImParam();
                     alImParam[0] = new AlignImParam();
                     vpWin.GetAlignRegion(ref alImParam[0], 0);
                     alImParam[1] = new AlignImParam();
-                    vpWin.GetAlignRegion(ref alImParam[1], 1);
+                    vpWin.GetAlignRegion(ref alImParam[1], 1);*/
                 }
                 if (!bSucc)
                 {
@@ -7288,7 +7288,7 @@ namespace VisionApplication
             strEngineerDir = rootDir;
             strEngineerName = Path.GetFileName(rootDir);
             toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-            this.Text = "镭射除胶   " + cup.p_DL.modelPath;
+            this.Text = "电极帽检测   " + cup.p_DL.modelPath;
             try
             {
                 // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
@@ -7506,7 +7506,7 @@ namespace VisionApplication
                 cup.p_DL.modelPath = rootDir;
                 strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
                 toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-                this.Text = "镭射除胶   " + cup.p_DL.modelPath;
+                this.Text = "电极帽检测   " + cup.p_DL.modelPath;
                 //   FrmMainUI.
 
             }
@@ -7753,9 +7753,7 @@ namespace VisionApplication
             }
             return lines;
         }
-
-       
-
+          
         calipParam clp = new calipParam();
         private void btGetCalipEdgeParam_Click(object sender, EventArgs e)
         {
