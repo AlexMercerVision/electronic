@@ -1332,7 +1332,10 @@ namespace VisionApplication
                     for (int i = 0; i < items.Count; i++)
                     {
                         if (!serialToIndex.ContainsKey(items[i]))
+                        {
                             serialToIndex.Add(items[i], i);
+                            
+                        }
                         else
                         {
                             // 理论上序列号唯一，若重复则记录错误
@@ -1360,13 +1363,14 @@ namespace VisionApplication
                             if (oldIdx != newIdx)
                             {
                                 // 索引变化：参数应跟随相机（复制参数到新索引）
-                               // CopyCameraParam(cup.p_Cam[oldIdx], ref cup.p_Cam[newIdx]);
+                                // CopyCameraParam(cup.p_Cam[oldIdx], ref cup.p_Cam[newIdx]);
                                 // 清空旧索引的序列号，避免后续误用
-                             //   cup.p_Cam[oldIdx].strCamName = "";
+                                //   cup.p_Cam[oldIdx].strCamName = "";
+                                cup.p_Cam[oldIdx].strCamName = items[newIdx];  // 更新当前相机的序列号
                                 cup.p_CD.camInd[i] = newIdx;
                                 mappingChanged = true;
 
-                                operLog.iEventStatus = 0;
+                                operLog.iEventStatus = 2;
                                 operLog.strOperEvent = $"工位{i + 1}相机映射更新";
                                 operLog.strFailReason = $"序列号 {savedSerial} 从索引 {oldIdx} 移至 {newIdx}";
                                 AddLog();

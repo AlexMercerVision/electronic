@@ -5949,7 +5949,7 @@ namespace BJJCZ_BaseDevelop
         /// <summary>
         /// 保存当前板卡的对象库到原文件路径
         /// </summary>
-        private void SaveToOriginalPath(int card)
+        /*private void SaveToOriginalPath(int card)
         {
             if (!string.IsNullOrEmpty(currentFilePath[card]))
             {
@@ -5973,13 +5973,13 @@ namespace BJJCZ_BaseDevelop
                     return;
                 }
 
-                /*LCZControlParam param = new LCZControlParam
+                *//*LCZControlParam param = new LCZControlParam
                 {
                     cardSN = card,
                     cmdType = 5,
                     strFileName = currentFilePath[card],  // 使用原路径
                     ind3 = 0
-                };*/
+                };*//*
 
                 try
                 {
@@ -6000,7 +6000,7 @@ namespace BJJCZ_BaseDevelop
             {
                 AddMsg($"卡{card + 1} 没有可保存的原文件路径，请先加载文件或指定保存路径");
             }
-        }
+        }*/
         /// <summary>
         /// 获取当前板卡的文件路径
         /// </summary>
@@ -8050,7 +8050,7 @@ namespace BJJCZ_BaseDevelop
                 }
             }
         }
-        private void menuExitApp_Click(object sender, EventArgs e)
+        /*private void menuExitApp_Click(object sender, EventArgs e)
         {
             FlushPendingFallbackAdjustmentsOnExit();
             try
@@ -8060,9 +8060,58 @@ namespace BJJCZ_BaseDevelop
                 AddMsg("关闭所有板卡");
             }
             catch { }
+            finally
+            {
+
+            }
+            Application.Exit();
+        }*/
+        private void menuExitApp_Click(object sender, EventArgs e)
+        {
+            // 1. 先关闭板卡（停止加工、红光预览并调用 lmc1_Close）
+            try
+            {
+                for (int card = 0; card < 2; card++)
+                {
+                    if (bInMark[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                    if (bInRed[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                    bInMark[card] = false;
+                    bInRed[card] = false;
+                }
+                JczLmc.lmc1_Close();
+                AddMsg("板卡已关闭");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"关闭板卡时异常: {ex.Message}");
+            }
+
+            // 2. 合并所有卡的副本到正本
+            FlushPendingFallbackAdjustmentsOnExit();  // 保留原有兜底参数保存
+            for (int card = 0; card < currentFilePath.Length; card++)
+            {
+                string orig = currentFilePath[card];
+                if (string.IsNullOrEmpty(orig)) continue;
+                string copy = GetEditCopyPath(orig);   // 请确保已实现该方法
+                if (File.Exists(copy))
+                {
+                    try
+                    {
+                        File.Copy(copy, orig, true);
+                        File.Delete(copy);
+                        AddMsg($"卡{card + 1} 退出时合并副本到原文件: {orig}");
+                    }
+                    catch (Exception ex)
+                    {
+                        AddMsg($"卡{card + 1} 合并副本失败: {ex.Message}");
+                    }
+                }
+            }
+
+            // 3. 标记为真正退出，并退出程序
+          //  _isExitingFromMenu = true;
             Application.Exit();
         }
-
         private void JCZServer_FormClosing(object sender, FormClosingEventArgs e)
         {
             FlushPendingFallbackAdjustmentsOnExit();
@@ -8951,7 +9000,7 @@ namespace BJJCZ_BaseDevelop
             pendingDeferredSave[card] = false;
             SaveToOriginalPath(card);
         }*/
-        private void btTransformSave_Click(object sender, EventArgs e)
+       /* private void btTransformSave_Click(object sender, EventArgs e)
         {
             int card = currentCard;
 
@@ -8991,7 +9040,7 @@ namespace BJJCZ_BaseDevelop
             {
                 _isSavingEzd = false;
             }
-        }
+        }*/
         /*private bool PrepareForManualSave(int card)//与上面操作相对应
         {
             try
@@ -10898,14 +10947,14 @@ namespace BJJCZ_BaseDevelop
 
             return true;
         }*/
-        private void File_OpenEZCad_Click(object sender, EventArgs e)
+      /*  private void File_OpenEZCad_Click(object sender, EventArgs e)
         {
             int card = currentCard;  // 仍以当前选中卡作为打开EZcad时的默认加载文件
 
             try
             {
                 // ===== 新增：先保存两块板卡的所有数据 =====
-              /*  AddMsg("正在保存 A 面（卡1）和 B 面（卡2）的当前模板...");
+              *//*  AddMsg("正在保存 A 面（卡1）和 B 面（卡2）的当前模板...");
                 bool allSaved = true;
 
                 for (int i = 0; i < 2; i++)
@@ -10935,7 +10984,7 @@ namespace BJJCZ_BaseDevelop
                 {
                     MessageBox.Show("保存模板失败，请检查文件路径或权限。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;  // 保存失败则中止打开EZcad
-                }*/
+                }*//*
 
                 // ===== 以下为原逻辑：关闭板卡，启动EZcad =====
                 AddMsg($"正在关闭卡{card + 1}板卡连接，为启动EZcad做准备...");
@@ -10999,7 +11048,7 @@ namespace BJJCZ_BaseDevelop
                 AddMsg($"打开EZcad时发生异常: {ex.Message}");
                 ReinitializeBothCards();
             }
-        }
+        }*/
         /*private void File_OpenEZCad_Click(object sender, EventArgs e)
         {
             int card = currentCard;  // 使用当前选中的板卡
@@ -11193,5 +11242,216 @@ namespace BJJCZ_BaseDevelop
 
 
         private object GetSdkLock(int card) => card == 0 ? _sdkLock0 : _sdkLock1;
+
+        #region ezd文件正本与副本
+        
+        private string GetEditCopyPath(string originalPath)
+        {
+            if (string.IsNullOrWhiteSpace(originalPath)) return null;
+            return originalPath + ".edit";
+        }
+
+        private void RestoreOriginalFromEditCopy(int card, string originalPath)
+        {
+            if (string.IsNullOrWhiteSpace(originalPath)) return;
+            string copyPath = GetEditCopyPath(originalPath);
+            if (File.Exists(copyPath))
+            {
+                try
+                {
+                    File.Copy(copyPath, originalPath, true);
+                    File.Delete(copyPath);
+                    AddMsg($"卡{card + 1} 已将副本恢复为原文件: {originalPath}");
+                }
+                catch (Exception ex)
+                {
+                    AddMsg($"卡{card + 1} 恢复副本失败: {ex.Message}");
+                }
+            }
+        }
+        private void btTransformSave_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            if (_isSavingEzd) { AddMsg($"卡{card + 1} 正在保存，请稍后"); return; }
+            string originalPath = currentFilePath[card];
+            if (string.IsNullOrWhiteSpace(originalPath))
+            {
+                AddMsg($"卡{card + 1} 没有可保存的原文件路径，请先加载文件");
+                return;
+            }
+            string copyPath = GetEditCopyPath(originalPath);
+            try
+            {
+                _isSavingEzd = true;
+                lock (GetSdkLock(card))
+                {
+                    if (!PrepareForManualSave(card)) return;
+                    int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, copyPath);
+                    AddMsg($"卡{card + 1} 保存副本 -> {JczLmc.GetErrorText(saveErr)}");
+                }
+            }
+            finally { _isSavingEzd = false; }
+        }
+
+        private void SaveToOriginalPath(int card)
+        {
+            // ... 原有检查（是否正在加工等）
+            string copyPath = GetEditCopyPath(currentFilePath[card]);
+            if (string.IsNullOrEmpty(copyPath)) return;
+            try
+            {
+                _isSavingEzd = true;
+                int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, copyPath);
+                AddMsg($"卡{card + 1} 自动保存副本 -> {JczLmc.GetErrorText(saveErr)}");
+            }
+            finally { _isSavingEzd = false; }
+        }
+
+        private void File_OpenEZCad_Click(object sender, EventArgs e)
+        {
+            int card = currentCard;
+            string originalPath = currentFilePath[card];
+            if (string.IsNullOrWhiteSpace(originalPath))
+            {
+                AddMsg("当前卡没有文件路径，请先加载或保存文件。");
+                return;
+            }
+            string copyPath = GetEditCopyPath(originalPath);
+
+            try
+            {
+                // 1. 保存当前内存对象到副本文件
+                int saveErr = SaveEntLibToFileWithoutPreviewAnchor(card, copyPath);
+                if (saveErr != 0)
+                {
+                    AddMsg($"保存副本失败: {JczLmc.GetErrorText(saveErr)}");
+                    return;
+                }
+                AddMsg($"已保存副本: {copyPath}");
+
+                // 2. 关闭板卡，释放硬件资源
+                if (bInMark[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                if (bInRed[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                JczLmc.lmc1_Close();
+                JczInitErrs[card] = -1;
+                AddMsg($"卡{card + 1} 板卡已关闭");
+
+                // 3. 将副本复制到正本，使正本与当前内存同步
+                if (File.Exists(copyPath))
+                {
+                    File.Copy(copyPath, originalPath, true);
+                    AddMsg($"副本已更新到正本: {originalPath}");
+                }
+
+                // 4. 删除副本，避免后续加载时恢复旧副本覆盖 EZCAD 修改
+                if (File.Exists(copyPath))
+                {
+                    File.Delete(copyPath);
+                    AddMsg($"已删除临时副本文件");
+                }
+
+                // 5. 查找并启动 EZCAD，加载正本文件
+                string ezcadPath = FindEZcadExecutable();
+                if (string.IsNullOrEmpty(ezcadPath))
+                {
+                    AddMsg("未找到 EZCAD，将重新初始化板卡");
+                    ReinitializeBothCards();
+                    return;
+                }
+
+                Process ezcadProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = ezcadPath,
+                        Arguments = $"\"{originalPath}\"",
+                        UseShellExecute = true,
+                        WorkingDirectory = Path.GetDirectoryName(ezcadPath)
+                    }
+                };
+                ezcadProcess.Start();
+                AddMsg($"EZCAD 已启动，打开文件: {originalPath}");
+
+                // 6. 异步等待 EZCAD 退出
+                Task.Run(() =>
+                {
+                    ezcadProcess.WaitForExit();
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        AddMsg("EZCAD 已关闭，正在重新初始化板卡并加载正本...");
+                        ReinitializeBothCards(); // 内部会调用 lmc1_LoadEzdFile 加载 currentFilePath[card]
+                    }));
+                });
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"打开 EZCAD 异常: {ex.Message}");
+                ReinitializeBothCards();
+            }
+        }
+
+        #endregion ezd文件正本与副本
+
+        private void File_RecovryEZD_Click(object sender, EventArgs e)
+        {
+            // 1. 先停止所有卡的加工/红光预览，关闭板卡（统一关闭，避免冲突）
+            try
+            {
+                for (int card = 0; card < 2; card++)
+                {
+                    if (bInMark[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                    if (bInRed[card]) JczLmc.lmc1_StopMark(phyCardSN[card]);
+                }
+                JczLmc.lmc1_Close();
+                for (int card = 0; card < 2; card++)
+                    JczInitErrs[card] = -1;
+             //   AddMsg("所有板卡已关闭");
+            }
+            catch (Exception ex)
+            {
+                AddMsg($"关闭板卡异常: {ex.Message}");
+                // 即使关闭失败，仍尝试继续恢复文件
+            }
+
+            // 2. 逐卡恢复副本到正本
+            bool anyCopyRestored = false;
+            for (int card = 0; card < 2; card++)
+            {
+                string originalPath = currentFilePath[card];
+                if (string.IsNullOrWhiteSpace(originalPath))
+                {
+                 //   AddMsg($"卡{card + 1} 没有文件路径，跳过");
+                    continue;
+                }
+
+                string copyPath = GetEditCopyPath(originalPath);
+                if (!File.Exists(copyPath))
+                {
+                    AddMsg($"卡{card + 1} 未找到副本文件: {copyPath}，跳过");
+                    continue;
+                }
+
+                try
+                {
+                    File.Copy(copyPath, originalPath, true);
+                    File.Delete(copyPath);
+                    AddMsg($"卡{card + 1} 副本已复制到正本并删除: {originalPath}");
+                    anyCopyRestored = true;
+                }
+                catch (Exception ex)
+                {
+                    AddMsg($"卡{card + 1} 恢复副本失败: {ex.Message}");
+                }
+            }
+
+            if (!anyCopyRestored)
+            {
+                AddMsg("未恢复任何副本，可能副本文件不存在。将直接重新初始化板卡。");
+            }
+
+            // 3. 重新初始化所有板卡并加载各自的正本文件
+            ReinitializeBothCards();
+            AddMsg("所有板卡已重新初始化并加载正本。");
+        }
     }
 }

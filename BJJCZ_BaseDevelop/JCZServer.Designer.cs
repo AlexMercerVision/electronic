@@ -42,6 +42,8 @@
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.mainMsgBox = new System.Windows.Forms.RichTextBox();
             this.panelImage = new System.Windows.Forms.Panel();
+            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
+            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
             this.panel3 = new System.Windows.Forms.Panel();
             this.dgvEnt = new System.Windows.Forms.DataGridView();
             this.Column1 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
@@ -98,11 +100,13 @@
             this.txtRo_Value = new System.Windows.Forms.TextBox();
             this.picScaleY = new System.Windows.Forms.PictureBox();
             this.txtMv_Value = new System.Windows.Forms.TextBox();
-            this.pictureBox2 = new BJJCZ_BaseDevelop.CoordPictureBox();
-            this.pictureBox1 = new BJJCZ_BaseDevelop.CoordPictureBox();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.File_RecovryEZD = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExit.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.panelImage.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).BeginInit();
             this.panel1.SuspendLayout();
@@ -114,8 +118,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // JCZServerIcon
@@ -162,7 +164,9 @@
             this.File_LoadEZD,
             this.File_QuickSaveEZD,
             this.File_SaveEZD,
-            this.File_ExportFigure});
+            this.File_ExportFigure,
+            this.toolStripSeparator2,
+            this.File_RecovryEZD});
             this.MenuFile.Name = "MenuFile";
             this.MenuFile.Size = new System.Drawing.Size(44, 22);
             this.MenuFile.Text = "文件";
@@ -170,28 +174,28 @@
             // File_LoadEZD
             // 
             this.File_LoadEZD.Name = "File_LoadEZD";
-            this.File_LoadEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_LoadEZD.Size = new System.Drawing.Size(180, 22);
             this.File_LoadEZD.Text = "加载EZD文件";
             this.File_LoadEZD.Click += new System.EventHandler(this.File_LoadEZD_Click);
             // 
             // File_QuickSaveEZD
             // 
             this.File_QuickSaveEZD.Name = "File_QuickSaveEZD";
-            this.File_QuickSaveEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_QuickSaveEZD.Size = new System.Drawing.Size(180, 22);
             this.File_QuickSaveEZD.Text = "保存EZD文件";
             this.File_QuickSaveEZD.Click += new System.EventHandler(this.File_QuickSaveEZD_Click);
             // 
             // File_SaveEZD
             // 
             this.File_SaveEZD.Name = "File_SaveEZD";
-            this.File_SaveEZD.Size = new System.Drawing.Size(159, 22);
+            this.File_SaveEZD.Size = new System.Drawing.Size(180, 22);
             this.File_SaveEZD.Text = "另存为EZD文件";
             this.File_SaveEZD.Click += new System.EventHandler(this.File_SaveEZD_Click);
             // 
             // File_ExportFigure
             // 
             this.File_ExportFigure.Name = "File_ExportFigure";
-            this.File_ExportFigure.Size = new System.Drawing.Size(159, 22);
+            this.File_ExportFigure.Size = new System.Drawing.Size(180, 22);
             this.File_ExportFigure.Text = "导出图像";
             this.File_ExportFigure.Click += new System.EventHandler(this.File_ExportFigure_Click);
             // 
@@ -330,6 +334,26 @@
             this.panelImage.Name = "panelImage";
             this.panelImage.Size = new System.Drawing.Size(828, 219);
             this.panelImage.TabIndex = 120;
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox2.Location = new System.Drawing.Point(261, 3);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(250, 213);
+            this.pictureBox2.TabIndex = 8;
+            this.pictureBox2.TabStop = false;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox1.Location = new System.Drawing.Point(5, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(250, 214);
+            this.pictureBox1.TabIndex = 7;
+            this.pictureBox1.TabStop = false;
             // 
             // panel3
             // 
@@ -980,25 +1004,17 @@
             this.txtMv_Value.TabIndex = 140;
             this.txtMv_Value.Text = "2";
             // 
-            // pictureBox2
+            // toolStripSeparator2
             // 
-            this.pictureBox2.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox2.Location = new System.Drawing.Point(261, 3);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(250, 213);
-            this.pictureBox2.TabIndex = 8;
-            this.pictureBox2.TabStop = false;
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
             // 
-            // pictureBox1
+            // File_RecovryEZD
             // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(5, 3);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(250, 214);
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
+            this.File_RecovryEZD.Name = "File_RecovryEZD";
+            this.File_RecovryEZD.Size = new System.Drawing.Size(180, 22);
+            this.File_RecovryEZD.Text = "恢复未保存文件";
+            this.File_RecovryEZD.Click += new System.EventHandler(this.File_RecovryEZD_Click);
             // 
             // JCZServer
             // 
@@ -1023,6 +1039,8 @@
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.panelImage.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel3.ResumeLayout(false);
             this.panel3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvEnt)).EndInit();
@@ -1036,8 +1054,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScaleX)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picRoClock)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScaleY)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1128,5 +1144,7 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem Win_ReloadBGImg;
         private System.Windows.Forms.ToolStripMenuItem Win_RecorevyView;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripMenuItem File_RecovryEZD;
     }
 }
