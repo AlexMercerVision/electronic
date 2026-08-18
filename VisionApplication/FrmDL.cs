@@ -46,11 +46,11 @@ namespace xbDefectDect
         [DllImport("model_infer.dll", EntryPoint = "DestructModel")]  // Segmentation, detection, identification model destruction method
         public static extern void DestructModel();
 
-    //    [DllImport("model_infer.dll", EntryPoint = "Det_Test")] // Model unified initialization method: need yml、pdmodel、pdiparams
-     //   public static extern int Det_Test();
+        //    [DllImport("model_infer.dll", EntryPoint = "Det_Test")] // Model unified initialization method: need yml、pdmodel、pdiparams
+        //   public static extern int Det_Test();
 
-   //     [DllImport("model_infer.dll", EntryPoint = "Det_ModelPreTest")]  // PaddleDetection Model reasoning method
-   //     public static extern int Det_ModelPreTest(byte[] img, int W, int H, int C, IntPtr output, int[] BoxesNum, ref byte label);
+        //     [DllImport("model_infer.dll", EntryPoint = "Det_ModelPreTest")]  // PaddleDetection Model reasoning method
+        //     public static extern int Det_ModelPreTest(byte[] img, int W, int H, int C, IntPtr output, int[] BoxesNum, ref byte label);
 
         /**********************************************************************/
         /******************         2.Statement of control parameters          *****************/
@@ -69,8 +69,8 @@ namespace xbDefectDect
 
         byte[] paddlex_model_type = new byte[10];  // det/seg/clas + \0
         bool paddlex_doing = false;
-        string[] img_type = {"jpg", "png", "JPEG", "jpeg"};
-
+        string[] img_type = { "jpg", "png", "bmp", "jpeg" };
+        private List<string> classNames = new List<string>();  // 存储从文件读取的类别名称
         public int has_model_init = 0;
         static int is_infer = 0;
         static int isBreakInfer = 0;
@@ -87,24 +87,46 @@ namespace xbDefectDect
         FileOper fo = new FileOper();
 
         bool bFromMainWind = true;   //从主窗口启动
-     //   bool bDLModelInit = false;
+                                     //   bool bDLModelInit = false;
         /**********************************************************************/
         /**************         3.Form loading and closing implementation          ***************/
         /**********************************************************************/
-
+        /// <summary>
+        /// 从 predefined_classes.txt 读取类别名称，每行一个类别
+        /// </summary>
+        private void LoadClassNames(string filePath)
+        {
+            classNames.Clear();
+            if (File.Exists(filePath))
+            {
+                var lines = File.ReadAllLines(filePath);
+                foreach (var line in lines)
+                {
+                    string trim = line.Trim();
+                    if (!string.IsNullOrEmpty(trim))
+                        classNames.Add(trim);
+                }
+            }
+            else
+            {
+                // 如果文件不存在，可以记录日志或使用默认列表
+                MessageBox.Show($"类别文件未找到: {filePath}，将使用默认类别", "警告");
+                classNames = new List<string> { "aotu", "diaoqi", "sunhaui", "true" };
+            }
+        }
         private void InitDL(DLParam dlParam)
         {
             int iRet = -1;
             if (Directory.Exists(dlParam.modelPath))
             {
-               // initStatus.bDLModelPathExist = true;
+                // initStatus.bDLModelPathExist = true;
                 try
                 {
                     iRet = cdl.InitDL(dlParam);
-                    if (iRet !=0)
+                    if (iRet != 0)
                     {
                         has_model_init = 0;
-                     //   MessageBox.Show(iRet.ToString());
+                        //   MessageBox.Show(iRet.ToString());
                     }
                     else
                     {
@@ -114,16 +136,16 @@ namespace xbDefectDect
                 catch
                 {
                     has_model_init = 0;
-                     
+
                 }
-                
+
             }
             else
             {
                 has_model_init = 0;
-                 
+
             }
-            if(has_model_init==1)
+            if (has_model_init == 1)
             {
                 StripStatus_modelStatus.Text = "模型已初始化";
                 StripStatus_modelStatus.ForeColor = Color.Green;
@@ -135,8 +157,13 @@ namespace xbDefectDect
                 StripStatus_modelStatus.ForeColor = Color.Red;
                 StripStatus_ModelFile.Text = "--";
             }
-           
-           
+
+            if (has_model_init == 1)
+            {
+                // 模型初始化成功后，读取类别文件（通常与模型文件在同一目录）
+                string classFilePath = Path.Combine(Path.GetDirectoryName(dlParam.modelPath), "inference_model\\predefined_classes.txt");
+                LoadClassNames(classFilePath);
+            }
         }
 
         public FrmDL()
@@ -152,7 +179,7 @@ namespace xbDefectDect
             InitializeComponent();
             imgfiles = new List<string>(strCurFile);
 
-        //    img_dir_load_flag = 1;
+            //    img_dir_load_flag = 1;
             HOperatorSet.ReadImage(out objTmp, imgfiles[0]);
             ci8gImageFile = HObj2CogImage(objTmp);
             cogRDSource.Image = ci8gImageFile;
@@ -169,7 +196,7 @@ namespace xbDefectDect
             cmb_ModelType.Text = cup.p_DL.modelType;
 
 
-          //  cmb_ModelType.SelectedIndex = 0;
+            //  cmb_ModelType.SelectedIndex = 0;
             cmb_Thre.SelectedIndex = 5;
             numericUpDown1.Value = 20;
 
@@ -179,7 +206,7 @@ namespace xbDefectDect
             txtPath.Text = strSavePath;
             if (!bFromMainWind)
             {
-                
+
                 InitDL(cup.p_DL);
                 if (has_model_init != 1)
                 {
@@ -198,7 +225,7 @@ namespace xbDefectDect
             //模型已经初始化并且并非从主程序中启动，则关闭时销毁模型
             if (has_model_init == 1 && !bFromMainWind)
             {
-               DestructModel();
+                DestructModel();
             }
         }
 
@@ -208,15 +235,15 @@ namespace xbDefectDect
         /**********************************************************************/
         int comboBox_clicked = 0;
         int comboBox1_last_index = 0;
-         
+
         int last_gpu_id = 0;
-        int gpu_id_done = 0; 
-        int comboBox2_last_index = 0; 
+        int gpu_id_done = 0;
+        int comboBox2_last_index = 0;
         int comboBox3_last_index = 0;
-     
+
         // Continuous reasoning interval length - picture folder reasoning
-      
- 
+
+
 
         // Load a single image
         HObject objTmp;
@@ -224,7 +251,7 @@ namespace xbDefectDect
         CogImage8Root cogImage8RootR = new CogImage8Root();
         CogImage8Root cogImage8RootG = new CogImage8Root();
         CogImage8Root cogImage8RootB = new CogImage8Root();
-        CogImage24PlanarColor cogImage = new CogImage24PlanarColor(3072,2048);
+        CogImage24PlanarColor cogImage = new CogImage24PlanarColor(3072, 2048);
         Mat[] matRGB = new Mat[3];
         private CogImage8Grey HObj2CogImage(HObject image)
         {
@@ -241,9 +268,9 @@ namespace xbDefectDect
         }
         private CogImage24PlanarColor Mat2CogImage(Mat image)
         {
- 
-             matRGB = image.Split();
-             
+
+            matRGB = image.Split();
+
             // image.
             try
             {
@@ -252,7 +279,7 @@ namespace xbDefectDect
                 cogImage8RootB.Initialize((Int32)image.Width, (Int32)image.Height, (IntPtr)matRGB[0].Data, (Int32)image.Width, null);
                 //  CogImage8Grey cogImage8Grey = new CogImage8Grey();
                 // cogImage.SetRoots();
-               // image.Ptr(0,0,0)
+                // image.Ptr(0,0,0)
                 cogImage.SetRoots(cogImage8RootR, cogImage8RootG, cogImage8RootB);
             }
             catch
@@ -286,7 +313,7 @@ namespace xbDefectDect
             ICogImage ci = ReadCogImage(img_file);
 
             int imgWidth = 0, imgHeight = 0;
-            
+
 
             if (ci is CogImage8Grey grayImg)
             {
@@ -369,22 +396,18 @@ namespace xbDefectDect
                 float right = resultlist[i * 6 + 4];
                 float down = resultlist[i * 6 + 5];
 
-                if (score > det_threshold)
+                if (score > det_threshold && labelindex >= 0 && labelindex < classNames.Count)
                 {
+                    // ✅ 先创建矩形对象
                     CogRectangleAffine cogRect = new CogRectangleAffine();
                     cogRect.CenterX = left + right / 2;
                     cogRect.CenterY = top + down / 2;
                     cogRect.SideXLength = right;
                     cogRect.SideYLength = down;
+
                     dlRes.AL_Rect.Add(cogRect);
                     dlRes.AL_score.Add(score);
-
-                    string labelName = predict_Label_List[i];
-                    if (labelName == "liewen") dlRes.AL_Type.Add(1);
-                    else if (labelName == "posz") dlRes.AL_Type.Add(2);
-                    else if (labelName == "liewenWP") dlRes.AL_Type.Add(3);
-                    else if (labelName == "poszWP") dlRes.AL_Type.Add(4);
-                    else if (labelName == "flaking") dlRes.AL_Type.Add(5);
+                    dlRes.AL_Type.Add(labelindex + 1);   // 根据实际映射调整
                 }
             }
 
@@ -514,16 +537,16 @@ namespace xbDefectDect
             int raise_ex_flag = 0;
             try
             {
-              //  HTuple  width = Width, height = Height;  //hpoint, type,
+                //  HTuple  width = Width, height = Height;  //hpoint, type,
 
-                for(iInferIndex= iLastIndex; iInferIndex<imgfiles.Count; iInferIndex++)
+                for (iInferIndex = iLastIndex; iInferIndex < imgfiles.Count; iInferIndex++)
                 {
-                    if(isBreakInfer==1  )
+                    if (isBreakInfer == 1)
                     {
                         iLastIndex = 0;
                         break;
                     }
-                    if ( isPauseInfer == 1)
+                    if (isPauseInfer == 1)
                     {
                         iLastIndex = iInferIndex;
                         break;
@@ -531,85 +554,122 @@ namespace xbDefectDect
 
                     string img_file = imgfiles[iInferIndex];
                     inferSetImage(img_file);
-                } 
+                }
             }
             catch (Exception e)
             {
                 raise_ex_flag = 1;
 
-              //  Action<String> AsyncUIDelegate = delegate (string n) { label7.Text = n; };
-              //  label7.Invoke(AsyncUIDelegate, new object[] { "0.00" });
+                //  Action<String> AsyncUIDelegate = delegate (string n) { label7.Text = n; };
+                //  label7.Invoke(AsyncUIDelegate, new object[] { "0.00" });
                 MessageBox.Show("1.请检查模型文件与模型类型是否一致!\n2.内存溢出，yml预处理有误，图片格式确保为1/3通道...", "模型运行失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             isBreakInfer = 0;
             isPauseInfer = 0;
 
-            is_infer = 0; 
-            infer_many_img_flag = 0; 
-            if (raise_ex_flag == 0) MessageBox.Show("图片文件夹推理完成!"); 
+            is_infer = 0;
+            infer_many_img_flag = 0;
+            if (raise_ex_flag == 0) MessageBox.Show("图片文件夹推理完成!");
         }
 
         private void AddGrap(CogRecordDisplay cogDisp, DLResult dlRes)
         {
-            string strGroupName="";
             cogDisp.InteractiveGraphics.Clear();
-
-            //创建文本
-            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
-
-            //     ResultLabel.Text = "Label Test,添加文本测试";
+            // 定义颜色数组（可根据需要扩充）
+            CogColorConstants[] colors = new CogColorConstants[]
+            {
+        CogColorConstants.Red,
+        CogColorConstants.Green,
+        CogColorConstants.Blue,
+        CogColorConstants.Yellow,
+        CogColorConstants.Purple,
+        CogColorConstants.Orange,
+                // ... 更多
+            };
 
             for (int i = 0; i < dlRes.AL_Rect.Count; i++)
             {
-                if (dlRes.AL_Type[i] == 1)
-                {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Red;
-                    strGroupName = "liewen";
-                    ResultLabel.Color = CogColorConstants.Red;
-                    ResultLabel.Font = new Font("arial", 10);
-                }
-                else if (dlRes.AL_Type[i] == 2)
-                {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "posz";
-                    ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
-                }
-                else if (dlRes.AL_Type[i] == 3)
-                {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Green;
-                    strGroupName = "liewenWP";
-                    ResultLabel.Color = CogColorConstants.Green;
-                    ResultLabel.Font = new Font("arial", 10);
-                }
-                else if (dlRes.AL_Type[i] == 4)
-                {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.DarkGreen;
-                    strGroupName = "poszWP";
-                    ResultLabel.Color = CogColorConstants.DarkGreen; 
-                    ResultLabel.Font = new Font("arial", 10);
-                }
-                else if (dlRes.AL_Type[i] == 5)
-                {
-                    dlRes.AL_Rect[i].Color = CogColorConstants.Purple;
-                    strGroupName = "flaking";
-                    ResultLabel.Color = CogColorConstants.Purple; 
-                    ResultLabel.Font = new Font("arial", 10);
-                }
-                //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
-                ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
-                ResultLabel.Y = dlRes.AL_Rect[i].CornerXY;
-                ResultLabel.Text = strGroupName + ":" + Math.Round(dlRes.AL_score[i], 2).ToString();
-                strGroupName += i;
-                cogDisp.InteractiveGraphics.Add(dlRes.AL_Rect[i], strGroupName, false);
-                cogDisp.InteractiveGraphics.Add(ResultLabel, strGroupName, false);
-                ResultLabel = new CogGraphicLabel();
+                int typeId = dlRes.AL_Type[i];
+                // 确保索引有效，若超出则使用默认颜色
+                CogColorConstants color = (typeId > 0 && typeId <= colors.Length) ? colors[typeId - 1] : CogColorConstants.Black;
+                dlRes.AL_Rect[i].Color = color;
+
+                // 创建文本标签
+                CogGraphicLabel label = new CogGraphicLabel();
+                label.Color = color;
+                label.Font = new Font("arial", 10);
+                label.X = dlRes.AL_Rect[i].CornerYX;
+                label.Y = dlRes.AL_Rect[i].CornerXY;
+                // 显示类别名称（若需要）
+                string className = (typeId > 0 && typeId <= classNames.Count) ? classNames[typeId - 1] : "unknown";
+                label.Text = $"{className}:{dlRes.AL_score[i]:F2}";
+
+                string groupName = $"Result_{i}";
+                cogDisp.InteractiveGraphics.Add(dlRes.AL_Rect[i], groupName, false);
+                cogDisp.InteractiveGraphics.Add(label, groupName, false);
             }
         }
-         
+        /* private void AddGrap(CogRecordDisplay cogDisp, DLResult dlRes)
+         {
+             string strGroupName = "";
+             cogDisp.InteractiveGraphics.Clear();
 
-       
+             //创建文本
+             CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
+
+             //     ResultLabel.Text = "Label Test,添加文本测试";
+
+             for (int i = 0; i < dlRes.AL_Rect.Count; i++)
+             {
+                 if (dlRes.AL_Type[i] == 1)
+                 {
+                     dlRes.AL_Rect[i].Color = CogColorConstants.Red;
+                     strGroupName = "liewen";
+                     ResultLabel.Color = CogColorConstants.Red;
+                     ResultLabel.Font = new Font("arial", 10);
+                 }
+                 else if (dlRes.AL_Type[i] == 2)
+                 {
+                     dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                     strGroupName = "posz";
+                     ResultLabel.Color = CogColorConstants.Green;
+                     ResultLabel.Font = new Font("arial", 10);
+                 }
+                 else if (dlRes.AL_Type[i] == 3)
+                 {
+                     dlRes.AL_Rect[i].Color = CogColorConstants.Green;
+                     strGroupName = "liewenWP";
+                     ResultLabel.Color = CogColorConstants.Green;
+                     ResultLabel.Font = new Font("arial", 10);
+                 }
+                 else if (dlRes.AL_Type[i] == 4)
+                 {
+                     dlRes.AL_Rect[i].Color = CogColorConstants.DarkGreen;
+                     strGroupName = "poszWP";
+                     ResultLabel.Color = CogColorConstants.DarkGreen;
+                     ResultLabel.Font = new Font("arial", 10);
+                 }
+                 else if (dlRes.AL_Type[i] == 5)
+                 {
+                     dlRes.AL_Rect[i].Color = CogColorConstants.Purple;
+                     strGroupName = "flaking";
+                     ResultLabel.Color = CogColorConstants.Purple;
+                     ResultLabel.Font = new Font("arial", 10);
+                 }
+                 //    dlRes.AL_Rect[i].TipText = dlRes.AL_score[i].ToString();
+                 ResultLabel.X = dlRes.AL_Rect[i].CornerYX;
+                 ResultLabel.Y = dlRes.AL_Rect[i].CornerXY;
+                 ResultLabel.Text = strGroupName + ":" + Math.Round(dlRes.AL_score[i], 2).ToString();
+                 strGroupName += i;
+                 cogDisp.InteractiveGraphics.Add(dlRes.AL_Rect[i], strGroupName, false);
+                 cogDisp.InteractiveGraphics.Add(ResultLabel, strGroupName, false);
+                 ResultLabel = new CogGraphicLabel();
+             }
+         }*/
+
+
+
         // RGB value collection of pseudo color map (color_map)
         private byte[] get_color_map_list(int num_classes = 256)
         {
@@ -661,9 +721,9 @@ namespace xbDefectDect
         {
             try
             {
- 
+
                 DirectoryInfo fdir = new DirectoryInfo(path);
-            //    FileInfo[] file = fdir.GetFiles(extName, SearchOption.AllDirectories);
+                //    FileInfo[] file = fdir.GetFiles(extName, SearchOption.AllDirectories);
                 FileInfo[] file = fdir.GetFiles();
                 if (file.Length != 0)
                 {
@@ -751,21 +811,21 @@ namespace xbDefectDect
             bSavePosiXml = checkBox3.Checked;
         }
 
-      
-     
+
+
         protected override bool ProcessDialogKey(Keys keyData)
         {
             if (imgfiles.Count < 1)
-                return base.ProcessDialogKey(keyData);  
+                return base.ProcessDialogKey(keyData);
 
             if (keyData == Keys.A || keyData == Keys.Left)
-            {                
+            {
                 isBreakInfer = 1;
                 iInferIndex--;
                 if (iInferIndex < 0)
                     iInferIndex = imgfiles.Count - 1;
                 inferSetImage(imgfiles[iInferIndex]);
-             
+
             }
             else if (keyData == Keys.D || keyData == Keys.Right)
             {
@@ -774,10 +834,10 @@ namespace xbDefectDect
                 if (iInferIndex > imgfiles.Count - 1)
                     iInferIndex = 0;
                 inferSetImage(imgfiles[iInferIndex]);
-             
+
             }
 
-      //      labelIndex.Text = (iInferIndex + 1) + "//" + imgfiles.Count +";     "+ imgfiles[iInferIndex];
+            //      labelIndex.Text = (iInferIndex + 1) + "//" + imgfiles.Count +";     "+ imgfiles[iInferIndex];
             return base.ProcessDialogKey(keyData);
         }
 
@@ -801,8 +861,8 @@ namespace xbDefectDect
 
             dlParam.modelType = model_type;
             dlParam.bUseGPU = use_gpu;
-            dlParam.gpuID= gpu_id;
-            InitDL(dlParam); 
+            dlParam.gpuID = gpu_id;
+            InitDL(dlParam);
         }
 
         private void menu_Model_Destroy_Click(object sender, EventArgs e)
@@ -822,7 +882,7 @@ namespace xbDefectDect
                     has_model_init = 0;
                 }
 
-              //  button1.Text = "初始化模型";
+                //  button1.Text = "初始化模型";
             }
             else
             {
@@ -838,7 +898,7 @@ namespace xbDefectDect
             {
                 StripStatus_modelStatus.Text = "模型未初始化";
                 StripStatus_modelStatus.ForeColor = Color.Red;
-              //  StripStatus_ModelFile.Text = "--";
+                //  StripStatus_ModelFile.Text = "--";
             }
         }
 
@@ -850,7 +910,7 @@ namespace xbDefectDect
                 return;
             }
 
-          //  int img_dir_load_flag = 0;
+            //  int img_dir_load_flag = 0;
             string img_dir_path = null;
             //  openFileDialog1.D = "请选择模型文件";
             openFileDialog1.Multiselect = true;
@@ -893,7 +953,7 @@ namespace xbDefectDect
 
             }
         }
-        
+
         int img_dir_load_flag = 0;
         private void menu_File_LoadDir_Click(object sender, EventArgs e)
         {
@@ -903,7 +963,7 @@ namespace xbDefectDect
                 return;
             }
 
-           
+
             string img_dir_path = null;
             folderBrowserDialog1.Description = "请选择模型文件夹";
             DialogResult folder = folderBrowserDialog1.ShowDialog();
@@ -1130,7 +1190,7 @@ namespace xbDefectDect
 
         private void cmbThre_SelectedIndexChanged(object sender, EventArgs e)
         {
-           
+
         }
 
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
@@ -1144,7 +1204,6 @@ namespace xbDefectDect
             int dir_load_flag = 0;
             string dir_path = null;
             folderBrowserDialog1.Description = "请选择模型文件夹";
-            folderBrowserDialog1.SelectedPath = cup.p_DL.modelPath;
             DialogResult folder = folderBrowserDialog1.ShowDialog();
             if (folder == DialogResult.OK || folder == DialogResult.Yes)
             {
@@ -1168,16 +1227,16 @@ namespace xbDefectDect
             int width = this.Width;
             int height = this.Height;
             int xzHeight = height - 100;
-            cogRDSource.Width = (width - groupBox1.Width- 40)/ 2 ;
+            cogRDSource.Width = (width - groupBox1.Width - 40) / 2;
             cogRDTarget.Width = cogRDSource.Width;
             cogRDSource.Height = xzHeight;
             cogRDTarget.Height = xzHeight;
             cogRDSource.Left = 0; cogRDSource.Top = 30;
             cogRDTarget.Left = cogRDSource.Right + 10; cogRDTarget.Top = cogRDSource.Top;
-           
+
 
             double dRatio = (double)cogRDTarget.Width / cogRDTarget.Height;
-        
+
             if (img_dir_load_flag == 1)
             {
                 cogRDTarget.Fit();
@@ -2026,16 +2085,16 @@ namespace xbDefectDect
           */
         private void menu_Cam_1_Click(object sender, EventArgs e)
         {
-           /* selectedCameraIndex = 0;
-            bool success = InitializeCamera(selectedCameraIndex); 
-            if (success)
-            {
-                MessageBox.Show("相机初始化成功", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }*/
+            /* selectedCameraIndex = 0;
+             bool success = InitializeCamera(selectedCameraIndex); 
+             if (success)
+             {
+                 MessageBox.Show("相机初始化成功", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+             }*/
         }
-    
-    
- 
+
+
+
 
         private void menu_Cam_2_Click(object sender, EventArgs e)
         {
@@ -2074,6 +2133,6 @@ namespace xbDefectDect
         {
 
         }
-        
+
     }
 }
