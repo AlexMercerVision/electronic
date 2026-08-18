@@ -418,6 +418,7 @@ namespace VisionApplication
             AddLog();
         }
         //初始化深度学习模型
+        //初始化深度学习模型
         private void InitDL()
         {
             int iRet = -1;
@@ -427,23 +428,41 @@ namespace VisionApplication
                 rts.initStatus.bDLModelPathExist = true;
                 try
                 {
-                   iRet = cdl.InitDL(cup.p_DL);
+                    iRet = cdl.InitDL(cup.p_DL);
                     if (iRet == -1)
                     {
                         rts.initStatus.bDLModelInit = false;
                         cup.p_VPPRTP.bDeepInfer = false;
-                        menuTask_Predict.Checked = false;
+                        menuTask_DeepInfer.Checked = false;
                         operLog.strFailReason = "深度推理模型初始化异常";
                     }
                     else
                     {
                         rts.initStatus.bDLModelInit = true;
+                        // ========== 新增：加载类别文件并设置给 cdl ==========
+                        string classFilePath = Path.Combine(cup.p_DL.modelPath, "inference_model", "predefined_classes.txt");
+                        if (!File.Exists(classFilePath))
+                            classFilePath = Path.Combine(cup.p_DL.modelPath, "predefined_classes.txt");
+                        if (File.Exists(classFilePath))
+                        {
+                            List<string> classNames = File.ReadAllLines(classFilePath)
+                                .Where(line => !string.IsNullOrWhiteSpace(line))
+                                .Select(line => line.Trim())
+                                .ToList();
+                            cdl.SetClassNames(classNames);
+                        }
+                        else
+                        {
+                            operLog.iEventStatus = -1;
+                            operLog.strFailReason = "未找到类别文件 predefined_classes.txt";
+                            AddLog();
+                        }
                     }
                 }
                 catch
                 {
                     cup.p_VPPRTP.bDeepInfer = false;
-                    menuTask_Predict.Checked = false;
+                    menuTask_DeepInfer.Checked = false;
                     operLog.iEventStatus = -1;
                     operLog.strFailReason = "深度推理模型初始化异常";
 
@@ -454,7 +473,7 @@ namespace VisionApplication
             {
                 cup.p_VPPRTP.bDeepInfer = false;
                 rts.initStatus.bDLModelPathExist = false;
-                menuTask_Predict.Checked = false;
+                menuTask_DeepInfer.Checked = false;
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = "未找到深度推理模型文件";
                 // operLog.strOperEvent = "查找深度学习模型文件";
@@ -2277,7 +2296,7 @@ namespace VisionApplication
         }
 
        
-
+        bool bLoadLaser = false;
         private void FrmMainUI_Load(object sender, EventArgs e)
         {
 
@@ -2300,19 +2319,10 @@ namespace VisionApplication
                 LoadVPFile(false);            //VP控件初始化，加载VPP文件和VisionControl控件
 
                 iProcess = 30;
-                fw.SetProgress(30, "正在初始化视图");
-               
-
+                fw.SetProgress(30, "正在初始化视图"); 
 
                 iProcess = 40;
-                fw.SetProgress(40, "正在加载硬件驱动");
-
-               
-                /*EnsureJCZServerRunning();          // 确保 JCZServer 进程正常
-                jczPipThread = new Thread(InitJCZ);
-                jczPipThread.IsBackground = true;
-                jczPipThread.Start();*/
-
+                fw.SetProgress(40, "正在加载硬件驱动"); 
 
                 iProcess = 50;
                 fw.SetProgress(50, "正在搜索并初始化相机");
@@ -2326,13 +2336,7 @@ namespace VisionApplication
 
                 if (cup.p_VPPRTP.bDeepInfer || rts.initStatus.bVPPInit)
                 {
-                    InitVisionControl();
-                    //2025年8月26日
-                   /* alImParam[0] = new AlignImParam();
-                    alImParam[0] = new AlignImParam();
-                    vpWin.GetAlignRegion(ref alImParam[0], 0);
-                    alImParam[1] = new AlignImParam();
-                    vpWin.GetAlignRegion(ref alImParam[1], 1);*/
+                    InitVisionControl(); 
                 }
                 if (!bSucc)
                 {
@@ -3711,9 +3715,9 @@ namespace VisionApplication
 
             toolBtSta_SaveRes.Checked = cup.p_VPPRTP.bSaveRes;
             if (cup.p_VPPRTP.bDeepInfer)
-                menuTask_Predict.Checked = true;
+                menuTask_VisionInfer.Checked = true;
             else
-                menuTask_Predict.Checked = false;
+                menuTask_VisionInfer.Checked = false;
             if (cup.p_VPPRTP.bFXRestruct)
             {
                 menuTask_FXRestruct.Checked = true;
@@ -5297,41 +5301,7 @@ namespace VisionApplication
                 vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
             }
         }
-        //是否启用深度推理
-        private void menuTask_Predict_Click(object sender, EventArgs e)
-        {
-            if (!menuTask_Predict.Checked && !rts.initStatus.bDLModelInit)  //视图开启深度学习，但目前深度学习还未初始化
-            {
-                if (MessageBox.Show("需要进行深度推理初始化吗", "提示", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                {
-                    toolStrip1.Enabled = false;
-                    splitContainer1.Panel1.Enabled = false;
-                    InitDL();
-                    toolStrip1.Enabled = true;
-                    splitContainer1.Panel1.Enabled = true;
-                }
-            }
-            menuTask_Predict.Checked = !menuTask_Predict.Checked;
-            cup.p_VPPRTP.bDeepInfer = menuTask_Predict.Checked;
-            if (cup.p_VPPRTP.bDeepInfer)  //如果启用了深度推理，则不加载历史结果
-            {
-                bLoadVPRes = false;
-                menuTask_LoadRes.Checked = bLoadVPRes;
-                vpWin.bLoadVPRes = bLoadVPRes;
-            }
-
-            if (cup.p_VPPRTP.bVisionInfer)
-            {
-                vpWin.SetVPInferModel(1 + (cup.p_VPPRTP.bDeepInfer ? 1 : 0) * 10);
-            }
-            else
-            {
-                vpWin.SetVPInferModel(0 + (bLoadVPRes ? 1 : 0) * 10);
-            }
-
-            //     vpWin.ClearDeepInfer(cup.p_VPPRTP.bDeepInfer);
-            InitCheckStatus();
-        }
+       
         //直接加载结果
        
         private void menuTask_LoadRes_Click(object sender, EventArgs e)
@@ -5344,7 +5314,7 @@ namespace VisionApplication
                 cup.p_VPPRTP.bVisionInfer = false;
                 menuTask_VisionInfer.Checked = false;
                 cup.p_VPPRTP.bDeepInfer = false;
-                menuTask_Predict.Checked = false;
+                menuTask_VisionInfer.Checked = false;
             }
             if (cup.p_VPPRTP.bVisionInfer)
             {
@@ -7893,6 +7863,126 @@ namespace VisionApplication
             catch { }
         }
 
+        private void menuTask_VisionInfer_Click_1(object sender, EventArgs e)
+        {
+            if (!cup.p_VPPRTP.bVisionInfer)
+                SwitchInferenceModel(true);
+        }
+
+        private void menuTask_DeepInfer_Click(object sender, EventArgs e)
+        {
+            if (!cup.p_VPPRTP.bDeepInfer)
+                SwitchInferenceModel(false);
+        }
+        /// <summary>
+        /// 切换推理模式
+        /// </summary>
+        /// <param name="bToVisionInfer">true: 切换到视觉推理；false: 切换到深度推理</param>
+        private void SwitchInferenceModel(bool bToVisionInfer)
+        {
+            // 1. 检查当前任务是否允许切换（如连续运行、预览等）
+            if (vpWin != null && !vpWin.bMainTaskFinished)
+            {
+                MessageBox.Show("请先停止当前任务（连续运行、预览等）后再切换推理模式。", "提示");
+                return;
+            }
+
+            // 2. 如果正在实时预览，先关闭
+            if (vpWin != null && vpWin._iTaskType == 1)
+            {
+                OpenOrCloseCam(false);
+            }
+
+            // 3. 卸载当前模型
+            if (cup.p_VPPRTP.bVisionInfer)
+            {
+                // 从视觉推理切换出去：卸载 VPP 引擎
+                if (vpWin != null)
+                {
+                    vpWin.UnloadVisionInfer();  // 需要实现此方法，释放 mJM
+                }
+                rts.initStatus.bVPPInit = false;
+            }
+            else if (cup.p_VPPRTP.bDeepInfer)
+            {
+                // 从深度推理切换出去：卸载深度学习模型
+                cdl.CloseDL();
+                rts.initStatus.bDLModelInit = false;
+            }
+
+            // 4. 更新配置
+            cup.p_VPPRTP.bVisionInfer = bToVisionInfer;
+            cup.p_VPPRTP.bDeepInfer = !bToVisionInfer;
+            SaveUserParam();
+
+            // 5. 加载新模型
+            if (bToVisionInfer)
+            {
+                // 加载视觉推理模型
+                LoadVPFile(true);   // 确保 vpWin 存在并加载 VPP
+                /* if (vpWin == null || string.IsNullOrEmpty(vpWin.LoadedVppFilename))  // 不直接访问私有字段 mJM，改为检查已加载的 VPP 文件名
+                 {
+
+                 }
+                 else
+                 {
+                     vpWin.ReLoadVisionControl(cup.p_Paf.strVPPFilePath);
+                 }*/
+                if (rts.initStatus.bVPPInit)
+                {
+                    InitVisionControl();
+                    vpWin.SetVPInferModel(true, false);
+                }
+                else
+                {
+                    MessageBox.Show("视觉推理模型加载失败，请检查 VPP 文件路径！", "错误");
+                }
+                // UI 更新
+                btFunSet.Visible = true;
+                bLoadVPRes = false;
+                menuTask_LoadRes.Checked = false;
+                vpWin.bLoadVPRes = false;
+            }
+            else
+            {
+                // 加载深度推理模型
+                if (vpWin == null)
+                {
+                    vpWin = new VisionControl.VisionControl();
+                    splitContainer3.Panel1.Controls.Add(vpWin);
+                    bVPWinAttached = true;
+                    vpWin.InitBG();
+                }
+                // 如果深度学习未初始化则初始化
+                if (!rts.initStatus.bDLModelInit)
+                {
+                    toolStrip1.Enabled = false;
+                    splitContainer1.Panel1.Enabled = false;
+                    InitDL();
+                    toolStrip1.Enabled = true;
+                    splitContainer1.Panel1.Enabled = true;
+                }
+                if (rts.initStatus.bDLModelInit)
+                {
+                    vpWin.SetVPInferModel(false, true);
+                    btFunSet.Visible = true;
+                    bLoadVPRes = false;
+                    menuTask_LoadRes.Checked = false;
+                    vpWin.bLoadVPRes = false;
+                }
+                else
+                {
+                    MessageBox.Show("深度推理模型加载失败，请检查模型路径！", "错误");
+                }
+            }
+
+            // 6. 更新界面状态
+            InitCheckStatus();
+            // 更新菜单勾选（确保与 cup 一致）
+            menuTask_VisionInfer.Checked = cup.p_VPPRTP.bVisionInfer;
+            menuTask_DeepInfer.Checked = cup.p_VPPRTP.bDeepInfer;
+            ViewLayout();
+        }
         private void btSaveVPP_Click(object sender, EventArgs e)
         {
             if (bVPPParamChanged)

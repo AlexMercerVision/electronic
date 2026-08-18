@@ -1144,6 +1144,7 @@ namespace xbDefectDect
             int dir_load_flag = 0;
             string dir_path = null;
             folderBrowserDialog1.Description = "请选择模型文件夹";
+            folderBrowserDialog1.SelectedPath = cup.p_DL.modelPath;
             DialogResult folder = folderBrowserDialog1.ShowDialog();
             if (folder == DialogResult.OK || folder == DialogResult.Yes)
             {

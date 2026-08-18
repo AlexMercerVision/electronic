@@ -81,12 +81,6 @@ namespace VisionApplication
             this.label102 = new System.Windows.Forms.Label();
             this.label78 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.tabBoard = new System.Windows.Forms.TabPage();
-            this.groupBox15 = new System.Windows.Forms.GroupBox();
-            this.cmbBoardB = new System.Windows.Forms.ComboBox();
-            this.cmbBoardA = new System.Windows.Forms.ComboBox();
-            this.label101 = new System.Windows.Forms.Label();
-            this.label100 = new System.Windows.Forms.Label();
             this.tabSer = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.lblSerStationB = new System.Windows.Forms.Label();
@@ -161,22 +155,6 @@ namespace VisionApplication
             this.label53 = new System.Windows.Forms.Label();
             this.label57 = new System.Windows.Forms.Label();
             this.tbExportPath = new System.Windows.Forms.TextBox();
-            this.tabImItem = new System.Windows.Forms.TabPage();
-            this.cmbRecordType = new System.Windows.Forms.ComboBox();
-            this.txtFilter = new System.Windows.Forms.TextBox();
-            this.btLoad = new System.Windows.Forms.Button();
-            this.btSave = new System.Windows.Forms.Button();
-            this.btFilter = new System.Windows.Forms.Button();
-            this.chkHoldMainItem = new System.Windows.Forms.CheckBox();
-            this.chkAll = new System.Windows.Forms.CheckBox();
-            this.btRemove = new System.Windows.Forms.Button();
-            this.btAdd = new System.Windows.Forms.Button();
-            this.btMoveDown = new System.Windows.Forms.Button();
-            this.btMoveUp = new System.Windows.Forms.Button();
-            this.lstBox_GUIRecord = new System.Windows.Forms.ListBox();
-            this.label19 = new System.Windows.Forms.Label();
-            this.label18 = new System.Windows.Forms.Label();
-            this.chkList_SubRecordsShow = new System.Windows.Forms.CheckedListBox();
             this.tabRunTime = new System.Windows.Forms.TabPage();
             this.groupBox13 = new System.Windows.Forms.GroupBox();
             this.chkUseFX = new System.Windows.Forms.CheckBox();
@@ -294,6 +272,12 @@ namespace VisionApplication
             this.txt_greyAbnormArea = new System.Windows.Forms.TextBox();
             this.txt_FXAbnormArea1 = new System.Windows.Forms.TextBox();
             this.txt_greyAbnormCount = new System.Windows.Forms.TextBox();
+            this.tabBoard = new System.Windows.Forms.TabPage();
+            this.groupBox15 = new System.Windows.Forms.GroupBox();
+            this.cmbBoardB = new System.Windows.Forms.ComboBox();
+            this.cmbBoardA = new System.Windows.Forms.ComboBox();
+            this.label101 = new System.Windows.Forms.Label();
+            this.label100 = new System.Windows.Forms.Label();
             this.tabFX = new System.Windows.Forms.TabPage();
             this.cmbLightSource = new System.Windows.Forms.ComboBox();
             this.tbOffset = new System.Windows.Forms.TextBox();
@@ -320,6 +304,22 @@ namespace VisionApplication
             this.label8 = new System.Windows.Forms.Label();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.tabImItem = new System.Windows.Forms.TabPage();
+            this.cmbRecordType = new System.Windows.Forms.ComboBox();
+            this.txtFilter = new System.Windows.Forms.TextBox();
+            this.btLoad = new System.Windows.Forms.Button();
+            this.btSave = new System.Windows.Forms.Button();
+            this.btFilter = new System.Windows.Forms.Button();
+            this.chkHoldMainItem = new System.Windows.Forms.CheckBox();
+            this.chkAll = new System.Windows.Forms.CheckBox();
+            this.btRemove = new System.Windows.Forms.Button();
+            this.btAdd = new System.Windows.Forms.Button();
+            this.btMoveDown = new System.Windows.Forms.Button();
+            this.btMoveUp = new System.Windows.Forms.Button();
+            this.lstBox_GUIRecord = new System.Windows.Forms.ListBox();
+            this.label19 = new System.Windows.Forms.Label();
+            this.label18 = new System.Windows.Forms.Label();
+            this.chkList_SubRecordsShow = new System.Windows.Forms.CheckedListBox();
             this.tabBlow = new System.Windows.Forms.TabPage();
             this.chkBlowUsed = new System.Windows.Forms.CheckBox();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
@@ -349,15 +349,12 @@ namespace VisionApplication
             this.tabLine.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).BeginInit();
             this.tabCam.SuspendLayout();
-            this.tabBoard.SuspendLayout();
-            this.groupBox15.SuspendLayout();
             this.tabSer.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.tabPath.SuspendLayout();
             this.groupBox11.SuspendLayout();
             this.groupPath.SuspendLayout();
-            this.tabImItem.SuspendLayout();
             this.tabRunTime.SuspendLayout();
             this.groupBox13.SuspendLayout();
             this.groupBox14.SuspendLayout();
@@ -371,6 +368,8 @@ namespace VisionApplication
             this.groupBox8.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.tabBoard.SuspendLayout();
+            this.groupBox15.SuspendLayout();
             this.tabFX.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.num_Slants4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.num_Tilts4)).BeginInit();
@@ -382,6 +381,7 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.num_Tilts1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.tabImItem.SuspendLayout();
             this.tabBlow.SuspendLayout();
             this.groupBox10.SuspendLayout();
             this.groupBox9.SuspendLayout();
@@ -992,71 +992,6 @@ namespace VisionApplication
             this.label1.Size = new System.Drawing.Size(60, 14);
             this.label1.TabIndex = 0;
             this.label1.Text = "A面工位";
-            // 
-            // tabBoard
-            // 
-            this.tabBoard.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
-            this.tabBoard.Controls.Add(this.groupBox15);
-            this.tabBoard.Location = new System.Drawing.Point(4, 22);
-            this.tabBoard.Name = "tabBoard";
-            this.tabBoard.Size = new System.Drawing.Size(795, 494);
-            this.tabBoard.TabIndex = 10;
-            this.tabBoard.Text = "板卡分配";
-            // 
-            // groupBox15
-            // 
-            this.groupBox15.Controls.Add(this.cmbBoardB);
-            this.groupBox15.Controls.Add(this.cmbBoardA);
-            this.groupBox15.Controls.Add(this.label101);
-            this.groupBox15.Controls.Add(this.label100);
-            this.groupBox15.Location = new System.Drawing.Point(24, 29);
-            this.groupBox15.Name = "groupBox15";
-            this.groupBox15.Size = new System.Drawing.Size(400, 120);
-            this.groupBox15.TabIndex = 0;
-            this.groupBox15.TabStop = false;
-            this.groupBox15.Text = "板卡分配";
-            // 
-            // cmbBoardB
-            // 
-            this.cmbBoardB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbBoardB.FormattingEnabled = true;
-            this.cmbBoardB.Items.AddRange(new object[] {
-            "板卡1",
-            "板卡2"});
-            this.cmbBoardB.Location = new System.Drawing.Point(116, 72);
-            this.cmbBoardB.Name = "cmbBoardB";
-            this.cmbBoardB.Size = new System.Drawing.Size(150, 20);
-            this.cmbBoardB.TabIndex = 3;
-            // 
-            // cmbBoardA
-            // 
-            this.cmbBoardA.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbBoardA.FormattingEnabled = true;
-            this.cmbBoardA.Items.AddRange(new object[] {
-            "板卡1",
-            "板卡2"});
-            this.cmbBoardA.Location = new System.Drawing.Point(116, 32);
-            this.cmbBoardA.Name = "cmbBoardA";
-            this.cmbBoardA.Size = new System.Drawing.Size(150, 20);
-            this.cmbBoardA.TabIndex = 2;
-            // 
-            // label101
-            // 
-            this.label101.AutoSize = true;
-            this.label101.Location = new System.Drawing.Point(18, 75);
-            this.label101.Name = "label101";
-            this.label101.Size = new System.Drawing.Size(77, 12);
-            this.label101.TabIndex = 1;
-            this.label101.Text = "B面工位板卡:";
-            // 
-            // label100
-            // 
-            this.label100.AutoSize = true;
-            this.label100.Location = new System.Drawing.Point(18, 35);
-            this.label100.Name = "label100";
-            this.label100.Size = new System.Drawing.Size(77, 12);
-            this.label100.TabIndex = 0;
-            this.label100.Text = "A面工位板卡:";
             // 
             // tabSer
             // 
@@ -1840,185 +1775,6 @@ namespace VisionApplication
             this.tbExportPath.TabIndex = 1;
             this.tbExportPath.Visible = false;
             // 
-            // tabImItem
-            // 
-            this.tabImItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
-            this.tabImItem.Controls.Add(this.cmbRecordType);
-            this.tabImItem.Controls.Add(this.txtFilter);
-            this.tabImItem.Controls.Add(this.btLoad);
-            this.tabImItem.Controls.Add(this.btSave);
-            this.tabImItem.Controls.Add(this.btFilter);
-            this.tabImItem.Controls.Add(this.chkHoldMainItem);
-            this.tabImItem.Controls.Add(this.chkAll);
-            this.tabImItem.Controls.Add(this.btRemove);
-            this.tabImItem.Controls.Add(this.btAdd);
-            this.tabImItem.Controls.Add(this.btMoveDown);
-            this.tabImItem.Controls.Add(this.btMoveUp);
-            this.tabImItem.Controls.Add(this.lstBox_GUIRecord);
-            this.tabImItem.Controls.Add(this.label19);
-            this.tabImItem.Controls.Add(this.label18);
-            this.tabImItem.Controls.Add(this.chkList_SubRecordsShow);
-            this.tabImItem.Location = new System.Drawing.Point(4, 22);
-            this.tabImItem.Name = "tabImItem";
-            this.tabImItem.Size = new System.Drawing.Size(795, 494);
-            this.tabImItem.TabIndex = 3;
-            this.tabImItem.Text = "显示编辑";
-            // 
-            // cmbRecordType
-            // 
-            this.cmbRecordType.FormattingEnabled = true;
-            this.cmbRecordType.Items.AddRange(new object[] {
-            "全局图",
-            "局部图",
-            "上边缘",
-            "下边缘"});
-            this.cmbRecordType.Location = new System.Drawing.Point(536, 25);
-            this.cmbRecordType.Name = "cmbRecordType";
-            this.cmbRecordType.Size = new System.Drawing.Size(215, 20);
-            this.cmbRecordType.TabIndex = 8;
-            this.cmbRecordType.SelectedIndexChanged += new System.EventHandler(this.cmbRecordType_SelectedIndexChanged);
-            // 
-            // txtFilter
-            // 
-            this.txtFilter.Location = new System.Drawing.Point(128, 421);
-            this.txtFilter.Name = "txtFilter";
-            this.txtFilter.Size = new System.Drawing.Size(141, 21);
-            this.txtFilter.TabIndex = 6;
-            // 
-            // btLoad
-            // 
-            this.btLoad.Location = new System.Drawing.Point(591, 270);
-            this.btLoad.Name = "btLoad";
-            this.btLoad.Size = new System.Drawing.Size(75, 28);
-            this.btLoad.TabIndex = 1;
-            this.btLoad.Text = "加载";
-            this.btLoad.UseVisualStyleBackColor = true;
-            this.btLoad.Click += new System.EventHandler(this.btLoad_Click);
-            // 
-            // btSave
-            // 
-            this.btSave.Location = new System.Drawing.Point(717, 270);
-            this.btSave.Name = "btSave";
-            this.btSave.Size = new System.Drawing.Size(75, 28);
-            this.btSave.TabIndex = 1;
-            this.btSave.Text = "保存";
-            this.btSave.UseVisualStyleBackColor = true;
-            this.btSave.Click += new System.EventHandler(this.btSave_Click);
-            // 
-            // btFilter
-            // 
-            this.btFilter.Location = new System.Drawing.Point(322, 426);
-            this.btFilter.Name = "btFilter";
-            this.btFilter.Size = new System.Drawing.Size(75, 28);
-            this.btFilter.TabIndex = 1;
-            this.btFilter.Text = "过滤";
-            this.btFilter.UseVisualStyleBackColor = true;
-            this.btFilter.Click += new System.EventHandler(this.btFilter_Click);
-            // 
-            // chkHoldMainItem
-            // 
-            this.chkHoldMainItem.AutoSize = true;
-            this.chkHoldMainItem.Location = new System.Drawing.Point(6, 462);
-            this.chkHoldMainItem.Name = "chkHoldMainItem";
-            this.chkHoldMainItem.Size = new System.Drawing.Size(138, 16);
-            this.chkHoldMainItem.TabIndex = 5;
-            this.chkHoldMainItem.Text = " 保留主界面显示记录";
-            this.chkHoldMainItem.UseVisualStyleBackColor = true;
-            this.chkHoldMainItem.CheckedChanged += new System.EventHandler(this.chkAll_CheckedChanged);
-            // 
-            // chkAll
-            // 
-            this.chkAll.AutoSize = true;
-            this.chkAll.Location = new System.Drawing.Point(6, 426);
-            this.chkAll.Name = "chkAll";
-            this.chkAll.Size = new System.Drawing.Size(90, 16);
-            this.chkAll.TabIndex = 5;
-            this.chkAll.Text = "全选/全取消";
-            this.chkAll.UseVisualStyleBackColor = true;
-            this.chkAll.CheckedChanged += new System.EventHandler(this.chkAll_CheckedChanged);
-            // 
-            // btRemove
-            // 
-            this.btRemove.Location = new System.Drawing.Point(403, 191);
-            this.btRemove.Name = "btRemove";
-            this.btRemove.Size = new System.Drawing.Size(57, 33);
-            this.btRemove.TabIndex = 4;
-            this.btRemove.Text = "<=";
-            this.btRemove.UseVisualStyleBackColor = true;
-            this.btRemove.Click += new System.EventHandler(this.btRemove_Click);
-            // 
-            // btAdd
-            // 
-            this.btAdd.Location = new System.Drawing.Point(403, 150);
-            this.btAdd.Name = "btAdd";
-            this.btAdd.Size = new System.Drawing.Size(57, 35);
-            this.btAdd.TabIndex = 4;
-            this.btAdd.Text = "=>";
-            this.btAdd.UseVisualStyleBackColor = true;
-            this.btAdd.Click += new System.EventHandler(this.btAdd_Click);
-            // 
-            // btMoveDown
-            // 
-            this.btMoveDown.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveDown.BackgroundImage")));
-            this.btMoveDown.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveDown.Location = new System.Drawing.Point(516, 77);
-            this.btMoveDown.Name = "btMoveDown";
-            this.btMoveDown.Size = new System.Drawing.Size(35, 34);
-            this.btMoveDown.TabIndex = 7;
-            this.btMoveDown.UseVisualStyleBackColor = true;
-            this.btMoveDown.Click += new System.EventHandler(this.btMoveDown_Click);
-            // 
-            // btMoveUp
-            // 
-            this.btMoveUp.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveUp.BackgroundImage")));
-            this.btMoveUp.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btMoveUp.Location = new System.Drawing.Point(475, 77);
-            this.btMoveUp.Name = "btMoveUp";
-            this.btMoveUp.Size = new System.Drawing.Size(35, 34);
-            this.btMoveUp.TabIndex = 7;
-            this.btMoveUp.UseVisualStyleBackColor = true;
-            this.btMoveUp.Click += new System.EventHandler(this.btMoveUp_Click);
-            // 
-            // lstBox_GUIRecord
-            // 
-            this.lstBox_GUIRecord.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lstBox_GUIRecord.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lstBox_GUIRecord.FormattingEnabled = true;
-            this.lstBox_GUIRecord.ItemHeight = 14;
-            this.lstBox_GUIRecord.Location = new System.Drawing.Point(466, 117);
-            this.lstBox_GUIRecord.Name = "lstBox_GUIRecord";
-            this.lstBox_GUIRecord.Size = new System.Drawing.Size(326, 116);
-            this.lstBox_GUIRecord.TabIndex = 3;
-            // 
-            // label19
-            // 
-            this.label19.AutoSize = true;
-            this.label19.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label19.Location = new System.Drawing.Point(3, 12);
-            this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(103, 16);
-            this.label19.TabIndex = 2;
-            this.label19.Text = "所有记录清单";
-            // 
-            // label18
-            // 
-            this.label18.AutoSize = true;
-            this.label18.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.label18.Location = new System.Drawing.Point(426, 29);
-            this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(103, 16);
-            this.label18.TabIndex = 2;
-            this.label18.Text = "选择显示记录";
-            // 
-            // chkList_SubRecordsShow
-            // 
-            this.chkList_SubRecordsShow.FormattingEnabled = true;
-            this.chkList_SubRecordsShow.Location = new System.Drawing.Point(3, 49);
-            this.chkList_SubRecordsShow.Name = "chkList_SubRecordsShow";
-            this.chkList_SubRecordsShow.Size = new System.Drawing.Size(394, 356);
-            this.chkList_SubRecordsShow.TabIndex = 0;
-            // 
             // tabRunTime
             // 
             this.tabRunTime.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
@@ -2193,7 +1949,7 @@ namespace VisionApplication
             // chkRunVPP
             // 
             this.chkRunVPP.AutoSize = true;
-            this.chkRunVPP.Location = new System.Drawing.Point(27, 190);
+            this.chkRunVPP.Location = new System.Drawing.Point(27, 111);
             this.chkRunVPP.Name = "chkRunVPP";
             this.chkRunVPP.Size = new System.Drawing.Size(96, 16);
             this.chkRunVPP.TabIndex = 4;
@@ -2204,23 +1960,25 @@ namespace VisionApplication
             // chkConnMotionCard
             // 
             this.chkConnMotionCard.AutoSize = true;
-            this.chkConnMotionCard.Location = new System.Drawing.Point(27, 153);
+            this.chkConnMotionCard.Location = new System.Drawing.Point(27, 150);
             this.chkConnMotionCard.Name = "chkConnMotionCard";
             this.chkConnMotionCard.Size = new System.Drawing.Size(132, 16);
             this.chkConnMotionCard.TabIndex = 4;
             this.chkConnMotionCard.Text = "启动运动卡断线连接";
             this.chkConnMotionCard.UseVisualStyleBackColor = true;
+            this.chkConnMotionCard.Visible = false;
             this.chkConnMotionCard.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
             // 
             // chkConnJCZ
             // 
             this.chkConnJCZ.AutoSize = true;
-            this.chkConnJCZ.Location = new System.Drawing.Point(27, 114);
+            this.chkConnJCZ.Location = new System.Drawing.Point(27, 182);
             this.chkConnJCZ.Name = "chkConnJCZ";
             this.chkConnJCZ.Size = new System.Drawing.Size(144, 16);
             this.chkConnJCZ.TabIndex = 4;
             this.chkConnJCZ.Text = "启动激光板卡断线连接";
             this.chkConnJCZ.UseVisualStyleBackColor = true;
+            this.chkConnJCZ.Visible = false;
             this.chkConnJCZ.CheckedChanged += new System.EventHandler(this.VPPParamChanged);
             // 
             // groupBox12
@@ -3554,6 +3312,71 @@ namespace VisionApplication
             this.txt_greyAbnormCount.Text = "40";
             this.txt_greyAbnormCount.TextChanged += new System.EventHandler(this.VPPThresholdChanged);
             // 
+            // tabBoard
+            // 
+            this.tabBoard.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
+            this.tabBoard.Controls.Add(this.groupBox15);
+            this.tabBoard.Location = new System.Drawing.Point(4, 22);
+            this.tabBoard.Name = "tabBoard";
+            this.tabBoard.Size = new System.Drawing.Size(795, 494);
+            this.tabBoard.TabIndex = 10;
+            this.tabBoard.Text = "板卡分配";
+            // 
+            // groupBox15
+            // 
+            this.groupBox15.Controls.Add(this.cmbBoardB);
+            this.groupBox15.Controls.Add(this.cmbBoardA);
+            this.groupBox15.Controls.Add(this.label101);
+            this.groupBox15.Controls.Add(this.label100);
+            this.groupBox15.Location = new System.Drawing.Point(24, 29);
+            this.groupBox15.Name = "groupBox15";
+            this.groupBox15.Size = new System.Drawing.Size(400, 120);
+            this.groupBox15.TabIndex = 0;
+            this.groupBox15.TabStop = false;
+            this.groupBox15.Text = "板卡分配";
+            // 
+            // cmbBoardB
+            // 
+            this.cmbBoardB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbBoardB.FormattingEnabled = true;
+            this.cmbBoardB.Items.AddRange(new object[] {
+            "板卡1",
+            "板卡2"});
+            this.cmbBoardB.Location = new System.Drawing.Point(116, 72);
+            this.cmbBoardB.Name = "cmbBoardB";
+            this.cmbBoardB.Size = new System.Drawing.Size(150, 20);
+            this.cmbBoardB.TabIndex = 3;
+            // 
+            // cmbBoardA
+            // 
+            this.cmbBoardA.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbBoardA.FormattingEnabled = true;
+            this.cmbBoardA.Items.AddRange(new object[] {
+            "板卡1",
+            "板卡2"});
+            this.cmbBoardA.Location = new System.Drawing.Point(116, 32);
+            this.cmbBoardA.Name = "cmbBoardA";
+            this.cmbBoardA.Size = new System.Drawing.Size(150, 20);
+            this.cmbBoardA.TabIndex = 2;
+            // 
+            // label101
+            // 
+            this.label101.AutoSize = true;
+            this.label101.Location = new System.Drawing.Point(18, 75);
+            this.label101.Name = "label101";
+            this.label101.Size = new System.Drawing.Size(77, 12);
+            this.label101.TabIndex = 1;
+            this.label101.Text = "B面工位板卡:";
+            // 
+            // label100
+            // 
+            this.label100.AutoSize = true;
+            this.label100.Location = new System.Drawing.Point(18, 35);
+            this.label100.Name = "label100";
+            this.label100.Size = new System.Drawing.Size(77, 12);
+            this.label100.TabIndex = 0;
+            this.label100.Text = "A面工位板卡:";
+            // 
             // tabFX
             // 
             this.tabFX.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
@@ -3836,6 +3659,185 @@ namespace VisionApplication
             this.pictureBox1.Size = new System.Drawing.Size(356, 304);
             this.pictureBox1.TabIndex = 4;
             this.pictureBox1.TabStop = false;
+            // 
+            // tabImItem
+            // 
+            this.tabImItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
+            this.tabImItem.Controls.Add(this.cmbRecordType);
+            this.tabImItem.Controls.Add(this.txtFilter);
+            this.tabImItem.Controls.Add(this.btLoad);
+            this.tabImItem.Controls.Add(this.btSave);
+            this.tabImItem.Controls.Add(this.btFilter);
+            this.tabImItem.Controls.Add(this.chkHoldMainItem);
+            this.tabImItem.Controls.Add(this.chkAll);
+            this.tabImItem.Controls.Add(this.btRemove);
+            this.tabImItem.Controls.Add(this.btAdd);
+            this.tabImItem.Controls.Add(this.btMoveDown);
+            this.tabImItem.Controls.Add(this.btMoveUp);
+            this.tabImItem.Controls.Add(this.lstBox_GUIRecord);
+            this.tabImItem.Controls.Add(this.label19);
+            this.tabImItem.Controls.Add(this.label18);
+            this.tabImItem.Controls.Add(this.chkList_SubRecordsShow);
+            this.tabImItem.Location = new System.Drawing.Point(4, 22);
+            this.tabImItem.Name = "tabImItem";
+            this.tabImItem.Size = new System.Drawing.Size(795, 494);
+            this.tabImItem.TabIndex = 3;
+            this.tabImItem.Text = "显示编辑";
+            // 
+            // cmbRecordType
+            // 
+            this.cmbRecordType.FormattingEnabled = true;
+            this.cmbRecordType.Items.AddRange(new object[] {
+            "全局图",
+            "局部图",
+            "上边缘",
+            "下边缘"});
+            this.cmbRecordType.Location = new System.Drawing.Point(536, 25);
+            this.cmbRecordType.Name = "cmbRecordType";
+            this.cmbRecordType.Size = new System.Drawing.Size(215, 20);
+            this.cmbRecordType.TabIndex = 8;
+            this.cmbRecordType.SelectedIndexChanged += new System.EventHandler(this.cmbRecordType_SelectedIndexChanged);
+            // 
+            // txtFilter
+            // 
+            this.txtFilter.Location = new System.Drawing.Point(128, 421);
+            this.txtFilter.Name = "txtFilter";
+            this.txtFilter.Size = new System.Drawing.Size(141, 21);
+            this.txtFilter.TabIndex = 6;
+            // 
+            // btLoad
+            // 
+            this.btLoad.Location = new System.Drawing.Point(591, 270);
+            this.btLoad.Name = "btLoad";
+            this.btLoad.Size = new System.Drawing.Size(75, 28);
+            this.btLoad.TabIndex = 1;
+            this.btLoad.Text = "加载";
+            this.btLoad.UseVisualStyleBackColor = true;
+            this.btLoad.Click += new System.EventHandler(this.btLoad_Click);
+            // 
+            // btSave
+            // 
+            this.btSave.Location = new System.Drawing.Point(717, 270);
+            this.btSave.Name = "btSave";
+            this.btSave.Size = new System.Drawing.Size(75, 28);
+            this.btSave.TabIndex = 1;
+            this.btSave.Text = "保存";
+            this.btSave.UseVisualStyleBackColor = true;
+            this.btSave.Click += new System.EventHandler(this.btSave_Click);
+            // 
+            // btFilter
+            // 
+            this.btFilter.Location = new System.Drawing.Point(322, 426);
+            this.btFilter.Name = "btFilter";
+            this.btFilter.Size = new System.Drawing.Size(75, 28);
+            this.btFilter.TabIndex = 1;
+            this.btFilter.Text = "过滤";
+            this.btFilter.UseVisualStyleBackColor = true;
+            this.btFilter.Click += new System.EventHandler(this.btFilter_Click);
+            // 
+            // chkHoldMainItem
+            // 
+            this.chkHoldMainItem.AutoSize = true;
+            this.chkHoldMainItem.Location = new System.Drawing.Point(6, 462);
+            this.chkHoldMainItem.Name = "chkHoldMainItem";
+            this.chkHoldMainItem.Size = new System.Drawing.Size(138, 16);
+            this.chkHoldMainItem.TabIndex = 5;
+            this.chkHoldMainItem.Text = " 保留主界面显示记录";
+            this.chkHoldMainItem.UseVisualStyleBackColor = true;
+            this.chkHoldMainItem.CheckedChanged += new System.EventHandler(this.chkAll_CheckedChanged);
+            // 
+            // chkAll
+            // 
+            this.chkAll.AutoSize = true;
+            this.chkAll.Location = new System.Drawing.Point(6, 426);
+            this.chkAll.Name = "chkAll";
+            this.chkAll.Size = new System.Drawing.Size(90, 16);
+            this.chkAll.TabIndex = 5;
+            this.chkAll.Text = "全选/全取消";
+            this.chkAll.UseVisualStyleBackColor = true;
+            this.chkAll.CheckedChanged += new System.EventHandler(this.chkAll_CheckedChanged);
+            // 
+            // btRemove
+            // 
+            this.btRemove.Location = new System.Drawing.Point(403, 191);
+            this.btRemove.Name = "btRemove";
+            this.btRemove.Size = new System.Drawing.Size(57, 33);
+            this.btRemove.TabIndex = 4;
+            this.btRemove.Text = "<=";
+            this.btRemove.UseVisualStyleBackColor = true;
+            this.btRemove.Click += new System.EventHandler(this.btRemove_Click);
+            // 
+            // btAdd
+            // 
+            this.btAdd.Location = new System.Drawing.Point(403, 150);
+            this.btAdd.Name = "btAdd";
+            this.btAdd.Size = new System.Drawing.Size(57, 35);
+            this.btAdd.TabIndex = 4;
+            this.btAdd.Text = "=>";
+            this.btAdd.UseVisualStyleBackColor = true;
+            this.btAdd.Click += new System.EventHandler(this.btAdd_Click);
+            // 
+            // btMoveDown
+            // 
+            this.btMoveDown.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveDown.BackgroundImage")));
+            this.btMoveDown.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMoveDown.Location = new System.Drawing.Point(516, 77);
+            this.btMoveDown.Name = "btMoveDown";
+            this.btMoveDown.Size = new System.Drawing.Size(35, 34);
+            this.btMoveDown.TabIndex = 7;
+            this.btMoveDown.UseVisualStyleBackColor = true;
+            this.btMoveDown.Click += new System.EventHandler(this.btMoveDown_Click);
+            // 
+            // btMoveUp
+            // 
+            this.btMoveUp.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btMoveUp.BackgroundImage")));
+            this.btMoveUp.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btMoveUp.Location = new System.Drawing.Point(475, 77);
+            this.btMoveUp.Name = "btMoveUp";
+            this.btMoveUp.Size = new System.Drawing.Size(35, 34);
+            this.btMoveUp.TabIndex = 7;
+            this.btMoveUp.UseVisualStyleBackColor = true;
+            this.btMoveUp.Click += new System.EventHandler(this.btMoveUp_Click);
+            // 
+            // lstBox_GUIRecord
+            // 
+            this.lstBox_GUIRecord.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lstBox_GUIRecord.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lstBox_GUIRecord.FormattingEnabled = true;
+            this.lstBox_GUIRecord.ItemHeight = 14;
+            this.lstBox_GUIRecord.Location = new System.Drawing.Point(466, 117);
+            this.lstBox_GUIRecord.Name = "lstBox_GUIRecord";
+            this.lstBox_GUIRecord.Size = new System.Drawing.Size(326, 116);
+            this.lstBox_GUIRecord.TabIndex = 3;
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label19.Location = new System.Drawing.Point(3, 12);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(103, 16);
+            this.label19.TabIndex = 2;
+            this.label19.Text = "所有记录清单";
+            // 
+            // label18
+            // 
+            this.label18.AutoSize = true;
+            this.label18.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label18.Location = new System.Drawing.Point(426, 29);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(103, 16);
+            this.label18.TabIndex = 2;
+            this.label18.Text = "选择显示记录";
+            // 
+            // chkList_SubRecordsShow
+            // 
+            this.chkList_SubRecordsShow.FormattingEnabled = true;
+            this.chkList_SubRecordsShow.Location = new System.Drawing.Point(3, 49);
+            this.chkList_SubRecordsShow.Name = "chkList_SubRecordsShow";
+            this.chkList_SubRecordsShow.Size = new System.Drawing.Size(394, 356);
+            this.chkList_SubRecordsShow.TabIndex = 0;
             // 
             // tabBlow
             // 
@@ -4132,9 +4134,6 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.picScene)).EndInit();
             this.tabCam.ResumeLayout(false);
             this.tabCam.PerformLayout();
-            this.tabBoard.ResumeLayout(false);
-            this.groupBox15.ResumeLayout(false);
-            this.groupBox15.PerformLayout();
             this.tabSer.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
@@ -4146,8 +4145,6 @@ namespace VisionApplication
             this.groupBox11.PerformLayout();
             this.groupPath.ResumeLayout(false);
             this.groupPath.PerformLayout();
-            this.tabImItem.ResumeLayout(false);
-            this.tabImItem.PerformLayout();
             this.tabRunTime.ResumeLayout(false);
             this.groupBox13.ResumeLayout(false);
             this.groupBox13.PerformLayout();
@@ -4171,6 +4168,9 @@ namespace VisionApplication
             this.groupBox2.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.tabBoard.ResumeLayout(false);
+            this.groupBox15.ResumeLayout(false);
+            this.groupBox15.PerformLayout();
             this.tabFX.ResumeLayout(false);
             this.tabFX.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.num_Slants4)).EndInit();
@@ -4183,6 +4183,8 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.num_Tilts1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.tabImItem.ResumeLayout(false);
+            this.tabImItem.PerformLayout();
             this.tabBlow.ResumeLayout(false);
             this.tabBlow.PerformLayout();
             this.groupBox10.ResumeLayout(false);

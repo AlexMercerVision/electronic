@@ -860,12 +860,33 @@ namespace VisionControl
         {
             acqFIFO = _acqFIFO;
         }
-         
-       
+
+
         //2024年8月27日  根据设定的匣钵类型对多模板匹配搜索集进行设置
-     //   CogPMAlignMultiTool pmaMTGrey;
-        
+        //   CogPMAlignMultiTool pmaMTGrey;
+
         //设置推理模式
+        //设置推理模式
+        public void SetVPInferModel(bool bVisionInfer, bool bDeepInfer)
+        {
+
+            cup.p_VPPRTP.bVisionInfer = bVisionInfer;
+            cup.p_VPPRTP.bDeepInfer = bDeepInfer;
+            
+        }
+        public void UnloadVisionInfer()
+        {
+            if (mJM != null)
+            {
+                AttachToJobManager(false);
+                mJM.Shutdown();
+                mJM = null;
+                mStarted = false;
+            }
+            mInitError = -1;  // 标记未初始化
+
+            // 注意：不要关闭 cogRDMain 等显示控件，只释放推理引擎
+        }
         public void SetVPInferModel(int iType)
         {
          }
