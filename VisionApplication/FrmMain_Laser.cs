@@ -1642,6 +1642,8 @@ namespace VisionApplication
         {
             iJobIndex = jobIndex;
 
+            if (!bUserLaser)
+                return;
             if (vpWin != null && jobIndex >= 0)
                 vpWin._iJobIndex = jobIndex;
 
@@ -2751,7 +2753,7 @@ namespace VisionApplication
                     iJobIndex = 2; // 预留（可能对应非激光任务）
                     UpdateLaserButtonStates();
                     break;
-                case "menuWS_Jobs":
+                case "menuWS_JobS":
                     iJobIndex = -1; // 同时控制多个Job
                     UpdateLaserButtonStates();
                     break;
@@ -4776,8 +4778,8 @@ namespace VisionApplication
         private void InitParamUI()
         {
             //隐藏不必要的参数界面
-            for (int i = 0; i < 1; i++)
-                tabControl1.TabPages.Remove(tabControl1.TabPages[4]);
+            for (int i = 0; i < 2; i++)
+                tabControl1.TabPages.Remove(tabControl1.TabPages[3]);
 
 
             if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
@@ -4796,7 +4798,7 @@ namespace VisionApplication
             UpdateCamParam2UI();
            
             //精定位界面初始化
-            if (cup.p_DL.gpuID==1)
+            if (cup.p_VPPRTP.iXBType == 1)
             {
                 rdBT_Caliper.Checked = true;
             }
@@ -4836,7 +4838,7 @@ namespace VisionApplication
             pmaRes[jobIndex] = vpWin.GetJobResult(jobIndex);
 
             UpdateStatisticsForJob(jobIndex);
-            AnaEventForJob(jobIndex);
+       //     AnaEventForJob(jobIndex);
             vpWin._bRunOneTimeFinished[jobIndex] = 2;
             completedJobCount++;
             if (completedJobCount >= GetEnabledJobCount())

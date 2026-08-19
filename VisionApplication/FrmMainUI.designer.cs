@@ -310,24 +310,6 @@ namespace VisionApplication
             this.label41 = new System.Windows.Forms.Label();
             this.cmbPMATrainAlg = new System.Windows.Forms.ComboBox();
             this.btPMAlignParam = new System.Windows.Forms.Button();
-            this.tabPageEdge = new System.Windows.Forms.TabPage();
-            this.button1 = new System.Windows.Forms.Button();
-            this.button2 = new System.Windows.Forms.Button();
-            this.label71 = new System.Windows.Forms.Label();
-            this.panel8 = new System.Windows.Forms.Panel();
-            this.button4 = new System.Windows.Forms.Button();
-            this.nudEdgeThre = new System.Windows.Forms.NumericUpDown();
-            this.button5 = new System.Windows.Forms.Button();
-            this.nudLenTh = new System.Windows.Forms.NumericUpDown();
-            this.nudCLPRadio = new System.Windows.Forms.NumericUpDown();
-            this.label73 = new System.Windows.Forms.Label();
-            this.label74 = new System.Windows.Forms.Label();
-            this.label75 = new System.Windows.Forms.Label();
-            this.label76 = new System.Windows.Forms.Label();
-            this.cmbCLPEdgeInd = new System.Windows.Forms.ComboBox();
-            this.label77 = new System.Windows.Forms.Label();
-            this.cmbCLPEdgePol = new System.Windows.Forms.ComboBox();
-            this.button3 = new System.Windows.Forms.Button();
             this.tabPageFindLine = new System.Windows.Forms.TabPage();
             this.rdBT_Caliper = new System.Windows.Forms.RadioButton();
             this.rdBT_FindLine = new System.Windows.Forms.RadioButton();
@@ -339,11 +321,13 @@ namespace VisionApplication
             this.label16 = new System.Windows.Forms.Label();
             this.panel6 = new System.Windows.Forms.Panel();
             this.nudCLPEdgeThre = new System.Windows.Forms.NumericUpDown();
+            this.nudLenTh = new System.Windows.Forms.NumericUpDown();
+            this.btLocateEdgeTest = new System.Windows.Forms.Button();
+            this.label78 = new System.Windows.Forms.Label();
             this.nudCLPCaliperNum = new System.Windows.Forms.NumericUpDown();
+            this.btLocateEdgeSet = new System.Windows.Forms.Button();
             this.nudCLPRemovePoint = new System.Windows.Forms.NumericUpDown();
             this.nudCLPRad = new System.Windows.Forms.NumericUpDown();
-            this.btLocateEdgeTest = new System.Windows.Forms.Button();
-            this.btLocateEdgeSet = new System.Windows.Forms.Button();
             this.label48 = new System.Windows.Forms.Label();
             this.label56 = new System.Windows.Forms.Label();
             this.label62 = new System.Windows.Forms.Label();
@@ -355,6 +339,24 @@ namespace VisionApplication
             this.cmbCLPPol2 = new System.Windows.Forms.ComboBox();
             this.cmbCLPPol = new System.Windows.Forms.ComboBox();
             this.btLocateEdge = new System.Windows.Forms.Button();
+            this.tabPageEdge = new System.Windows.Forms.TabPage();
+            this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
+            this.label71 = new System.Windows.Forms.Label();
+            this.panel8 = new System.Windows.Forms.Panel();
+            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            this.button4 = new System.Windows.Forms.Button();
+            this.nudEdgeThre = new System.Windows.Forms.NumericUpDown();
+            this.button5 = new System.Windows.Forms.Button();
+            this.nudCLPRadio = new System.Windows.Forms.NumericUpDown();
+            this.label73 = new System.Windows.Forms.Label();
+            this.label74 = new System.Windows.Forms.Label();
+            this.label75 = new System.Windows.Forms.Label();
+            this.label76 = new System.Windows.Forms.Label();
+            this.cmbCLPEdgeInd = new System.Windows.Forms.ComboBox();
+            this.label77 = new System.Windows.Forms.Label();
+            this.cmbCLPEdgePol = new System.Windows.Forms.ComboBox();
+            this.button3 = new System.Windows.Forms.Button();
             this.tabPageCalib = new System.Windows.Forms.TabPage();
             this.btMarkSquare = new System.Windows.Forms.Button();
             this.panel7 = new System.Windows.Forms.Panel();
@@ -507,17 +509,18 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.nudPMATrainEdgeThre)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudPMAFine)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudPMACoarse)).BeginInit();
-            this.tabPageEdge.SuspendLayout();
-            this.panel8.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nudEdgeThre)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nudLenTh)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nudCLPRadio)).BeginInit();
             this.tabPageFindLine.SuspendLayout();
             this.panel6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPEdgeThre)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudLenTh)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPCaliperNum)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPRemovePoint)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPRad)).BeginInit();
+            this.tabPageEdge.SuspendLayout();
+            this.panel8.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudEdgeThre)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudCLPRadio)).BeginInit();
             this.tabPageCalib.SuspendLayout();
             this.panel7.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -582,6 +585,7 @@ namespace VisionApplication
             this.menuLaserFile.Name = "menuLaserFile";
             this.menuLaserFile.Size = new System.Drawing.Size(44, 22);
             this.menuLaserFile.Text = "文件";
+            this.menuLaserFile.Visible = false;
             // 
             // menuLaser_LoadFile
             // 
@@ -633,21 +637,21 @@ namespace VisionApplication
             // menuWS_Job1
             // 
             this.menuWS_Job1.Name = "menuWS_Job1";
-            this.menuWS_Job1.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_Job1.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job1.Text = "A面";
             this.menuWS_Job1.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job2
             // 
             this.menuWS_Job2.Name = "menuWS_Job2";
-            this.menuWS_Job2.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_Job2.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job2.Text = "B面";
             this.menuWS_Job2.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuWS_Job3
             // 
             this.menuWS_Job3.Name = "menuWS_Job3";
-            this.menuWS_Job3.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_Job3.Size = new System.Drawing.Size(180, 22);
             this.menuWS_Job3.Text = "C面";
             this.menuWS_Job3.Visible = false;
             this.menuWS_Job3.Click += new System.EventHandler(this.menuWSJobS_Click);
@@ -655,8 +659,9 @@ namespace VisionApplication
             // menuWS_JobS
             // 
             this.menuWS_JobS.Name = "menuWS_JobS";
-            this.menuWS_JobS.Size = new System.Drawing.Size(100, 22);
+            this.menuWS_JobS.Size = new System.Drawing.Size(180, 22);
             this.menuWS_JobS.Text = "同步";
+            this.menuWS_JobS.Click += new System.EventHandler(this.menuWSJobS_Click);
             // 
             // menuCam
             // 
@@ -767,8 +772,6 @@ namespace VisionApplication
             // 
             // menuTask_VisionInfer
             // 
-            this.menuTask_VisionInfer.Checked = true;
-            this.menuTask_VisionInfer.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuTask_VisionInfer.Name = "menuTask_VisionInfer";
             this.menuTask_VisionInfer.Size = new System.Drawing.Size(180, 22);
             this.menuTask_VisionInfer.Text = "电极帽尺寸测量";
@@ -776,8 +779,6 @@ namespace VisionApplication
             // 
             // menuTask_DeepInfer
             // 
-            this.menuTask_DeepInfer.Checked = true;
-            this.menuTask_DeepInfer.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuTask_DeepInfer.Name = "menuTask_DeepInfer";
             this.menuTask_DeepInfer.Size = new System.Drawing.Size(180, 22);
             this.menuTask_DeepInfer.Text = "电极帽缺陷检测";
@@ -950,6 +951,7 @@ namespace VisionApplication
             this.menuDisp.Name = "menuDisp";
             this.menuDisp.Size = new System.Drawing.Size(44, 22);
             this.menuDisp.Text = "显示";
+            this.menuDisp.Visible = false;
             // 
             // menuDisp_Default
             // 
@@ -2271,8 +2273,8 @@ namespace VisionApplication
             // 
             this.tabControl1.Controls.Add(this.tabPageCam);
             this.tabControl1.Controls.Add(this.tabPageBase);
-            this.tabControl1.Controls.Add(this.tabPageEdge);
             this.tabControl1.Controls.Add(this.tabPageFindLine);
+            this.tabControl1.Controls.Add(this.tabPageEdge);
             this.tabControl1.Controls.Add(this.tabPageCalib);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Font = new System.Drawing.Font("宋体", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
@@ -3629,244 +3631,6 @@ namespace VisionApplication
             this.btPMAlignParam.UseVisualStyleBackColor = true;
             this.btPMAlignParam.Click += new System.EventHandler(this.btPMAlignParam_Click);
             // 
-            // tabPageEdge
-            // 
-            this.tabPageEdge.Controls.Add(this.button1);
-            this.tabPageEdge.Controls.Add(this.button2);
-            this.tabPageEdge.Controls.Add(this.label71);
-            this.tabPageEdge.Controls.Add(this.panel8);
-            this.tabPageEdge.Controls.Add(this.button3);
-            this.tabPageEdge.Location = new System.Drawing.Point(4, 24);
-            this.tabPageEdge.Name = "tabPageEdge";
-            this.tabPageEdge.Size = new System.Drawing.Size(349, 515);
-            this.tabPageEdge.TabIndex = 6;
-            this.tabPageEdge.Text = "测量1";
-            this.tabPageEdge.UseVisualStyleBackColor = true;
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(17, 219);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(76, 29);
-            this.button1.TabIndex = 99;
-            this.button1.Text = "获取参数";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.btGetCalipEdgeParam_Click);
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(122, 219);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(76, 29);
-            this.button2.TabIndex = 100;
-            this.button2.Text = "设置参数";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.btSetCLPEdgeParam_Click);
-            // 
-            // label71
-            // 
-            this.label71.AutoSize = true;
-            this.label71.ForeColor = System.Drawing.Color.Salmon;
-            this.label71.Location = new System.Drawing.Point(16, 10);
-            this.label71.Name = "label71";
-            this.label71.Size = new System.Drawing.Size(37, 14);
-            this.label71.TabIndex = 97;
-            this.label71.Text = "参数";
-            // 
-            // panel8
-            // 
-            this.panel8.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel8.Controls.Add(this.button4);
-            this.panel8.Controls.Add(this.nudEdgeThre);
-            this.panel8.Controls.Add(this.button5);
-            this.panel8.Controls.Add(this.nudLenTh);
-            this.panel8.Controls.Add(this.nudCLPRadio);
-            this.panel8.Controls.Add(this.label73);
-            this.panel8.Controls.Add(this.label74);
-            this.panel8.Controls.Add(this.label75);
-            this.panel8.Controls.Add(this.label76);
-            this.panel8.Controls.Add(this.cmbCLPEdgeInd);
-            this.panel8.Controls.Add(this.label77);
-            this.panel8.Controls.Add(this.cmbCLPEdgePol);
-            this.panel8.Location = new System.Drawing.Point(13, 32);
-            this.panel8.Name = "panel8";
-            this.panel8.Size = new System.Drawing.Size(335, 181);
-            this.panel8.TabIndex = 98;
-            // 
-            // button4
-            // 
-            this.button4.ForeColor = System.Drawing.Color.Red;
-            this.button4.Location = new System.Drawing.Point(212, 139);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(118, 32);
-            this.button4.TabIndex = 101;
-            this.button4.Text = "测量边缘提取";
-            this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.btMeasEdgeExtra_Click);
-            // 
-            // nudEdgeThre
-            // 
-            this.nudEdgeThre.DecimalPlaces = 1;
-            this.nudEdgeThre.Location = new System.Drawing.Point(132, 76);
-            this.nudEdgeThre.Maximum = new decimal(new int[] {
-            254,
-            0,
-            0,
-            0});
-            this.nudEdgeThre.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.nudEdgeThre.Name = "nudEdgeThre";
-            this.nudEdgeThre.Size = new System.Drawing.Size(64, 23);
-            this.nudEdgeThre.TabIndex = 98;
-            this.nudEdgeThre.Value = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            // 
-            // button5
-            // 
-            this.button5.ForeColor = System.Drawing.Color.Red;
-            this.button5.Location = new System.Drawing.Point(212, 101);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(118, 32);
-            this.button5.TabIndex = 102;
-            this.button5.Text = "测量边缘设置";
-            this.button5.UseVisualStyleBackColor = true;
-            this.button5.Click += new System.EventHandler(this.btMeasEdge_Click);
-            // 
-            // nudLenTh
-            // 
-            this.nudLenTh.Increment = new decimal(new int[] {
-            20,
-            0,
-            0,
-            0});
-            this.nudLenTh.Location = new System.Drawing.Point(116, 153);
-            this.nudLenTh.Maximum = new decimal(new int[] {
-            2000,
-            0,
-            0,
-            0});
-            this.nudLenTh.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.nudLenTh.Name = "nudLenTh";
-            this.nudLenTh.Size = new System.Drawing.Size(80, 23);
-            this.nudLenTh.TabIndex = 96;
-            this.nudLenTh.Value = new decimal(new int[] {
-            950,
-            0,
-            0,
-            0});
-            // 
-            // nudCLPRadio
-            // 
-            this.nudCLPRadio.Location = new System.Drawing.Point(116, 117);
-            this.nudCLPRadio.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.nudCLPRadio.Name = "nudCLPRadio";
-            this.nudCLPRadio.Size = new System.Drawing.Size(80, 23);
-            this.nudCLPRadio.TabIndex = 96;
-            this.nudCLPRadio.Value = new decimal(new int[] {
-            2,
-            0,
-            0,
-            0});
-            // 
-            // label73
-            // 
-            this.label73.AutoSize = true;
-            this.label73.Location = new System.Drawing.Point(13, 78);
-            this.label73.Name = "label73";
-            this.label73.Size = new System.Drawing.Size(112, 14);
-            this.label73.TabIndex = 93;
-            this.label73.Text = "边缘对比度阈值";
-            // 
-            // label74
-            // 
-            this.label74.AutoSize = true;
-            this.label74.ForeColor = System.Drawing.Color.Blue;
-            this.label74.Location = new System.Drawing.Point(13, 155);
-            this.label74.Name = "label74";
-            this.label74.Size = new System.Drawing.Size(67, 14);
-            this.label74.TabIndex = 93;
-            this.label74.Text = "长度阈值";
-            // 
-            // label75
-            // 
-            this.label75.AutoSize = true;
-            this.label75.ForeColor = System.Drawing.Color.Blue;
-            this.label75.Location = new System.Drawing.Point(13, 119);
-            this.label75.Name = "label75";
-            this.label75.Size = new System.Drawing.Size(97, 14);
-            this.label75.TabIndex = 93;
-            this.label75.Text = "边缘滤波半径";
-            // 
-            // label76
-            // 
-            this.label76.AutoSize = true;
-            this.label76.Location = new System.Drawing.Point(13, 8);
-            this.label76.Name = "label76";
-            this.label76.Size = new System.Drawing.Size(67, 14);
-            this.label76.TabIndex = 93;
-            this.label76.Text = "边缘位置";
-            // 
-            // cmbCLPEdgeInd
-            // 
-            this.cmbCLPEdgeInd.FormattingEnabled = true;
-            this.cmbCLPEdgeInd.Items.AddRange(new object[] {
-            "左边缘",
-            "右边缘"});
-            this.cmbCLPEdgeInd.Location = new System.Drawing.Point(82, 5);
-            this.cmbCLPEdgeInd.Name = "cmbCLPEdgeInd";
-            this.cmbCLPEdgeInd.Size = new System.Drawing.Size(114, 22);
-            this.cmbCLPEdgeInd.TabIndex = 94;
-            // 
-            // label77
-            // 
-            this.label77.AutoSize = true;
-            this.label77.Location = new System.Drawing.Point(13, 41);
-            this.label77.Name = "label77";
-            this.label77.Size = new System.Drawing.Size(67, 14);
-            this.label77.TabIndex = 93;
-            this.label77.Text = "边缘极性";
-            // 
-            // cmbCLPEdgePol
-            // 
-            this.cmbCLPEdgePol.FormattingEnabled = true;
-            this.cmbCLPEdgePol.Items.AddRange(new object[] {
-            "由暗到明",
-            "由明到暗",
-            "任何极性"});
-            this.cmbCLPEdgePol.Location = new System.Drawing.Point(84, 38);
-            this.cmbCLPEdgePol.Name = "cmbCLPEdgePol";
-            this.cmbCLPEdgePol.Size = new System.Drawing.Size(112, 22);
-            this.cmbCLPEdgePol.TabIndex = 94;
-            // 
-            // button3
-            // 
-            this.button3.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("button3.BackgroundImage")));
-            this.button3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.button3.ForeColor = System.Drawing.Color.Red;
-            this.button3.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.button3.Location = new System.Drawing.Point(16, 263);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(77, 77);
-            this.button3.TabIndex = 11;
-            this.button3.Text = "高级设置";
-            this.button3.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.btEdgeParam_Click);
-            // 
             // tabPageFindLine
             // 
             this.tabPageFindLine.BackColor = System.Drawing.Color.White;
@@ -3884,7 +3648,7 @@ namespace VisionApplication
             this.tabPageFindLine.Name = "tabPageFindLine";
             this.tabPageFindLine.Size = new System.Drawing.Size(349, 515);
             this.tabPageFindLine.TabIndex = 5;
-            this.tabPageFindLine.Text = "测量2";
+            this.tabPageFindLine.Text = "长度测量";
             // 
             // rdBT_Caliper
             // 
@@ -3913,17 +3677,20 @@ namespace VisionApplication
             // chkUseTuneLocation
             // 
             this.chkUseTuneLocation.AutoSize = true;
+            this.chkUseTuneLocation.Checked = true;
+            this.chkUseTuneLocation.CheckState = System.Windows.Forms.CheckState.Checked;
             this.chkUseTuneLocation.Location = new System.Drawing.Point(10, 7);
             this.chkUseTuneLocation.Name = "chkUseTuneLocation";
             this.chkUseTuneLocation.Size = new System.Drawing.Size(101, 18);
             this.chkUseTuneLocation.TabIndex = 101;
             this.chkUseTuneLocation.Text = "启用精定位";
             this.chkUseTuneLocation.UseVisualStyleBackColor = true;
+            this.chkUseTuneLocation.Visible = false;
             this.chkUseTuneLocation.CheckedChanged += new System.EventHandler(this.chkUseTuneLocation_CheckedChanged);
             // 
             // btGetCalipFLParam
             // 
-            this.btGetCalipFLParam.Location = new System.Drawing.Point(10, 320);
+            this.btGetCalipFLParam.Location = new System.Drawing.Point(13, 351);
             this.btGetCalipFLParam.Name = "btGetCalipFLParam";
             this.btGetCalipFLParam.Size = new System.Drawing.Size(76, 29);
             this.btGetCalipFLParam.TabIndex = 99;
@@ -3934,17 +3701,18 @@ namespace VisionApplication
             // btExtractCaliperBase
             // 
             this.btExtractCaliperBase.ForeColor = System.Drawing.Color.Red;
-            this.btExtractCaliperBase.Location = new System.Drawing.Point(263, 320);
+            this.btExtractCaliperBase.Location = new System.Drawing.Point(45, 473);
             this.btExtractCaliperBase.Name = "btExtractCaliperBase";
             this.btExtractCaliperBase.Size = new System.Drawing.Size(76, 29);
             this.btExtractCaliperBase.TabIndex = 100;
             this.btExtractCaliperBase.Text = "提取基准";
             this.btExtractCaliperBase.UseVisualStyleBackColor = true;
+            this.btExtractCaliperBase.Visible = false;
             this.btExtractCaliperBase.Click += new System.EventHandler(this.btExtractCaliperBase_Click);
             // 
             // btSetCalipFLParam
             // 
-            this.btSetCalipFLParam.Location = new System.Drawing.Point(92, 320);
+            this.btSetCalipFLParam.Location = new System.Drawing.Point(95, 352);
             this.btSetCalipFLParam.Name = "btSetCalipFLParam";
             this.btSetCalipFLParam.Size = new System.Drawing.Size(76, 29);
             this.btSetCalipFLParam.TabIndex = 100;
@@ -3976,11 +3744,13 @@ namespace VisionApplication
             // 
             this.panel6.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel6.Controls.Add(this.nudCLPEdgeThre);
+            this.panel6.Controls.Add(this.nudLenTh);
+            this.panel6.Controls.Add(this.btLocateEdgeTest);
+            this.panel6.Controls.Add(this.label78);
             this.panel6.Controls.Add(this.nudCLPCaliperNum);
+            this.panel6.Controls.Add(this.btLocateEdgeSet);
             this.panel6.Controls.Add(this.nudCLPRemovePoint);
             this.panel6.Controls.Add(this.nudCLPRad);
-            this.panel6.Controls.Add(this.btLocateEdgeTest);
-            this.panel6.Controls.Add(this.btLocateEdgeSet);
             this.panel6.Controls.Add(this.label48);
             this.panel6.Controls.Add(this.label56);
             this.panel6.Controls.Add(this.label62);
@@ -3993,7 +3763,7 @@ namespace VisionApplication
             this.panel6.Controls.Add(this.cmbCLPPol);
             this.panel6.Location = new System.Drawing.Point(10, 91);
             this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(335, 223);
+            this.panel6.Size = new System.Drawing.Size(335, 254);
             this.panel6.TabIndex = 98;
             // 
             // nudCLPEdgeThre
@@ -4019,6 +3789,54 @@ namespace VisionApplication
             0,
             0});
             // 
+            // nudLenTh
+            // 
+            this.nudLenTh.Increment = new decimal(new int[] {
+            20,
+            0,
+            0,
+            0});
+            this.nudLenTh.Location = new System.Drawing.Point(94, 225);
+            this.nudLenTh.Maximum = new decimal(new int[] {
+            2000,
+            0,
+            0,
+            0});
+            this.nudLenTh.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nudLenTh.Name = "nudLenTh";
+            this.nudLenTh.Size = new System.Drawing.Size(80, 23);
+            this.nudLenTh.TabIndex = 96;
+            this.nudLenTh.Value = new decimal(new int[] {
+            950,
+            0,
+            0,
+            0});
+            // 
+            // btLocateEdgeTest
+            // 
+            this.btLocateEdgeTest.ForeColor = System.Drawing.Color.Red;
+            this.btLocateEdgeTest.Location = new System.Drawing.Point(212, 216);
+            this.btLocateEdgeTest.Name = "btLocateEdgeTest";
+            this.btLocateEdgeTest.Size = new System.Drawing.Size(118, 32);
+            this.btLocateEdgeTest.TabIndex = 96;
+            this.btLocateEdgeTest.Text = "定位边缘测试";
+            this.btLocateEdgeTest.UseVisualStyleBackColor = true;
+            this.btLocateEdgeTest.Click += new System.EventHandler(this.btLocateEdge2_Click);
+            // 
+            // label78
+            // 
+            this.label78.AutoSize = true;
+            this.label78.ForeColor = System.Drawing.Color.Blue;
+            this.label78.Location = new System.Drawing.Point(7, 227);
+            this.label78.Name = "label78";
+            this.label78.Size = new System.Drawing.Size(67, 14);
+            this.label78.TabIndex = 103;
+            this.label78.Text = "长度阈值";
+            // 
             // nudCLPCaliperNum
             // 
             this.nudCLPCaliperNum.Location = new System.Drawing.Point(110, 193);
@@ -4040,6 +3858,17 @@ namespace VisionApplication
             0,
             0,
             0});
+            // 
+            // btLocateEdgeSet
+            // 
+            this.btLocateEdgeSet.ForeColor = System.Drawing.Color.Red;
+            this.btLocateEdgeSet.Location = new System.Drawing.Point(212, 177);
+            this.btLocateEdgeSet.Name = "btLocateEdgeSet";
+            this.btLocateEdgeSet.Size = new System.Drawing.Size(118, 32);
+            this.btLocateEdgeSet.TabIndex = 96;
+            this.btLocateEdgeSet.Text = "定位边缘设置";
+            this.btLocateEdgeSet.UseVisualStyleBackColor = true;
+            this.btLocateEdgeSet.Click += new System.EventHandler(this.btLocateEdge1_Click);
             // 
             // nudCLPRemovePoint
             // 
@@ -4069,28 +3898,6 @@ namespace VisionApplication
             0,
             0,
             0});
-            // 
-            // btLocateEdgeTest
-            // 
-            this.btLocateEdgeTest.ForeColor = System.Drawing.Color.Red;
-            this.btLocateEdgeTest.Location = new System.Drawing.Point(212, 178);
-            this.btLocateEdgeTest.Name = "btLocateEdgeTest";
-            this.btLocateEdgeTest.Size = new System.Drawing.Size(118, 32);
-            this.btLocateEdgeTest.TabIndex = 96;
-            this.btLocateEdgeTest.Text = "定位边缘测试";
-            this.btLocateEdgeTest.UseVisualStyleBackColor = true;
-            this.btLocateEdgeTest.Click += new System.EventHandler(this.btLocateEdge2_Click);
-            // 
-            // btLocateEdgeSet
-            // 
-            this.btLocateEdgeSet.ForeColor = System.Drawing.Color.Red;
-            this.btLocateEdgeSet.Location = new System.Drawing.Point(212, 140);
-            this.btLocateEdgeSet.Name = "btLocateEdgeSet";
-            this.btLocateEdgeSet.Size = new System.Drawing.Size(118, 32);
-            this.btLocateEdgeSet.TabIndex = 96;
-            this.btLocateEdgeSet.Text = "定位边缘设置";
-            this.btLocateEdgeSet.UseVisualStyleBackColor = true;
-            this.btLocateEdgeSet.Click += new System.EventHandler(this.btLocateEdge1_Click);
             // 
             // label48
             // 
@@ -4204,7 +4011,7 @@ namespace VisionApplication
             this.btLocateEdge.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btLocateEdge.ForeColor = System.Drawing.Color.Red;
             this.btLocateEdge.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btLocateEdge.Location = new System.Drawing.Point(14, 365);
+            this.btLocateEdge.Location = new System.Drawing.Point(14, 383);
             this.btLocateEdge.Name = "btLocateEdge";
             this.btLocateEdge.Size = new System.Drawing.Size(78, 90);
             this.btLocateEdge.TabIndex = 11;
@@ -4212,6 +4019,244 @@ namespace VisionApplication
             this.btLocateEdge.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btLocateEdge.UseVisualStyleBackColor = true;
             this.btLocateEdge.Click += new System.EventHandler(this.btLocateEdgeSet_Click);
+            // 
+            // tabPageEdge
+            // 
+            this.tabPageEdge.Controls.Add(this.button1);
+            this.tabPageEdge.Controls.Add(this.button2);
+            this.tabPageEdge.Controls.Add(this.label71);
+            this.tabPageEdge.Controls.Add(this.panel8);
+            this.tabPageEdge.Controls.Add(this.button3);
+            this.tabPageEdge.Location = new System.Drawing.Point(4, 24);
+            this.tabPageEdge.Name = "tabPageEdge";
+            this.tabPageEdge.Size = new System.Drawing.Size(349, 515);
+            this.tabPageEdge.TabIndex = 6;
+            this.tabPageEdge.Text = "测量1";
+            this.tabPageEdge.UseVisualStyleBackColor = true;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(17, 219);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(76, 29);
+            this.button1.TabIndex = 99;
+            this.button1.Text = "获取参数";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.btGetCalipEdgeParam_Click);
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(122, 219);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(76, 29);
+            this.button2.TabIndex = 100;
+            this.button2.Text = "设置参数";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.btSetCLPEdgeParam_Click);
+            // 
+            // label71
+            // 
+            this.label71.AutoSize = true;
+            this.label71.ForeColor = System.Drawing.Color.Salmon;
+            this.label71.Location = new System.Drawing.Point(16, 10);
+            this.label71.Name = "label71";
+            this.label71.Size = new System.Drawing.Size(37, 14);
+            this.label71.TabIndex = 97;
+            this.label71.Text = "参数";
+            // 
+            // panel8
+            // 
+            this.panel8.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel8.Controls.Add(this.numericUpDown1);
+            this.panel8.Controls.Add(this.button4);
+            this.panel8.Controls.Add(this.nudEdgeThre);
+            this.panel8.Controls.Add(this.button5);
+            this.panel8.Controls.Add(this.nudCLPRadio);
+            this.panel8.Controls.Add(this.label73);
+            this.panel8.Controls.Add(this.label74);
+            this.panel8.Controls.Add(this.label75);
+            this.panel8.Controls.Add(this.label76);
+            this.panel8.Controls.Add(this.cmbCLPEdgeInd);
+            this.panel8.Controls.Add(this.label77);
+            this.panel8.Controls.Add(this.cmbCLPEdgePol);
+            this.panel8.Location = new System.Drawing.Point(13, 32);
+            this.panel8.Name = "panel8";
+            this.panel8.Size = new System.Drawing.Size(335, 181);
+            this.panel8.TabIndex = 98;
+            // 
+            // numericUpDown1
+            // 
+            this.numericUpDown1.Increment = new decimal(new int[] {
+            20,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Location = new System.Drawing.Point(116, 150);
+            this.numericUpDown1.Maximum = new decimal(new int[] {
+            2000,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Name = "numericUpDown1";
+            this.numericUpDown1.Size = new System.Drawing.Size(57, 23);
+            this.numericUpDown1.TabIndex = 104;
+            this.numericUpDown1.Value = new decimal(new int[] {
+            950,
+            0,
+            0,
+            0});
+            // 
+            // button4
+            // 
+            this.button4.ForeColor = System.Drawing.Color.Red;
+            this.button4.Location = new System.Drawing.Point(212, 139);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(118, 32);
+            this.button4.TabIndex = 101;
+            this.button4.Text = "测量边缘提取";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.btMeasEdgeExtra_Click);
+            // 
+            // nudEdgeThre
+            // 
+            this.nudEdgeThre.DecimalPlaces = 1;
+            this.nudEdgeThre.Location = new System.Drawing.Point(132, 76);
+            this.nudEdgeThre.Maximum = new decimal(new int[] {
+            254,
+            0,
+            0,
+            0});
+            this.nudEdgeThre.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nudEdgeThre.Name = "nudEdgeThre";
+            this.nudEdgeThre.Size = new System.Drawing.Size(64, 23);
+            this.nudEdgeThre.TabIndex = 98;
+            this.nudEdgeThre.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            // 
+            // button5
+            // 
+            this.button5.ForeColor = System.Drawing.Color.Red;
+            this.button5.Location = new System.Drawing.Point(212, 101);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(118, 32);
+            this.button5.TabIndex = 102;
+            this.button5.Text = "测量边缘设置";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.btMeasEdge_Click);
+            // 
+            // nudCLPRadio
+            // 
+            this.nudCLPRadio.Location = new System.Drawing.Point(116, 117);
+            this.nudCLPRadio.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nudCLPRadio.Name = "nudCLPRadio";
+            this.nudCLPRadio.Size = new System.Drawing.Size(80, 23);
+            this.nudCLPRadio.TabIndex = 96;
+            this.nudCLPRadio.Value = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
+            // 
+            // label73
+            // 
+            this.label73.AutoSize = true;
+            this.label73.Location = new System.Drawing.Point(13, 78);
+            this.label73.Name = "label73";
+            this.label73.Size = new System.Drawing.Size(112, 14);
+            this.label73.TabIndex = 93;
+            this.label73.Text = "边缘对比度阈值";
+            // 
+            // label74
+            // 
+            this.label74.AutoSize = true;
+            this.label74.ForeColor = System.Drawing.Color.Blue;
+            this.label74.Location = new System.Drawing.Point(13, 155);
+            this.label74.Name = "label74";
+            this.label74.Size = new System.Drawing.Size(67, 14);
+            this.label74.TabIndex = 93;
+            this.label74.Text = "长度阈值";
+            // 
+            // label75
+            // 
+            this.label75.AutoSize = true;
+            this.label75.ForeColor = System.Drawing.Color.Blue;
+            this.label75.Location = new System.Drawing.Point(13, 119);
+            this.label75.Name = "label75";
+            this.label75.Size = new System.Drawing.Size(97, 14);
+            this.label75.TabIndex = 93;
+            this.label75.Text = "边缘滤波半径";
+            // 
+            // label76
+            // 
+            this.label76.AutoSize = true;
+            this.label76.Location = new System.Drawing.Point(13, 8);
+            this.label76.Name = "label76";
+            this.label76.Size = new System.Drawing.Size(67, 14);
+            this.label76.TabIndex = 93;
+            this.label76.Text = "边缘位置";
+            // 
+            // cmbCLPEdgeInd
+            // 
+            this.cmbCLPEdgeInd.FormattingEnabled = true;
+            this.cmbCLPEdgeInd.Items.AddRange(new object[] {
+            "左边缘",
+            "右边缘"});
+            this.cmbCLPEdgeInd.Location = new System.Drawing.Point(82, 5);
+            this.cmbCLPEdgeInd.Name = "cmbCLPEdgeInd";
+            this.cmbCLPEdgeInd.Size = new System.Drawing.Size(114, 22);
+            this.cmbCLPEdgeInd.TabIndex = 94;
+            // 
+            // label77
+            // 
+            this.label77.AutoSize = true;
+            this.label77.Location = new System.Drawing.Point(13, 41);
+            this.label77.Name = "label77";
+            this.label77.Size = new System.Drawing.Size(67, 14);
+            this.label77.TabIndex = 93;
+            this.label77.Text = "边缘极性";
+            // 
+            // cmbCLPEdgePol
+            // 
+            this.cmbCLPEdgePol.FormattingEnabled = true;
+            this.cmbCLPEdgePol.Items.AddRange(new object[] {
+            "由暗到明",
+            "由明到暗",
+            "任何极性"});
+            this.cmbCLPEdgePol.Location = new System.Drawing.Point(84, 38);
+            this.cmbCLPEdgePol.Name = "cmbCLPEdgePol";
+            this.cmbCLPEdgePol.Size = new System.Drawing.Size(112, 22);
+            this.cmbCLPEdgePol.TabIndex = 94;
+            // 
+            // button3
+            // 
+            this.button3.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("button3.BackgroundImage")));
+            this.button3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.button3.ForeColor = System.Drawing.Color.Red;
+            this.button3.ImeMode = System.Windows.Forms.ImeMode.NoControl;
+            this.button3.Location = new System.Drawing.Point(16, 263);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(77, 77);
+            this.button3.TabIndex = 11;
+            this.button3.Text = "高级设置";
+            this.button3.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.btEdgeParam_Click);
             // 
             // tabPageCalib
             // 
@@ -5571,21 +5616,22 @@ namespace VisionApplication
             ((System.ComponentModel.ISupportInitialize)(this.nudPMATrainEdgeThre)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudPMAFine)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudPMACoarse)).EndInit();
-            this.tabPageEdge.ResumeLayout(false);
-            this.tabPageEdge.PerformLayout();
-            this.panel8.ResumeLayout(false);
-            this.panel8.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nudEdgeThre)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nudLenTh)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nudCLPRadio)).EndInit();
             this.tabPageFindLine.ResumeLayout(false);
             this.tabPageFindLine.PerformLayout();
             this.panel6.ResumeLayout(false);
             this.panel6.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPEdgeThre)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudLenTh)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPCaliperNum)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPRemovePoint)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudCLPRad)).EndInit();
+            this.tabPageEdge.ResumeLayout(false);
+            this.tabPageEdge.PerformLayout();
+            this.panel8.ResumeLayout(false);
+            this.panel8.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudEdgeThre)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudCLPRadio)).EndInit();
             this.tabPageCalib.ResumeLayout(false);
             this.tabPageCalib.PerformLayout();
             this.panel7.ResumeLayout(false);
@@ -6053,5 +6099,7 @@ namespace VisionApplication
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         private System.Windows.Forms.ToolStripMenuItem menuTask_CrackPlayback;
         private System.Windows.Forms.ToolStripMenuItem menuTask_LoadRes;
+        private System.Windows.Forms.NumericUpDown numericUpDown1;
+        private System.Windows.Forms.Label label78;
     }
 }

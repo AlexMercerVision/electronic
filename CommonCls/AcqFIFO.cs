@@ -363,9 +363,9 @@ namespace CommonCls
                         //保留byte[]型数据
                         int width = (int)stFrameInfoWithData.stFrameInfo.nWidth;
                         int height = (int)stFrameInfoWithData.stFrameInfo.nHeight;
-                        /* 
-                         IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
-     */
+
+                        IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
+
                         // 初始化 CogImage8Root
                         cogImage8Root.Initialize(width, height, imagePtr, width, null);
                         cogImage8Grey.SetRoot(cogImage8Root);
@@ -440,11 +440,11 @@ namespace CommonCls
                         // 从 frameInfoForOther 中获取图像宽高和像素数据指针
                         int width = (int)stFrameInfoWithData.stFrameInfo.nWidth;
                         int height = (int)stFrameInfoWithData.stFrameInfo.nHeight;
-                        /*
+
                         IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
                         //保留byte[]型数据
                         IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
-                         */
+
                         ci24ColorAcq[iCamIndex] = new CogImage24PlanarColor(IntPtrToBitmap(stFrameInfoWithData.pBufAddr, width, height));
                         nRet = _cameras[iCamIndex].MV_CC_FreeImageBuffer_NET(ref stFrameInfoWithData);
                     }
@@ -747,7 +747,7 @@ namespace CommonCls
                         if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height * 3)
                             bImgSrcData[iCamIndex] = new byte[width * height * 3];
 
-                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap(), ImageFormat.Bmp);
+                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap());
 
                         return 1;
                     }
@@ -762,7 +762,7 @@ namespace CommonCls
                         if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
                             bImgSrcData[wsInd] = new byte[width * height * 3];
 
-                          bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap(), ImageFormat.Bmp); 
+                          bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap()); 
 
                         return 0;
                     }
@@ -827,15 +827,50 @@ namespace CommonCls
             
         }
 
-        private  byte[] BitmapToBytes(Bitmap bitmap, ImageFormat format)
+        private byte[] BitmapToBytes(Bitmap bitmap)
         {
-            using (MemoryStream ms = new MemoryStream())
+            if (bitmap == null)
+                throw new ArgumentNullException(nameof(bitmap));
+
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+            int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+            byte[] pixels = new byte[width * height * bytesPerPixel];
+
+            BitmapData bmpData = bitmap.LockBits(
+                new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadOnly,
+                bitmap.PixelFormat
+            );
+
+            try
             {
-                bitmap.Save(ms, format);
-                return ms.ToArray();
+                IntPtr ptr = bmpData.Scan0;
+                int stride = bmpData.Stride;
+
+                // 如果每行无填充，一次性复制全部
+                if (stride == width * bytesPerPixel)
+                {
+                    Marshal.Copy(ptr, pixels, 0, pixels.Length);
+                }
+                else
+                {
+                    // 有填充时逐行复制，跳过填充字节
+                    for (int y = 0; y < height; y++)
+                    {
+                        IntPtr rowPtr = IntPtr.Add(ptr, y * stride);
+                        Marshal.Copy(rowPtr, pixels, y * width * bytesPerPixel, width * bytesPerPixel);
+                    }
+                }
             }
+            finally
+            {
+                bitmap.UnlockBits(bmpData);
+            }
+
+            return pixels;
         }
-       
+
         public CogImage8Grey[] GrabOneFrameCogFromFileSingle(int iFileInd, bool bListProcess, int wsInd,int iCamIndex)
         {
             int tWait = 5;

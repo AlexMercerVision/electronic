@@ -29,6 +29,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
@@ -97,7 +98,7 @@ namespace VisionControl
         public CDL cdl = new CDL();
         List<CogRectangleAffine>[] AL_det_result = new List<CogRectangleAffine>[maxCameraNum];
 
-        DLResult[] DL_result = new DLResult[maxCameraNum];
+        public DLResult[] DL_result = new DLResult[maxCameraNum];
 
 
         private PMARes[] pmaRes=new PMARes[maxCameraNum];
@@ -641,7 +642,7 @@ namespace VisionControl
                     
                     //2026年4月12日 修改了采集图像函数
                     if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) ||
-                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFile(iFileIndex, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) >=0)
+                        !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFileWithSrcData(iFileIndex, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) >=0)
                     {
                         ci8gAcq = acqFIFO._ci8gAcq;
                       //  ci8gFX = acqFIFO.ci8gAcqFX;
@@ -653,6 +654,8 @@ namespace VisionControl
                             else
                                 DLInferOffLine(jobIndex);
                             pmaRes[jobIndex].bLocated = true;
+                            // ★★★ 关键：深度推理已完成，立即设置完成标志 ★★★
+                            _bRunOneTimeFinished[jobIndex] = 2;
                         }
                         else if(cup.p_VPPRTP.bVisionInfer)
                         {
@@ -666,6 +669,8 @@ namespace VisionControl
                     else
                     {
                         strErrInfo[jobIndex] = "图像采集异常:"+ acqFIFO.strErrInfo;
+                        // 采集失败也应当设置完成标志，避免死等
+                        _bRunOneTimeFinished[jobIndex] = 2;
                         return false;
                     }
                 }
@@ -688,7 +693,54 @@ namespace VisionControl
             }          
             return true; 
         }
-      
+
+        /// <summary>
+        /// 执行所有启用的工位（同步模式）
+        /// </summary>
+        public bool RunOneTimeSpliteAll()
+        {
+            // 先检查所有工位是否都空闲（可选）
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                if (cup.p_CD.bListProcess[i] && IsJobBusy(i))
+                {
+                    strErrInfo[i] = "工位正在执行中";
+                    return false;
+                }
+            }
+
+            bool allSuccess = true;
+            // 遍历所有工位
+            for (int jobIndex = 0; jobIndex < maxCameraNum; jobIndex++)
+            {
+                if (!cup.p_CD.bListProcess[jobIndex]) continue;
+
+                // 执行单个工位（同步等待）
+                if (!RunOneTime(jobIndex))
+                {
+                    allSuccess = false;
+                    strErrInfo[jobIndex] = "执行失败";
+                    continue;
+                }
+
+                // 等待该工位完成
+                int count = 0;
+                int maxTimes = cup.p_RTSP.runTimeOut / 5;
+                while (bRunOneTimeFinished[jobIndex] != 2 && count < maxTimes)
+                {
+                    Thread.Sleep(5);
+                    count++;
+                }
+                if (bRunOneTimeFinished[jobIndex] != 2)
+                {
+                    bRunOneTimeFinished[jobIndex] = 2; // 强制结束
+                    allSuccess = false;
+                    strErrInfo[jobIndex] = "超时";
+                }
+            }
+
+            return allSuccess;
+        }
         //VP执行一次运算
         public bool RunOneTime()
         {
@@ -835,6 +887,30 @@ namespace VisionControl
             InitPreviewLocks();   // 初始化预览锁数组
             vpRes.iResCode = new int[maxCameraNum];
             //vpRes.TF = new CogTransform2DLinear[maxCameraNum];
+
+            // 初始化 DL_result 数组每个元素
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+               // if (DL_result[i] == null)
+                    DL_result[i] = new DLResult();
+                // 确保内部 List 不为 null（如果 DLResult 构造函数未初始化）
+                if (DL_result[i].AL_Rect == null)
+                    DL_result[i].AL_Rect = new List<CogRectangleAffine>();
+                if (DL_result[i].AL_score == null)
+                    DL_result[i].AL_score = new List<float>();
+                if (DL_result[i].AL_Type == null)
+                    DL_result[i].AL_Type = new List<int>();
+                if (DL_result[i].Al_bDiff == null)
+                    DL_result[i].Al_bDiff = new List<bool>();
+            }
+
+            // 如果也有 pmaRes 数组，同样初始化
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+             //   if (pmaRes[i] == null)
+                    pmaRes[i] = new PMARes();
+            }
+
         }
       
       
@@ -1678,7 +1754,7 @@ namespace VisionControl
                 {
                     string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
                     CogFindLineTool cfl = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
-                    cflParam.bUseTuneLocation = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
+                 //   cflParam.bUseTuneLocation = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
 
                     cflParam.bPolarity = (int)cfl.RunParams.CaliperRunParams.Edge0Polarity - 1;
                     cflParam.dThre = cfl.RunParams.CaliperRunParams.ContrastThreshold;
@@ -1690,7 +1766,7 @@ namespace VisionControl
                 {
                     string calipName = bLeft ? "CogCaliperTool1" : "CogCaliperTool2";
                     CogCaliperTool ccT= (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
-                    cflParam.bUseTuneLocation = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
+                //    cflParam.bUseTuneLocation = (bool)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("bUseTuneLocation");
 
                     cflParam.bPolarity = (int)ccT.RunParams.Edge0Polarity - 1;
                     cflParam.iCaliperNum = (int)ccT.RunParams.Edge1Polarity - 1; //边缘对右边缘
@@ -1717,7 +1793,7 @@ namespace VisionControl
                     string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
                     CogFindLineTool cfl = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogFindLineTool;
 
-                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
+                  //  (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
                     cfl.RunParams.CaliperRunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
                     cfl.RunParams.CaliperRunParams.ContrastThreshold = clpParam.dThre;
                     cfl.RunParams.CaliperRunParams.FilterHalfSizeInPixels = clpParam.iRadius;
@@ -1729,15 +1805,14 @@ namespace VisionControl
                     string calipName = bLeft ? "CogCaliperTool1" : "CogCaliperTool2";
                     CogCaliperTool cfl = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools[calipName] as CogCaliperTool;
 
-                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
+                  //  (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", clpParam.bUseTuneLocation);
                     cfl.RunParams.Edge0Polarity = (CogCaliperPolarityConstants)(clpParam.bPolarity + 1);
                     cfl.RunParams.Edge1Polarity= (CogCaliperPolarityConstants)(clpParam.iCaliperNum +1);
                     cfl.RunParams.ContrastThreshold = clpParam.dThre;
                     cfl.RunParams.FilterHalfSizeInPixels = clpParam.iRadius;
                     
                 }
-
-                //  (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.iRes1);
+                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.dRes1);
             }
             catch (Exception ex)
             {
@@ -4100,15 +4175,15 @@ namespace VisionControl
                             else
                             {
                                 cogRDMainUser.Image = cogImg;
-                            //    AddGrap(cogRDMainUser, DL_result[jobIndex]);
-                            //    AddGrapOkNg(cogRDMainUser, pmaRes[jobIndex].bOk);
+                                AddGrap(cogRDMainUser, DL_result[jobIndex]);
+                               AddGrapOkNg(cogRDMainUser, pmaRes[jobIndex].bOk);
                                 cogRDMainUser.Fit(true);
                             }
                             break;
                         case 1:
                             cogRDSub1.Image = cogImg;
-                        //    AddGrap(cogRDSub1, DL_result[jobIndex]);
-                        //    AddGrapOkNg(cogRDSub1, pmaRes[jobIndex].bOk);
+                            AddGrap(cogRDSub1, DL_result[jobIndex]);
+                            AddGrapOkNg(cogRDSub1, pmaRes[jobIndex].bOk);
                             cogRDSub1.Fit(true);
                             break;
                         case 2:

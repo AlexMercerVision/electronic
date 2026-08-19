@@ -167,6 +167,8 @@ namespace VisionApplication
                                                                 // ★★★ 新增：静默运行标志 ★★★
         private bool _skipStatUpdateForCurrentRun = false;
 
+
+        bool bUserLaser = false;                                    // 用户是否使用激光标刻
         #endregion
 
         // 14. 构造函数
@@ -1913,7 +1915,78 @@ namespace VisionApplication
             AddLog();
         }
 
+        /// <summary>
+        /// 分析单个工位的运行结果并记录日志。
+        /// 支持深度推理（缺陷检测）和视觉推理（长度测量）。
+        /// </summary>
+        /// <param name="jobIndex">工位索引（0=A面，1=B面）</param>
         private void AnaEventForJob(int jobIndex)
+        {
+            // 参数有效性检查
+            if (jobIndex < 0 || jobIndex >= maxCameraNum || !cup.p_CD.bListProcess[jobIndex])
+                return;
+
+            string faceName = (jobIndex == 0) ? "A面" : $"B面";
+
+            if (cup.p_VPPRTP.bDeepInfer)
+            {
+                // ========== 深度推理模式：缺陷检测 ==========
+                DLResult dlRes = vpWin.DL_result[jobIndex];   // 假设 DL_result 已公开
+                int defectCount = dlRes.AL_Rect?.Count ?? 0;
+                bool bOk = (defectCount == 0);
+
+                // 构建缺陷详情（如果有）
+                string defectDetail = "";
+                if (!bOk)
+                {
+                    for (int i = 0; i < dlRes.AL_Type.Count && i < dlRes.AL_score.Count; i++)
+                    {
+                        int typeId = dlRes.AL_Type[i];
+                        float score = dlRes.AL_score[i];
+                        string className = cdl.GetClassName(typeId) ?? $"类型{typeId}";
+                        defectDetail += $"{className}({score:F2}) ";
+                    }
+                }
+
+                operLog.strOperEvent = $"{faceName} 缺陷检测完成";
+                operLog.iEventStatus = bOk ? 2 : -2;
+                operLog.strFailReason = bOk ? "OK" : $"NG，缺陷: {defectDetail.Trim()}";
+
+                // 如果定位失败且未保存图像，可自动保存（可选）
+                if (!bOk && !cup.p_VPPRTP.bRecord)
+                {
+                    // 调用保存方法（已在其他部分实现）
+                }
+            }
+            else if (cup.p_VPPRTP.bVisionInfer)
+            {
+                // ========== 视觉推理模式：长度测量 ==========
+                PMARes res = vpWin._PMARes[jobIndex];    // 假设 _PMARes 已公开
+                bool bOk = res.bOk;
+                double length = res.dPMAScore;           // 或 res.dTX，取决于存储字段
+
+                operLog.strOperEvent = $"{faceName} 长度测量完成";
+                operLog.iEventStatus = bOk ? 2 : -2;
+                operLog.strFailReason = bOk ? $"OK，长度: {length:F2}" : $"NG，长度: {length:F2}";
+            }
+            else
+            {
+                // 未启用任何推理引擎
+                operLog.strOperEvent = $"{faceName} 无推理";
+                operLog.iEventStatus = 0;
+                operLog.strFailReason = "未启用推理引擎";
+            }
+
+            // 记录日志
+            AddLog();
+
+            // 如果启用了IO输出，调用对应工位的输出方法
+            if (cup.p_RTSP.bUpdateIO)
+            {
+                ExeIOOut(jobIndex);
+            }
+        }
+        /*private void AnaEventForJob(int jobIndex)
         {
             bool ok = pmaRes[jobIndex].bLocated;
             string faceName = (jobIndex == 0) ? "A面" : "B面";
@@ -1937,10 +2010,10 @@ namespace VisionApplication
                         // 调用新方法保存当前图像
                         acqFIFO.SaveCurrentImageForErr(strErrPathS, acqFIFO.strTime[jobIndex], jobIndex);
 
-                       /* operLog.iEventStatus = 0;
+                       *//* operLog.iEventStatus = 0;
                         operLog.strOperEvent = "自动保存失败图像";
                         operLog.strFailReason = $"{faceName} 图像已保存";
-                        AddLog();*/
+                        AddLog();*//*
                     }
                 }
                 catch (Exception ex)
@@ -1952,8 +2025,92 @@ namespace VisionApplication
                     System.Diagnostics.Debug.WriteLine($"自动保存失败图像异常: {ex.Message}");
                 }
             }
+        }*/
+        /// <summary>
+        /// 分析所有工位的检测结果，生成日志并更新统计。
+        /// 适用于同步执行所有工位后的统一处理。
+        /// </summary>
+        /// <summary>
+        /// 分析本次运行结果：收集所有启用工位的检测状态，生成综合日志。
+        /// 支持 VP 视觉推理（长度测量）和深度推理（缺陷检测）。
+        /// </summary>
+        private void AnaEvent()
+        {
+            // 1. 如果没有任何工位启用，直接返回
+            bool anyJobEnabled = false;
+            for (int i = 0; i < maxCameraNum; i++)
+            {
+                if (cup.p_CD.bListProcess[i])
+                {
+                    anyJobEnabled = true;
+                    break;
+                }
+            }
+            if (!anyJobEnabled)
+                return;
+
+            // 2. 根据推理模式分别处理
+            if (cup.p_VPPRTP.bDeepInfer)
+            {
+                // ---------- 深度推理模式 ----------
+                bool anyNG = false;
+                string detailInfo = "";
+
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (!cup.p_CD.bListProcess[i]) continue;
+
+                    // 获取该工位的推理结果（DL_result 是数组，元素为 struct，无需判空）
+                    DLResult dlRes = vpWin.DL_result[i];
+                    int defectCount = dlRes.AL_Rect?.Count ?? 0;
+                    bool bOk = (defectCount == 0);      // 无检测框视为 OK
+
+                    if (!bOk) anyNG = true;
+
+                    string faceName = (i == 0) ? "A面" : $"B面";
+                    detailInfo += $"{faceName}: {(bOk ? "OK" : "NG")} (缺陷数:{defectCount}) ";
+                }
+
+                operLog.strOperEvent = "完成一次运行 (深度推理)";
+                operLog.iEventStatus = anyNG ? -2 : 2;
+                operLog.strFailReason = anyNG ? $"NG。{detailInfo}" : $"OK。{detailInfo}";
+                AddLog();
+            }
+            else if (cup.p_VPPRTP.bVisionInfer)
+            {
+                // ---------- VP 视觉推理模式 ----------
+                bool anyNG = false;
+                string detailInfo = "";
+
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (!cup.p_CD.bListProcess[i]) continue;
+
+                    // 从 pmaRes 获取该工位结果（pmaRes 为 struct 数组，直接访问）
+                    PMARes res = vpWin._PMARes[i];
+                    bool bOk = res.bOk;
+                    double length = res.dPMAScore;      // 假设长度存储在 dPMAScore，也可用 dTX
+
+                    if (!bOk) anyNG = true;
+
+                    string faceName = (i == 0) ? "A面" : $"B面";
+                    detailInfo += $"{faceName}: {(bOk ? "OK" : "NG")} (长度:{length:F2}) ";
+                }
+
+                operLog.strOperEvent = "完成一次运行 (视觉推理)";
+                operLog.iEventStatus = anyNG ? -2 : 2;
+                operLog.strFailReason = anyNG ? $"NG。{detailInfo}" : $"OK。{detailInfo}";
+                AddLog();
+            }
+            else
+            {
+                // 未启用任何推理引擎（仅采集或回放）
+                operLog.strOperEvent = "完成一次运行 (无推理)";
+                operLog.iEventStatus = 0;
+                operLog.strFailReason = "未启用任何推理引擎";
+                AddLog();
+            }
         }
-       
         //2025年10月7日  执行一次运算输出IO信号
         private async void ExeIOOut(int jobIndex) 
         {
@@ -2042,7 +2199,7 @@ namespace VisionApplication
                 // 限制行数最多 20 行（可选）
                 if (dgvLog.RowCount > 20)
                     dgvLog.Rows.RemoveAt(19);
-
+                operLog.dtOperTime = DateTime.Now;
                 int ind = 0;
                 dgvLog.Rows.Insert(0, 1);
 
@@ -2349,7 +2506,17 @@ namespace VisionApplication
                 fw.SetProgress(70, "正在进行历史数据加载");
                 InitRecord();       //初始化路径
                 InitLocalFile();    //加载回放数据                            //  bSucc = vpWin.SetDiagParam(cup);
-                 
+
+                iProcess = 80;
+                fw.SetProgress(80, "正在加深度载推理环境");
+                rts.initStatus.bDLModelInit = false;
+                if (cup.p_VPPRTP.bDeepInfer)
+                {
+                    InitDL();
+                }
+                btFunSet.Visible = cup.p_VPPRTP.bVisionInfer;
+
+
                 InitCheckStatus(); 
                 iProcess = 90;
                 fw.SetProgress(90, "正在启动相机采集");
@@ -6762,7 +6929,8 @@ namespace VisionApplication
 
                 vpWin.bMainTaskFinished = false;
 
-                oneTimeThread = new Thread(RunOneTimeThread);
+                //    oneTimeThread = new Thread(RunOneTimeThread);
+                oneTimeThread = new Thread(() => RunOneTimeThread(iJobIndex==-1));
                 oneTimeThread.Start();
 
 
@@ -7274,17 +7442,17 @@ namespace VisionApplication
                 operLog.strFailReason = $"从 {calibDir} 加载";
                 AddLog();
 
-               /* vpWin.LoadAllFindLineTools(findlineDir);
+                vpWin.LoadAllFindLineTools(findlineDir);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "加载边缘定位工具";
                 operLog.strFailReason = $"从 {findlineDir} 加载";
-                AddLog();*/
-
-                vpWin.ExtractLocateBase(0,cup.p_DL.gpuID);
-                vpWin.ExtractLocateBase(1, cup.p_DL.gpuID);
-                operLog.iEventStatus = 0;
-                operLog.strOperEvent = "提取定位基准";
                 AddLog();
+
+                /* vpWin.ExtractLocateBase(0,cup.p_VPPRTP.iXBType);
+                 vpWin.ExtractLocateBase(1, cup.p_VPPRTP.iXBType);
+                 operLog.iEventStatus = 0;
+                 operLog.strOperEvent = "提取定位基准";
+                 AddLog();*/
 
                 // 5. 加载训练图像到 PMA 工具（用于重新训练或显示）
                 // 5. 恢复背景模板图到程序 data 目录（仅文件复制，不加载到VP）
@@ -7857,7 +8025,7 @@ namespace VisionApplication
                     MessageBox.Show("请选择定位边缘");
                     return;
                 }
-                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_DL.gpuID);
+                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_VPPRTP.iXBType);
                 bVPPParamChanged = true;
             }
             catch { }
@@ -7983,6 +8151,9 @@ namespace VisionApplication
             menuTask_DeepInfer.Checked = cup.p_VPPRTP.bDeepInfer;
             ViewLayout();
         }
+
+      
+
         private void btSaveVPP_Click(object sender, EventArgs e)
         {
             if (bVPPParamChanged)
@@ -8138,6 +8309,124 @@ namespace VisionApplication
             }
         }
 
+
+        /// <summary>
+        /// 单次运行线程（支持同步模式）
+        /// </summary>
+        /// <param name="syncMode">true: 同步执行所有启用工位；false: 仅执行当前选中的工位</param>
+        private void RunOneTimeThread(bool syncMode)
+        {
+            // 1. 确定需要执行的工位列表
+            List<int> jobIndices = new List<int>();
+            if (syncMode)
+            {
+                // 同步模式：遍历所有启用的工位
+                for (int i = 0; i < maxCameraNum; i++)
+                {
+                    if (cup.p_CD.bListProcess[i])
+                        jobIndices.Add(i);
+                }
+            }
+            else
+            {
+                // 单工位模式：只执行当前选中的工位（必须启用）
+                if (iJobIndex >= 0 && iJobIndex < maxCameraNum && cup.p_CD.bListProcess[iJobIndex])
+                    jobIndices.Add(iJobIndex);
+                else
+                {
+                    // 若当前工位未启用，则不执行任何操作（或可改为执行第一个启用工位）
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "单次运行";
+                    operLog.strFailReason = "当前工位未启用";
+                    AddLog();
+                    return;
+                }
+            }
+
+            if (jobIndices.Count == 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "单次运行";
+                operLog.strFailReason = "没有启用的工位";
+                AddLog();
+                return;
+            }
+
+            try
+            {
+                rts.iIsRunning = 1;
+                vpWin.bMainTaskFinished = false;
+
+                // 顺序执行每个工位（若需并行，可改为 Parallel.ForEach 或 Task 并行）
+                foreach (int jobIndex in jobIndices)
+                {
+                    // 重置完成标志（假设 vpWin._bRunOneTimeFinished 为数组）
+                    vpWin._bRunOneTimeFinished[jobIndex] = 0;
+
+                    // 执行该工位的检测
+                    if (!vpWin.RunOneTime(jobIndex))
+                    {
+                        // 启动失败，强制标记完成并记录错误
+                        vpWin._bRunOneTimeFinished[jobIndex] = 2;
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"工位{jobIndex + 1}运行一次";
+                        operLog.strFailReason = vpWin.strErrInfo?[jobIndex] ?? "启动失败";
+                        AddLog();
+                        continue;
+                    }
+
+                    // 等待该工位完成（轮询直到 _bRunOneTimeFinished 变为 2 或超时）
+                    int count = 0;
+                    int maxTimes = cup.p_RTSP.runTimeOut / 5; // 假设 runTimeOut 单位为毫秒
+                    while (vpWin._bRunOneTimeFinished[jobIndex] != 2 && count < maxTimes)
+                    {
+                        Thread.Sleep(5);
+                        count++;
+                    }
+
+                    if (vpWin._bRunOneTimeFinished[jobIndex] != 2)
+                    {
+                        // 超时处理：强制结束并记录
+                        vpWin._bRunOneTimeFinished[jobIndex] = 2;
+                        operLog.iEventStatus = -1;
+                        operLog.strOperEvent = $"工位{jobIndex + 1}运行一次";
+                        operLog.strFailReason = "视觉检测超时";
+                        AddLog();
+                    }
+                    else
+                    {
+                        // 正常完成，获取结果（假设 pmaRes 数组存储每个工位的 PMA 结果）
+                        pmaRes[jobIndex] = vpWin._PMARes[jobIndex];
+                    }
+
+                    // 更新该工位的 UI（必须在主线程执行）
+                    if (this.InvokeRequired)
+                        this.Invoke(new Action(() => UpdateUIExeForJob(jobIndex)));
+                    else
+                        UpdateUIExeForJob(jobIndex);
+                }
+
+                rts.iIsRunning = 0;
+                vpWin.bMainTaskFinished = true;
+            }
+            catch (Exception ex)
+            {
+                rts.iIsRunning = -1;
+                vpWin.bMainTaskFinished = true;
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "单次运行异常";
+                operLog.strFailReason = ex.Message;
+                AddLog();
+            }
+            finally
+            {
+                // 恢复按钮样式（在 UI 线程执行）
+                if (btFunRunOneTime.InvokeRequired)
+                    btFunRunOneTime.Invoke(new Action(() => btFunRunOneTime.FlatStyle = FlatStyle.Popup));
+                else
+                    btFunRunOneTime.FlatStyle = FlatStyle.Popup;
+            }
+        }
         private void UpdateUIExe()
         {
             int jobIndex = (iJobIndex >= 0 && iJobIndex < maxCameraNum) ? iJobIndex : 0;
@@ -8160,13 +8449,13 @@ namespace VisionApplication
             UpdateStatisticsForJob(jobIndex);  //更新统计数据
             if (cup.p_RTSP.bUpdateRecord)
             {                
-               // AnaEventForJob(iJobIndex);
+               AnaEventForJob(jobIndex);
                 //AddEventLog(iEventStatus);  //已取消颜色显示
             }
-           /* if(cup.p_RTSP.bUpdateIO)  //启用IO输出
+           /* if (cup.p_RTSP.bUpdateIO)  //启用IO输出
             {
                 //只输出OK或者只输出NG
-                if(pmaRes[jobIndex].bLocated )
+                if (pmaRes[jobIndex].bLocated)
                     ExeIOOut(jobIndex);
             }*/
         }

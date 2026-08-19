@@ -1361,7 +1361,7 @@ namespace VisionApplication
 
                 try
                 {
-                    if (cup.p_DL.gpuID == 1)
+                    if (cup.p_VPPRTP.iXBType == 1)
                     {
                         if (bFindEdgeEdit)
                         {
@@ -1401,7 +1401,7 @@ namespace VisionApplication
 
                         }
                     }
-                    else if (cup.p_DL.gpuID == 0)
+                    else if (cup.p_VPPRTP.iXBType == 0)
                     {
                         if (bFindEdgeEdit)
                         {
@@ -1457,7 +1457,7 @@ namespace VisionApplication
             try
             {
                 calipFindLineParam cflParam = new calipFindLineParam();
-                vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID,cmbCLPEdgeLeft.SelectedIndex == 0);
+                vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
                 UpdateUIFromCLPParam(cflParam);
                 operLog.strOperEvent = "获取边缘定位参数";
                 operLog.iEventStatus = 0;
@@ -1484,7 +1484,7 @@ namespace VisionApplication
 
                 UpdateCLPParamFromUI(ref cflParam);
 
-                vpWin.SetCLPParam(cflParam, iJobIndex,cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
+                vpWin.SetCLPParam(cflParam, iJobIndex,cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
                 operLog.strOperEvent = "设置边缘定位参数";
                 operLog.iEventStatus = 0;
 
@@ -1509,7 +1509,7 @@ namespace VisionApplication
                     MessageBox.Show("请选择定位边缘");
                     return;
                 }
-                vpWin.SetFindLineSearchRegion(iJobIndex, index,cup.p_DL.gpuID);
+                vpWin.SetFindLineSearchRegion(iJobIndex, index, cup.p_VPPRTP.iXBType);
                 bVPPParamChanged = true;
             }
             catch { }
@@ -1525,7 +1525,7 @@ namespace VisionApplication
                     MessageBox.Show("请选择定位边缘");
                     return;
                 }
-                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_DL.gpuID);
+                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_VPPRTP.iXBType);
                 bVPPParamChanged = true;
             }
             catch { }
@@ -1539,7 +1539,7 @@ namespace VisionApplication
             try
             {
                 bVPPParamChanged = true;
-                vpWin.ExtractLocateBase(iJobIndex,cup.p_DL.gpuID);
+                vpWin.ExtractLocateBase(iJobIndex, cup.p_VPPRTP.iXBType);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "提取定位基准";
                 AddLog();
@@ -1558,7 +1558,7 @@ namespace VisionApplication
         /// </summary>
         private void chkUseTuneLocation_CheckedChanged(object sender, EventArgs e)
         {
-            try { 
+           /* try { 
                     bVPPParamChanged = true;
 
                
@@ -1575,30 +1575,31 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = ex.ToString();
                 AddLog();
-            }
+            }*/
         }
 
         
         private void rdBT_FindLine_Click(object sender, EventArgs e)
         {
             if (rdBT_FindLine.Checked)
-            {
-                cup.p_DL.gpuID = 0;
+            { 
+                cup.p_VPPRTP.iXBType=0;
+                
             }
             if (rdBT_Caliper.Checked)
             {
-                cup.p_DL.gpuID = 1;
+                cup.p_VPPRTP.iXBType = 1;
             }
-            CaliperControlVisSet(cup.p_DL.gpuID);
+            CaliperControlVisSet(cup.p_VPPRTP.iXBType);
              calipFindLineParam cflParam = new calipFindLineParam();
-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
+            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
             UpdateUIFromCLPParam(cflParam); 
-            vpWin.SetUseTuneLocation(iJobIndex, chkUseTuneLocation.Checked, cup.p_DL.gpuID); 
+            vpWin.SetUseTuneLocation(iJobIndex, true, cup.p_VPPRTP.iXBType); 
         }
         private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
         {
             calipFindLineParam cflParam = new calipFindLineParam();
-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_DL.gpuID, cmbCLPEdgeLeft.SelectedIndex == 0);
+            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
             UpdateUIFromCLPParam(cflParam);
         }
         /// <summary>
@@ -1608,25 +1609,25 @@ namespace VisionApplication
         {
             try
             {
-                if(cup.p_DL.gpuID==0)
+                if(cup.p_VPPRTP.iXBType==0)
                 {
-                    chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+                  //   chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
                     cmbCLPPol.SelectedIndex = cflParam.bPolarity;
-                    nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
-                    nudCLPRad.Value = (decimal)cflParam.iRadius;
-                    nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
-                    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+                    nudCLPEdgeThre.Value = Math.Max((decimal)cflParam.dThre,1);
+                    nudCLPRad.Value = Math.Max((decimal)cflParam.iRadius, 1);
+                    nudCLPRemovePoint.Value = Math.Max((decimal)cflParam.iRemovePoint, 1);
+                    nudCLPCaliperNum.Value = Math.Max((decimal)cflParam.iCaliperNum, 1);
                 }
-                else if (cup.p_DL.gpuID == 1)
+                else  
                 {
-                    chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+              //     chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
                     cmbCLPPol.SelectedIndex = cflParam.bPolarity;
                     cmbCLPPol2.SelectedIndex = cflParam.iCaliperNum; 
 
-                    nudCLPEdgeThre.Value = (decimal)cflParam.dThre;
-                    nudCLPRad.Value = (decimal)cflParam.iRadius;
-                //    nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
-                //    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+                    nudCLPEdgeThre.Value = Math.Max((decimal)cflParam.dThre,1);
+                    nudCLPRad.Value = Math.Max((decimal)cflParam.iRadius, 1);
+                    //    nudCLPRemovePoint.Value = (decimal)cflParam.iRemovePoint;
+                    //    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
                 }
 
             }
@@ -1646,23 +1647,25 @@ namespace VisionApplication
         {
             try
             {
-                if (cup.p_DL.gpuID == 0)
+                if (cup.p_VPPRTP.iXBType == 0)
                 {
-                    cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
+                  //  cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
                     cflParam.bPolarity = cmbCLPPol.SelectedIndex;
                     cflParam.iCaliperNum = (int)nudCLPCaliperNum.Value; 
                     cflParam.dThre = (double)nudCLPEdgeThre.Value;
                     cflParam.iRadius = (int)nudCLPRad.Value;
                     cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+                    cflParam.dRes1 = (double)nudLenTh.Value;
                 }
-               else if (cup.p_DL.gpuID == 1)
+               else if (cup.p_VPPRTP.iXBType == 1)
                 {
-                    cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
+                  //  cflParam.bUseTuneLocation = chkUseTuneLocation.Checked;
                     cflParam.bPolarity = cmbCLPPol.SelectedIndex;
                     cflParam.iCaliperNum = cmbCLPPol2.SelectedIndex;
                     cflParam.dThre = (double)nudCLPEdgeThre.Value;
                     cflParam.iRadius = (int)nudCLPRad.Value;
-                   //cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+                    cflParam.dRes1 = (double)nudLenTh.Value;
+                    //cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
                 }
                 
             }

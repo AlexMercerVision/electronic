@@ -983,8 +983,8 @@ namespace VisionControl
         //获取结果状态
         public bool bLoadVPRes = true;
         public VPRes vpRes = new VPRes();  //xb项目的结果存储结构体
-        //   CogBlobResultCollection[] blobColl = new CogBlobResultCollection[maxCameraNum];
-        private void RunOneTimeFinished(int jobIndex)
+                                           //   CogBlobResultCollection[] blobColl = new CogBlobResultCollection[maxCameraNum];
+        /*private void RunOneTimeFinished(int  jobIndex)
         {
             try
             {
@@ -1011,11 +1011,11 @@ namespace VisionControl
                         pmaRes[jobIndex].dPMAScore -= 0.3;
                     }
 
-                    /*if (pmaRes[jobIndex].dPMAScore < 0.8)
+                    *//*if (pmaRes[jobIndex].dPMAScore < 0.8)
                     {
                         pmaRes[jobIndex].bLocated = false;
                         pmaRes[jobIndex].dPMAScore -= 0.3;
-                    }*/
+                    }*//*
                 }
                 bRunOneTimeFinished[jobIndex] = 2;
             }
@@ -1023,11 +1023,30 @@ namespace VisionControl
             {
                // bRunOneTimeFinished[jobIndex] = 2;
                 OnVisionError(jobIndex,$"工位{jobIndex+1}提取定位结果异常："+ex.Message); // ✅ 添加此处
+            } 
+        }*/
+
+        private void RunOneTimeFinished(int jobIndex)
+        {
+            try
+            {
+
+                bool bOk = (string)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result") == "OK";
+                double length = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("length");
+                pmaRes[jobIndex].bOk = bOk;             //复用模板匹配结果
+                pmaRes[jobIndex].dPMAScore = length;
+                // 触发等待事件
+              //  jobCompletedEvents[iJobIndex]?.Set();
+                bRunOneTimeFinished[jobIndex] = 2;
             }
-
-
-
+            catch (Exception ex)
+            {
+                 bRunOneTimeFinished[jobIndex] = 2;
+                OnVisionError(jobIndex, $"工位{jobIndex + 1}长度测量异常：" + ex.Message); // ✅ 添加此处
+            }
         }
+
+        
 
         //2024年6月13日  保存blob
         /* blobColl= (CogBlobResultCollection)(mJM.Job(0).VisionTool as CogToolGroup).GetScriptTerminalData("ResBlob");
