@@ -553,11 +553,12 @@ namespace VisionApplication
             this.menuStrip1.BackColor = System.Drawing.Color.White;
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuFile,
             this.menuLaserFile,
             this.menuXBType,
             this.menuCam,
             this.menuTask,
-            this.menuFile,
+            this.menuTool,
             this.menuManage,
             this.menuDisp,
             this.menuWin,
@@ -565,8 +566,7 @@ namespace VisionApplication
             this.menuHelp,
             this.menuLight,
             this.menuParam,
-            this.menuLaser,
-            this.menuTool});
+            this.menuLaser});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Padding = new System.Windows.Forms.Padding(4, 1, 0, 1);
@@ -590,7 +590,7 @@ namespace VisionApplication
             // menuLaser_LoadFile
             // 
             this.menuLaser_LoadFile.Name = "menuLaser_LoadFile";
-            this.menuLaser_LoadFile.Size = new System.Drawing.Size(148, 22);
+            this.menuLaser_LoadFile.Size = new System.Drawing.Size(180, 22);
             this.menuLaser_LoadFile.Text = "加载激光文件";
             this.menuLaser_LoadFile.Visible = false;
             this.menuLaser_LoadFile.Click += new System.EventHandler(this.menuLaser_LoadFile_Click);
@@ -598,7 +598,7 @@ namespace VisionApplication
             // menuLaser_SaveFile
             // 
             this.menuLaser_SaveFile.Name = "menuLaser_SaveFile";
-            this.menuLaser_SaveFile.Size = new System.Drawing.Size(148, 22);
+            this.menuLaser_SaveFile.Size = new System.Drawing.Size(180, 22);
             this.menuLaser_SaveFile.Text = "保存激光文件";
             this.menuLaser_SaveFile.Visible = false;
             this.menuLaser_SaveFile.Click += new System.EventHandler(this.menuLaser_SaveFile_Click);
@@ -606,20 +606,20 @@ namespace VisionApplication
             // toolStripSeparator18
             // 
             this.toolStripSeparator18.Name = "toolStripSeparator18";
-            this.toolStripSeparator18.Size = new System.Drawing.Size(145, 6);
+            this.toolStripSeparator18.Size = new System.Drawing.Size(177, 6);
             this.toolStripSeparator18.Visible = false;
             // 
             // menuLaser_SaveEngine
             // 
             this.menuLaser_SaveEngine.Name = "menuLaser_SaveEngine";
-            this.menuLaser_SaveEngine.Size = new System.Drawing.Size(148, 22);
+            this.menuLaser_SaveEngine.Size = new System.Drawing.Size(180, 22);
             this.menuLaser_SaveEngine.Text = "保存工程";
             this.menuLaser_SaveEngine.Click += new System.EventHandler(this.menuLaser_SaveEngine_Click);
             // 
             // menuLaser_LoadEngine
             // 
             this.menuLaser_LoadEngine.Name = "menuLaser_LoadEngine";
-            this.menuLaser_LoadEngine.Size = new System.Drawing.Size(148, 22);
+            this.menuLaser_LoadEngine.Size = new System.Drawing.Size(180, 22);
             this.menuLaser_LoadEngine.Text = "加载工程";
             this.menuLaser_LoadEngine.Click += new System.EventHandler(this.menuLaser_LoadEngine_Click);
             // 
@@ -729,35 +729,35 @@ namespace VisionApplication
             // menuTask_AcqOneImage
             // 
             this.menuTask_AcqOneImage.Name = "menuTask_AcqOneImage";
-            this.menuTask_AcqOneImage.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_AcqOneImage.Size = new System.Drawing.Size(160, 22);
             this.menuTask_AcqOneImage.Text = "采集图像";
             this.menuTask_AcqOneImage.Visible = false;
             // 
             // menuTask_RunOneTime
             // 
             this.menuTask_RunOneTime.Name = "menuTask_RunOneTime";
-            this.menuTask_RunOneTime.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_RunOneTime.Size = new System.Drawing.Size(160, 22);
             this.menuTask_RunOneTime.Text = "单次运行";
             this.menuTask_RunOneTime.Visible = false;
             // 
             // menuTask_RunCont
             // 
             this.menuTask_RunCont.Name = "menuTask_RunCont";
-            this.menuTask_RunCont.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_RunCont.Size = new System.Drawing.Size(160, 22);
             this.menuTask_RunCont.Text = "循环运行";
             this.menuTask_RunCont.Visible = false;
             // 
             // menuTask_Paint
             // 
             this.menuTask_Paint.Name = "menuTask_Paint";
-            this.menuTask_Paint.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_Paint.Size = new System.Drawing.Size(160, 22);
             this.menuTask_Paint.Text = "平整度检测";
             this.menuTask_Paint.Visible = false;
             // 
             // menuTask_PreView
             // 
             this.menuTask_PreView.Name = "menuTask_PreView";
-            this.menuTask_PreView.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_PreView.Size = new System.Drawing.Size(160, 22);
             this.menuTask_PreView.Text = "实时预览";
             this.menuTask_PreView.Visible = false;
             // 
@@ -766,73 +766,73 @@ namespace VisionApplication
             this.menuTask_FXRestruct.Checked = true;
             this.menuTask_FXRestruct.CheckState = System.Windows.Forms.CheckState.Checked;
             this.menuTask_FXRestruct.Name = "menuTask_FXRestruct";
-            this.menuTask_FXRestruct.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_FXRestruct.Size = new System.Drawing.Size(160, 22);
             this.menuTask_FXRestruct.Text = "启用光度图重构";
             this.menuTask_FXRestruct.Visible = false;
             // 
             // menuTask_VisionInfer
             // 
             this.menuTask_VisionInfer.Name = "menuTask_VisionInfer";
-            this.menuTask_VisionInfer.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_VisionInfer.Size = new System.Drawing.Size(160, 22);
             this.menuTask_VisionInfer.Text = "电极帽尺寸测量";
             this.menuTask_VisionInfer.Click += new System.EventHandler(this.menuTask_VisionInfer_Click_1);
             // 
             // menuTask_DeepInfer
             // 
             this.menuTask_DeepInfer.Name = "menuTask_DeepInfer";
-            this.menuTask_DeepInfer.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_DeepInfer.Size = new System.Drawing.Size(160, 22);
             this.menuTask_DeepInfer.Text = "电极帽缺陷检测";
             this.menuTask_DeepInfer.Click += new System.EventHandler(this.menuTask_DeepInfer_Click);
             // 
             // 软触发一次ToolStripMenuItem
             // 
             this.软触发一次ToolStripMenuItem.Name = "软触发一次ToolStripMenuItem";
-            this.软触发一次ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.软触发一次ToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.软触发一次ToolStripMenuItem.Text = "软触发一次";
             this.软触发一次ToolStripMenuItem.Visible = false;
             // 
             // menuTask_Refresh
             // 
             this.menuTask_Refresh.Name = "menuTask_Refresh";
-            this.menuTask_Refresh.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_Refresh.Size = new System.Drawing.Size(160, 22);
             this.menuTask_Refresh.Text = "唤醒睡眠";
             this.menuTask_Refresh.Visible = false;
             // 
             // menuTask_SingleFrame
             // 
             this.menuTask_SingleFrame.Name = "menuTask_SingleFrame";
-            this.menuTask_SingleFrame.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_SingleFrame.Size = new System.Drawing.Size(160, 22);
             this.menuTask_SingleFrame.Text = "单帧模式";
             this.menuTask_SingleFrame.Visible = false;
             // 
             // 创建空标注ToolStripMenuItem
             // 
             this.创建空标注ToolStripMenuItem.Name = "创建空标注ToolStripMenuItem";
-            this.创建空标注ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.创建空标注ToolStripMenuItem.Size = new System.Drawing.Size(160, 22);
             this.创建空标注ToolStripMenuItem.Text = "创建空标注";
             this.创建空标注ToolStripMenuItem.Visible = false;
             // 
             // toolStripSeparator12
             // 
             this.toolStripSeparator12.Name = "toolStripSeparator12";
-            this.toolStripSeparator12.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator12.Size = new System.Drawing.Size(157, 6);
             // 
             // toolStripSeparator6
             // 
             this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator6.Size = new System.Drawing.Size(157, 6);
             // 
             // menuTask_CrackPlayback
             // 
             this.menuTask_CrackPlayback.Name = "menuTask_CrackPlayback";
-            this.menuTask_CrackPlayback.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_CrackPlayback.Size = new System.Drawing.Size(160, 22);
             this.menuTask_CrackPlayback.Text = "回放缺陷样本";
             this.menuTask_CrackPlayback.Visible = false;
             // 
             // menuTask_LoadRes
             // 
             this.menuTask_LoadRes.Name = "menuTask_LoadRes";
-            this.menuTask_LoadRes.Size = new System.Drawing.Size(180, 22);
+            this.menuTask_LoadRes.Size = new System.Drawing.Size(160, 22);
             this.menuTask_LoadRes.Text = "加载结果";
             this.menuTask_LoadRes.Visible = false;
             // 
@@ -852,33 +852,33 @@ namespace VisionApplication
             // menuFile_SaveDirectory
             // 
             this.menuFile_SaveDirectory.Name = "menuFile_SaveDirectory";
-            this.menuFile_SaveDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_SaveDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_SaveDirectory.Text = "打开存储文件夹";
             this.menuFile_SaveDirectory.Click += new System.EventHandler(this.menuFile_SaveDirectory_Click);
             // 
             // menuFile_PlaybackDirectory
             // 
             this.menuFile_PlaybackDirectory.Name = "menuFile_PlaybackDirectory";
-            this.menuFile_PlaybackDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_PlaybackDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_PlaybackDirectory.Text = "打开回放文件夹";
             this.menuFile_PlaybackDirectory.Click += new System.EventHandler(this.menuFile_PlaybackDirectory_Click);
             // 
             // menuFile_ResultDirectory
             // 
             this.menuFile_ResultDirectory.Name = "menuFile_ResultDirectory";
-            this.menuFile_ResultDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_ResultDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_ResultDirectory.Text = "打开模型文件夹";
             this.menuFile_ResultDirectory.Click += new System.EventHandler(this.menuFile_ResultDirectory_Click);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(157, 6);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(177, 6);
             // 
             // menuFile_LogDirectory
             // 
             this.menuFile_LogDirectory.Name = "menuFile_LogDirectory";
-            this.menuFile_LogDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_LogDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_LogDirectory.Text = "打开标刻文件夹";
             this.menuFile_LogDirectory.Visible = false;
             this.menuFile_LogDirectory.Click += new System.EventHandler(this.menuFile_LogDirectory_Click);
@@ -886,7 +886,7 @@ namespace VisionApplication
             // menuFile_UpdatePlaybackDirectory
             // 
             this.menuFile_UpdatePlaybackDirectory.Name = "menuFile_UpdatePlaybackDirectory";
-            this.menuFile_UpdatePlaybackDirectory.Size = new System.Drawing.Size(160, 22);
+            this.menuFile_UpdatePlaybackDirectory.Size = new System.Drawing.Size(180, 22);
             this.menuFile_UpdatePlaybackDirectory.Text = "更新回放数据";
             this.menuFile_UpdatePlaybackDirectory.Visible = false;
             this.menuFile_UpdatePlaybackDirectory.Click += new System.EventHandler(this.menuFile_UpdatePlaybackDirectory_Click);
@@ -1034,6 +1034,7 @@ namespace VisionApplication
             this.menu_View_LaserWin.Name = "menu_View_LaserWin";
             this.menu_View_LaserWin.Size = new System.Drawing.Size(160, 22);
             this.menu_View_LaserWin.Text = "激光标刻服务端";
+            this.menu_View_LaserWin.Visible = false;
             this.menu_View_LaserWin.Click += new System.EventHandler(this.menu_View_LaserWin_Click);
             // 
             // menu_View_ResultStatics
@@ -1133,7 +1134,7 @@ namespace VisionApplication
             this.menuTask_Pause});
             this.menuUnion.Name = "menuUnion";
             this.menuUnion.Size = new System.Drawing.Size(68, 22);
-            this.menuUnion.Text = "通信控制";
+            this.menuUnion.Text = "反馈控制";
             this.menuUnion.Visible = false;
             // 
             // menuTask_FeedBack
@@ -1474,52 +1475,51 @@ namespace VisionApplication
             this.menuTool_Remark,
             this.toolStripSeparator13,
             this.menuTool_LightDebug});
-            this.menuTool.Enabled = false;
             this.menuTool.Name = "menuTool";
             this.menuTool.Size = new System.Drawing.Size(44, 22);
             this.menuTool.Text = "工具";
-            this.menuTool.Visible = false;
             // 
             // menuTool_infer
             // 
             this.menuTool_infer.Name = "menuTool_infer";
-            this.menuTool_infer.Size = new System.Drawing.Size(178, 22);
+            this.menuTool_infer.Size = new System.Drawing.Size(180, 22);
             this.menuTool_infer.Text = "深度推理";
             // 
             // menuTool_RemarkManager
             // 
             this.menuTool_RemarkManager.Name = "menuTool_RemarkManager";
-            this.menuTool_RemarkManager.Size = new System.Drawing.Size(178, 22);
+            this.menuTool_RemarkManager.Size = new System.Drawing.Size(180, 22);
             this.menuTool_RemarkManager.Text = "标注文件管理";
             // 
             // menuTool_ImageGroupPreview
             // 
             this.menuTool_ImageGroupPreview.Name = "menuTool_ImageGroupPreview";
-            this.menuTool_ImageGroupPreview.Size = new System.Drawing.Size(178, 22);
+            this.menuTool_ImageGroupPreview.Size = new System.Drawing.Size(180, 22);
             this.menuTool_ImageGroupPreview.Text = "图像同步查看";
             // 
             // menuTool_ImageMarkCmp
             // 
             this.menuTool_ImageMarkCmp.Name = "menuTool_ImageMarkCmp";
-            this.menuTool_ImageMarkCmp.Size = new System.Drawing.Size(178, 22);
+            this.menuTool_ImageMarkCmp.Size = new System.Drawing.Size(180, 22);
             this.menuTool_ImageMarkCmp.Text = "图像和标注比对";
             // 
             // menuTool_Remark
             // 
             this.menuTool_Remark.Name = "menuTool_Remark";
-            this.menuTool_Remark.Size = new System.Drawing.Size(178, 22);
+            this.menuTool_Remark.Size = new System.Drawing.Size(180, 22);
             this.menuTool_Remark.Text = "LabelImg数据标注";
             // 
             // toolStripSeparator13
             // 
             this.toolStripSeparator13.Name = "toolStripSeparator13";
-            this.toolStripSeparator13.Size = new System.Drawing.Size(175, 6);
+            this.toolStripSeparator13.Size = new System.Drawing.Size(177, 6);
             // 
             // menuTool_LightDebug
             // 
             this.menuTool_LightDebug.Name = "menuTool_LightDebug";
-            this.menuTool_LightDebug.Size = new System.Drawing.Size(178, 22);
+            this.menuTool_LightDebug.Size = new System.Drawing.Size(180, 22);
             this.menuTool_LightDebug.Text = "光源测试";
+            this.menuTool_LightDebug.Visible = false;
             this.menuTool_LightDebug.Click += new System.EventHandler(this.menuTool_LightDebug_Click);
             // 
             // toolStrip1
@@ -2034,8 +2034,7 @@ namespace VisionApplication
             // 
             this.toolStripStatus_Engineer.BackColor = System.Drawing.SystemColors.ButtonFace;
             this.toolStripStatus_Engineer.Name = "toolStripStatus_Engineer";
-            this.toolStripStatus_Engineer.Size = new System.Drawing.Size(44, 30);
-            this.toolStripStatus_Engineer.Text = "机种：";
+            this.toolStripStatus_Engineer.Size = new System.Drawing.Size(0, 30);
             // 
             // splitContainer1
             // 

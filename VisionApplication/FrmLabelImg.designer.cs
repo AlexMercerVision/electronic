@@ -114,6 +114,8 @@ namespace xbDefectDect
             this.btTransform = new System.Windows.Forms.Button();
             this.cmbDefectClsTar = new System.Windows.Forms.ComboBox();
             this.cmbDefectClsScr = new System.Windows.Forms.ComboBox();
+            this.cmbFormat = new System.Windows.Forms.ComboBox();
+            this.label16 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.cogRDManuMark)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.cogRDAutoMark)).BeginInit();
             this.menuStrip1.SuspendLayout();
@@ -711,11 +713,12 @@ namespace xbDefectDect
             // 
             this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(2, 17);
+            this.label11.Location = new System.Drawing.Point(7, 42);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(53, 12);
             this.label11.TabIndex = 36;
             this.label11.Text = "缺陷类别";
+            this.label11.Click += new System.EventHandler(this.label11_Click);
             // 
             // cmbDefectCls
             // 
@@ -728,9 +731,9 @@ namespace xbDefectDect
             "Sub2",
             "Sub3",
             "Sub4"});
-            this.cmbDefectCls.Location = new System.Drawing.Point(59, 14);
+            this.cmbDefectCls.Location = new System.Drawing.Point(64, 39);
             this.cmbDefectCls.Name = "cmbDefectCls";
-            this.cmbDefectCls.Size = new System.Drawing.Size(145, 20);
+            this.cmbDefectCls.Size = new System.Drawing.Size(107, 20);
             this.cmbDefectCls.TabIndex = 40;
             this.cmbDefectCls.SelectedIndexChanged += new System.EventHandler(this.cmbDefectCls_SelectedIndexChanged);
             // 
@@ -738,7 +741,7 @@ namespace xbDefectDect
             // 
             this.label12.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(4, 47);
+            this.label12.Location = new System.Drawing.Point(7, 69);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(53, 12);
             this.label12.TabIndex = 36;
@@ -760,7 +763,7 @@ namespace xbDefectDect
             "0.8",
             "0.9",
             "1"});
-            this.cmbDefectScore.Location = new System.Drawing.Point(63, 44);
+            this.cmbDefectScore.Location = new System.Drawing.Point(66, 66);
             this.cmbDefectScore.Name = "cmbDefectScore";
             this.cmbDefectScore.Size = new System.Drawing.Size(71, 20);
             this.cmbDefectScore.TabIndex = 40;
@@ -770,7 +773,7 @@ namespace xbDefectDect
             // 
             this.chkHigh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkHigh.AutoSize = true;
-            this.chkHigh.Location = new System.Drawing.Point(140, 48);
+            this.chkHigh.Location = new System.Drawing.Point(143, 70);
             this.chkHigh.Name = "chkHigh";
             this.chkHigh.Size = new System.Drawing.Size(72, 16);
             this.chkHigh.TabIndex = 44;
@@ -782,7 +785,7 @@ namespace xbDefectDect
             // 
             this.rbManuMark.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.rbManuMark.AutoSize = true;
-            this.rbManuMark.Location = new System.Drawing.Point(63, 77);
+            this.rbManuMark.Location = new System.Drawing.Point(66, 99);
             this.rbManuMark.Name = "rbManuMark";
             this.rbManuMark.Size = new System.Drawing.Size(71, 16);
             this.rbManuMark.TabIndex = 45;
@@ -795,7 +798,7 @@ namespace xbDefectDect
             this.rbAutoMark.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.rbAutoMark.AutoSize = true;
             this.rbAutoMark.Checked = true;
-            this.rbAutoMark.Location = new System.Drawing.Point(140, 77);
+            this.rbAutoMark.Location = new System.Drawing.Point(143, 99);
             this.rbAutoMark.Name = "rbAutoMark";
             this.rbAutoMark.Size = new System.Drawing.Size(71, 16);
             this.rbAutoMark.TabIndex = 45;
@@ -807,7 +810,7 @@ namespace xbDefectDect
             // 
             this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(4, 78);
+            this.label13.Location = new System.Drawing.Point(7, 100);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(53, 12);
             this.label13.TabIndex = 36;
@@ -816,7 +819,7 @@ namespace xbDefectDect
             // lblInfo
             // 
             this.lblInfo.AutoSize = true;
-            this.lblInfo.Location = new System.Drawing.Point(14, 150);
+            this.lblInfo.Location = new System.Drawing.Point(17, 172);
             this.lblInfo.Name = "lblInfo";
             this.lblInfo.Size = new System.Drawing.Size(11, 12);
             this.lblInfo.TabIndex = 36;
@@ -824,7 +827,7 @@ namespace xbDefectDect
             // 
             // btFP
             // 
-            this.btFP.Location = new System.Drawing.Point(3, 168);
+            this.btFP.Location = new System.Drawing.Point(6, 190);
             this.btFP.Name = "btFP";
             this.btFP.Size = new System.Drawing.Size(69, 24);
             this.btFP.TabIndex = 46;
@@ -834,7 +837,7 @@ namespace xbDefectDect
             // 
             // btFN
             // 
-            this.btFN.Location = new System.Drawing.Point(75, 168);
+            this.btFN.Location = new System.Drawing.Point(78, 190);
             this.btFN.Name = "btFN";
             this.btFN.Size = new System.Drawing.Size(81, 24);
             this.btFN.TabIndex = 46;
@@ -845,6 +848,7 @@ namespace xbDefectDect
             // groupBox3
             // 
             this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox3.Controls.Add(this.label16);
             this.groupBox3.Controls.Add(this.label11);
             this.groupBox3.Controls.Add(this.chkHigh);
             this.groupBox3.Controls.Add(this.btFN);
@@ -859,12 +863,13 @@ namespace xbDefectDect
             this.groupBox3.Controls.Add(this.lblInfo);
             this.groupBox3.Controls.Add(this.rbManuMark);
             this.groupBox3.Controls.Add(this.cmbDefectClsTar);
+            this.groupBox3.Controls.Add(this.cmbFormat);
             this.groupBox3.Controls.Add(this.cmbDefectClsScr);
             this.groupBox3.Controls.Add(this.cmbDefectCls);
             this.groupBox3.Controls.Add(this.cmbDefectScore);
             this.groupBox3.Location = new System.Drawing.Point(989, 39);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(215, 198);
+            this.groupBox3.Size = new System.Drawing.Size(215, 220);
             this.groupBox3.TabIndex = 47;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "标注管理";
@@ -873,7 +878,7 @@ namespace xbDefectDect
             // 
             this.label15.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(145, 101);
+            this.label15.Location = new System.Drawing.Point(148, 123);
             this.label15.Name = "label15";
             this.label15.Size = new System.Drawing.Size(53, 12);
             this.label15.TabIndex = 36;
@@ -883,7 +888,7 @@ namespace xbDefectDect
             // 
             this.label14.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(14, 101);
+            this.label14.Location = new System.Drawing.Point(17, 123);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(41, 12);
             this.label14.TabIndex = 36;
@@ -891,7 +896,7 @@ namespace xbDefectDect
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(161, 167);
+            this.button1.Location = new System.Drawing.Point(164, 189);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(50, 24);
             this.button1.TabIndex = 46;
@@ -901,7 +906,7 @@ namespace xbDefectDect
             // 
             // btTransform
             // 
-            this.btTransform.Location = new System.Drawing.Point(84, 117);
+            this.btTransform.Location = new System.Drawing.Point(87, 139);
             this.btTransform.Name = "btTransform";
             this.btTransform.Size = new System.Drawing.Size(50, 24);
             this.btTransform.TabIndex = 46;
@@ -920,7 +925,7 @@ namespace xbDefectDect
             "Sub2",
             "Sub3",
             "Sub4"});
-            this.cmbDefectClsTar.Location = new System.Drawing.Point(137, 120);
+            this.cmbDefectClsTar.Location = new System.Drawing.Point(140, 142);
             this.cmbDefectClsTar.Name = "cmbDefectClsTar";
             this.cmbDefectClsTar.Size = new System.Drawing.Size(72, 20);
             this.cmbDefectClsTar.TabIndex = 40;
@@ -936,10 +941,34 @@ namespace xbDefectDect
             "Sub2",
             "Sub3",
             "Sub4"});
-            this.cmbDefectClsScr.Location = new System.Drawing.Point(6, 120);
+            this.cmbDefectClsScr.Location = new System.Drawing.Point(9, 142);
             this.cmbDefectClsScr.Name = "cmbDefectClsScr";
             this.cmbDefectClsScr.Size = new System.Drawing.Size(72, 20);
             this.cmbDefectClsScr.TabIndex = 40;
+            // 
+            // cmbFormat
+            // 
+            this.cmbFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmbFormat.FormattingEnabled = true;
+            this.cmbFormat.Items.AddRange(new object[] {
+            "xml",
+            "txt"});
+            this.cmbFormat.Location = new System.Drawing.Point(63, 14);
+            this.cmbFormat.Name = "cmbFormat";
+            this.cmbFormat.Size = new System.Drawing.Size(108, 20);
+            this.cmbFormat.TabIndex = 40;
+            this.cmbFormat.SelectedIndexChanged += new System.EventHandler(this.cmbDefectCls_SelectedIndexChanged);
+            // 
+            // label16
+            // 
+            this.label16.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label16.AutoSize = true;
+            this.label16.Location = new System.Drawing.Point(6, 17);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(53, 12);
+            this.label16.TabIndex = 36;
+            this.label16.Text = "标注格式";
+            this.label16.Click += new System.EventHandler(this.label11_Click);
             // 
             // FrmLabelImage
             // 
@@ -1064,6 +1093,8 @@ namespace xbDefectDect
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripMenuItem menuExport_MarkFile;
         private System.Windows.Forms.ToolStripMenuItem menuExport_ImageFile;
+        private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.ComboBox cmbFormat;
     }
 }
 

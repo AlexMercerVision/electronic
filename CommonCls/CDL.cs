@@ -1,21 +1,20 @@
-﻿using System;
+﻿using Cognex.VisionPro;
+using Cognex.VisionPro.ImageFile;
+using HalconDotNet;
+using MathNet.Numerics.LinearAlgebra;
+using OpenCvSharp;
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Cognex.VisionPro;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 //using gRPC_ClientAPP;
 
 using System.IO;
-
+using System.Linq;
 using System.Net.Http.Headers;
-
-using System.Collections;
-using System.Diagnostics;
-using OpenCvSharp;
-using HalconDotNet;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Xml;
-using MathNet.Numerics.LinearAlgebra;
 
 namespace CommonCls
 {
@@ -866,114 +865,187 @@ namespace CommonCls
                 return false;
 
         }
+        /*   public void ReadRemarkXML_EN1(string imageName, string strSourcePath, ref DLResult dlRes)
+           {
+
+               try
+               {
+                   dlRes = new DLResult();
+                   dlRes.AL_Rect = new List<CogRectangleAffine>();
+                   dlRes.AL_score = new List<float>();
+                   dlRes.AL_Type = new List<int>();
+                   dlRes.Al_bDiff = new List<bool>();
+                   string extension = Path.GetExtension(imageName);
+                   string strXMLName = strSourcePath + "\\" + Path.GetFileName(imageName).Replace(extension, ".xml");
+
+                   XmlDocument xmlDoc = new XmlDocument();
+                   if (File.Exists(strXMLName))
+                   {//判断文件是否存在   存在则修改
+                       xmlDoc.Load(strXMLName);
+                   }
+                   else
+                   {
+                       return;
+                   }
+                   //读取二级节点   如果不存在则新增二级节点
+                   XmlNode nodeName = xmlDoc.SelectSingleNode($"annotation/object");
+
+                   XmlNodeList nodeTarget = xmlDoc.SelectNodes($"annotation/object");
+
+
+
+                   foreach (XmlNode nodeObj in nodeTarget)
+                   {
+                       CogRectangleAffine rect = new CogRectangleAffine();
+                       XmlNode nodeTypeName = nodeObj.SelectSingleNode($"name");
+                       if (nodeTypeName.InnerText == "liewen")
+                       {
+                           dlRes.AL_Type.Add(1);
+                       }
+                       else if (nodeTypeName.InnerText == "posz")
+                       {
+                           dlRes.AL_Type.Add(2);
+                       }
+                       else if (nodeTypeName.InnerText == "liewenWP")
+                       {
+                           dlRes.AL_Type.Add(3);
+                       }
+                       else if (nodeTypeName.InnerText == "poszWP")
+                       {
+                           dlRes.AL_Type.Add(4);
+                       }
+                       else if (nodeTypeName.InnerText == "flaking")
+                       {
+                           dlRes.AL_Type.Add(5);
+                       }
+                       else if (nodeTypeName.InnerText == "")
+                       {
+                           dlRes.AL_Type.Add(5);
+                       }
+
+                       nodeTypeName = nodeObj.SelectSingleNode($"difficult");
+                       if (nodeTypeName.InnerText == "0")
+                       {
+                           dlRes.Al_bDiff.Add(false);
+                       }
+                       else
+                       {
+                           dlRes.Al_bDiff.Add(true);
+                       }
+
+
+                       nodeTypeName = nodeObj.SelectSingleNode($"bndbox/xmin");
+                       double dCornerYX = double.Parse(nodeTypeName.InnerText);
+                       nodeTypeName = nodeObj.SelectSingleNode($"bndbox/xmax");
+                       double dCornerXX = double.Parse(nodeTypeName.InnerText);
+
+                       nodeTypeName = nodeObj.SelectSingleNode($"bndbox/ymin");
+                       double dCornerXY = double.Parse(nodeTypeName.InnerText);
+                       nodeTypeName = nodeObj.SelectSingleNode($"bndbox/ymax");
+                       double dCornerYY = double.Parse(nodeTypeName.InnerText);
+
+
+                       rect.CenterX = (dCornerYX + dCornerXX) / 2;
+                       rect.CenterY = (dCornerXY + dCornerYY) / 2;
+                       rect.SideXLength = dCornerXX - dCornerYX;
+                       rect.SideYLength = dCornerYY - dCornerXY;
+                       dlRes.AL_Rect.Add(rect);
+
+
+                       nodeTypeName = nodeObj.SelectSingleNode($"xeScore");
+                       if (nodeTypeName != null)
+                       {
+                           float fScore = float.Parse(nodeTypeName.InnerText);
+                           dlRes.AL_score.Add(fScore);
+                       }
+                       else
+                       {
+                           dlRes.AL_score.Add(0.5f);
+                       }
+
+                   }
+
+               }
+               catch
+               {
+                   //  dlRes.AL_score.Add(0.5f);
+               }
+               ;
+           }
+   */
         public void ReadRemarkXML_EN1(string imageName, string strSourcePath, ref DLResult dlRes)
         {
-
             try
             {
+                // 初始化结果
                 dlRes = new DLResult();
                 dlRes.AL_Rect = new List<CogRectangleAffine>();
                 dlRes.AL_score = new List<float>();
                 dlRes.AL_Type = new List<int>();
                 dlRes.Al_bDiff = new List<bool>();
+
                 string extension = Path.GetExtension(imageName);
                 string strXMLName = strSourcePath + "\\" + Path.GetFileName(imageName).Replace(extension, ".xml");
 
+                if (!File.Exists(strXMLName)) return;
+
                 XmlDocument xmlDoc = new XmlDocument();
-                if (File.Exists(strXMLName))
-                {//判断文件是否存在   存在则修改
-                    xmlDoc.Load(strXMLName);
-                }
-                else
-                {
-                    return;
-                }
-                //读取二级节点   如果不存在则新增二级节点
-                XmlNode nodeName = xmlDoc.SelectSingleNode($"annotation/object");
-
-                XmlNodeList nodeTarget = xmlDoc.SelectNodes($"annotation/object");
-
-
+                xmlDoc.Load(strXMLName);
+                XmlNodeList nodeTarget = xmlDoc.SelectNodes("annotation/object");
 
                 foreach (XmlNode nodeObj in nodeTarget)
                 {
+                    // 读取类别名称
+                    XmlNode nodeName = nodeObj.SelectSingleNode("name");
+                    string className = nodeName?.InnerText?.Trim();
+                    if (string.IsNullOrEmpty(className)) continue;
+
+                    // 在动态类别列表中查找索引（区分大小写，可根据需要改为忽略大小写）
+                    int idx = _classNames.FindIndex(c => c.Equals(className, StringComparison.OrdinalIgnoreCase));
+                    if (idx < 0) continue; // 未知类别，跳过该对象
+
+                    int typeId = idx + 1; // 类型ID从1开始
+
+                    // 读取边界框坐标
+                    XmlNode nodeXmin = nodeObj.SelectSingleNode("bndbox/xmin");
+                    XmlNode nodeXmax = nodeObj.SelectSingleNode("bndbox/xmax");
+                    XmlNode nodeYmin = nodeObj.SelectSingleNode("bndbox/ymin");
+                    XmlNode nodeYmax = nodeObj.SelectSingleNode("bndbox/ymax");
+                    if (nodeXmin == null || nodeXmax == null || nodeYmin == null || nodeYmax == null)
+                        continue;
+
+                    double xmin = double.Parse(nodeXmin.InnerText);
+                    double xmax = double.Parse(nodeXmax.InnerText);
+                    double ymin = double.Parse(nodeYmin.InnerText);
+                    double ymax = double.Parse(nodeYmax.InnerText);
+
                     CogRectangleAffine rect = new CogRectangleAffine();
-                    XmlNode nodeTypeName = nodeObj.SelectSingleNode($"name");
-                    if (nodeTypeName.InnerText == "liewen")
-                    {
-                        dlRes.AL_Type.Add(1);
-                    }
-                    else if (nodeTypeName.InnerText == "posz")
-                    {
-                        dlRes.AL_Type.Add(2);
-                    }
-                    else if (nodeTypeName.InnerText == "liewenWP")
-                    {
-                        dlRes.AL_Type.Add(3);
-                    }
-                    else if (nodeTypeName.InnerText == "poszWP")
-                    {
-                        dlRes.AL_Type.Add(4);
-                    }
-                    else if (nodeTypeName.InnerText == "flaking")
-                    {
-                        dlRes.AL_Type.Add(5);
-                    }
-                    else if (nodeTypeName.InnerText == "")
-                    {
-                        dlRes.AL_Type.Add(5);
-                    }
+                    rect.CenterX = (xmin + xmax) / 2.0;
+                    rect.CenterY = (ymin + ymax) / 2.0;
+                    rect.SideXLength = xmax - xmin;
+                    rect.SideYLength = ymax - ymin;
 
-                    nodeTypeName = nodeObj.SelectSingleNode($"difficult");
-                    if (nodeTypeName.InnerText == "0")
-                    {
-                        dlRes.Al_bDiff.Add(false);
-                    }
-                    else
-                    {
-                        dlRes.Al_bDiff.Add(true);
-                    }
+                    // 读取 difficult 标志
+                    XmlNode nodeDiff = nodeObj.SelectSingleNode("difficult");
+                    bool isDifficult = (nodeDiff != null && nodeDiff.InnerText == "1");
 
+                    // 读取分数（若不存在，默认0.5）
+                    XmlNode nodeScore = nodeObj.SelectSingleNode("xeScore");
+                    float score = (nodeScore != null) ? float.Parse(nodeScore.InnerText) : 0.5f;
 
-                    nodeTypeName = nodeObj.SelectSingleNode($"bndbox/xmin");
-                    double dCornerYX = double.Parse(nodeTypeName.InnerText);
-                    nodeTypeName = nodeObj.SelectSingleNode($"bndbox/xmax");
-                    double dCornerXX = double.Parse(nodeTypeName.InnerText);
-
-                    nodeTypeName = nodeObj.SelectSingleNode($"bndbox/ymin");
-                    double dCornerXY = double.Parse(nodeTypeName.InnerText);
-                    nodeTypeName = nodeObj.SelectSingleNode($"bndbox/ymax");
-                    double dCornerYY = double.Parse(nodeTypeName.InnerText);
-
-
-                    rect.CenterX = (dCornerYX + dCornerXX) / 2;
-                    rect.CenterY = (dCornerXY + dCornerYY) / 2;
-                    rect.SideXLength = dCornerXX - dCornerYX;
-                    rect.SideYLength = dCornerYY - dCornerXY;
+                    // ★★★ 必须同时添加所有列表 ★★★
                     dlRes.AL_Rect.Add(rect);
-
-
-                    nodeTypeName = nodeObj.SelectSingleNode($"xeScore");
-                    if (nodeTypeName != null)
-                    {
-                        float fScore = float.Parse(nodeTypeName.InnerText);
-                        dlRes.AL_score.Add(fScore);
-                    }
-                    else
-                    {
-                        dlRes.AL_score.Add(0.5f);
-                    }
-
+                    dlRes.AL_Type.Add(typeId);
+                    dlRes.AL_score.Add(score);
+                    dlRes.Al_bDiff.Add(isDifficult);
                 }
-
             }
-            catch
+            catch (Exception ex)
             {
-                //  dlRes.AL_score.Add(0.5f);
+                // 记录日志（可选）
+                Console.WriteLine($"读取XML失败: {ex.Message}");
             }
-            ;
         }
-
 
         //多张图像识别结果合并
         public void UnionRemark(ref DLResult dlResA)
@@ -1380,9 +1452,137 @@ namespace CommonCls
             }
         }
 
+        /// <summary>
+        /// 根据格式读取标注文件
+        /// </summary>
+        public void ReadAnnotation(string imagePath, string annotationDir, string format, ref DLResult result)
+        {
+            if (format == "XML")
+                ReadRemarkXML_EN1(imagePath, annotationDir, ref result);
+            else if (format == "TXT")
+                ReadRemarkYOLO(imagePath, annotationDir, ref result);
+            else
+                throw new ArgumentException("不支持的标注格式");
+        }
 
+        /// <summary>
+        /// 根据格式写入标注文件
+        /// </summary>
+        public void WriteAnnotation(string imagePath, string annotationDir, DLResult result, string format)
+        {
+            if (format == "XML")
+                CreateRemarkXML_EN("NullMark_00.xml", Path.GetFileName(imagePath),
+                    Path.Combine(annotationDir, Path.GetFileNameWithoutExtension(imagePath) + ".xml"), result);
+            else if (format == "TXT")
+                WriteRemarkYOLO(imagePath, annotationDir, result);
+            else
+                throw new ArgumentException("不支持的标注格式");
+        }
 
+        private void ReadRemarkYOLO(string imagePath, string annotationDir, ref DLResult result)
+        {
+            result = new DLResult();
+            result.AL_Rect = new List<CogRectangleAffine>();
+            result.AL_Type = new List<int>();
+            result.AL_score = new List<float>();
+            result.Al_bDiff = new List<bool>();
 
+            string txtPath = Path.Combine(annotationDir, Path.GetFileNameWithoutExtension(imagePath) + ".txt");
+            if (!File.Exists(txtPath)) return;
+
+            // 读取图像尺寸（用于反归一化）
+            ICogImage img = ReadCogImage(imagePath);
+            if (img == null) return;
+            int width = img.Width;
+            int height = img.Height;
+
+            var lines = File.ReadAllLines(txtPath);
+            foreach (var line in lines)
+            {
+                var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 5) continue;
+
+                int classId = int.Parse(parts[0]);
+                float cx = float.Parse(parts[1]);
+                float cy = float.Parse(parts[2]);
+                float bw = float.Parse(parts[3]);
+                float bh = float.Parse(parts[4]);
+
+                // 反归一化到像素坐标
+                double xmin = (cx - bw / 2) * width;
+                double ymin = (cy - bh / 2) * height;
+                double xmax = (cx + bw / 2) * width;
+                double ymax = (cy + bh / 2) * height;
+
+                CogRectangleAffine rect = new CogRectangleAffine();
+                rect.CenterX = (xmin + xmax) / 2.0;
+                rect.CenterY = (ymin + ymax) / 2.0;
+                rect.SideXLength = xmax - xmin;
+                rect.SideYLength = ymax - ymin;
+
+                result.AL_Rect.Add(rect);
+                result.AL_Type.Add(classId + 1);  // 内部从1开始
+                result.AL_score.Add(0.95f);       // YOLO无分数，给默认值
+                result.Al_bDiff.Add(false);       // 默认非难例
+            }
+        }
+        private void WriteRemarkYOLO(string imagePath, string annotationDir, DLResult result)
+        {
+            string txtPath;
+            if (result.AL_Rect.Count == 0)
+            {
+                // 若没有标注，可选择删除已有TXT或跳过，这里选择删除
+                 txtPath = Path.Combine(annotationDir, Path.GetFileNameWithoutExtension(imagePath) + ".txt");
+                if (File.Exists(txtPath)) File.Delete(txtPath);
+                return;
+            }
+
+            // 获取图像尺寸
+            ICogImage img = ReadCogImage(imagePath);
+            if (img == null) return;
+            int width = img.Width;
+            int height = img.Height;
+
+              txtPath = Path.Combine(annotationDir, Path.GetFileNameWithoutExtension(imagePath) + ".txt");
+            List<string> lines = new List<string>();
+
+            for (int i = 0; i < result.AL_Rect.Count; i++)
+            {
+                var rect = result.AL_Rect[i];
+                int classId = result.AL_Type[i] - 1;  // YOLO从0开始
+
+                float cx = (float)((rect.CornerYX + rect.CornerXX) / 2.0 / width);
+                float cy = (float)((rect.CornerXY + rect.CornerYY) / 2.0 / height);
+                float bw = (float)((rect.CornerXX - rect.CornerYX) / width);
+                float bh = (float)((rect.CornerYY - rect.CornerXY) / height);
+
+                // 限幅
+                cx = Math.Max(0, Math.Min(1, cx));
+                cy = Math.Max(0, Math.Min(1, cy));
+                bw = Math.Max(0.001f, Math.Min(1, bw));
+                bh = Math.Max(0.001f, Math.Min(1, bh));
+
+                lines.Add($"{classId} {cx:F6} {cy:F6} {bw:F6} {bh:F6}");
+            }
+
+            File.WriteAllLines(txtPath, lines);
+        }
+        private ICogImage ReadCogImage(string filePath)
+        {
+            try
+            {
+                var imageFileTool = new CogImageFileTool();
+                imageFileTool.Operator.Open(filePath, CogImageFileModeConstants.Read);
+                imageFileTool.Run();
+                ICogImage image = imageFileTool.OutputImage;
+                imageFileTool.Operator.Close();
+                return image;
+            }
+            catch
+            {
+                return null;
+            }
+        }
         #endregion
     }
 }

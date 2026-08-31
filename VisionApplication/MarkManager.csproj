@@ -76,7 +76,7 @@
     <Reference Include="Cognex.VisionPro.ToolGroup, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64" />
     <Reference Include="CommonCls, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\dll\userdll\CommonCls.dll</HintPath>
+      <HintPath>..\bin\CommonCls.dll</HintPath>
     </Reference>
     <Reference Include="halcondotnet">
       <HintPath>..\dll\halcondotnet.dll</HintPath>

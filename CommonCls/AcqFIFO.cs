@@ -54,8 +54,8 @@ namespace CommonCls
         private int _cameraType = 0;  //用户预先分配的非托管缓冲区
 
         /// <summary>旋转镜像类型（0-无，1-90°，2-180°，3-270°，4-翻转，5-翻转+90°等）</summary>
-        private int _rotateFlipType = 4;
-
+      //  private int _rotateFlipType = 4;
+        private int[] _rotateFlipTypes = new int[maxCameraNum];
         /// <summary>海康SDK返回值</summary>
         private int nRet = 0;
 
@@ -227,18 +227,19 @@ namespace CommonCls
                 cogImFlipRotate[i] = new CogIPOneImageFlipRotate();
                 imgTool[i] = new CogIPOneImageTool();
                 mImageFile[i] = new CogImageFile();
+                _rotateFlipTypes[i] = 0;   // 默认无旋转镜像，可根据需要调整
             }
         }
         #endregion
 
         #region 属性
         /// <summary>旋转镜像类型赋值与读取</summary>
-        public int _rtType
+        /*public int _rtType
         {
             get { return _rotateFlipType; }
             set { _rotateFlipType = value; }
-        }
-
+        }*/
+        public int[] _rtType => _rotateFlipTypes;
         /// <summary>相机状态赋值与读取</summary>
         public CameraStatus _cs
         {
@@ -1020,7 +1021,7 @@ namespace CommonCls
         /// <summary>对CogImage8Grey应用旋转/镜像</summary>
         public ICogImage CogFlipRotateIm(ICogImage inputIm,int jobIndex)
         {
-            switch (_rotateFlipType)
+            switch (_rotateFlipTypes[jobIndex])
             {
                 case 0: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.None; break;
                 case 1: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate90Deg; break;
@@ -1557,7 +1558,7 @@ namespace CommonCls
         {
             try
             {
-                switch (_rotateFlipType)
+                switch (_rotateFlipTypes[jobIndex])
                 {
                     case 0: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.None; break;
                     case 1: cogImFlipRotate[jobIndex].OperationInPixelSpace = CogIPOneImageFlipRotateOperationConstants.Rotate90Deg; break;

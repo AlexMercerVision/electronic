@@ -1622,6 +1622,7 @@ namespace VisionApplication
             this.btResultSave.TabIndex = 2;
             this.btResultSave.Text = "选择路径";
             this.btResultSave.UseVisualStyleBackColor = true;
+            this.btResultSave.Visible = false;
             this.btResultSave.Click += new System.EventHandler(this.btPathChoose_Click);
             // 
             // label6
@@ -1667,6 +1668,7 @@ namespace VisionApplication
             this.label34.Size = new System.Drawing.Size(59, 12);
             this.label34.TabIndex = 0;
             this.label34.Text = "模板路径:";
+            this.label34.Visible = false;
             // 
             // tbResultSave
             // 
@@ -1674,6 +1676,7 @@ namespace VisionApplication
             this.tbResultSave.Name = "tbResultSave";
             this.tbResultSave.Size = new System.Drawing.Size(412, 21);
             this.tbResultSave.TabIndex = 1;
+            this.tbResultSave.Visible = false;
             // 
             // label5
             // 

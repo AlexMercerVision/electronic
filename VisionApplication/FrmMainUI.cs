@@ -305,8 +305,13 @@ namespace VisionApplication
                         AddLog();
                     }
                     strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
-                    toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-                    this.Text = "电极帽检测   " +cup.p_DL.modelPath;
+                    //  toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
+                    if (cup.p_VPPRTP.bVisionInfer)
+                    {
+                        this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                    }
+                    else
+                        this.Text = "电极帽检测   " + cup.p_DL.modelPath;
 
                 }
                 catch
@@ -2512,7 +2517,14 @@ namespace VisionApplication
                 rts.initStatus.bDLModelInit = false;
                 if (cup.p_VPPRTP.bDeepInfer)
                 {
+                    menuTask_DeepInfer.Checked = true;
+                    menuTask_VisionInfer.Checked = false;
                     InitDL();
+                }
+                else
+                {
+                    menuTask_VisionInfer.Checked = true;
+                    menuTask_DeepInfer.Checked = false;
                 }
                 btFunSet.Visible = cup.p_VPPRTP.bVisionInfer;
 
@@ -4964,91 +4976,43 @@ namespace VisionApplication
 
             int iCamSuccNum = 0;
             int iCamFailNum = 0;
-            for (int i = 0; i < maxJobNum; i++)
+            // 自动重连（仅在启用且从相机采集时）
+            if (cup.p_RTSP.bAutoConnCam)
             {
-                int iCamInd = cup.p_CD.camInd[i];
-                // 在 TipInfo 中，发现相机状态异常时
-                if (cup.p_VPPRTP.bAcqFromCam && cup.p_CD.bListProcess[i] && rts.cs.iStatus[iCamInd] < 2)
+                for (int i = 0; i < maxJobNum; i++)
                 {
-                    // 如果尚未在重连且距离上次重连尝试超过间隔
-                    if (!_isReconnecting && (DateTime.Now - _lastReconnectAttempt) > _reconnectInterval)
+                    int iCamInd = cup.p_CD.camInd[i];
+                    if (cup.p_VPPRTP.bAcqFromCam && cup.p_CD.bListProcess[i] && rts.cs.iStatus[iCamInd] < 2)
                     {
-                        _lastReconnectAttempt = DateTime.Now;
-                        // 启动后台线程尝试重连
-                        ThreadPool.QueueUserWorkItem(state =>
+                        if (!_isReconnecting && (DateTime.Now - _lastReconnectAttempt) > _reconnectInterval)
                         {
-                            _isReconnecting = true;
-                            try
+                            _lastReconnectAttempt = DateTime.Now;
+                            ThreadPool.QueueUserWorkItem(state =>
                             {
-                                int index = (int)state;  //jobIndex
-                                // 重新枚举相机（可选）
-                                // 调用 InitCamInd 或更轻量的重连方法
-                                bool success = InitJobCamInd(index);
-                                if (success)
+                                // 重连逻辑（原代码不变）
+                                _isReconnecting = true;
+                                try
                                 {
-                                    // 重连成功，恢复采集
-                                    StartGrab(iCamInd);
-                                    // 更新状态栏颜色等
+                                    int index = (int)state;
+                                    bool success = InitJobCamInd(index);
+                                    if (success)
+                                    {
+                                        StartGrab(iCamInd);
+                                    }
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                // 记录日志，但不影响主线程
-                                operLog.iEventStatus = -1;
-                                operLog.strOperEvent = "相机后台重连";
-                                operLog.strFailReason = ex.Message;
-                                AddLog();
-                            }
-                            finally
-                            {
-                                _isReconnecting = false;
-                            }
-                        }, i);
-                    }
-                }
-
-                if (rts.cs.iStatus[iCamInd] >= 2)
-                {
-                    iCamSuccNum++;
-                    switch (i)
-                    {
-                        case 0:
-                            toolStripStatus_Cam1.ForeColor = Color.Green;
-                            break;
-                        case 1:
-                            toolStripStatus_Cam2.ForeColor = Color.Green;
-                            break;
-                        case 2:
-                            toolStripStatus_Cam3.ForeColor = Color.Green;
-                            break;
-                        case 3:
-                            toolStripStatus_Cam4.ForeColor = Color.Green;
-                            break;
-                        case 4:
-                            toolStripStatus_Cam5.ForeColor = Color.Green;
-                            break;
-                    }
-
-                }
-                else if (!cup.p_CD.bListProcess[i])
-                {
-                    switch (i)
-                    {
-                        case 0:
-                            toolStripStatus_Cam1.ForeColor = Color.Gray;
-                            break;
-                        case 1:
-                            toolStripStatus_Cam2.ForeColor = Color.Gray;
-                            break;
-                        case 2:
-                            toolStripStatus_Cam3.ForeColor = Color.Gray;
-                            break;
-                        case 3:
-                            toolStripStatus_Cam4.ForeColor = Color.Gray;
-                            break;
-                        case 4:
-                            toolStripStatus_Cam5.ForeColor = Color.Gray;
-                            break;
+                                catch (Exception ex)
+                                {
+                                    operLog.iEventStatus = -1;
+                                    operLog.strOperEvent = "相机后台重连";
+                                    operLog.strFailReason = ex.Message;
+                                    AddLog();
+                                }
+                                finally
+                                {
+                                    _isReconnecting = false;
+                                }
+                            }, i);
+                        }
                     }
                 }
             }
@@ -6144,75 +6108,73 @@ namespace VisionApplication
         /// </summary>
         /// 
         private int packLen = 25;
-        private void ProcessSerialBuffer() 
+        private void ProcessSerialBuffer()
         {
-           /* if(_rxBuffer.Count%25==0)
-                packLen = 25;
-            else
-                packLen = 10;*/
-
-            while (_rxBuffer.Count >= packLen)  // 至少能容纳一个完整主动上报包（最短10字节）
+            while (_rxBuffer.Count >= 6)  // 最小包长为6（查询反馈）
             {
-                //  toolStripStatus_ExcuteTimes.Text = "接收缓存长度：" + _rxBuffer.Count.ToString();
-                // ---- 1. 尝试解析主动上报帧（固定10字节） ----
-                /*if ((packLen==25 &&_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
-                    ||(packLen == 10 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01))*/
-                if ((_rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01))
+                // ---- 每次循环重新判断当前包类型 ----
+                int packLen = 0;
+                bool bIOInput = false;
+
+                // 1. 判断 IO 主动上报
+                if (_rxBuffer.Count >= 4 &&
+                    _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01)
                 {
-                    if (_rxBuffer.Count < packLen)
-                        break;   // 数据不够，等待下次接收
-                   
-
-                    byte[] packet = _rxBuffer.GetRange(0, packLen).ToArray();
-                    _rxBuffer.RemoveRange(0, packLen);
-
-                   /* operLog.iEventStatus = 0;
-                    operLog.strOperEvent = BitConverter.ToString(packet);
-                    operLog.strFailReason = "-";
-                    AddLog();*/
-                    // 处理该主动上报包（内部会判断触发）
-                    ProcessActiveReport(packet);
-                    continue;
+                    packLen = 10;
+                    bIOInput = true;
                 }
-
-                // ---- 2. 尝试解析设置输出反馈（长度8或16） ----
+                else if (_rxBuffer.Count >= 5 &&
+                         _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
+                         _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
+                {
+                    packLen = 25;
+                    bIOInput = true;
+                }
                 else if (_rxBuffer.Count >= 8 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x0F)
                 {
-                    // 实际长度可能为8或16，这里根据协议判断（示例中简单取8）
-                    int len = 8;
-                    if (_rxBuffer.Count >= len)
-                    {
-                        byte[] packet = _rxBuffer.GetRange(0, len).ToArray();
-                        _rxBuffer.RemoveRange(0, len);
-                        //      ProcessSetOutputResponse(packet);
-                        continue;
-                    }
-                    break;
+                    // 设置输出反馈（长度可能8或16，这里示例取8，实际可根据协议动态）
+                    packLen = 8;
                 }
-
-                // ---- 3. 尝试解析查询反馈（长度6） ----
                 else if (_rxBuffer.Count >= 6 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x02 && _rxBuffer[2] == 0x01)
                 {
-                    byte[] packet = _rxBuffer.GetRange(0, 6).ToArray();
-                    _rxBuffer.RemoveRange(0, 6);
-                    ProcessQueryResponse(packet);
-                    continue;
+                    packLen = 6;
                 }
-                else {                     // 不是已知的包头，可能是噪声或错误数据
-                                           // 可以选择丢弃一个字节，继续解析下一个字节
+                else
+                {
+                    // 无法识别：丢弃一个字节，尝试同步
                     byte unknownByte = _rxBuffer[0];
                     string hexStr = BitConverter.ToString(_rxBuffer.Take(Math.Min(10, _rxBuffer.Count)).ToArray());
                     operLog.iEventStatus = -1;
                     operLog.strOperEvent = "串口未知数据";
                     operLog.strFailReason = $"跳过字节 0x{unknownByte:X2}，缓存前10字节: {hexStr}";
                     AddLog();
+                    _rxBuffer.RemoveAt(0);
+                    continue;  // 继续下一轮循环
                 }
 
-                // ---- 4. 无法识别包头，跳过1字节防止死循环 ----
-                _rxBuffer.RemoveAt(0);
+                // 检查完整包是否到达
+                if (_rxBuffer.Count < packLen)
+                    break;  // 数据不足，等待下一次接收
+
+                // 取出完整包
+                byte[] packet = _rxBuffer.GetRange(0, packLen).ToArray();
+                _rxBuffer.RemoveRange(0, packLen);
+
+                // 根据类型分发处理
+                if (bIOInput)
+                {
+                    ProcessActiveReport(packet);
+                }
+                else if (packLen == 8)  // 设置输出反馈
+                {
+                    ProcessSetOutputResponse(packet);
+                }
+                else if (packLen == 6)  // 查询反馈
+                {
+                    ProcessQueryResponse(packet);
+                }
+                // 循环继续，自动处理下一个包
             }
         }
 
@@ -7426,7 +7388,12 @@ namespace VisionApplication
             strEngineerDir = rootDir;
             strEngineerName = Path.GetFileName(rootDir);
             toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-            this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+            if(cup.p_VPPRTP.bVisionInfer)
+            {
+                this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+            }
+            else
+                this.Text = "电极帽检测   " + cup.p_DL.modelPath;
             try
             {
                 // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
@@ -7644,8 +7611,13 @@ namespace VisionApplication
                 cup.p_DL.modelPath = rootDir;
                 strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
                 toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-                this.Text = "电极帽检测   " + cup.p_DL.modelPath;
-                //   FrmMainUI.
+               // this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+                if (cup.p_VPPRTP.bVisionInfer)
+                {
+                    this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                }
+                else
+                    this.Text = "电极帽检测   " + cup.p_DL.modelPath;
 
             }
             catch (Exception ex)
@@ -8070,6 +8042,8 @@ namespace VisionApplication
                     vpWin.UnloadVisionInfer();  // 需要实现此方法，释放 mJM
                 }
                 rts.initStatus.bVPPInit = false;
+
+
             }
             else if (cup.p_VPPRTP.bDeepInfer)
             {
@@ -8087,7 +8061,13 @@ namespace VisionApplication
             if (bToVisionInfer)
             {
                 // 加载视觉推理模型
+
+                toolStrip1.Enabled = false;
+                splitContainer1.Panel1.Enabled = false;
                 LoadVPFile(true);   // 确保 vpWin 存在并加载 VPP
+                toolStrip1.Enabled = true;
+                splitContainer1.Panel1.Enabled = true;
+               
                 /* if (vpWin == null || string.IsNullOrEmpty(vpWin.LoadedVppFilename))  // 不直接访问私有字段 mJM，改为检查已加载的 VPP 文件名
                  {
 
@@ -8142,6 +8122,14 @@ namespace VisionApplication
                 {
                     MessageBox.Show("深度推理模型加载失败，请检查模型路径！", "错误");
                 }
+
+                if (cup.p_VPPRTP.bVisionInfer)
+                {
+                    this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                }
+                else
+                    this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+
             }
 
             // 6. 更新界面状态
@@ -8186,6 +8174,7 @@ namespace VisionApplication
                 }
             }
         }
+         
 
         private void timerIOIn_Tick(object sender, EventArgs e)
         {

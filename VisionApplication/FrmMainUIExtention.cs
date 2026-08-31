@@ -957,53 +957,118 @@ namespace VisionApplication
         //图像旋转
         private void rdRot_Click(object sender, EventArgs e)
         {
-            switch (((RadioButton)sender).Name)
+            if (iJobIndex >= 0)
             {
-                case "rbNoneRotate":
-                    cup.p_Cam[icamSelectInd].iRotateType = 0;
-                    break;
-                case "rbRot90":
-                    cup.p_Cam[icamSelectInd].iRotateType = 1;
-                    break;
-                case "rbRot180":
-                    cup.p_Cam[icamSelectInd].iRotateType = 2;
-                    break;
-                case "rbRot270":
-                    cup.p_Cam[icamSelectInd].iRotateType = 3;
-                    break;
+                if (cup.p_Cam == null || icamSelectInd < 0 || icamSelectInd >= cup.p_Cam.Length)
+                    return;
+                switch (((RadioButton)sender).Name)
+                {
+                    case "rbNoneRotate":
+                        cup.p_Cam[icamSelectInd].iRotateType = 0;
+                        break;
+                    case "rbRot90":
+                        cup.p_Cam[icamSelectInd].iRotateType = 1;
+                        break;
+                    case "rbRot180":
+                        cup.p_Cam[icamSelectInd].iRotateType = 2;
+                        break;
+                    case "rbRot270":
+                        cup.p_Cam[icamSelectInd].iRotateType = 3;
+                        break;
+                }
+
+                acqFIFO._rtType[icamSelectInd] = cup.p_Cam[icamSelectInd].iFlipType * 4 + cup.p_Cam[icamSelectInd].iRotateType;
             }
-            acqFIFO._rtType = cup.p_Cam[icamSelectInd].iFlipType * 4 + cup.p_Cam[icamSelectInd].iRotateType;
+            else
+            {
+                for (int i = 0; i < maxJobNum; i++)
+                {
+                    int iCamInd = cup.p_CD.camInd[i];
+                    if (cup.p_Cam == null || iCamInd < 0 || iCamInd >= cup.p_Cam.Length)
+                        continue;
+                    switch (((RadioButton)sender).Name)
+                    {
+                        case "rbNoneRotate":
+                            cup.p_Cam[iCamInd].iRotateType = 0;
+                            break;
+                        case "rbRot90":
+                            cup.p_Cam[iCamInd].iRotateType = 1;
+                            break;
+                        case "rbRot180":
+                            cup.p_Cam[iCamInd].iRotateType = 2;
+                            break;
+                        case "rbRot270":
+                            cup.p_Cam[iCamInd].iRotateType = 3;
+                            break;
+                    }
+
+                    acqFIFO._rtType[iCamInd] = cup.p_Cam[iCamInd].iFlipType * 4 + cup.p_Cam[iCamInd].iRotateType;
+                }
+            }
         }
 
         //2026年6月17日
         //图像镜像
         private void rdMirror_Click(object sender, EventArgs e)
         {
-            if (cup.p_CD.camInd == null || iJobIndex < 0 || iJobIndex >= cup.p_CD.camInd.Length)
+            if (cup.p_CD.camInd == null  || iJobIndex >= cup.p_CD.camInd.Length)
                 return;
 
-            int cameraIndex = cup.p_CD.camInd[iJobIndex];
-            if (cup.p_Cam == null || cameraIndex < 0 || cameraIndex >= cup.p_Cam.Length)
-                return;
+            if(iJobIndex>=0)
+            {
+              //  int cameraIndex = cup.p_CD.camInd[iJobIndex];
+                if (cup.p_Cam == null || icamSelectInd < 0 || icamSelectInd >= cup.p_Cam.Length)
+                    return;
 
-            switch (((RadioButton)sender).Name)
-            {
-                case "rdNoneFlip":
-                    cup.p_Cam[cameraIndex].iFlipType = 0;
-                    break;
-                case "rdFlipHor":
-                    cup.p_Cam[cameraIndex].iFlipType = 1;
-                    break;
-                case "rdFlipVer":
-                    cup.p_Cam[cameraIndex].iFlipType = 2;
-                    break;
+                switch (((RadioButton)sender).Name)
+                {
+                    case "rdNoneFlip":
+                        cup.p_Cam[icamSelectInd].iFlipType = 0;
+                        break;
+                    case "rdFlipHor":
+                        cup.p_Cam[icamSelectInd].iFlipType = 1;
+                        break;
+                    case "rdFlipVer":
+                        cup.p_Cam[icamSelectInd].iFlipType = 2;
+                        break;
+                }
+                acqFIFO._rtType[icamSelectInd] = cup.p_Cam[icamSelectInd].iFlipType * 4 + cup.p_Cam[icamSelectInd].iRotateType;
+                if (vpWin != null)
+                {
+                    vpWin._cup = cup;
+                    vpWin.SetPreviewFlipType(icamSelectInd, cup.p_Cam[icamSelectInd].iFlipType);
+                }
             }
-            acqFIFO._rtType = cup.p_Cam[cameraIndex].iFlipType * 4 + cup.p_Cam[cameraIndex].iRotateType;
-            if (vpWin != null)
+            else
             {
-                vpWin._cup = cup;
-                vpWin.SetPreviewFlipType(cameraIndex, cup.p_Cam[cameraIndex].iFlipType);
+                for (int i = 0; i < maxJobNum; i++)
+                {
+                    int iCamInd = cup.p_CD.camInd[iJobIndex];
+                    if (cup.p_Cam == null || iCamInd < 0 || iCamInd >= cup.p_Cam.Length)
+                        continue;
+
+                    switch (((RadioButton)sender).Name)
+                    {
+                        case "rdNoneFlip":
+                            cup.p_Cam[iCamInd].iFlipType = 0;
+                            break;
+                        case "rdFlipHor":
+                            cup.p_Cam[iCamInd].iFlipType = 1;
+                            break;
+                        case "rdFlipVer":
+                            cup.p_Cam[iCamInd].iFlipType = 2;
+                            break;
+                    }
+                    acqFIFO._rtType[iCamInd] = cup.p_Cam[iCamInd].iFlipType * 4 + cup.p_Cam[iCamInd].iRotateType;
+                    if (vpWin != null)
+                    {
+                        vpWin._cup = cup;
+                        vpWin.SetPreviewFlipType(iCamInd, cup.p_Cam[iCamInd].iFlipType);
+                    }
+                }
+
             }
+            
         }
         //相机选择
         private void cbDeviceList_SelectedIndexChanged(object sender, EventArgs e)
@@ -1207,7 +1272,7 @@ namespace VisionApplication
                             rdFlipVer.Checked = true;
                             break;
                     }
-                    acqFIFO._rtType = cup.p_Cam[icamInd].iFlipType * 4 + cup.p_Cam[icamInd].iRotateType;
+                    acqFIFO._rtType[icamInd] = cup.p_Cam[icamInd].iFlipType * 4 + cup.p_Cam[icamInd].iRotateType;
                 }
             }
             finally

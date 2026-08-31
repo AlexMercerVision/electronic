@@ -4801,6 +4801,7 @@ namespace VisionApplication
             if (cup.p_VPPRTP.iXBType == 1)
             {
                 rdBT_Caliper.Checked = true;
+                rdBT_FindLine_Click(null, null);
             }
             else
             {

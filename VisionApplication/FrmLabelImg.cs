@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
-
+using Cognex.VisionPro.ImageFile;
 //using OpenCvSharp;
 using Cognex.VisionPro;
-using HalconDotNet;
+//using HalconDotNet;
 using System.Xml;
 using CommonCls;
 
@@ -64,6 +64,34 @@ namespace xbDefectDect
         /**************         3.Form loading and closing implementation          ***************/
         /**********************************************************************/
         int iRunType = 0;
+
+        private Dictionary<string, CogColorConstants> _classColors = new Dictionary<string, CogColorConstants>();
+
+        private CogColorConstants GetColorForClass(string className)
+        {
+            if (!_classColors.ContainsKey(className))
+            {
+                // 使用预定义颜色列表（可根据需要扩展）
+                CogColorConstants[] colors = new CogColorConstants[]
+                {
+            CogColorConstants.Red,
+            CogColorConstants.Green,
+            CogColorConstants.Blue,
+            CogColorConstants.Yellow,
+            CogColorConstants.Purple,
+            CogColorConstants.Orange,
+            CogColorConstants.Cyan,
+            CogColorConstants.Magenta,
+          //  CogColorConstants.Lime,
+        //    CogColorConstants.Teal
+                };
+                int idx = _classNames.IndexOf(className);
+                if (idx < 0) idx = 0;
+                _classColors[className] = colors[idx % colors.Length];
+            }
+            return _classColors[className];
+        }
+
         public FrmLabelImage()
         {
             try
@@ -94,26 +122,41 @@ namespace xbDefectDect
         private bool isFilterActive = false;
         private bool bFinishLoad = false;
         // 新增：存储类别信息
-     //   private List<DefectClassInfo> defectClasses = new List<DefectClassInfo>();
+        //   private List<DefectClassInfo> defectClasses = new List<DefectClassInfo>();
+        private List<string> _classNames = new List<string>();
+
         private void LoadDefectCls()
         {
-            List<string> strCls = (new FileOper()).ReadRemarkImageFile("data\\predefined_classes.txt");
-            if (strCls != null && strCls.Count > 0)
+            _classNames = (new FileOper()).ReadRemarkImageFile("data\\predefined_classes.txt");
+            if (_classNames == null || _classNames.Count == 0)
             {
-                cmbDefectCls.Items.Clear();
-                cmbDefectCls.Items.Add("All");
-                for (int i = 0; i < strCls.Count; i++)
-                {
-                    cmbDefectCls.Items.Add(strCls[i]);
-                    cmbDefectClsScr.Items.Add(strCls[i]);
-                    cmbDefectClsTar.Items.Add(strCls[i]);
-                } 
-                cmbDefectCls.SelectedIndex = 0;
-                cmbDefectClsScr.SelectedIndex = 0;
-                cmbDefectClsTar.SelectedIndex = 0;
+                // 若文件不存在或为空，提供默认类别（如 "liewen", "posz" 等），但会创建文件
+                _classNames = new List<string> { "liewen", "posz", "liewenWP", "poszWP", "flaking" };
+                SaveClassNamesToFile();
             }
-            cmbDefectScore.SelectedIndex = 5;
+
+            // 设置到 CDL 中
+            cdl.SetClassNames(_classNames);
+
+            cmbDefectCls.Items.Clear();
+            cmbDefectCls.Items.Add("All");
+            cmbDefectClsScr.Items.Clear();
+            cmbDefectClsTar.Items.Clear();
+            foreach (var cls in _classNames)
+            {
+                cmbDefectCls.Items.Add(cls);
+                cmbDefectClsScr.Items.Add(cls);
+                cmbDefectClsTar.Items.Add(cls);
+            }
+            cmbDefectCls.SelectedIndex = 0;
+            cmbDefectClsScr.SelectedIndex = 0;
+            cmbDefectClsTar.SelectedIndex = 0;
             bFinishLoad = true;
+        }
+
+        private void SaveClassNamesToFile()
+        {
+            File.WriteAllLines("data\\predefined_classes.txt", _classNames);
         }
         // 筛选图片和标注文件
         private void FilterImagesByDefect()
@@ -307,11 +350,42 @@ namespace xbDefectDect
             imgfiles = new List<string>(strCurFile);
 
             bLoadImg = true;
-            HOperatorSet.ReadImage(out objTmp, imgfiles[0]);
+            ICogImage image = ReadCogImage(imgfile);
+            if (image != null)
+            {
+                _currentDisplayImage = image;      // _currentDisplayImage 类型改为 ICogImage
+                cogRDManuMark.Image = _currentDisplayImage;
+                cogRDAutoMark.Image = _currentDisplayImage;
+            }
+            else
+            {
+                // 处理读取失败
+            }
+            /*HOperatorSet.ReadImage(out objTmp, imgfiles[0]);
             ci8gImageFile = HObj2CogImage(objTmp);
             cogRDAutoMark.Image = ci8gImageFile;
-            cogRDManuMark.Image = ci8gImageFile;
+            cogRDManuMark.Image = ci8gImageFile;*/
         }
+
+        private ICogImage ReadCogImage(string filePath)
+        {
+            try
+            {
+                var imageFileTool = new CogImageFileTool();
+                imageFileTool.Operator.Open(filePath, CogImageFileModeConstants.Read);
+                imageFileTool.Run();
+                ICogImage image = imageFileTool.OutputImage;
+                imageFileTool.Operator.Close();
+                return image;
+            }
+            catch (Exception ex)
+            {
+                // 可记录日志
+                Console.WriteLine($"读取图像失败: {ex.Message}");
+                return null;
+            }
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             dlResManuRemark.AL_Rect=new List<CogRectangleAffine>();
@@ -346,18 +420,17 @@ namespace xbDefectDect
             }
             
         }
-         
+
 
         /**********************************************************************/
         /*****************          5.Select control components implementation          ***************/
         /**********************************************************************/
         // Load the model related file folder
-       
-        // Load a single image
-        HObject objTmp;
-        CogImage8Grey ci8gImageFile = new CogImage8Grey();
 
-        private CogImage8Grey HObj2CogImage(HObject image)
+        // Load a single image
+        private ICogImage _currentDisplayImage;   // 用于当前显示的图像
+
+        /*private CogImage8Grey HObj2CogImage(HObject image)
         {
             CogImage8Grey cogImage8Grey = new CogImage8Grey();
             HTuple hpoint, type, width, height;
@@ -369,7 +442,7 @@ namespace xbDefectDect
             //  CogImage8Grey cogImage8Grey = new CogImage8Grey();
             cogImage8Grey.SetRoot(cogImage8Root);
             return cogImage8Grey.Copy();
-        }
+        }*/
 
         DLResult dlResAutoRemark = new DLResult();   //检测出来的标注
         DLResult dlResManuRemark = new DLResult();      //原标注（参与训练的样本）
@@ -449,11 +522,20 @@ namespace xbDefectDect
         {
             //imgfile = imgfiles[iFileIndex% imgfiles.Count];
 
-            HOperatorSet.ReadImage(out objTmp, imgfile);
-            ci8gImageFile = HObj2CogImage(objTmp);
-             
-            cogRDManuMark.Image = ci8gImageFile;
-            cogRDAutoMark.Image = ci8gImageFile;
+            ICogImage image = ReadCogImage(imgfile);
+            if (image != null)
+            {
+                _currentDisplayImage = image;      // _currentDisplayImage 类型改为 ICogImage
+                cogRDManuMark.Image = _currentDisplayImage;
+                cogRDAutoMark.Image = _currentDisplayImage;
+            }
+            else
+            {
+                // 处理读取失败
+            }
+
+          /*  cogRDManuMark.Image = ci8gImageFile;
+            cogRDAutoMark.Image = ci8gImageFile;*/
 
             dlResManuRemark.AL_Rect.Clear();
             dlResManuRemark.AL_score.Clear();
@@ -466,7 +548,9 @@ namespace xbDefectDect
             dlResAutoRemark.Al_bDiff.Clear();
 
             //读取标注文件
-            cdl.ReadRemarkXML_EN1(imgfile, StripStatus_ManulXMLPath.Text, ref dlResManuRemark);
+            string format = cmbFormat.Text;
+            cdl.ReadAnnotation(imgfile, StripStatus_ManulXMLPath.Text, format, ref dlResManuRemark);
+           // cdl.ReadRemarkXML_EN1(imgfile, StripStatus_ManulXMLPath.Text, ref dlResManuRemark);
             cdl.ReadRemarkXML_EN1(imgfile, StripStatus_AutoXMLPath.Text, ref dlResAutoRemark);
 
             //比较标注文件的差异
@@ -700,9 +784,10 @@ namespace xbDefectDect
 
 
             string strFileName = Path.GetFileNameWithoutExtension(imgfile);
-            string strDestPath = StripStatus_ManulXMLPath.Text + "\\" + strFileName + ".xml";
-            cdl.CreateRemarkXML_EN("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlResManu);
-
+          //  string strDestPath = StripStatus_ManulXMLPath.Text + "\\" + strFileName + ".xml";
+           // cdl.CreateRemarkXML_EN("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlResManu);
+            string format = cmbFormat.Text;
+            cdl.WriteAnnotation(imgfile, StripStatus_ManulXMLPath.Text, dlResManuRemark, format);
 
 
         }
@@ -740,11 +825,23 @@ namespace xbDefectDect
                     //比较标注文件的差异
                      AutoRemarkliewenWP( dlResAutoRemark, dlResManuRemark);
 
-                    HOperatorSet.ReadImage(out objTmp, imgfile);
+                    ICogImage image = ReadCogImage(imgfile);
+                    if (image != null)
+                    {
+                        _currentDisplayImage = image;      // _currentDisplayImage 类型改为 ICogImage
+                        cogRDManuMark.Image = _currentDisplayImage;
+                        cogRDAutoMark.Image = _currentDisplayImage;
+                    }
+                    else
+                    {
+                        // 处理读取失败
+                    }
+
+                    /*HOperatorSet.ReadImage(out objTmp, imgfile);
                     ci8gImageFile = HObj2CogImage(objTmp);
 
                     cogRDManuMark.Image = ci8gImageFile;
-                    cogRDAutoMark.Image = ci8gImageFile;
+                    cogRDAutoMark.Image = ci8gImageFile;*/
 
                     AddRDManuGrap();
 
@@ -1900,68 +1997,36 @@ namespace xbDefectDect
         }
 
         private void AddRDAutoGrap()
-        { 
-
-            int iGrapCount = dTargetMarkPose.Count / 10;
-
+        {
             cogRDAutoMark.InteractiveGraphics.Clear();
 
-            //创建文本
-            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
-
-            string strGroupName="";
             for (int i = 0; i < dlResAutoRemark.AL_Rect.Count; i++)
             {
+                int typeId = dlResAutoRemark.AL_Type[i];
+                // 从 _classNames 获取类别名称（索引从0开始，typeId从1开始）
+                string className = (typeId > 0 && typeId <= _classNames.Count)
+                                    ? _classNames[typeId - 1]
+                                    : "unknown";
 
-                if (dlResAutoRemark.AL_Type[i] == 1)
-                {
-                    dlResAutoRemark.AL_Rect[i].Color = CogColorConstants.Red;
-                    strGroupName = "liewen";
-                    ResultLabel.Color = CogColorConstants.Red;
-                   
-                }
-                else if (dlResAutoRemark.AL_Type[i] == 2)
-                {
-                    dlResAutoRemark.AL_Rect[i].Color = CogColorConstants.Green;
-                    ResultLabel.Color = CogColorConstants.Green; 
-                    strGroupName = "posz";
-                }
-                else if (dlResAutoRemark.AL_Type[i] == 3)
-                {
-                    dlResAutoRemark.AL_Rect[i].Color = CogColorConstants.DarkRed;
-                    strGroupName = "liewenWP";
-                    ResultLabel.Color = CogColorConstants.DarkRed;
+                // 获取颜色
+                CogColorConstants color = GetColorForClass(className);
 
-                }
-                else if (dlResAutoRemark.AL_Type[i] == 4)
-                {
-                    dlResAutoRemark.AL_Rect[i].Color = CogColorConstants.DarkGreen;
-                    ResultLabel.Color = CogColorConstants.DarkGreen;
-                    strGroupName = "poszWP";
-                }
-                else if (dlResAutoRemark.AL_Type[i] == 5)
-                {
-                    dlResAutoRemark.AL_Rect[i].Color = CogColorConstants.Purple;
-                    ResultLabel.Color = CogColorConstants.Purple;
-                    strGroupName = "flaking";
-                }
+                // 设置矩形颜色
+                dlResAutoRemark.AL_Rect[i].Color = color;
 
-                ResultLabel.Font = new Font("arial", 10);
+                // 创建标签
+                CogGraphicLabel label = new CogGraphicLabel();
+                label.Font = new Font("arial", 10);
+                label.X = dlResAutoRemark.AL_Rect[i].CornerYX;
+                label.Y = dlResAutoRemark.AL_Rect[i].CornerXY;
+                label.Text = $"{className}:{dlResAutoRemark.AL_score[i]:F2}";
+                label.Color = color;
 
-
-                ResultLabel.X = dlResAutoRemark.AL_Rect[i].CornerYX;
-                ResultLabel.Y = dlResAutoRemark.AL_Rect[i].CornerXY;
-                ResultLabel.Text = strGroupName + ":" + Math.Round(dlResAutoRemark.AL_score[i], 2).ToString();
-
-
-                strGroupName += i;
-                cogRDAutoMark.InteractiveGraphics.Add(dlResAutoRemark.AL_Rect[i], strGroupName, false);
-                cogRDAutoMark.InteractiveGraphics.Add(ResultLabel, strGroupName, false);
-                ResultLabel = new CogGraphicLabel();
-
+                // 添加到InteractiveGraphics
+                string groupName = $"{className}_{i}";
+                cogRDAutoMark.InteractiveGraphics.Add(dlResAutoRemark.AL_Rect[i], groupName, false);
+                cogRDAutoMark.InteractiveGraphics.Add(label, groupName, false);
             }
-
-             
         }
 
         private void chkDiff_CheckedChanged(object sender, EventArgs e)
@@ -1973,79 +2038,39 @@ namespace xbDefectDect
             }
         }
 
-        private void AddRDManuGrap( )
+        private void AddRDManuGrap()
         {
-           
-             cogRDManuMark.InteractiveGraphics.Clear();
-           if (!(bCreateMark && bMouseDown) && (dTargetMarkPose==null || dTargetMarkPose.Count==0 ||dTargetMarkPose.Count % 10 != 0))
-                return;
-          
-            
-            int iGrapCount = dTargetMarkPose.Count / 10;
+            cogRDManuMark.InteractiveGraphics.Clear();
 
-          
-          //  cogRDManuMark.InteractiveGraphics.
-            //创建文本
-            CogGraphicLabel ResultLabel = new CogGraphicLabel();//创建标签对象
-
-
-            for (int i=0;i<iGrapCount;i++)
-            {
-                CogRectangle rect = new CogRectangle();
-                rect.X = dTargetMarkPose[10 * i+2];
-                rect.Y = dTargetMarkPose[10 * i + 3];
-                rect.Width= Math.Abs(dTargetMarkPose[10 * i + 4]- dTargetMarkPose[10 * i + 2]);
-                rect.Height = Math.Abs(dTargetMarkPose[10 * i + 7] - dTargetMarkPose[10 * i + 5]);
-
-                string strName="";
-                if(dlResManuRemark.AL_Type[i]==1)
-                {
-                    strName =i+ "liewen";
-                    rect.Color = CogColorConstants.Red; 
-                }
-                else if (dlResManuRemark.AL_Type[i] == 2)
-                {
-                    strName = i + "posz";
-                    rect.Color = CogColorConstants.Green; 
-                }
-                else if (dlResManuRemark.AL_Type[i] == 3)
-                {
-                    strName = i + "liewenWP";
-                    rect.Color = CogColorConstants.DarkRed;
-                }
-                else if (dlResManuRemark.AL_Type[i] ==4)
-                {
-                    strName = i + "poszWP";
-                    rect.Color = CogColorConstants.DarkGreen;
-                }
-                else if (dlResManuRemark.AL_Type[i] == 5)
-                {
-                    strName = i + "flaking";
-                    rect.Color = CogColorConstants.Purple;
-                }
-
-
-                //   ResultLabel.X = rect.X;
-                //   ResultLabel.Y = rect.Y;
-                //   ResultLabel.Text = strName + ":" + Math.Round(dlResAutoRemark.AL_score[i], 2).ToString();
-
-
-                cogRDManuMark.InteractiveGraphics.Add(rect,strName,false);
-              //  cogRDManuMark.InteractiveGraphics.Add(ResultLabel, strName, false);
-
-                cogRDManuMark.InteractiveGraphics[i].SelectedColor = CogColorConstants.Blue;
-                cogRDManuMark.InteractiveGraphics[i].SelectedLineStyle = CogGraphicLineStyleConstants.Dash;
-                cogRDManuMark.InteractiveGraphics[i].SelectedLineWidthInScreenPixels = 2;
-             //   ResultLabel = new CogGraphicLabel();
-            }
-
-            if(bCreateMark && bMouseDown)
+            if (bCreateMark && bMouseDown)
             {
                 newRect.Color = CogColorConstants.Red;
-                newRect.LineStyle= CogGraphicLineStyleConstants.Dash;
+                newRect.LineStyle = CogGraphicLineStyleConstants.Dash;
                 newRect.LineWidthInScreenPixels = 2;
-                cogRDManuMark.InteractiveGraphics.Add(newRect, "new", false); 
+                cogRDManuMark.InteractiveGraphics.Add(newRect, "new", false);
+                return;
+            }
 
+            for (int i = 0; i < dlResManuRemark.AL_Rect.Count; i++)
+            {
+                int typeId = dlResManuRemark.AL_Type[i];
+                string className = (typeId > 0 && typeId <= _classNames.Count)
+                                    ? _classNames[typeId - 1]
+                                    : "unknown";
+
+                CogColorConstants color = GetColorForClass(className);
+
+                CogRectangle rect = new CogRectangle();
+                rect.X = dlResManuRemark.AL_Rect[i].CornerYX;
+                rect.Y = dlResManuRemark.AL_Rect[i].CornerXY;
+                rect.Width = dlResManuRemark.AL_Rect[i].SideXLength;
+                rect.Height = dlResManuRemark.AL_Rect[i].SideYLength;
+                rect.Color = color;
+
+                string groupName = $"{className}_{i}";
+                cogRDManuMark.InteractiveGraphics.Add(rect, groupName, false);
+                // 可选添加标签
+                // CogGraphicLabel label = ... 
             }
         }
         private void cogRDManuMark_MouseDown(object sender, MouseEventArgs e)
@@ -2057,8 +2082,8 @@ namespace xbDefectDect
             ptStart = e.Location;
             fScale = cogRDManuMark.Zoom;
 
-            dTargetImgX = ptStart.X / fScale- cogRDManuMark.PanX- cogRDManuMark.Width/2 / fScale+ ci8gImageFile.Width/2;
-            dTargetImgY = (ptStart.Y) / fScale- cogRDManuMark.PanY - cogRDManuMark.Height/2 / fScale+ ci8gImageFile.Height/2;
+            dTargetImgX = ptStart.X / fScale- cogRDManuMark.PanX- cogRDManuMark.Width/2 / fScale+ _currentDisplayImage.Width/2;
+            dTargetImgY = (ptStart.Y) / fScale- cogRDManuMark.PanY - cogRDManuMark.Height/2 / fScale+ _currentDisplayImage.Height/2;
 
        //     label1.Text = dTargetImgX.ToString("F2") + ",  " + dTargetImgY.ToString("F2") + ";  " +
       //          cogRDManuMark.PanX.ToString("F2")+ ",  " + cogRDManuMark.PanY.ToString("F2") + "; "  +fScale.ToString("F2"); ;
@@ -2109,10 +2134,12 @@ namespace xbDefectDect
 
             if(bCreateMark && bMouseDown)
             {
-                ClsList clsList = new ClsList(iLastClsType-1);
-               if( clsList.ShowDialog()==DialogResult.OK && clsList.iClsType>0)
+               // ClsList clsList = new ClsList(iLastClsType-1);
+                // 传入当前类别列表和之前使用的索引（-1 表示无预选）
+                ClsList clsList = new ClsList(_classNames, iLastClsType - 1);
+                if ( clsList.ShowDialog()==DialogResult.OK && clsList.SelectedClassIndex > 0)
                 {
-                    iLastClsType = clsList.iClsType;
+                    iLastClsType = clsList.SelectedClassIndex;
                     CogRectangleAffine cogRectA = new CogRectangleAffine();
                     cogRectA.CenterX = newRect.CenterX;
                     cogRectA.CenterY = newRect.CenterY;
@@ -2165,8 +2192,8 @@ namespace xbDefectDect
             {
                 ptEnd = e.Location;
 
-                dTargetImgMX = ptEnd.X / fScale - cogRDManuMark.PanX - cogRDManuMark.Width / 2 / fScale + ci8gImageFile.Width / 2;
-                dTargetImgMY = (ptEnd.Y) / fScale - cogRDManuMark.PanY - cogRDManuMark.Height / 2 / fScale + ci8gImageFile.Height / 2;
+                dTargetImgMX = ptEnd.X / fScale - cogRDManuMark.PanX - cogRDManuMark.Width / 2 / fScale + _currentDisplayImage.Width / 2;
+                dTargetImgMY = (ptEnd.Y) / fScale - cogRDManuMark.PanY - cogRDManuMark.Height / 2 / fScale + _currentDisplayImage.Height / 2;
 
 
                 if (dTargetImgMX < dTargetStartImgX)
@@ -2191,8 +2218,8 @@ namespace xbDefectDect
             ptEnd = e.Location;
 
 
-            dTargetImgMX = ptEnd.X / fScale - cogRDManuMark.PanX - cogRDManuMark.Width / 2 / fScale + ci8gImageFile.Width / 2;
-            dTargetImgMY = (ptEnd.Y) / fScale - cogRDManuMark.PanY - cogRDManuMark.Height / 2 / fScale + ci8gImageFile.Height / 2;
+            dTargetImgMX = ptEnd.X / fScale - cogRDManuMark.PanX - cogRDManuMark.Width / 2 / fScale + _currentDisplayImage.Width / 2;
+            dTargetImgMY = (ptEnd.Y) / fScale - cogRDManuMark.PanY - cogRDManuMark.Height / 2 / fScale + _currentDisplayImage.Height / 2;
 
 
           //  dTargetImgMX = ptEnd.X / fScale - cogRDManuMark.PanX - dOffsetX2 / fScale;
@@ -3065,6 +3092,11 @@ namespace xbDefectDect
             menuExport_MarkFile.Checked = bExportMark;
         }
 
+        private void label11_Click(object sender, EventArgs e)
+        {
+
+        }
+
         private void menuExport_ImageFile_Click(object sender, EventArgs e)
         {
             bExportImg = !bExportImg;
@@ -3076,9 +3108,9 @@ namespace xbDefectDect
             if (indOri > -1 && indOri < dlResManuRemark.AL_Rect.Count)
             {
                 ClsList clsList = new ClsList(iLastClsType-1);
-                if (clsList.ShowDialog() == DialogResult.OK && clsList.iClsType > 0)
+                if (clsList.ShowDialog() == DialogResult.OK && clsList.SelectedClassIndex > 0)
                 {
-                    iLastClsType = clsList.iClsType;
+                    iLastClsType = clsList.SelectedClassIndex;
                     dlResManuRemark.AL_Type[indOri] = iLastClsType;
                     AddRDManuGrap();
                     bXG = true;
@@ -3213,7 +3245,10 @@ namespace xbDefectDect
             }
             string strFileName = Path.GetFileNameWithoutExtension(imgfile);
             string strDestPath = StripStatus_ManulXMLPath.Text + "\\" + strFileName + ".xml";
-            cdl.CreateRemarkXML_EN("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlResManuRemark);  
+            // cdl.CreateRemarkXML_EN("NullMark_00.xml", strFileName + ".jpg", strDestPath, dlResManuRemark);  
+            string format = cmbFormat.Text;
+            cdl.WriteAnnotation(imgfile, StripStatus_ManulXMLPath.Text, dlResManuRemark, format);
+
         }
 
 
@@ -3262,6 +3297,11 @@ namespace xbDefectDect
 
             return isModified;
         }
+
+         
+
+       
+
     }
 }
 
