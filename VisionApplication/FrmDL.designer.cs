@@ -29,7 +29,6 @@ namespace xbDefectDect
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmDL));
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
@@ -68,6 +67,8 @@ namespace xbDefectDect
             this.menu_Cam = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_Cam_1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menu_Cam_2 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Cam_3 = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Cam_4 = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.StripStatus_modelStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
@@ -81,14 +82,19 @@ namespace xbDefectDect
             this.StripStatus_Const4 = new System.Windows.Forms.ToolStripStatusLabel();
             this.StripStatus_ModelFile = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
-            this.toolInit = new System.Windows.Forms.ToolStripButton();
             this.toolDestroy = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStart = new System.Windows.Forms.ToolStripButton();
             this.toolPause = new System.Windows.Forms.ToolStripButton();
             this.toolStop = new System.Windows.Forms.ToolStripButton();
+            this.InferFromCam = new System.Windows.Forms.ToolStripButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.CamConn = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuCam_RefreshCam = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolInit = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.menu_Infer_FromFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menu_Infer_FromCam = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
@@ -419,7 +425,10 @@ namespace xbDefectDect
             this.menu_Infer.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menu_Infer_Start,
             this.menu_Infer_Pauss,
-            this.menu_Infer_Stop});
+            this.menu_Infer_Stop,
+            this.toolStripSeparator3,
+            this.menu_Infer_FromFile,
+            this.menu_Infer_FromCam});
             this.menu_Infer.Name = "menu_Infer";
             this.menu_Infer.Size = new System.Drawing.Size(44, 21);
             this.menu_Infer.Text = "推理";
@@ -427,21 +436,21 @@ namespace xbDefectDect
             // menu_Infer_Start
             // 
             this.menu_Infer_Start.Name = "menu_Infer_Start";
-            this.menu_Infer_Start.Size = new System.Drawing.Size(124, 22);
+            this.menu_Infer_Start.Size = new System.Drawing.Size(180, 22);
             this.menu_Infer_Start.Text = "启动推理";
             this.menu_Infer_Start.Click += new System.EventHandler(this.menu_Infer_Start_Click);
             // 
             // menu_Infer_Pauss
             // 
             this.menu_Infer_Pauss.Name = "menu_Infer_Pauss";
-            this.menu_Infer_Pauss.Size = new System.Drawing.Size(124, 22);
+            this.menu_Infer_Pauss.Size = new System.Drawing.Size(180, 22);
             this.menu_Infer_Pauss.Text = "暂停推理";
             this.menu_Infer_Pauss.Click += new System.EventHandler(this.menu_Infer_Pauss_Click);
             // 
             // menu_Infer_Stop
             // 
             this.menu_Infer_Stop.Name = "menu_Infer_Stop";
-            this.menu_Infer_Stop.Size = new System.Drawing.Size(124, 22);
+            this.menu_Infer_Stop.Size = new System.Drawing.Size(180, 22);
             this.menu_Infer_Stop.Text = "停止推理";
             this.menu_Infer_Stop.Click += new System.EventHandler(this.menu_Infer_Stop_Click);
             // 
@@ -449,7 +458,11 @@ namespace xbDefectDect
             // 
             this.menu_Cam.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menu_Cam_1,
-            this.menu_Cam_2});
+            this.menu_Cam_2,
+            this.menu_Cam_3,
+            this.menu_Cam_4,
+            this.toolStripSeparator2,
+            this.menuCam_RefreshCam});
             this.menu_Cam.Name = "menu_Cam";
             this.menu_Cam.Size = new System.Drawing.Size(44, 21);
             this.menu_Cam.Text = "相机";
@@ -467,6 +480,20 @@ namespace xbDefectDect
             this.menu_Cam_2.Size = new System.Drawing.Size(180, 22);
             this.menu_Cam_2.Text = "相机2";
             this.menu_Cam_2.Click += new System.EventHandler(this.menu_Cam_2_Click);
+            // 
+            // menu_Cam_3
+            // 
+            this.menu_Cam_3.Name = "menu_Cam_3";
+            this.menu_Cam_3.Size = new System.Drawing.Size(180, 22);
+            this.menu_Cam_3.Text = "相机3";
+            this.menu_Cam_3.Click += new System.EventHandler(this.menu_Cam_3_Click);
+            // 
+            // menu_Cam_4
+            // 
+            this.menu_Cam_4.Name = "menu_Cam_4";
+            this.menu_Cam_4.Size = new System.Drawing.Size(180, 22);
+            this.menu_Cam_4.Text = "相机4";
+            this.menu_Cam_4.Click += new System.EventHandler(this.menu_Cam_4_Click);
             // 
             // statusStrip1
             // 
@@ -564,25 +591,13 @@ namespace xbDefectDect
             this.toolStart,
             this.toolPause,
             this.toolStop,
-            this.CamConn});
+            this.InferFromCam});
             this.toolStrip.Location = new System.Drawing.Point(0, 25);
             this.toolStrip.Name = "toolStrip";
             this.toolStrip.Size = new System.Drawing.Size(1083, 48);
             this.toolStrip.Stretch = true;
             this.toolStrip.TabIndex = 36;
             this.toolStrip.Text = "toolStrip1";
-            // 
-            // toolInit
-            // 
-            this.toolInit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolInit.Image = ((System.Drawing.Image)(resources.GetObject("toolInit.Image")));
-            this.toolInit.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.toolInit.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolInit.Name = "toolInit";
-            this.toolInit.Size = new System.Drawing.Size(45, 45);
-            this.toolInit.Text = "toolStripButton1";
-            this.toolInit.ToolTipText = "模型初始化";
-            this.toolInit.Click += new System.EventHandler(this.toolInit_Click);
             // 
             // toolDestroy
             // 
@@ -637,6 +652,15 @@ namespace xbDefectDect
             this.toolStop.ToolTipText = "结束推理";
             this.toolStop.Click += new System.EventHandler(this.toolStop_Click);
             // 
+            // InferFromCam
+            // 
+            this.InferFromCam.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.InferFromCam.Image = ((System.Drawing.Image)(resources.GetObject("InferFromCam.Image")));
+            this.InferFromCam.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.InferFromCam.Name = "InferFromCam";
+            this.InferFromCam.Size = new System.Drawing.Size(23, 45);
+            this.InferFromCam.Text = "toolStripButton1";
+            // 
             // groupBox1
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -661,15 +685,48 @@ namespace xbDefectDect
             this.groupBox1.TabIndex = 37;
             this.groupBox1.TabStop = false;
             // 
-            // CamConn
+            // toolStripSeparator2
             // 
-            this.CamConn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.CamConn.Image = ((System.Drawing.Image)(resources.GetObject("CamConn.Image")));
-            this.CamConn.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.CamConn.Name = "CamConn";
-            this.CamConn.Size = new System.Drawing.Size(23, 45);
-            this.CamConn.Text = "toolStripButton1";
-            this.CamConn.Click += new System.EventHandler(this.CamConn_Click);
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
+            // 
+            // menuCam_RefreshCam
+            // 
+            this.menuCam_RefreshCam.Name = "menuCam_RefreshCam";
+            this.menuCam_RefreshCam.Size = new System.Drawing.Size(180, 22);
+            this.menuCam_RefreshCam.Text = "刷新相机";
+            this.menuCam_RefreshCam.Click += new System.EventHandler(this.menuCam_RefreshCam_Click);
+            // 
+            // toolInit
+            // 
+            this.toolInit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolInit.Image = ((System.Drawing.Image)(resources.GetObject("toolInit.Image")));
+            this.toolInit.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            this.toolInit.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolInit.Name = "toolInit";
+            this.toolInit.Size = new System.Drawing.Size(45, 45);
+            this.toolInit.Text = "toolStripButton1";
+            this.toolInit.ToolTipText = "模型初始化";
+            this.toolInit.Click += new System.EventHandler(this.toolInit_Click);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(177, 6);
+            // 
+            // menu_Infer_FromFile
+            // 
+            this.menu_Infer_FromFile.Name = "menu_Infer_FromFile";
+            this.menu_Infer_FromFile.Size = new System.Drawing.Size(180, 22);
+            this.menu_Infer_FromFile.Text = "从文件";
+            this.menu_Infer_FromFile.Click += new System.EventHandler(this.menu_Infer_FromFile_Click);
+            // 
+            // menu_Infer_FromCam
+            // 
+            this.menu_Infer_FromCam.Name = "menu_Infer_FromCam";
+            this.menu_Infer_FromCam.Size = new System.Drawing.Size(180, 22);
+            this.menu_Infer_FromCam.Text = "从相机";
+            this.menu_Infer_FromCam.Click += new System.EventHandler(this.menu_Infer_FromCam_Click);
             // 
             // FrmDL
             // 
@@ -755,7 +812,6 @@ namespace xbDefectDect
         private System.Windows.Forms.ToolStripMenuItem menu_Model_ModelPath;
         private System.Windows.Forms.ToolStripMenuItem menu_File_SaveXMLPath;
         private System.Windows.Forms.ToolStrip toolStrip;
-        private System.Windows.Forms.ToolStripButton toolInit;
         private System.Windows.Forms.ToolStripButton toolDestroy;
         private System.Windows.Forms.ToolStripButton toolStart;
         private System.Windows.Forms.GroupBox groupBox1;
@@ -768,7 +824,15 @@ namespace xbDefectDect
         private System.Windows.Forms.ToolStripMenuItem menu_Cam;
         private System.Windows.Forms.ToolStripMenuItem menu_Cam_1;
         private System.Windows.Forms.ToolStripMenuItem menu_Cam_2;
-        private System.Windows.Forms.ToolStripButton CamConn;
+        private System.Windows.Forms.ToolStripButton InferFromCam;
+        private System.Windows.Forms.ToolStripMenuItem menu_Cam_3;
+        private System.Windows.Forms.ToolStripMenuItem menu_Cam_4;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripMenuItem menuCam_RefreshCam;
+        private System.Windows.Forms.ToolStripButton toolInit;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripMenuItem menu_Infer_FromFile;
+        private System.Windows.Forms.ToolStripMenuItem menu_Infer_FromCam;
     }
 }
 
