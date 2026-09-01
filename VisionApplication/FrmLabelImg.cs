@@ -406,6 +406,7 @@ namespace xbDefectDect
             StripStatus_ManulXMLPath.Text = strManuMarkPath;
             StripStatus_ImagePath.Text = strMarkPicPath;
 
+            cmbFormat.SelectedIndex = 0;
             InitLoadImage();
             LoadDefectCls();
         }
@@ -2067,7 +2068,7 @@ namespace xbDefectDect
                 rect.Height = dlResManuRemark.AL_Rect[i].SideYLength;
                 rect.Color = color;
 
-                string groupName = $"{className}_{i}";
+                string groupName = $"{i}_{className}";
                 cogRDManuMark.InteractiveGraphics.Add(rect, groupName, false);
                 // 可选添加标签
                 // CogGraphicLabel label = ... 
@@ -2239,7 +2240,9 @@ namespace xbDefectDect
                         dTargetMarkPose[10 * indOri + 2 * j] += detX;
                         dTargetMarkPose[10 * indOri + 2 * j+1] += detY; 
                     }
-
+                    // 同步更新 AL_Rect
+                    dlResManuRemark.AL_Rect[indOri].CenterX = dTargetMarkPose[10 * indOri];
+                    dlResManuRemark.AL_Rect[indOri].CenterY = dTargetMarkPose[10 * indOri + 1];
                     break;
                 case 1:
 
@@ -2251,8 +2254,9 @@ namespace xbDefectDect
                     dTargetMarkPose[10 * indOri + 5] += detY;
 
                     dTargetMarkPose[10 * indOri + 8] += detX;
-  
 
+                    // ★★★ 新增：重新计算并同步更新 AL_Rect ★★★
+                    UpdateRectFromPose(indOri); 
                     break;
                 case 2:
                     dTargetMarkPose[10 * indOri + 0] += detX / 2;
@@ -2267,7 +2271,7 @@ namespace xbDefectDect
 
                     dTargetMarkPose[10 * indOri + 6] += detX;
 
-
+                    UpdateRectFromPose(indOri);
                     break;
                 case 3:
                     dTargetMarkPose[10 * indOri + 0] += detX / 2;
@@ -2285,7 +2289,7 @@ namespace xbDefectDect
                     dTargetMarkPose[10 * indOri + 7] += detY;
                    
                     dTargetMarkPose[10 * indOri + 9] += detY;
-
+                    UpdateRectFromPose(indOri);
                     break;
                 case 4:
                     dTargetMarkPose[10 * indOri + 0] += detX / 2;
@@ -2300,6 +2304,7 @@ namespace xbDefectDect
 
                     dTargetMarkPose[10 * indOri + 8] += detX;
                     dTargetMarkPose[10 * indOri + 9] += detY;
+                    UpdateRectFromPose(indOri);
                     break;
                 case 5:
 
@@ -2308,7 +2313,33 @@ namespace xbDefectDect
             AddRDManuGrap();
 
         }
+        /// <summary>
+        /// 从 dTargetMarkPose 重新计算矩形参数，并同步到 AL_Rect
+        /// </summary>
+        private void UpdateRectFromPose(int idx)
+        {
+            int baseIdx = idx * 10;
+            double x1 = dTargetMarkPose[baseIdx + 2];  // 左
+            double y1 = dTargetMarkPose[baseIdx + 3];  // 上
+            double x2 = dTargetMarkPose[baseIdx + 6];  // 右
+            double y2 = dTargetMarkPose[baseIdx + 7];  // 下
 
+            double cx = (x1 + x2) / 2;
+            double cy = (y1 + y2) / 2;
+            double w = Math.Abs(x2 - x1);
+            double h = Math.Abs(y2 - y1);
+
+            // 更新 dTargetMarkPose 的中心点
+            dTargetMarkPose[baseIdx] = cx;
+            dTargetMarkPose[baseIdx + 1] = cy;
+
+            // ★★★ 同步更新 AL_Rect ★★★
+            CogRectangleAffine rect = dlResManuRemark.AL_Rect[idx];
+            rect.CenterX = cx;
+            rect.CenterY = cy;
+            rect.SideXLength = w;
+            rect.SideYLength = h;
+        }
         int iSurfaceType = 0;
         bool bCrack = false;
         bool bPosz = false;
@@ -2642,7 +2673,7 @@ namespace xbDefectDect
 
         private void cmbDefectCls_SelectedIndexChanged(object sender, EventArgs e)
         {
-            FilterImagesByDefect();
+          //  FilterImagesByDefect();
         }
 
         private void cmbDefectScore_TextChanged(object sender, EventArgs e)
@@ -3107,7 +3138,7 @@ namespace xbDefectDect
         {
             if (indOri > -1 && indOri < dlResManuRemark.AL_Rect.Count)
             {
-                ClsList clsList = new ClsList(iLastClsType-1);
+                ClsList clsList = new ClsList(_classNames, iLastClsType -1);
                 if (clsList.ShowDialog() == DialogResult.OK && clsList.SelectedClassIndex > 0)
                 {
                     iLastClsType = clsList.SelectedClassIndex;

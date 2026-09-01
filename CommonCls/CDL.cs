@@ -1457,9 +1457,9 @@ namespace CommonCls
         /// </summary>
         public void ReadAnnotation(string imagePath, string annotationDir, string format, ref DLResult result)
         {
-            if (format == "XML")
+            if (format.ToUpper() == "XML")
                 ReadRemarkXML_EN1(imagePath, annotationDir, ref result);
-            else if (format == "TXT")
+            else if (format.ToUpper() == "TXT")
                 ReadRemarkYOLO(imagePath, annotationDir, ref result);
             else
                 throw new ArgumentException("不支持的标注格式");
@@ -1470,10 +1470,10 @@ namespace CommonCls
         /// </summary>
         public void WriteAnnotation(string imagePath, string annotationDir, DLResult result, string format)
         {
-            if (format == "XML")
+            if (format.ToUpper() == "XML"  )
                 CreateRemarkXML_EN("NullMark_00.xml", Path.GetFileName(imagePath),
                     Path.Combine(annotationDir, Path.GetFileNameWithoutExtension(imagePath) + ".xml"), result);
-            else if (format == "TXT")
+            else if (format.ToUpper() == "TXT")
                 WriteRemarkYOLO(imagePath, annotationDir, result);
             else
                 throw new ArgumentException("不支持的标注格式");
