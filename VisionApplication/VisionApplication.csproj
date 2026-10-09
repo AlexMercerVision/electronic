@@ -93,27 +93,27 @@
     </Reference>
     <Reference Include="Cognex.VisionPro.Blob, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.Blob.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.Blob.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.Blob.Controls, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.Blob.Controls.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.Blob.Controls.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.CalibFix, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.CalibFix.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.CalibFix.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.CalibFix.Controls, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.CalibFix.Controls.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.CalibFix.Controls.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.Caliper, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.Caliper.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.Caliper.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.Caliper.Controls, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.Caliper.Controls.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.Caliper.Controls.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.Controls">
       <Name>Cognex.VisionPro.Controls</Name>
@@ -124,27 +124,23 @@
     </Reference>
     <Reference Include="Cognex.VisionPro.Display.Controls, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.Display.Controls.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.Display.Controls.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.ImageFile, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.ImageFile.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.ImageFile.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.ImageProcessing, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.ImageProcessing.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.ImageProcessing.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.PMAlign, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.PMAlign.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.PMAlign.dll</HintPath>
     </Reference>
     <Reference Include="Cognex.VisionPro.PMAlign.Controls, Version=59.2.0.0, Culture=neutral, PublicKeyToken=ef0f902af9dee505, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Cognex\VisionPro\ReferencedAssemblies\Cognex.VisionPro.PMAlign.Controls.dll</HintPath>
-    </Reference>
-    <Reference Include="CommonCls, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\CommonCls.dll</HintPath>
+      <HintPath>..\\bin\\Cognex.VisionPro.PMAlign.Controls.dll</HintPath>
     </Reference>
     <Reference Include="halcondotnet, Version=12.0.0.0, Culture=neutral, PublicKeyToken=4973bed59ddbf2b8, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -177,8 +173,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -190,10 +186,14 @@
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="xbVP_Control, Version=1.0.9002.38906, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\xbVP_Control.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\CommonCls\CommonCls.csproj">
+      <Project>{56F3543D-1DF9-4011-86A6-5DAFD3478857}</Project>
+      <Name>CommonCls</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VisionControl\VisionControl.csproj">
+      <Project>{29E47515-CE28-4D06-87F4-0DC52F6AD67E}</Project>
+      <Name>VisionControl</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileRW.cs" />

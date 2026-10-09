@@ -35,7 +35,7 @@
   <ItemGroup>
     <Reference Include="CommonCls, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\VisionApplication\bin\Debug\CommonCls.dll</HintPath>
+      <HintPath>..\bin\CommonCls.dll</HintPath>
     </Reference>
     <Reference Include="OpenCvSharp">
       <HintPath>..\packages\OpenCvSharp4.4.7.0.20230115\lib\netstandard2.0\OpenCvSharp.dll</HintPath>
