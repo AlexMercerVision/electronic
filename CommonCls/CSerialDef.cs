@@ -699,7 +699,7 @@ namespace CommonCls
             {
 
                 returnBytes = HexStringToString("01 0F 00 00 00 08 01 80 FF 35", encode);   //Y4=1
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
 
                 //输出1s钟的脉冲
                 Thread.Sleep(iTime);
@@ -731,7 +731,7 @@ namespace CommonCls
                     returnBytes = HexStringToString("01 0F 00 00 00 08 01 10 FF 59", encode);  //Y5=1
                 else
                     returnBytes = HexStringToString("01 0F 00 00 00 08 01 08 FF 53", encode);   //Y4=1
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
 
                 //输出1s钟的脉冲
                 Thread.Sleep(600);
@@ -757,7 +757,7 @@ namespace CommonCls
                     returnBytes = HexStringToString("01 0F 00 00 00 08 01 10 FF 59", encode);  //Y5=1
                 else
                     returnBytes = HexStringToString("01 0F 00 00 00 08 01 20 FF 4D", encode);  //Y6=1
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
                 Thread.Sleep(20);
                 ClearOutput(sPort);
             }
@@ -798,7 +798,7 @@ namespace CommonCls
                         returnBytes = HexStringToString("01 0F 00 00 00 08 01 04 FF 56", encode);  //Y3=1  凹口缺陷
 
                 }
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
 
                 Thread.Sleep(600);
                 ClearOutput(sPort);
@@ -810,80 +810,137 @@ namespace CommonCls
             return true;
         }
 
-        //检测结果发送
-        //01:子站地址
-        //0f:指令号，0x0f=十进制 15，写多路 DO
-        //00 00:从哪一路开始写，00 00=Y1 开始写
-        //00 01:要写多少路，十六进制 0x0001=十进制 1，写 1 路
-        //01:后面要写入的数据字节数,0x01=十进制 1，写入 1 字节数据
-        //01:写入的数据，0x01 换算成二进制 00000001 = Y8-Y7-Y6-Y5-Y4-Y3-Y2-Y1 输出状态，ON=0，OFF=1
-        //ef 57:CRC 校验
-        //  Byte[5][] order
-        public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
-        {
-            try
-            {
-                // 使用ThreadPool来执行异步操作
-                ThreadPool.QueueUserWorkItem(state =>
-                {
-                    try
-                    {
-                        SendResultToIOAsync(sPort, bOk, ioParam);
-                    }
-                    catch (Exception ex)
-                    {
-                         // 记录日志，避免异常传播到线程池
-                         // Debug.WriteLine($"SendResultToIOAsync error: {ex.Message}");
-                     }
-                });
+        private readonly object ioOutputWriteSync = new object();
 
-                return true; // 立即返回，不等待操作完成
-            }
-            catch (Exception ex)
+        private void WriteIOFrame(SerialPort sPort, byte[] frame, int count)
+        {
+            lock (ioOutputWriteSync)
+                sPort.Write(frame, 0, count);
+        }
+
+        /// <summary>
+        /// 使用 Modbus RTU 0x0F 一次写入 Y1～Y8，并保持指定脉冲时间后全部关闭。
+        /// outputBitmap 的 bit0～bit7 分别对应 Y1～Y8。
+        /// </summary>
+        public bool SendIOOutputBitmapPulse(SerialPort sPort, byte outputBitmap, int pulseMilliseconds,
+            out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (sPort == null)
             {
-                // Debug.WriteLine($"QueueUserWorkItem error: {ex.Message}");
+                errorMessage = "IO串口对象为空";
                 return false;
+            }
+            if (!sPort.IsOpen)
+            {
+                errorMessage = $"IO串口{sPort.PortName}未打开";
+                return false;
+            }
+            if (outputBitmap == 0)
+            {
+                errorMessage = "IO输出位图为空";
+                return false;
+            }
+            if (pulseMilliseconds <= 0 || pulseMilliseconds > 60000)
+            {
+                errorMessage = $"IO脉冲时间非法：{pulseMilliseconds}ms";
+                return false;
+            }
+
+            lock (ioOutputWriteSync)
+            {
+                bool outputEnabled = false;
+                try
+                {
+                    byte[] outputFrame = BuildWriteEightOutputsFrame(outputBitmap);
+                    WriteIOFrame(sPort, outputFrame, outputFrame.Length);
+                    outputEnabled = true;
+
+                    Thread.Sleep(pulseMilliseconds);
+
+                    byte[] clearFrame = BuildWriteEightOutputsFrame(0x00);
+                    WriteIOFrame(sPort, clearFrame, clearFrame.Length);
+                    outputEnabled = false;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = $"IO组合输出失败：{ex.Message}";
+                    if (outputEnabled && sPort.IsOpen)
+                    {
+                        try
+                        {
+                            byte[] clearFrame = BuildWriteEightOutputsFrame(0x00);
+                            WriteIOFrame(sPort, clearFrame, clearFrame.Length);
+                        }
+                        catch (Exception clearEx)
+                        {
+                            errorMessage += $"；全部关闭失败：{clearEx.Message}";
+                        }
+                    }
+                    return false;
+                }
             }
         }
 
-        private void SendResultToIOAsync(SerialPort sPort, bool bOk, IOPortParam ioParam)
+        /// <summary>
+        /// 一次关闭 Y1～Y8。与组合脉冲共用同一串口写锁。
+        /// </summary>
+        public bool ClearIOOutputs(SerialPort sPort, out string errorMessage)
         {
-            try
+            errorMessage = string.Empty;
+            if (sPort == null)
             {
-                Byte[] returnBytes;
+                errorMessage = "IO串口对象为空";
+                return false;
+            }
+            if (!sPort.IsOpen)
+            {
+                errorMessage = $"IO串口{sPort.PortName}未打开";
+                return false;
+            }
 
-                if (bOk)
+            lock (ioOutputWriteSync)
+            {
+                try
                 {
-                    // 第一次写入
-                    returnBytes = new byte[] { 0x01, 0x0f, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0xef, 0x57 };
-                    sPort.Write(returnBytes, 0, 10);
-
-                    // 等待
-                    Thread.Sleep(ioParam.IOTimeDelay);
-
-                    // 第二次写入
-                    returnBytes = HexStringToString("01 0f 00 00 00 01 01 00 2e 97", encode);
-                    sPort.Write(returnBytes, 0, 10);
+                    byte[] clearFrame = BuildWriteEightOutputsFrame(0x00);
+                    WriteIOFrame(sPort, clearFrame, clearFrame.Length);
+                    return true;
                 }
-                else
+                catch (Exception ex)
                 {
-                    // 第一次写入
-                    returnBytes = HexStringToString("01 0f 00 01 00 01 01 01 d2 97", encode);
-                    sPort.Write(returnBytes, 0, 10);
-
-                    // 等待
-                    Thread.Sleep(ioParam.IOTimeDelay);
-
-                    // 第二次写入
-                    returnBytes = HexStringToString(" 01 0f 00 01 00 01 01 00 13 57", encode);
-                    sPort.Write(returnBytes, 0, 10);
+                    errorMessage = $"Y1～Y8全部关闭失败：{ex.Message}";
+                    return false;
                 }
             }
-            catch (Exception ex)
+        }
+
+        private byte[] BuildWriteEightOutputsFrame(byte outputBitmap)
+        {
+            byte[] frame =
             {
-                // 处理异常，可以记录日志
-                //  Debug.WriteLine($"SendResultToIOAsync operation error: {ex.Message}");
-            }
+                0x01,       // 从站地址
+                0x0F,       // 写多个线圈
+                0x00, 0x00, // 起始地址：Y1
+                0x00, 0x08, // 线圈数量：Y1～Y8
+                0x01,       // 数据字节数
+                outputBitmap,
+                0x00, 0x00  // CRC占位
+            };
+            CalculateCRC(ref frame);
+            return frame;
+        }
+
+        /// <summary>
+        /// 兼容旧调用；同步发送Y1/Y2，真实返回串口写入结果。
+        /// 新的自动反馈和手动测试不再使用该接口。
+        /// </summary>
+        public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
+        {
+            string errorMessage;
+            byte outputBitmap = bOk ? (byte)0x01 : (byte)0x02;
+            return SendIOOutputBitmapPulse(sPort, outputBitmap, ioParam.IOTimeDelay, out errorMessage);
         }
        /* public bool SendResultToIO(SerialPort sPort, bool bOk, IOPortParam ioParam)
         {
@@ -903,11 +960,11 @@ namespace CommonCls
             {
                 returnBytes = HexStringToString("01 0f 00 01 00 01 01 01 d2 97", encode);
                 //  returnBytes = { 0x01, 0x0f, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0xef, 0x57 };
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
 
                 Thread.Sleep(ioParam.IOTimeDelay);
                 returnBytes = HexStringToString(" 01 0f 00 01 00 01 01 00 13 57", encode);
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
                 // ClearOutput(sPort);
             }
 
@@ -994,7 +1051,7 @@ namespace CommonCls
                         returnBytes = HexStringToString("01 0F 00 00 00 08 01 04 FF 56", encode);  //Y3=1  凹口缺陷
 
                 }
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
 
                 Thread.Sleep(600);
                 ClearOutput(sPort);
@@ -1014,7 +1071,7 @@ namespace CommonCls
             {
                 Byte[] returnBytes = new Byte[10];
                 returnBytes = HexStringToString("01 0f 00 00 00 18 03 00 00 00 40 74", encode);  //Y=0
-                sPort.Write(returnBytes, 0, 10);
+                WriteIOFrame(sPort, returnBytes, 10);
             }
             catch
             {
@@ -1026,7 +1083,7 @@ namespace CommonCls
         {
             Byte[] returnBytes = new Byte[8];
             returnBytes = HexStringToString("01 02 00 00 00 08 79 CC", encode);
-            sPort.Write(returnBytes, 0, 8);
+            WriteIOFrame(sPort, returnBytes, 8);
         }
           
         //推杆控制

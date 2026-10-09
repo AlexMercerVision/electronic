@@ -64,6 +64,11 @@ namespace VisionApplication
         int iLastcmbRecordType = 0;
 
         int iLastCMIndex = 0;
+        private bool _isUpdatingCameraAssignment = false;
+        private ComboBox cmbJob1OkOut;
+        private ComboBox cmbJob1NgOut;
+        private Label lblJob1OkOut;
+        private Label lblJob1NgOut;
 
         string[] strPortName;
         FileOper fo = new FileOper();
@@ -294,9 +299,112 @@ namespace VisionApplication
 
             return true;
         }
+
+        private static string GetCameraSerialKey(string cameraIdentity)
+        {
+            if (string.IsNullOrWhiteSpace(cameraIdentity))
+                return string.Empty;
+
+            string[] parts = cameraIdentity.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length == 0 ? string.Empty : parts[parts.Length - 1];
+        }
+
+        private void EnsureCameraSerialBindingArray()
+        {
+            int requiredLength = cup.p_CD.camInd != null ? cup.p_CD.camInd.Length : cup.p_Cam.Length;
+            if (cup.p_CD.camSerial != null && cup.p_CD.camSerial.Length >= requiredLength)
+                return;
+
+            string[] bindings = new string[requiredLength];
+            if (cup.p_CD.camSerial != null)
+                Array.Copy(cup.p_CD.camSerial, bindings, cup.p_CD.camSerial.Length);
+            cup.p_CD.camSerial = bindings;
+        }
+
+        private int FindCameraIndexBySerial(string serial)
+        {
+            string serialKey = GetCameraSerialKey(serial);
+            if (string.IsNullOrEmpty(serialKey) || cup.p_Cam == null)
+                return -1;
+
+            for (int i = 0; i < maxCameraNum && i < cup.p_Cam.Length; i++)
+            {
+                if (string.Equals(GetCameraSerialKey(cup.p_Cam[i].strCamName), serialKey,
+                    StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return -1;
+        }
+
+        private string GetCameraDisplayName(int cameraIndex)
+        {
+            if (cup.p_Cam == null || cameraIndex < 0 || cameraIndex >= cup.p_Cam.Length)
+                return "未识别相机";
+
+            string cameraName = cup.p_Cam[cameraIndex].strCamName;
+            if (string.IsNullOrWhiteSpace(cameraName))
+                return "未识别相机";
+
+            const string usbPrefix = "U3V: ";
+            return cameraName.StartsWith(usbPrefix, StringComparison.OrdinalIgnoreCase)
+                ? cameraName.Substring(usbPrefix.Length)
+                : cameraName;
+        }
+
+        private void RefreshCameraSelectionItems()
+        {
+            ComboBox[] cameraBoxes = { cmbCamInd1, cmbCamInd2 };
+            foreach (ComboBox cameraBox in cameraBoxes)
+            {
+                cameraBox.Items.Clear();
+                for (int cameraIndex = 0; cameraIndex < maxCameraNum; cameraIndex++)
+                    cameraBox.Items.Add(GetCameraDisplayName(cameraIndex));
+            }
+        }
+
+        private bool ValidateCameraAssignParam()
+        {
+            bool aEnabled = chkCam1Used.Checked;
+            bool bEnabled = chkCam2Used.Checked;
+            int aIndex = cmbCamInd1.SelectedIndex;
+            int bIndex = cmbCamInd2.SelectedIndex;
+
+            if ((aEnabled && aIndex < 0) || (bEnabled && bIndex < 0))
+            {
+                MessageBox.Show("请为已启用的A/B工位选择有效相机。", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (aEnabled && bEnabled && aIndex == bIndex)
+            {
+                MessageBox.Show("A面和B面不能绑定同一台物理相机，请按序列号分别选择。", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            string aSerial = aIndex >= 0 ? GetCameraSerialKey(cup.p_Cam[aIndex].strCamName) : string.Empty;
+            string bSerial = bIndex >= 0 ? GetCameraSerialKey(cup.p_Cam[bIndex].strCamName) : string.Empty;
+            if ((aEnabled && string.IsNullOrEmpty(aSerial)) || (bEnabled && string.IsNullOrEmpty(bSerial)))
+            {
+                MessageBox.Show("所选相机缺少有效硬件序列号，请先重新连接相机。", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (aEnabled && bEnabled && string.Equals(aSerial, bSerial, StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("A面和B面不能绑定相同的相机序列号。", "提示",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            return true;
+        }
         private void Frm_RuntimeSet_Load(object sender, EventArgs e)
         {
             bMaskChanged = true;
+            InitializeIOOutputMappingControls();
 
             // 获取排序后的串口列表
             List<string> sortedPorts = GetAvailableSerialPorts();
@@ -310,8 +418,18 @@ namespace VisionApplication
 
         private void btOK_Click(object sender, EventArgs e)
         {
+            if (!ValidateCameraAssignParam())
+                return;
+
             if (!ValidateBoardAssignParam())
                 return;
+
+            string ioOutputError;
+            if (!ValidateIOOutputParam(out ioOutputError))
+            {
+                MessageBox.Show(ioOutputError, "IO输出设置", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
             getParam();
 
@@ -711,8 +829,15 @@ namespace VisionApplication
             //相机分配参数
             try
             {
+                EnsureCameraSerialBindingArray();
                 cup.p_CD.camInd[0] = cmbCamInd1.SelectedIndex;
                 cup.p_CD.camInd[1] = cmbCamInd2.SelectedIndex;
+                cup.p_CD.camSerial[0] = cmbCamInd1.SelectedIndex >= 0
+                    ? GetCameraSerialKey(cup.p_Cam[cmbCamInd1.SelectedIndex].strCamName)
+                    : string.Empty;
+                cup.p_CD.camSerial[1] = cmbCamInd2.SelectedIndex >= 0
+                    ? GetCameraSerialKey(cup.p_Cam[cmbCamInd2.SelectedIndex].strCamName)
+                    : string.Empty;
               //  cup.p_CD.camInd[2] = cmbCamInd3.SelectedIndex;
              //   cup.p_CD.camInd[3] = cmbCamInd4.SelectedIndex;
              //   cup.p_CD.camInd[4] = cmbCamInd5.SelectedIndex;
@@ -896,8 +1021,16 @@ namespace VisionApplication
                 cup.p_IOPP.BPlane = cmbBPlane.SelectedIndex;
                 cup.p_IOPP.EndAPlane = cmbEndAPlane.SelectedIndex;
                 cup.p_IOPP.EndBPlane = cmbEndBPlane.SelectedIndex;
-                cup.p_IOPP.OkOut = cmbOkOut.SelectedIndex;
-                cup.p_IOPP.NGOut = cmbNgOut.SelectedIndex;
+                if (cup.p_IOPP.JobOkOut == null || cup.p_IOPP.JobOkOut.Length < 2)
+                    cup.p_IOPP.JobOkOut = new int[2];
+                if (cup.p_IOPP.JobNGOut == null || cup.p_IOPP.JobNGOut.Length < 2)
+                    cup.p_IOPP.JobNGOut = new int[2];
+                cup.p_IOPP.JobOkOut[0] = cmbOkOut.SelectedIndex;
+                cup.p_IOPP.JobNGOut[0] = cmbNgOut.SelectedIndex;
+                cup.p_IOPP.JobOkOut[1] = cmbJob1OkOut.SelectedIndex;
+                cup.p_IOPP.JobNGOut[1] = cmbJob1NgOut.SelectedIndex;
+                cup.p_IOPP.OkOut = cup.p_IOPP.JobOkOut[0];
+                cup.p_IOPP.NGOut = cup.p_IOPP.JobNGOut[0];
                 cup.p_IOPP.IOTimeDelay =Int32.Parse( cmbIOTimeDelay.Text);
             }
             catch(Exception ex)
@@ -1300,9 +1433,23 @@ namespace VisionApplication
         {
             try
             {
-                //相机分配参数 
-                cmbCamInd1.SelectedIndex = cup.p_CD.camInd[0];
-                cmbCamInd2.SelectedIndex = cup.p_CD.camInd[1];
+                // 相机分配以工位序列号为主，camInd 只显示本次运行解析出的物理索引。
+                EnsureCameraSerialBindingArray();
+                _isUpdatingCameraAssignment = true;
+                RefreshCameraSelectionItems();
+
+                int cameraIndex1 = FindCameraIndexBySerial(cup.p_CD.camSerial[0]);
+                int cameraIndex2 = FindCameraIndexBySerial(cup.p_CD.camSerial[1]);
+                if (cameraIndex1 < 0 && cup.p_CD.camInd[0] >= 0 && cup.p_CD.camInd[0] < maxCameraNum)
+                    cameraIndex1 = cup.p_CD.camInd[0];
+                if (cameraIndex2 < 0 && cup.p_CD.camInd[1] >= 0 && cup.p_CD.camInd[1] < maxCameraNum)
+                    cameraIndex2 = cup.p_CD.camInd[1];
+
+                cmbCamInd1.SelectedIndex = cameraIndex1;
+                cmbCamInd2.SelectedIndex = cameraIndex2;
+                UpdateCameraSerialText(0, cameraIndex1);
+                UpdateCameraSerialText(1, cameraIndex2);
+                _isUpdatingCameraAssignment = false;
               //  cmbCamInd3.SelectedIndex = cup.p_CD.camInd[2];
              //   cmbCamInd4.SelectedIndex = cup.p_CD.camInd[3];
              //   cmbCamInd5.SelectedIndex = cup.p_CD.camInd[4];
@@ -1338,6 +1485,7 @@ namespace VisionApplication
             }
             catch (Exception ex)
             {
+                _isUpdatingCameraAssignment = false;
                 MessageBox.Show("相机分配参数设置有误：" + ex.Message.ToString());
             }
         }
@@ -1512,8 +1660,16 @@ namespace VisionApplication
                 cmbBPlane.SelectedIndex = cup.p_IOPP.BPlane;
                 cmbEndAPlane.SelectedIndex = cup.p_IOPP.EndAPlane;
                 cmbEndBPlane.SelectedIndex = cup.p_IOPP.EndBPlane;
-                cmbOkOut.SelectedIndex = cup.p_IOPP.OkOut;
-                cmbNgOut.SelectedIndex = cup.p_IOPP.NGOut;
+                int[] defaultOkOut = { 1, 3 };
+                int[] defaultNGOut = { 2, 4 };
+                if (cup.p_IOPP.JobOkOut == null || cup.p_IOPP.JobOkOut.Length < 2)
+                    cup.p_IOPP.JobOkOut = defaultOkOut;
+                if (cup.p_IOPP.JobNGOut == null || cup.p_IOPP.JobNGOut.Length < 2)
+                    cup.p_IOPP.JobNGOut = defaultNGOut;
+                cmbOkOut.SelectedIndex = cup.p_IOPP.JobOkOut[0];
+                cmbNgOut.SelectedIndex = cup.p_IOPP.JobNGOut[0];
+                cmbJob1OkOut.SelectedIndex = cup.p_IOPP.JobOkOut[1];
+                cmbJob1NgOut.SelectedIndex = cup.p_IOPP.JobNGOut[1];
 
                 cmbIOTimeDelay.Text = cup.p_IOPP.IOTimeDelay.ToString();
             }
@@ -1736,7 +1892,7 @@ namespace VisionApplication
 
         int has_model_init = 0; 
         string model_type = "paddlex";
-        bool use_gpu = true;
+        bool use_gpu = false;
         int gpu_id = 0;
         bool paddlex_doing = false;
         int comboBox_clicked = 0;
@@ -2289,7 +2445,107 @@ namespace VisionApplication
             }
             bLoadVPPChange = false;
         }
-        TextBox serialTextBox;
+        private void UpdateCameraSerialText(int jobIndex, int cameraIndex)
+        {
+            TextBox serialTextBox = FindTextBoxByJob(jobIndex);
+            if (serialTextBox == null)
+                return;
+
+            serialTextBox.Text = cameraIndex >= 0 && cameraIndex < maxCameraNum
+                ? GetCameraDisplayName(cameraIndex)
+                : string.Empty;
+        }
+
+        private void InitializeIOOutputMappingControls()
+        {
+            if (cmbJob1OkOut != null)
+                return;
+
+            string[] outputItems = { "无", "Y1", "Y2", "Y3", "Y4", "Y5", "Y6", "Y7", "Y8" };
+            cmbOkOut.Items.Clear();
+            cmbNgOut.Items.Clear();
+            cmbOkOut.Items.AddRange(outputItems);
+            cmbNgOut.Items.AddRange(outputItems);
+            label93.Text = "工位1 OK";
+            label94.Text = "工位1 NG";
+
+            cmbJob1OkOut = new ComboBox
+            {
+                Name = "cmbJob1OkOut",
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(414, 133),
+                Size = new Size(121, 20)
+            };
+            cmbJob1NgOut = new ComboBox
+            {
+                Name = "cmbJob1NgOut",
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(414, 183),
+                Size = new Size(121, 20)
+            };
+            cmbJob1OkOut.Items.AddRange(outputItems);
+            cmbJob1NgOut.Items.AddRange(outputItems);
+
+            lblJob1OkOut = new Label
+            {
+                Name = "lblJob1OkOut",
+                AutoSize = true,
+                Text = "工位2 OK",
+                Location = new Point(347, 137)
+            };
+            lblJob1NgOut = new Label
+            {
+                Name = "lblJob1NgOut",
+                AutoSize = true,
+                Text = "工位2 NG",
+                Location = new Point(347, 187)
+            };
+
+            tabIO.Controls.Add(lblJob1OkOut);
+            tabIO.Controls.Add(cmbJob1OkOut);
+            tabIO.Controls.Add(lblJob1NgOut);
+            tabIO.Controls.Add(cmbJob1NgOut);
+        }
+
+        private bool ValidateIOOutputParam(out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (cmbJob1OkOut == null || cmbJob1NgOut == null)
+            {
+                errorMessage = "IO输出设置控件尚未初始化";
+                return false;
+            }
+
+            int[] outputs =
+            {
+                cmbOkOut.SelectedIndex,
+                cmbNgOut.SelectedIndex,
+                cmbJob1OkOut.SelectedIndex,
+                cmbJob1NgOut.SelectedIndex
+            };
+            string[] names = { "工位1 OK", "工位1 NG", "工位2 OK", "工位2 NG" };
+            HashSet<int> usedOutputs = new HashSet<int>();
+            for (int i = 0; i < outputs.Length; i++)
+            {
+                if (outputs[i] < 1 || outputs[i] > 8)
+                {
+                    errorMessage = names[i] + "必须选择Y1～Y8";
+                    return false;
+                }
+                if (!usedOutputs.Add(outputs[i]))
+                {
+                    errorMessage = "工位1/工位2的OK、NG不能重复使用Y" + outputs[i];
+                    return false;
+                }
+            }
+            if (outputs[0] != 1 || outputs[1] != 2 || outputs[2] != 3 || outputs[3] != 4)
+            {
+                errorMessage = "当前IO控制器固定映射：工位1 OK/NG为Y1/Y2，工位2 OK/NG为Y3/Y4";
+                return false;
+            }
+            return true;
+        }
+
         private void cmbCamInd_SelectedIndexChanged(object sender, EventArgs e)
         {
             // 1. 获取触发事件的 ComboBox
@@ -2302,37 +2558,41 @@ namespace VisionApplication
             string numStr = name.Substring("cmbCamInd".Length);
             if (!int.TryParse(numStr, out int jobNumber)) return;
             int jobIndex = jobNumber - 1; // 转为0基索引
+            if (jobIndex < 0 || jobIndex >= maxCameraNum) return;
 
             // 3. 获取选中的物理相机索引（下拉框的 SelectedIndex）
             int camIndex = cmb.SelectedIndex;
 
-            // 4. 先查找对应的序列号文本框（只调用一次，避免重复声明相同变量名）
-            TextBox serialTextBox = FindTextBoxByJob(jobIndex);
-
             if (camIndex < 0 || cup.p_Cam == null || camIndex >= cup.p_Cam.Length)
             {
-                // 未选择或索引无效，清空对应文本框
-                if (serialTextBox != null) serialTextBox.Text = "";
+                UpdateCameraSerialText(jobIndex, -1);
                 return;
             }
 
-            // 5. 更新工位映射
+            if (!_isUpdatingCameraAssignment)
+            {
+                ComboBox otherCameraBox = jobIndex == 0 ? cmbCamInd2 : cmbCamInd1;
+                if (otherCameraBox.SelectedIndex == camIndex)
+                {
+                    MessageBox.Show("A面和B面不能选择同一台物理相机，请按序列号分别选择。", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _isUpdatingCameraAssignment = true;
+                    cmb.SelectedIndex = -1;
+                    _isUpdatingCameraAssignment = false;
+                    UpdateCameraSerialText(jobIndex, -1);
+                    return;
+                }
+            }
+
+            // 4. 更新工位序列号绑定；物理索引仅作为当前枚举结果缓存。
+            EnsureCameraSerialBindingArray();
             if (cup.p_CD.camInd != null && jobIndex < cup.p_CD.camInd.Length)
             {
                 cup.p_CD.camInd[jobIndex] = camIndex;
-
+                cup.p_CD.camSerial[jobIndex] = GetCameraSerialKey(cup.p_Cam[camIndex].strCamName);
             }
 
-            // 6. 更新序列号文本框
-            if (serialTextBox != null )
-            {
-                int ind = 0;
-                try { ind = cup.p_Cam[camIndex].strCamName.IndexOf("MV-"); }
-                catch { }
-                 
-                serialTextBox.Text = cup.p_Cam[camIndex].strCamName.Substring(ind); // strCamName 存储序列号
-            }
-
+            UpdateCameraSerialText(jobIndex, camIndex);
         }
         /// <summary>
         /// 根据工位索引查找对应的序列号文本框

@@ -108,6 +108,55 @@ namespace CommonCls
         [DllImport("model_infer.dll", EntryPoint = "Det_Test")] // Model unified initialization method: need yml、pdmodel、pdiparams
         public static extern int Det_Test();
 
+        private static void WriteInitDLLog(string message)
+        {
+            try
+            {
+                string dir = "UserData";
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                string logPath = Path.Combine(dir, "dl_init_debug.log");
+                File.AppendAllText(
+                    logPath,
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message + Environment.NewLine);
+            }
+            catch
+            {
+            }
+        }
+
+        private static string FormatFileList(List<FileInfo> files)
+        {
+            if (files == null || files.Count == 0)
+                return "(none)";
+
+            return string.Join("; ", files.Select(file => file.FullName));
+        }
+
+        private static void LogInitDLContext(
+            string stage,
+            DLParam dlParam,
+            string dirPath,
+            List<FileInfo> modelFiles,
+            List<FileInfo> paramsFiles,
+            List<FileInfo> cfgFiles,
+            string cfgFile)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("[InitDL] " + stage);
+            sb.AppendLine("modelPath=" + (dlParam.modelPath ?? "(null)"));
+            sb.AppendLine("dirPath=" + (dirPath ?? "(null)"));
+            sb.AppendLine("modelType=" + (dlParam.modelType ?? "(null)"));
+            sb.AppendLine("useGPU=" + dlParam.bUseGPU);
+            sb.AppendLine("gpuID=" + dlParam.gpuID);
+            sb.AppendLine("pdmodel=" + FormatFileList(modelFiles));
+            sb.AppendLine("pdiparams=" + FormatFileList(paramsFiles));
+            sb.AppendLine("yml/yaml=" + FormatFileList(cfgFiles));
+            sb.AppendLine("selectedCfg=" + (cfgFile ?? "(null)"));
+            WriteInitDLLog(sb.ToString());
+        }
+
 
         public static IntPtr FloatToIntptr(float[] bytes)
         {
@@ -130,7 +179,7 @@ namespace CommonCls
             dir_path = dlParam.modelPath;
             if (string.IsNullOrEmpty(dir_path))
             {
-
+                LogInitDLContext("return 1: modelPath is empty", dlParam, dir_path, null, null, null, cfg_file);
                 return 1;
             }
 
@@ -145,6 +194,7 @@ namespace CommonCls
 
             if (model_lst.Count != 1 || params_lst.Count != 1)
             {
+                LogInitDLContext("return 2: pdmodel/pdiparams count invalid", dlParam, dir_path, model_lst, params_lst, cfg_lst, cfg_file);
                 return 2;
             }
 
@@ -153,10 +203,12 @@ namespace CommonCls
 
             if (cfg_lst.Count == 0)
             {
+                LogInitDLContext("return 3: yml/yaml not found", dlParam, dir_path, model_lst, params_lst, cfg_lst, cfg_file);
                 return 3;
             }
             else if (cfg_lst.Count > 2) // Excessive YML， > 2 
             {
+                LogInitDLContext("return 4: too many yml/yaml files", dlParam, dir_path, model_lst, params_lst, cfg_lst, cfg_file);
                 return 4;
             }
             else if (cfg_lst.Count == 2) // Processing for the case of multiple YML files
@@ -185,13 +237,15 @@ namespace CommonCls
                 {
                     model_type = "paddlex";
                 }
+                LogInitDLContext("calling InitModel", dlParam, dir_path, model_lst, params_lst, cfg_lst, cfg_file);
                 InitModel(model_type, model_filename, params_filename, cfg_file, dlParam.bUseGPU, dlParam.gpuID, ref paddlex_model_type[0]);
-                //    int ret= Det_Test( );
+                // int ret = Det_Test();
                 has_model_init = true;
+                LogInitDLContext("return 0: InitModel success", dlParam, dir_path, model_lst, params_lst, cfg_lst, cfg_file);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-
+                LogInitDLContext("return 5: InitModel exception", dlParam, dir_path, model_lst, params_lst, cfg_lst, cfg_file);
                 return 5;
 
             }

@@ -297,7 +297,227 @@ namespace VisionApplication
         /// 初始化A、B面的4分区光源亮度（分别设置每个通道）
         /// </summary>
         private bool _isUpdatingLightUI = false;  // 防止程序化更新控件时触发事件
-        private void SendAllChannelsCommand(int jobIndex, int ch1, int ch2, int ch3, int ch4)
+        private bool TryGetSelectedCameraBinding(out int cameraIndex, out int jobIndex)
+        {
+            cameraIndex = -1;
+            jobIndex = -1;
+
+            int listIndex = cbDeviceList.SelectedIndex;
+            if (listIndex < 0 || listIndex >= cameraListPhysicalIndices.Count ||
+                listIndex >= cameraListJobIndices.Count)
+                return false;
+
+            cameraIndex = cameraListPhysicalIndices[listIndex];
+            jobIndex = cameraListJobIndices[listIndex];
+            return cameraIndex >= 0 && cameraIndex < cup.p_Cam.Length &&
+                   jobIndex >= 0 && jobIndex < maxJobNum;
+        }
+
+        private int ResolveLightControllerSlot(int jobIndex, out string failureReason)
+        {
+            failureReason = "";
+            if (jobIndex < 0 || cup.p_SD.bUsed == null)
+            {
+                failureReason = $"[Light] no valid light-controller slot for job={jobIndex}";
+                return -1;
+            }
+
+            // 兼容旧配置：工位原来对应的前三个光源槽已启用时优先沿用。
+            if (jobIndex < lightControllerSlotCount && jobIndex < cup.p_SD.bUsed.Length &&
+                cup.p_SD.bUsed[jobIndex])
+                return jobIndex;
+
+            List<int> enabledSlots = new List<int>();
+            int slotCount = Math.Min(lightControllerSlotCount, cup.p_SD.bUsed.Length);
+            for (int slot = 0; slot < slotCount; slot++)
+            {
+                if (cup.p_SD.bUsed[slot])
+                    enabledSlots.Add(slot);
+            }
+
+            if (enabledSlots.Count == 1)
+                return enabledSlots[0];
+
+            if (enabledSlots.Count == 0)
+            {
+                failureReason = $"[Light] no valid light-controller slot for job={jobIndex}";
+            }
+            else
+            {
+                string slots = string.Join(",", enabledSlots.Select(slot => (slot + 1).ToString()));
+                failureReason = $"[Light] ambiguous light-controller slots: {slots}, job={jobIndex}";
+            }
+            return -1;
+        }
+
+        private SerialPort GetLightPortForJob(int jobIndex)
+        {
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            if (controllerSlot < 0 || sPortAll == null || controllerSlot >= sPortAll.Length)
+                return null;
+            return sPortAll[controllerSlot];
+        }
+
+        private bool IsLightSerialConfigured(int jobIndex)
+        {
+            string failureReason;
+            return ResolveLightControllerSlot(jobIndex, out failureReason) >= 0;
+        }
+
+        private int[] GetLightValuesStorage(int controllerSlot)
+        {
+            if (controllerSlot == 0)
+                return cup.p_LS.indent;
+
+            int subIndex = controllerSlot - 1;
+            if (subIndex >= 0 && cup.p_LS2 != null && subIndex < cup.p_LS2.Length)
+                return cup.p_LS2[subIndex].indent;
+
+            return null;
+        }
+
+        private bool TryGetLightValuesForController(int controllerSlot, out int ch1, out int ch2, out int ch3, out int ch4)
+        {
+            ch1 = ch2 = ch3 = ch4 = 0;
+            int[] indent = GetLightValuesStorage(controllerSlot);
+            if (indent == null || indent.Length < 5)
+                return false;
+
+            ch1 = indent[1];
+            ch2 = indent[2];
+            ch3 = indent[3];
+            ch4 = indent[4];
+            return true;
+        }
+
+        private bool TryGetLightValues(int jobIndex, out int ch1, out int ch2, out int ch3, out int ch4)
+        {
+            ch1 = ch2 = ch3 = ch4 = 0;
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            if (controllerSlot < 0)
+                return false;
+            return TryGetLightValuesForController(controllerSlot, out ch1, out ch2, out ch3, out ch4);
+        }
+
+        private bool SaveLightValues(int jobIndex, int ch1, int ch2, int ch3, int ch4)
+        {
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            int[] indent = GetLightValuesStorage(controllerSlot);
+            if (indent == null || indent.Length < 5)
+                return false;
+
+            indent[1] = ch1;
+            indent[2] = ch2;
+            indent[3] = ch3;
+            indent[4] = ch4;
+            return true;
+        }
+
+        private void SetLightButtonState(int jobIndex, bool available)
+        {
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            int channel = cmbLs_Channel.SelectedIndex + 1;
+            if (channel < 1 || channel > lightChannelCount)
+                channel = 1;
+
+            bool isOn = false;
+            if (available && controllerSlot >= 0 && controllerSlot < lightControllerSlotCount)
+            {
+                if (chkLS_Sync.Checked)
+                {
+                    isOn = true;
+                    for (int channelIndex = 0; channelIndex < lightChannelCount; channelIndex++)
+                        isOn &= lightOnStates[controllerSlot, channelIndex];
+                }
+                else
+                {
+                    isOn = lightOnStates[controllerSlot, channel - 1];
+                }
+            }
+
+            toolBtSta_Triggle.Enabled = available;
+            toolBtSta_Triggle.Checked = isOn;
+            toolBtSta_Triggle.Image = isOn
+                ? global::VisionApplication.Properties.Resources.LightOn
+                : global::VisionApplication.Properties.Resources.LightOff;
+            toolBtSta_Triggle.ToolTipText = available
+                ? (chkLS_Sync.Checked ? "打开/关闭当前控制器CH1～CH4" : $"打开/关闭当前控制器CH{channel}")
+                : "当前所选相机光源串口未连接";
+        }
+
+        private void RefreshSelectedCameraLightUI()
+        {
+            int cameraIndex;
+            int jobIndex;
+            bool hasBinding = TryGetSelectedCameraBinding(out cameraIndex, out jobIndex);
+            SerialPort port = hasBinding ? GetLightPortForJob(jobIndex) : null;
+            bool available = hasBinding && IsLightSerialConfigured(jobIndex) && port != null && port.IsOpen;
+
+            tbBirghtness.Enabled = available;
+            nudContrast.Enabled = available;
+            cmbLs_Channel.Enabled = available;
+            chkLS_Sync.Enabled = available;
+            SetLightButtonState(jobIndex, available);
+
+            if (!hasBinding)
+                return;
+
+            int ch1, ch2, ch3, ch4;
+            if (!TryGetLightValues(jobIndex, out ch1, out ch2, out ch3, out ch4))
+                return;
+
+            int channel = cmbLs_Channel.SelectedIndex + 1;
+            int[] values = { ch1, ch2, ch3, ch4 };
+            int brightness = channel >= 1 && channel <= 4 ? values[channel - 1] : ch1;
+
+            _isUpdatingLightUI = true;
+            try
+            {
+                tbBirghtness.Value = Math.Max(tbBirghtness.Minimum, Math.Min(tbBirghtness.Maximum, brightness));
+                nudContrast.Value = Math.Max(nudContrast.Minimum, Math.Min(nudContrast.Maximum, brightness));
+            }
+            finally
+            {
+                _isUpdatingLightUI = false;
+            }
+        }
+
+        private void GetLightOutputValues(int controllerSlot, int ch1, int ch2, int ch3, int ch4,
+            out int sendCh1, out int sendCh2, out int sendCh3, out int sendCh4)
+        {
+            sendCh1 = lightOnStates[controllerSlot, 0] ? ch1 : 0;
+            sendCh2 = lightOnStates[controllerSlot, 1] ? ch2 : 0;
+            sendCh3 = lightOnStates[controllerSlot, 2] ? ch3 : 0;
+            sendCh4 = lightOnStates[controllerSlot, 3] ? ch4 : 0;
+        }
+
+        private void LogLightControllerResolution(int jobIndex)
+        {
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            if (controllerSlot < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "[Light]";
+                operLog.strFailReason = failureReason;
+                AddLog();
+                return;
+            }
+
+            SerialPort port = GetLightPortForJob(jobIndex);
+            string portName = port != null && !string.IsNullOrWhiteSpace(port.PortName) ? port.PortName : "unknown";
+            operLog.iEventStatus = port != null && port.IsOpen ? 0 : -1;
+            operLog.strOperEvent = "[Light]";
+            operLog.strFailReason = $"job={jobIndex} controllerSlot={controllerSlot + 1} port={portName}" +
+                (port != null && port.IsOpen ? "" : " not-open");
+            AddLog();
+        }
+
+        private bool SendAllChannelsCommand(int jobIndex, int ch1, int ch2, int ch3, int ch4, string target)
         {
             // 限制亮度范围 0-255
             ch1 = Math.Max(0, Math.Min(255, ch1));
@@ -305,167 +525,160 @@ namespace VisionApplication
             ch3 = Math.Max(0, Math.Min(255, ch3));
             ch4 = Math.Max(0, Math.Min(255, ch4));
 
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            if (controllerSlot < 0)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = "[Light]";
+                operLog.strFailReason = failureReason;
+                AddLog();
+                return false;
+            }
+
             string command = $"S{ch1:D3}T{ch2:D3}T{ch3:D3}T{ch4:D3}TC#";
-            // 选择串口
-            SerialPort port = null;
-            if (jobIndex == 0)
-                port = sPortMain;
-            else if (jobIndex == 1)
-                port = sPortSub[0];
-            // 可扩展更多
+            SerialPort port = GetLightPortForJob(jobIndex);
 
             if (port == null || !port.IsOpen)
             {
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = "光源设置";
-                operLog.strFailReason = "串口未打开";
+                operLog.strOperEvent = "[Light]";
+                operLog.strFailReason = $"job={jobIndex} controllerSlot={controllerSlot + 1} port not-open";
                 AddLog();
-                return;
+                return false;
             }
 
             try
             {
                 port.Write(command);
                 operLog.iEventStatus = 0;
-                operLog.strOperEvent = "光源设置";
-                operLog.strFailReason = $"工位{jobIndex + 1} 命令:{command}";
+                operLog.strOperEvent = "[Light]";
+                operLog.strFailReason = $"job={jobIndex} controllerSlot={controllerSlot + 1} port={port.PortName} " +
+                    $"channel={target} values=[{ch1},{ch2},{ch3},{ch4}]";
                 AddLog();
+                return true;
             }
             catch (Exception ex)
             {
                 operLog.iEventStatus = -1;
-                operLog.strOperEvent = "光源设置";
-                operLog.strFailReason = ex.Message;
+                operLog.strOperEvent = "[Light]";
+                operLog.strFailReason = $"job={jobIndex} controllerSlot={controllerSlot + 1} port={port.PortName} " +
+                    $"channel={target} write-failed: {ex.Message}";
                 AddLog();
+                return false;
             }
         }
-        private void ApplyLightBrightness(int jobIndex, int? channel = null, int? brightness = null)
+        private bool ApplyLightBrightness(int jobIndex, int? channel = null, int? brightness = null)
         {
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+            if (controllerSlot < 0)
+                return false;
+
             int ch1, ch2, ch3, ch4;
+            if (!TryGetLightValuesForController(controllerSlot, out ch1, out ch2, out ch3, out ch4))
+                return false;
+
             bool sync = chkLS_Sync.Checked;
-            int targetBrightness = brightness ?? tbBirghtness.Value;
+            int targetBrightness = Math.Max(0, Math.Min(255, brightness ?? tbBirghtness.Value));
             // 如果非同步且未指定通道，则使用当前界面选中的通道
             if (!sync && !channel.HasValue)
             {
                 channel = cmbLs_Channel.SelectedIndex + 1;
-                if (channel < 1 || channel > 4) channel = 1; // 默认通道1
+                if (channel < 1 || channel > lightChannelCount) channel = 1; // 默认通道1
             }
 
-            if (jobIndex == 0) // 主光源
+            if (sync)
             {
-                if (sync)
-                {
-                    ch1 = ch2 = ch3 = ch4 = targetBrightness;
-                }
-                else
-                {
-                    // 独立模式：从配置读取各通道当前值，只修改指定通道（如果指定）
-                    ch1 = cup.p_LS.indent[1];
-                    ch2 = cup.p_LS.indent[2];
-                    ch3 = cup.p_LS.indent[3];
-                    ch4 = cup.p_LS.indent[4];
-                    if (channel.HasValue && channel >= 1 && channel <= 4)
-                    {
-                        // 更新对应通道
-                        switch (channel.Value)
-                        {
-                            case 1: ch1 = targetBrightness; break;
-                            case 2: ch2 = targetBrightness; break;
-                            case 3: ch3 = targetBrightness; break;
-                            case 4: ch4 = targetBrightness; break;
-                        }
-                    }
-                    // 保存更新后的值到配置
-                    cup.p_LS.indent[1] = ch1;
-                    cup.p_LS.indent[2] = ch2;
-                    cup.p_LS.indent[3] = ch3;
-                    cup.p_LS.indent[4] = ch4;
-                }
+                ch1 = ch2 = ch3 = ch4 = targetBrightness;
             }
-            else if (jobIndex == 1) // 侧光源1
+            else if (channel.HasValue && channel >= 1 && channel <= lightChannelCount)
             {
-                // 类似，使用 cup.p_LS2[0]
-                if (sync)
+                switch (channel.Value)
                 {
-                    ch1 = ch2 = ch3 = ch4 = targetBrightness;
-                }
-                else
-                {
-                    ch1 = cup.p_LS2[0].indent[1];
-                    ch2 = cup.p_LS2[0].indent[2];
-                    ch3 = cup.p_LS2[0].indent[3];
-                    ch4 = cup.p_LS2[0].indent[4];
-                    if (channel.HasValue && channel >= 1 && channel <= 4)
-                    {
-                        switch (channel.Value)
-                        {
-                            case 1: ch1 = targetBrightness; break;
-                            case 2: ch2 = targetBrightness; break;
-                            case 3: ch3 = targetBrightness; break;
-                            case 4: ch4 = targetBrightness; break;
-                        }
-                    }
-                    cup.p_LS2[0].indent[1] = ch1;
-                    cup.p_LS2[0].indent[2] = ch2;
-                    cup.p_LS2[0].indent[3] = ch3;
-                    cup.p_LS2[0].indent[4] = ch4;
+                    case 1: ch1 = targetBrightness; break;
+                    case 2: ch2 = targetBrightness; break;
+                    case 3: ch3 = targetBrightness; break;
+                    case 4: ch4 = targetBrightness; break;
                 }
             }
             else
             {
-                // 其他工位...
-                return;
+                return false;
             }
 
-            // 发送一条命令设置所有通道
-            SendAllChannelsCommand(jobIndex, ch1, ch2, ch3, ch4);
+            int sendCh1, sendCh2, sendCh3, sendCh4;
+            GetLightOutputValues(controllerSlot, ch1, ch2, ch3, ch4,
+                out sendCh1, out sendCh2, out sendCh3, out sendCh4);
+            string target = sync ? "SYNC" : $"CH{channel.Value}";
+            if (!SendAllChannelsCommand(jobIndex, sendCh1, sendCh2, sendCh3, sendCh4, target))
+                return false;
 
-            // 同步更新 cup.p_Cam 以便 UI 显示（可选）
+            // 仅在完整四通道命令发送成功后保存新的亮度设定。
+            if (!SaveLightValues(jobIndex, ch1, ch2, ch3, ch4))
+                return false;
+            SetLightButtonState(jobIndex, true);
+
             int camIndex = cup.p_CD.camInd[jobIndex];
             if (camIndex >= 0 && camIndex < cup.p_Cam.Length)
-                cup.p_Cam[camIndex].iBrightness = (uint)targetBrightness; // 或者显示第一个通道
+                cup.p_Cam[camIndex].iBrightness = (uint)targetBrightness;
+            return true;
         }
+
+        private bool ApplySelectedCameraLightBrightness(int? channel = null, int? brightness = null)
+        {
+            int cameraIndex;
+            int jobIndex;
+            if (!TryGetSelectedCameraBinding(out cameraIndex, out jobIndex))
+                return false;
+
+            bool succeeded = ApplyLightBrightness(jobIndex, channel, brightness);
+            if (!succeeded)
+                RefreshSelectedCameraLightUI();
+            return succeeded;
+        }
+
         private void InitializeLightBrightness()
         {
-            if (sPortMain == null || !sPortMain.IsOpen)
+            bool[] initializedSlots = new bool[lightControllerSlotCount];
+            for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
             {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "初始化光源亮度";
-                operLog.strFailReason = "主光源串口未打开";
-                AddLog();
-                return;
+                string failureReason;
+                int controllerSlot = ResolveLightControllerSlot(jobIndex, out failureReason);
+                if (controllerSlot < 0 || initializedSlots[controllerSlot])
+                    continue;
+
+                int ch1, ch2, ch3, ch4;
+                if (!TryGetLightValuesForController(controllerSlot, out ch1, out ch2, out ch3, out ch4))
+                    continue;
+
+                initializedSlots[controllerSlot] = true;
+                if (!SendAllChannelsCommand(jobIndex, ch1, ch2, ch3, ch4, "INIT"))
+                    continue;
+
+                lightOnStates[controllerSlot, 0] = ch1 > 0;
+                lightOnStates[controllerSlot, 1] = ch2 > 0;
+                lightOnStates[controllerSlot, 2] = ch3 > 0;
+                lightOnStates[controllerSlot, 3] = ch4 > 0;
             }
 
-            // 主光源
-            if (cup.p_LS.indent != null && cup.p_LS.indent.Length >= 5)
-            {
-                int ch1 = cup.p_LS.indent[1];
-                int ch2 = cup.p_LS.indent[2];
-                int ch3 = cup.p_LS.indent[3];
-                int ch4 = cup.p_LS.indent[4];
-                SendAllChannelsCommand(0, ch1, ch2, ch3, ch4);
-            }
-
-            // 侧光源1
-            if (sPortSub[0] != null && sPortSub[0].IsOpen && cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
-                cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length >= 5)
-            {
-                int ch1 = cup.p_LS2[0].indent[1];
-                int ch2 = cup.p_LS2[0].indent[2];
-                int ch3 = cup.p_LS2[0].indent[3];
-                int ch4 = cup.p_LS2[0].indent[4];
-                SendAllChannelsCommand(1, ch1, ch2, ch3, ch4);
-            }
+            RefreshSelectedCameraLightUI();
         }
         //修改亮度参数
         private void tbContrast_ValueChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingUI) return;
-            // 同步数字框
-            if ((int)nudContrast.Value != tbBirghtness.Value)
-                nudContrast.Value = tbBirghtness.Value;
-            // 应用亮度（当前选中通道）
-            ApplyLightBrightness(iJobIndex);
+            if (_isUpdatingUI || _isUpdatingLightUI) return;
+            _isUpdatingLightUI = true;
+            try
+            {
+                if ((int)nudContrast.Value != tbBirghtness.Value)
+                    nudContrast.Value = tbBirghtness.Value;
+            }
+            finally
+            {
+                _isUpdatingLightUI = false;
+            }
+            ApplySelectedCameraLightBrightness(null, tbBirghtness.Value);
 
             /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
              int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
@@ -530,10 +743,18 @@ namespace VisionApplication
         //修改亮度参数
         private void nudContrast_ValueChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingUI) return;
-            if (tbBirghtness.Value != (int)nudContrast.Value)
-                tbBirghtness.Value = (int)nudContrast.Value;
-            ApplyLightBrightness(iJobIndex);
+            if (_isUpdatingUI || _isUpdatingLightUI) return;
+            _isUpdatingLightUI = true;
+            try
+            {
+                if (tbBirghtness.Value != (int)nudContrast.Value)
+                    tbBirghtness.Value = (int)nudContrast.Value;
+            }
+            finally
+            {
+                _isUpdatingLightUI = false;
+            }
+            ApplySelectedCameraLightBrightness(null, (int)nudContrast.Value);
 
             /* //  if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
                int iCamSelectInd = cup.p_CD.camInd[iJobIndex];
@@ -825,7 +1046,7 @@ namespace VisionApplication
         //获取ROI区域
         private void btGetROI_Click(object sender, EventArgs e)
         {
-            int icamInd = cbDeviceList.SelectedIndex;
+            int icamInd = icamSelectInd;
             if (icamInd >= 0)
             {
                 if (camera2 == null || camera2[icamInd] == null)
@@ -860,7 +1081,7 @@ namespace VisionApplication
          }*/
         private void btSetROI_Click(object sender, EventArgs e)
         {
-            int icamInd = cbDeviceList.SelectedIndex;
+            int icamInd = icamSelectInd;
             if (icamInd < 0)
             {
                 MessageBox.Show("请先选择相机");
@@ -1073,9 +1294,14 @@ namespace VisionApplication
         //相机选择
         private void cbDeviceList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            icamSelectInd = cbDeviceList.SelectedIndex;
+            int selectedJobIndex;
+            if (!TryGetSelectedCameraBinding(out icamSelectInd, out selectedJobIndex))
+                icamSelectInd = -1;
           //  UpdateCamParam2UI();
             UpdateCamParamToUI();
+
+            if (selectedJobIndex >= 0 && rts.initStatus.bSerInit)
+                LogLightControllerResolution(selectedJobIndex);
         }
         //根据UI参数设置相机
         private void UpdateCamParamFromUI()
@@ -1192,12 +1418,17 @@ namespace VisionApplication
         }*/
         private void UpdateCamParamToUI()
         {
-            if (cbDeviceList.Items.Count == 0) return;
+            if (cbDeviceList.Items.Count == 0)
+            {
+                icamSelectInd = -1;
+                RefreshSelectedCameraLightUI();
+                return;
+            }
 
             _isUpdatingUI = true;
             try
             {
-                int icamInd = cbDeviceList.SelectedIndex;
+                int icamInd = icamSelectInd;
                 if (icamInd >= 0)
                 {
                     // 其他参数（曝光、增益等）保持不变
@@ -1210,21 +1441,7 @@ namespace VisionApplication
                     if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)
                         cmbPixelFormat.SelectedIndex = cup.p_Cam[icamInd].iMonoType;
 
-                    // ---- 光源亮度：从光源配置读取 ----
-                    _isUpdatingLightUI = true;
-                    try
-                    {
-                        int channel = cmbLs_Channel.SelectedIndex + 1;
-                        int brightness = 0;
-                        if (iJobIndex == 0 && cup.p_LS.indent != null && cup.p_LS.indent.Length > channel)
-                            brightness = cup.p_LS.indent[channel];
-                        else if (iJobIndex == 1 && cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
-                                 cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length > channel)
-                            brightness = cup.p_LS2[0].indent[channel];
-                        nudContrast.Value = brightness;
-                        tbBirghtness.Value = brightness;
-                    }
-                    finally { _isUpdatingLightUI = false; }
+                    RefreshSelectedCameraLightUI();
 
                     // ROI、旋转、镜像等保持不变
                     // ...（原有代码）
@@ -1283,46 +1500,7 @@ namespace VisionApplication
 
         private void SetLightBrightnessFromUI(int newBrightness)
         {
-            int channel = cmbLs_Channel.SelectedIndex + 1; // 1~4
-            if (channel < 1 || channel > 4) return;
-
-            bool sync = chkLS_Sync.Checked;
-
-            if (iJobIndex == 0) // 主光源（A面）
-            {
-                if (sync)
-                {
-                    for (int ch = 1; ch <= 4; ch++)
-                        cup.p_LS.indent[ch] = newBrightness;
-                    csd.SetLightBrightnessByJob(iJobIndex, newBrightness);
-                }
-                else
-                {
-                    cup.p_LS.indent[channel] = newBrightness;
-                    csd.SetChIntensity(channel, newBrightness, sPortMain);
-                }
-            }
-            else if (iJobIndex == 1) // 侧光源1（B面）
-            {
-                if (sync)
-                {
-                    for (int ch = 1; ch <= 4; ch++)
-                        cup.p_LS2[0].indent[ch] = newBrightness;
-                    csd.SetLightBrightnessByJob(iJobIndex, newBrightness);
-                }
-                else
-                {
-                    cup.p_LS2[0].indent[channel] = newBrightness;
-                    csd.SetChIntensity(channel, newBrightness, sPortSub[0]);
-                }
-            }
-            // 可根据实际工位数量扩展（如 iJobIndex == 2 对应侧光源2）
-
-            // 记录日志（可选）
-            operLog.iEventStatus = 0;
-            operLog.strOperEvent = "修改光源亮度";
-            operLog.strFailReason = $"工位{iJobIndex + 1} 通道{channel} 亮度={newBrightness} {(sync ? "同步" : "独立")}";
-            AddLog();
+            ApplySelectedCameraLightBrightness(null, newBrightness);
         }
         //手动设置相机参数，（可去掉）
         private void bnSetParam_Click(object sender, EventArgs e)
@@ -1330,7 +1508,6 @@ namespace VisionApplication
             // SetParam();
 
             UpdateCamParamFromUI();
-            icamSelectInd = cbDeviceList.SelectedIndex;
             if (icamSelectInd >= 0)
             {
                 hIKVisionCamera.StopGrabbing(icamSelectInd);
@@ -1355,7 +1532,7 @@ namespace VisionApplication
         //手动获取相机参数，（可去掉）
         private void bnGetParam_Click(object sender, EventArgs e)
         {
-            int icamInd = cbDeviceList.SelectedIndex;
+            int icamInd = icamSelectInd;
             if (icamInd < 0) return;
 
             // 空和边界检查
@@ -1372,10 +1549,7 @@ namespace VisionApplication
 
         private void UpdateCamParam2UI()
         {
-            LightControlTurnOn(); 
             UpdateCamParamToUI();
-
-            InitializeLightBrightness();
             /* for(int iJobIndex=0; iJobIndex < maxCameraNum; iJobIndex++)
              {
                  setBrightness(iJobIndex);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -53,6 +54,9 @@ namespace CommonCls
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
         public int[] camInd;
+        // 每个逻辑工位绑定的相机硬件序列号。camInd 仅作为本次运行的物理索引缓存。
+        [OptionalField]
+        public string[] camSerial;
         public bool bTriggle;
         public int triggleCam;
         public int triggleMode;
@@ -292,6 +296,12 @@ namespace CommonCls
         public int EndBPlane;
         public int OkOut;
         public int NGOut;
+        [OptionalField]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+        public int[] JobOkOut;
+        [OptionalField]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+        public int[] JobNGOut;
         public int defIn1;
         public int defIn2;
         public int defIn3;
@@ -403,10 +413,12 @@ namespace CommonCls
         public void InitCameraDistr()
         {
             p_CD.camInd = new int[maxCameraNum];
+            p_CD.camSerial = new string[maxCameraNum];
             p_CD.bListProcess = new bool[maxCameraNum];
             for (int i = 0; i < maxCameraNum; i++)
             {
                 p_CD.camInd[i] = i;
+                p_CD.camSerial[i] = string.Empty;
                 p_CD.bListProcess[i] = true;
             }
             p_CD.triggleCam = 1;
@@ -715,6 +727,8 @@ namespace CommonCls
         {
             p_IOPP.OkOut = 1;
             p_IOPP.NGOut = 2;
+            p_IOPP.JobOkOut = new[] { 1, 3 };
+            p_IOPP.JobNGOut = new[] { 2, 4 };
             p_IOPP.IOTimeDelay = 100;
         }
 
@@ -1094,6 +1108,16 @@ namespace CommonCls
                 cup.p_CD.camInd = cupTmp.p_CD.camInd;
             }
 
+            // CameraDistr.camSerial 兼容：旧参数文件没有该字段时保留为空，
+            // 由相机初始化阶段结合一次实际枚举结果完成唯一序列号迁移。
+            if (cup.p_CD.camSerial == null || cupTmp.p_CD.camSerial.Length > cup.p_CD.camSerial.Length)
+            {
+                int copyLength = cup.p_CD.camSerial == null ? 0 : cup.p_CD.camSerial.Length;
+                for (int i = 0; i < copyLength; i++)
+                    cupTmp.p_CD.camSerial[i] = cup.p_CD.camSerial[i] ?? string.Empty;
+                cup.p_CD.camSerial = cupTmp.p_CD.camSerial;
+            }
+
             // CameraDistr.bListProcess 长度兼容
             if (cup.p_CD.bListProcess == null || cupTmp.p_CD.bListProcess.Length > cup.p_CD.bListProcess.Length)
             {
@@ -1227,6 +1251,16 @@ namespace CommonCls
             // IO延时兼容
             if (cup.p_IOPP.IOTimeDelay == 0)
                 cup.p_IOPP.IOTimeDelay = 100;
+
+            // 两工位组合输出兼容：旧参数文件没有数组时使用现场固定映射。
+            if (cup.p_IOPP.JobOkOut == null || cup.p_IOPP.JobOkOut.Length < 2)
+                cup.p_IOPP.JobOkOut = (int[])cupTmp.p_IOPP.JobOkOut.Clone();
+            if (cup.p_IOPP.JobNGOut == null || cup.p_IOPP.JobNGOut.Length < 2)
+                cup.p_IOPP.JobNGOut = (int[])cupTmp.p_IOPP.JobNGOut.Clone();
+
+            // 保留旧字段供旧代码/旧参数读取，语义对应Job0的OK/NG。
+            cup.p_IOPP.OkOut = cup.p_IOPP.JobOkOut[0];
+            cup.p_IOPP.NGOut = cup.p_IOPP.JobNGOut[0];
 
             // 保存兼容后的参数（覆盖旧文件）
             SaveUserParam(cup);

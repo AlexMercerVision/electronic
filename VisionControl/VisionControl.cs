@@ -58,6 +58,7 @@ namespace VisionControl
         private string mLoadedVppFilename;
         private OptionsFile mCurrentOptionsFile;
         private CogJobManager mJM = null;  //vpp文件实例对象
+        private string mVppInterfaceValidationError = "";
 
         private bool mAttached = false;
         private int mSelectedJob = 0;
@@ -91,6 +92,14 @@ namespace VisionControl
         public string LoadedVppFilename
         {
             get { return mLoadedVppFilename; }
+        }
+
+        /// <summary>
+        /// VPP长度测量接口校验失败时的详细原因。
+        /// </summary>
+        public string VppInterfaceValidationError
+        {
+            get { return mVppInterfaceValidationError; }
         }
 
         /// <summary>
@@ -246,9 +255,62 @@ namespace VisionControl
               return true;
           }*/
 
+        private bool ValidateLengthMeasurementInterface(out string validationError)
+        {
+            validationError = "";
+
+            if (mJM == null)
+            {
+                validationError = "VPP JobManager未初始化";
+                return false;
+            }
+
+            if (mJM.JobCount <= 0)
+            {
+                validationError = "VPP中没有可运行的Job";
+                return false;
+            }
+
+            for (int i = 0; i < mJM.JobCount; i++)
+            {
+                CogToolGroup toolGroup = mJM.Job(i).VisionTool as CogToolGroup;
+                if (toolGroup == null)
+                {
+                    validationError = "Job[" + i + "]的VisionTool不是CogToolGroup";
+                    return false;
+                }
+
+                try
+                {
+                    object result = toolGroup.GetScriptTerminalData("Result");
+                    if (!(result is string))
+                    {
+                        validationError = "Job[" + i + "]缺少String类型的Result输出终端";
+                        return false;
+                    }
+
+                    object length = toolGroup.GetScriptTerminalData("length");
+                    if (!(length is double))
+                    {
+                        validationError = "Job[" + i + "]缺少Double类型的length输出终端";
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    validationError = "Job[" + i + "]读取长度测量输出终端失败：" + ex.Message;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         //st** 加载vpp文件初始化条件判断
         private int PerformRequiredInit()
         {
+            mVppInterfaceValidationError = "";
+
             // resolve the quickbuild filename
             string vppFileToLoad = ResolveVppFilename();
             if (!File.Exists(vppFileToLoad) && !File.Exists(mVppFilename))
@@ -293,6 +355,20 @@ namespace VisionControl
                     //**label_controlErrorMessage.Text = ResourceUtility.FormatString("RtUninitializedAcq", mLoadedVppFilename);
                     return 4;
                 }
+            }
+
+            if (!ValidateLengthMeasurementInterface(out mVppInterfaceValidationError))
+            {
+                try
+                {
+                    mJM.Shutdown();
+                }
+                catch
+                {
+                }
+                mJM = null;
+                mLoadedVppFilename = null;
+                return 5;
             }
 
             return 0;
@@ -495,6 +571,7 @@ namespace VisionControl
                 for (int i = 0; i < mJM.JobCount; ++i)
                 {
                     mJM.Job(i).Running += new CogJob.CogJobRunningEventHandler(Job_Running);
+                    mJM.Job(i).Stopped += new CogJob.CogJobStoppedEventHandler(mJM_JobStopped);
                     mJM.Job(i).ImageQueueOverflowed += new CogJob.CogImageQueueOverflowedEventHandler(Job_ImageQueueOverflowed);
                 }
 
@@ -526,6 +603,7 @@ namespace VisionControl
                 for (int i = 0; i < mJM.JobCount; ++i)
                 {
                     mJM.Job(i).Running -= new CogJob.CogJobRunningEventHandler(Job_Running);
+                    mJM.Job(i).Stopped -= new CogJob.CogJobStoppedEventHandler(mJM_JobStopped);
                     mJM.Job(i).ImageQueueOverflowed -= new CogJob.CogImageQueueOverflowedEventHandler(Job_ImageQueueOverflowed);
                 }
             }
@@ -608,6 +686,115 @@ namespace VisionControl
         //回调
         //结果可用回调
 
+        private bool TryBeginVppJobCompletion(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxJobNum)
+                return false;
+
+            lock (vppJobCompletionLock)
+            {
+                if (jobBusy[jobIndex])
+                {
+                    // 兼容上层现有超时退出：只有已经收到该工位Stopped时才允许清理并重新开始。
+                    if (vppJobCompletionPending[jobIndex] &&
+                        vppJobStopped[jobIndex] &&
+                        bRunOneTimeFinished[jobIndex] == 2)
+                    {
+                        vppJobCompletionPending[jobIndex] = false;
+                        jobBusy[jobIndex] = false;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                vppJobResultProcessed[jobIndex] = false;
+                vppJobStopped[jobIndex] = false;
+                vppJobCompletionPending[jobIndex] = true;
+                bRunOneTimeFinished[jobIndex] = 0;
+                jobBusy[jobIndex] = true;
+                return true;
+            }
+        }
+
+        private void AbortVppJobCompletion(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxJobNum)
+                return;
+
+            lock (vppJobCompletionLock)
+            {
+                vppJobResultProcessed[jobIndex] = false;
+                vppJobStopped[jobIndex] = false;
+                vppJobCompletionPending[jobIndex] = false;
+                bRunOneTimeFinished[jobIndex] = 2;
+                jobBusy[jobIndex] = false;
+            }
+        }
+
+        private void MarkVppJobResultProcessed(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxJobNum)
+                return;
+
+            lock (vppJobCompletionLock)
+            {
+                if (!vppJobCompletionPending[jobIndex])
+                    return;
+
+                vppJobResultProcessed[jobIndex] = true;
+            }
+
+            TryCompleteVppJob(jobIndex);
+        }
+
+        private void MarkVppJobStopped(int jobIndex)
+        {
+            if (jobIndex < 0 || jobIndex >= maxJobNum)
+                return;
+
+            lock (vppJobCompletionLock)
+            {
+                if (!vppJobCompletionPending[jobIndex])
+                    return;
+
+                vppJobStopped[jobIndex] = true;
+            }
+
+            TryCompleteVppJob(jobIndex);
+        }
+
+        private void TryCompleteVppJob(int jobIndex)
+        {
+            lock (vppJobCompletionLock)
+            {
+                if (!vppJobCompletionPending[jobIndex] ||
+                    !vppJobResultProcessed[jobIndex] ||
+                    !vppJobStopped[jobIndex])
+                {
+                    return;
+                }
+
+                // 在锁内领取完成权，保证两个异步事件无论谁后到都只完成一次。
+                vppJobCompletionPending[jobIndex] = false;
+            }
+
+            try
+            {
+                RunOneTimeFinished(jobIndex);
+            }
+            finally
+            {
+                lock (vppJobCompletionLock)
+                {
+                    jobBusy[jobIndex] = false;
+                }
+            }
+
+            JobResultReady?.Invoke(jobIndex);
+        }
+
         //任务运行回调，单次运行每个job被回调1次
         private void Job_Running(object sender, CogJobActionEventArgs e)
         {
@@ -667,18 +854,28 @@ namespace VisionControl
             try
             {
                 int? jobIdx;
-                while ((jobIdx = HandleUserResults()).HasValue)
+                while (true)
                 {
+                    iCurrentJobIndex = -1;
+                    jobIdx = HandleUserResults();
+                    if (!jobIdx.HasValue)
+                        break;
+
                     int idx = jobIdx.Value;
 
-                    RunOneTimeFinished(idx);
-                    SetJobBusy(idx, false);
-                    if (!SkipImageUpdateForCurrentRun)
-                        DirectShowImage(idx);
-                    infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
-                    start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
-                    cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
-                    JobResultReady?.Invoke(idx);
+                    try
+                    {
+                        if (!SkipImageUpdateForCurrentRun)
+                            DirectShowImage(idx);
+                        infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
+                        start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
+                        cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
+                    }
+                    finally
+                    {
+                        // 这里只表示结果处理完成；是否真正结束还要等待对应 CogJob.Stopped。
+                        MarkVppJobResultProcessed(idx);
+                    }
                 }
             }
             catch (Exception ex)
@@ -686,6 +883,8 @@ namespace VisionControl
                 // ✅ 此处无法确定具体工位，默认用 0，可从上下文尝试获取
                 int jobIdx = iCurrentJobIndex >= 0 ? iCurrentJobIndex : 0;
                 OnVisionError(jobIdx, $"用户结果回调异常: {ex.Message}");
+                if (iCurrentJobIndex >= 0)
+                    MarkVppJobResultProcessed(iCurrentJobIndex);
             }
         }
 
@@ -809,26 +1008,15 @@ namespace VisionControl
             catch { }
         }
 
-        //停止实时预览时回调，本程序已经去掉VP自带实时预览，该函数不被执行
+        //每个CogJob真正停止时回调，用于与该工位的结果完成状态汇合。
         private void mJM_JobStopped(object sender, CogJobActionEventArgs e)
         {
-            if (e.Action == CogActionConstants.StoppedContinuous ||
-               e.Action == CogActionConstants.RunningContinuous)
-            {
-                try
-                {
-                    if (this.InvokeRequired)
-                    {
-                        // Call this same function on the GUI thread.
-                        // No need to wait for it here, so ignore the asyncresult return value and return immediately
-                        BeginInvoke(new CogJob.CogJobStoppedEventHandler(mJM_JobStopped), new object[] { sender, e });
-                        return;
-                    }
+            CogJob job = sender as CogJob;
+            if (job == null || mJM == null)
+                return;
 
-                    //   UpdateControlsEnabled();
-                }
-                catch { }
-            }
+            int jobIndex = Utility.GetJobIndexFromName(mJM, job.Name);
+            MarkVppJobStopped(jobIndex);
         }
 
         private int FindResultHistoryIndex(object sender)
@@ -937,6 +1125,7 @@ namespace VisionControl
                 int jobIndex = Utility.GetJobIndexFromName(mJM, jobName);
                 if (jobIndex >= 0)
                 {
+                    iCurrentJobIndex = jobIndex;
                     mHistoryCollection[jobIndex].Clear();
                     mHistoryCollection[jobIndex].AddNewUserResult(result);
                     VisionControlUserResultAvailable?.Invoke(this, new VisionControlUserResultAvailableEventArgs(jobIndex, result));

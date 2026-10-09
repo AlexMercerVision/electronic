@@ -1571,6 +1571,16 @@ namespace VisionApplication
                 if (!CanRunFaceAutoTrigger(faceIndex, operEvent))
                     return false;
 
+                string ioFeedbackReason;
+                if (!CanAcceptIOFeedbackRun(faceIndex, out ioFeedbackReason))
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = operEvent;
+                    operLog.strFailReason = ioFeedbackReason;
+                    AddLog();
+                    return false;
+                }
+
                 if (IsFaceVisionBusy(faceIndex))
                 {
                     operLog.iEventStatus = -1;
@@ -1642,22 +1652,29 @@ namespace VisionApplication
         {
             iJobIndex = jobIndex;
 
+            if (vpWin != null)
+            {
+                if (jobIndex >= 0 && jobIndex < maxCameraNum)
+                    vpWin._iJobIndex = jobIndex;
+                vpWin.SetWorkstationDisplayMode(jobIndex);
+            }
+
+            UpdateJobMenuSelection(jobIndex);
+            UpdateCurrentWorkstationText();
+
             if (!bUserLaser)
                 return;
-            if (vpWin != null && jobIndex >= 0)
-                vpWin._iJobIndex = jobIndex;
 
             if (jobIndex >= 0 && jobIndex < 2)
                 SwitchCard(GetCardSNByJob(jobIndex));
             else
                 UpdateLaserButtonStates();
 
-            InitParamUIWithCardSwitch();
+            if (jobIndex >= 0 && jobIndex < 2)
+                InitParamUIWithCardSwitch();
         }
         private void InitParamUIWithCardSwitch()
         {
-            if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
-                cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
             cmbCLPEdgeLeft.SelectedIndex = iJobIndex;
 
 
@@ -1850,7 +1867,7 @@ namespace VisionApplication
         {
             // 更新状态栏文本
             //toolStripStatusLabel_CardStatus.Text = $"当前工位：{iJobIndex==0?"A面":"B面"}，当前板卡: {cardSN + 1}";
-            toolStripStatusLabel_CardStatus.Text = $"当前工位：{(iJobIndex == 0 ? "A面" : "B面")}";
+            UpdateCurrentWorkstationText();
             // 更新板卡状态指示器颜色
             if (bInitJCZ[cardSN] == 0)
             {
@@ -1870,6 +1887,21 @@ namespace VisionApplication
                 toolStripStatusLabel_LaserStatus1.Text = "● 红光预览";
             else
                 toolStripStatusLabel_LaserStatus1.Text = "● 空闲";
+        }
+
+        private void UpdateCurrentWorkstationText()
+        {
+            string workstationText;
+            if (iJobIndex == 0)
+                workstationText = "A面";
+            else if (iJobIndex == 1)
+                workstationText = "B面";
+            else if (iJobIndex == -1)
+                workstationText = "同步";
+            else
+                workstationText = "未选择";
+
+            toolStripStatusLabel_CardStatus.Text = $"当前工位：{workstationText}";
         }
 
         /// <summary>
@@ -2750,12 +2782,10 @@ namespace VisionApplication
                     ApplyJobSelection(1);
                     break;
                 case "menuWS_Job3":
-                    iJobIndex = 2; // 预留（可能对应非激光任务）
-                    UpdateLaserButtonStates();
+                    ApplyJobSelection(2); // 预留（可能对应非激光任务）
                     break;
                 case "menuWS_JobS":
-                    iJobIndex = -1; // 同时控制多个Job
-                    UpdateLaserButtonStates();
+                    ApplyJobSelection(-1); // 同时控制多个Job
                     break;
             }
         }
@@ -4778,12 +4808,9 @@ namespace VisionApplication
         private void InitParamUI()
         {
             //隐藏不必要的参数界面
-            for (int i = 0; i < 2; i++)
-                tabControl1.TabPages.Remove(tabControl1.TabPages[3]);
+            tabControl1.TabPages.Remove(tabPageEdge);
+            tabControl1.TabPages.Remove(tabPageCalib);
 
-
-            if (cbDeviceList.Items.Count > cup.p_CD.camInd[iJobIndex])
-                cbDeviceList.SelectedIndex = cup.p_CD.camInd[iJobIndex];
 
             cmbPMATrainAlg.SelectedIndex = 2;
             cmbPMARunAlg.SelectedIndex = 2;
@@ -4897,10 +4924,24 @@ namespace VisionApplication
         /// 单个工位的一次运行（视觉检测 + 激光标刻）
         /// </summary>
         /// <param name="faceIndex">工位索引：0 = A面，1 = B面</param>
-        private async Task RunOneTimeForFace(int faceIndex)
+        private async Task RunOneTimeForFace(int faceIndex, bool singleJobIOCycle = false)
         {
+            string ioFeedbackReason;
+            long ioFeedbackCycleToken;
+            if (!TryBeginIOFeedbackRun(faceIndex, singleJobIOCycle,
+                out ioFeedbackCycleToken, out ioFeedbackReason))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = $"工位{faceIndex + 1}运行";
+                operLog.strFailReason = ioFeedbackReason;
+                AddLog();
+                return;
+            }
+
             bool reservationReleased = false;
             bool visionBusyEntered = false;
+            bool visionOk = false;
+            bool runSucceeded = false;
             DateTime startTime = DateTime.Now;   // 记录开始时间
 
             try
@@ -4908,7 +4949,6 @@ namespace VisionApplication
                 vpWin.ClearRDRecord(faceIndex);
 
                 // ★★★ 关键修改：不再修改 vpWin._iJobIndex，所有操作直接使用 faceIndex ★★★
-                bool visionOk = false;
                 try
                 {
                     vpWin._iTaskType = 2;
@@ -4985,11 +5025,13 @@ namespace VisionApplication
                     AddLog();
                 }
 
-                // IO 输出（如果启用）
-                if (cup.p_RTSP.bUpdateIO && pmaRes[faceIndex].bLocated)
+                // 视觉链成功完成后提交本工位真实OK/NG结果。
+                if (cup.p_RTSP.bUpdateIO && visionOk)
                 {
-                    ExeIOOut(faceIndex);
+                    ExeIOOut(faceIndex, ioFeedbackCycleToken);
                 }
+
+                runSucceeded = visionOk;
             }
             catch (Exception ex)
             {
@@ -5001,6 +5043,9 @@ namespace VisionApplication
             }
             finally
             {
+                if (!runSucceeded)
+                    AbortIOFeedbackCycle(faceIndex, ioFeedbackCycleToken, "视觉检测未成功完成");
+
                 // 释放资源与标志
                 if (!reservationReleased)
                     ReleaseAutoTriggerReservation(faceIndex);
@@ -5015,9 +5060,13 @@ namespace VisionApplication
                 // 记录本次运行耗时
                 TimeSpan elapsed = DateTime.Now - startTime;
                 string faceName = (faceIndex == 0) ? "A面" : "B面";
-                operLog.iEventStatus = 2;
-                operLog.strOperEvent = $"{faceName} 单次运行完成";
-                operLog.strFailReason = $"总耗时 {elapsed.TotalMilliseconds:F0} ms";
+                operLog.iEventStatus = runSucceeded ? 2 : -1;
+                operLog.strOperEvent = runSucceeded
+                    ? $"{faceName} 单次运行完成"
+                    : $"{faceName} 单次运行失败";
+                operLog.strFailReason = runSucceeded
+                    ? $"总耗时 {elapsed.TotalMilliseconds:F0} ms"
+                    : $"视觉链未成功完成，详见前序错误；总耗时 {elapsed.TotalMilliseconds:F0} ms";
                 AddLog();
             }
         }

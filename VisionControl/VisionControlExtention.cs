@@ -79,6 +79,10 @@ namespace VisionControl
         int[] iEventStatus = new int[6];
         int[] bRunOneTimeFinished = new int[maxJobNum];
         bool[] jobBusy = new bool[maxJobNum];
+        private readonly object vppJobCompletionLock = new object();
+        private readonly bool[] vppJobResultProcessed = new bool[maxJobNum];
+        private readonly bool[] vppJobStopped = new bool[maxJobNum];
+        private readonly bool[] vppJobCompletionPending = new bool[maxJobNum];
         private CUserParam cup = new CUserParam();
 
         public string[] strErrInfo = new string[maxJobNum];
@@ -162,7 +166,26 @@ namespace VisionControl
 
         private bool IsJobBusy(int jobIndex)
         {
-            return jobIndex >= 0 && jobIndex < maxCameraNum && jobBusy[jobIndex];
+            if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                return false;
+
+            lock (vppJobCompletionLock)
+            {
+                // 上层原有超时路径会把完成标志强制置为2。若CogJob此时已经真正停止，
+                // 允许清理“停止但无结果”的残留状态，避免该工位永久保持busy。
+                if (jobBusy[jobIndex] &&
+                    vppJobCompletionPending[jobIndex] &&
+                    vppJobStopped[jobIndex] &&
+                    bRunOneTimeFinished[jobIndex] == 2)
+                {
+                    vppJobResultProcessed[jobIndex] = false;
+                    vppJobStopped[jobIndex] = false;
+                    vppJobCompletionPending[jobIndex] = false;
+                    jobBusy[jobIndex] = false;
+                }
+
+                return jobBusy[jobIndex];
+            }
         }
 
         public void SetJobBusy(int jobIndex, bool busy)
@@ -494,16 +517,17 @@ namespace VisionControl
 
         private void DLInfer(int jobIndex)
         {
+            int cameraIndex = cup.p_CD.camInd[jobIndex];
             DL_result[jobIndex].AL_Rect.Clear();
             DL_result[jobIndex].AL_score.Clear();
             DL_result[jobIndex].AL_Type.Clear();
             DL_result[jobIndex].Al_bDiff.Clear();
 
             // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
-            if(cup.p_Cam[jobIndex].iMonoType==0 && acqFIFO.bImgSrcData[jobIndex]!=null)  //灰度图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci8gAcq[jobIndex].Width, acqFIFO.ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
-            else if(acqFIFO.bImgSrcData[jobIndex] != null) //彩色图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci24ColorAcq[jobIndex].Width, acqFIFO.ci24ColorAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            if(cup.p_Cam[cameraIndex].iMonoType==0 && acqFIFO.bImgSrcData[cameraIndex]!=null)  //灰度图推理
+                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci8gAcq[cameraIndex].Width, acqFIFO.ci8gAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            else if(acqFIFO.bImgSrcData[cameraIndex] != null) //彩色图推理
+                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci24ColorAcq[cameraIndex].Width, acqFIFO.ci24ColorAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
 
             if (DL_result[jobIndex].AL_Rect.Count > 0)
             {
@@ -568,6 +592,9 @@ namespace VisionControl
         // 1. 声明事件：参数 (工位索引, 错误描述)
         public event Action<int, string> VisionErrorOccurred;
 
+        // 实时预览诊断事件：状态 0=首帧显示成功，-1=失败，2=线程已启动/等待首帧。
+        public event Action<int, int, int, string> PreviewStatusChanged;
+
         // 2. 封装的触发方法（统一入口，方便后续加日志过滤）
         private void OnVisionError(int jobIndex, string errorMessage)
         {
@@ -581,6 +608,11 @@ namespace VisionControl
 
             // 触发事件（如果有订阅者）
             VisionErrorOccurred?.Invoke(jobIndex, errorMessage);
+        }
+
+        private void OnPreviewStatus(int jobIndex, int cameraIndex, int status, string message)
+        {
+            PreviewStatusChanged?.Invoke(jobIndex, cameraIndex, status, message);
         }
 
         int iDeepInferTime = 0;
@@ -614,8 +646,11 @@ namespace VisionControl
             }
 
             inactiveTime = 0;       //只要运行了，就将不活跃次数置零
-            bRunOneTimeFinished[jobIndex] = 0;
-            SetJobBusy(jobIndex, true);
+            if (!cup.p_VPPRTP.bVisionInfer)
+            {
+                bRunOneTimeFinished[jobIndex] = 0;
+                SetJobBusy(jobIndex, true);
+            }
 
             //2026年6月20日
        
@@ -634,11 +669,21 @@ namespace VisionControl
         }
 
         public bool RunOneTime(int jobIndex)
-        {            
+        {
+            bool vppCompletionStarted = false;
             try
             {  
                 if (jobIndex >= 0)
                 {
+                    if (cup.p_VPPRTP.bVisionInfer)
+                    {
+                        if (!TryBeginVppJobCompletion(jobIndex))
+                        {
+                            strErrInfo[jobIndex] = "当前工位视觉任务未结束";
+                            return false;
+                        }
+                        vppCompletionStarted = true;
+                    }
                     
                     //2026年4月12日 修改了采集图像函数
                     if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) ||
@@ -670,7 +715,10 @@ namespace VisionControl
                     {
                         strErrInfo[jobIndex] = "图像采集异常:"+ acqFIFO.strErrInfo;
                         // 采集失败也应当设置完成标志，避免死等
-                        _bRunOneTimeFinished[jobIndex] = 2;
+                        if (vppCompletionStarted)
+                            AbortVppJobCompletion(jobIndex);
+                        else
+                            _bRunOneTimeFinished[jobIndex] = 2;
                         return false;
                     }
                 }
@@ -680,7 +728,8 @@ namespace VisionControl
             {
                 // do nothing in this case - we're already running
                 strErrInfo[jobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
-              
+                if (vppCompletionStarted)
+                    AbortVppJobCompletion(jobIndex);
                 return false;
             }
             catch (Cognex.VisionPro.Exceptions.CogException ex)
@@ -688,9 +737,17 @@ namespace VisionControl
                 if (mCurrentRunState != RunState.RunningContinuous)
                     mCurrentRunState = RunState.Stopped;
                 strErrInfo[jobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
-                
+                if (vppCompletionStarted)
+                    AbortVppJobCompletion(jobIndex);
                 return false;
-            }          
+            }
+            catch (Exception ex)
+            {
+                strErrInfo[jobIndex] = ResourceUtility.GetString("RtUnexpectedErrorQB") + ex.Message;
+                if (vppCompletionStarted)
+                    AbortVppJobCompletion(jobIndex);
+                return false;
+            }
             return true; 
         }
 
@@ -2716,6 +2773,11 @@ namespace VisionControl
         private const int PreviewUiIntervalMs = 100;
         private int[] _previewUiPending = new int[maxCameraNum];
         private int[] _previewLastUiTick = new int[maxCameraNum];
+        private bool[] _previewThreadStarted = new bool[maxCameraNum];
+        private bool[] _previewFirstFrameReceived = new bool[maxCameraNum];
+        private bool[] _previewGetBufferFailureLogged = new bool[maxCameraNum];
+        private bool[] _previewDisplayFailureLogged = new bool[maxCameraNum];
+        private int[] _previewLastGetBufferError = new int[maxCameraNum];
         private void InitPreviewLocks()
         {
             for (int i = 0; i < maxCameraNum; i++)
@@ -2723,72 +2785,30 @@ namespace VisionControl
         }
        
         // 启动/停止单路预览
-        public void previewOnlive(bool bOpen, int wsInd)
+        public bool previewOnlive(bool bOpen, int wsInd)
         {
-            if (wsInd < 0 || wsInd >= maxCameraNum) return;
+            if (wsInd < 0 || wsInd >= maxCameraNum)
+                return false;
 
-           
             int iCamIdx = cup.p_CD.camInd[wsInd];
-            MyCamera camera = acqFIFO._HikCam?[iCamIdx];
-            if (camera == null) return;
-
-            if (bOpen)
-            { // 1. 根据配置设置镜像（在开始预览前）
-                int flipType = cup.p_Cam[iCamIdx].iFlipType;
-                if (flipType != 0)
-                {
-                    uint payloadSize = acqFIFO.GetPayloadSize(iCamIdx);
-                    if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < payloadSize)
-                    {
-                        if (_flipBuffers[wsInd] != IntPtr.Zero)
-                            Marshal.FreeHGlobal(_flipBuffers[wsInd]);
-                        _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)payloadSize);
-                        _flipBufferSizes[wsInd] = payloadSize;
-                    }
-                }
-                if (_previewRunning[wsInd]) return;
-                switch (wsInd)
-                {
-                    case 0:
-                       /* cogRDMainUser.Visible = false;
-                        picSub1.Visible = true;
-                        picSub1.Location = cogRDMainUser.Location;*/
-
-                        AdjustPictureBoxSize(cogRDMainUser, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
-                        // picSub1.Size = cogRDMainUser.Size;
-                        break;
-                    case 1:
-                        /*cogRDSub1.Visible = false;
-                        picSub2.Visible = true;
-                        picSub2.Location = cogRDSub1.Location;*/
-                        AdjustPictureBoxSize(cogRDSub1, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
-                        // picSub2.Size = cogRDSub1.Size;
-                        break;
-                }
-                // 获取对应的 PictureBox 句柄（根据工位选择）
-                Control displayControl = GetPreviewControl(wsInd);
-                if (displayControl == null || !displayControl.IsHandleCreated)
-                {
-                    // 如果句柄未创建，先创建
-                    displayControl?.CreateControl();
-                }
-                _previewHwnds[wsInd] = displayControl?.Handle ?? IntPtr.Zero;
-                if (_previewHwnds[wsInd] == IntPtr.Zero) return;
-
-                _previewUiPending[wsInd] = 0;
-                _previewLastUiTick[wsInd] = 0;
-                _previewRunning[wsInd] = true;
-                _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd));
-                _previewThreads[wsInd].IsBackground = true;
-                _previewThreads[wsInd].Start();
+            if (iCamIdx < 0 || acqFIFO._HikCam == null || iCamIdx >= acqFIFO._HikCam.Length)
+            {
+                OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd} 的物理相机索引无效");
+                return false;
             }
-            else
+
+            if (!bOpen)
             {   // 停止预览，释放翻转缓冲区
                 _previewUiPending[wsInd] = 0;
                 _previewRunning[wsInd] = false;
+                bool stopped = true;
                 if (_previewThreads[wsInd] != null && _previewThreads[wsInd].IsAlive)
+                {
                     _previewThreads[wsInd].Join(1000);
+                    stopped = !_previewThreads[wsInd].IsAlive;
+                }
                 _previewThreads[wsInd] = null;
+                _previewThreadStarted[wsInd] = false;
 
                 if (_flipBuffers[wsInd] != IntPtr.Zero)
                 {
@@ -2796,23 +2816,7 @@ namespace VisionControl
                     _flipBuffers[wsInd] = IntPtr.Zero;
                     _flipBufferSizes[wsInd] = 0;
                 }
-               /* switch (wsInd)
-                {
-                    case 0:
 
-                        picSub1.Visible = false;
-                        cogRDMainUser.Visible = true;
-                        *//*picSub1.Location = cogRDMainUser.Location;
-                        picSub1.Size = cogRDMainUser.Size;*//*
-                        break;
-                    case 1:
-                        picSub2.Visible = false;
-                        cogRDSub1.Visible = true;
-                        *//*picSub2.Location = cogRDSub1.Location;
-                        picSub2.Size = cogRDSub1.Size;*//*
-                        break;
-                }*/
-                // 清空 PictureBox 显示
                 Control displayControl = GetPreviewControl(wsInd);
                 if (displayControl is PictureBox pb)
                 {
@@ -2822,7 +2826,72 @@ namespace VisionControl
                 }
                 else if (displayControl is CogRecordDisplay cogDisp)
                     cogDisp.Image = null;
+
+                if (!stopped)
+                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx} 预览线程未在超时内停止");
+                return stopped;
             }
+
+            MyCamera camera = acqFIFO._HikCam[iCamIdx];
+            string serial = cup.p_Cam != null && iCamIdx < cup.p_Cam.Length
+                ? cup.p_Cam[iCamIdx].strCamName
+                : string.Empty;
+            if (camera == null)
+            {
+                OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 相机对象为空");
+                return false;
+            }
+
+            // 根据配置设置镜像（在开始预览前）
+            int flipType = cup.p_Cam[iCamIdx].iFlipType;
+            if (flipType != 0)
+            {
+                uint payloadSize = acqFIFO.GetPayloadSize(iCamIdx);
+                if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < payloadSize)
+                {
+                    if (_flipBuffers[wsInd] != IntPtr.Zero)
+                        Marshal.FreeHGlobal(_flipBuffers[wsInd]);
+                    _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)payloadSize);
+                    _flipBufferSizes[wsInd] = payloadSize;
+                }
+            }
+            if (_previewRunning[wsInd])
+                return true;
+
+            switch (wsInd)
+            {
+                case 0:
+                    AdjustPictureBoxSize(cogRDMainUser, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
+                    break;
+                case 1:
+                    AdjustPictureBoxSize(cogRDSub1, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
+                    break;
+            }
+
+            Control targetControl = GetPreviewControl(wsInd);
+            if (targetControl == null || !targetControl.IsHandleCreated)
+                targetControl?.CreateControl();
+            _previewHwnds[wsInd] = targetControl?.Handle ?? IntPtr.Zero;
+            if (_previewHwnds[wsInd] == IntPtr.Zero)
+            {
+                OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 显示窗口句柄无效");
+                return false;
+            }
+
+            _previewUiPending[wsInd] = 0;
+            _previewLastUiTick[wsInd] = 0;
+            _previewFirstFrameReceived[wsInd] = false;
+            _previewGetBufferFailureLogged[wsInd] = false;
+            _previewDisplayFailureLogged[wsInd] = false;
+            _previewLastGetBufferError[wsInd] = MyCamera.MV_OK;
+            _previewRunning[wsInd] = true;
+            _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd));
+            _previewThreads[wsInd].IsBackground = true;
+            _previewThreads[wsInd].Start();
+            _previewThreadStarted[wsInd] = true;
+            OnPreviewStatus(wsInd, iCamIdx, 2,
+                $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: Preview线程已启动，等待首帧");
+            return true;
         }
 
         private void AdjustPictureBoxSize(Control pic, int imgW, int imgH,int jobIndex)
@@ -2942,6 +3011,9 @@ namespace VisionControl
             MyCamera.MV_DISPLAY_FRAME_INFO stDisplayInfo = new MyCamera.MV_DISPLAY_FRAME_INFO();
 
             int iCamIdx = cup.p_CD.camInd[wsInd];
+            string serial = cup.p_Cam != null && iCamIdx >= 0 && iCamIdx < cup.p_Cam.Length
+                ? cup.p_Cam[iCamIdx].strCamName
+                : string.Empty;
             _previewFlipTypes[wsInd] = cup.p_Cam[iCamIdx].iFlipType;
             Control displayControl = GetPreviewControl(wsInd);
 
@@ -2996,13 +3068,35 @@ namespace VisionControl
                         stDisplayInfo.nWidth = stFrameInfo.stFrameInfo.nWidth;
                         stDisplayInfo.nHeight = stFrameInfo.stFrameInfo.nHeight;
                         stDisplayInfo.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
-                        camera.MV_CC_DisplayOneFrame_NET(ref stDisplayInfo);
+                        int displayRet = camera.MV_CC_DisplayOneFrame_NET(ref stDisplayInfo);
+                        if (displayRet == MyCamera.MV_OK)
+                        {
+                            if (!_previewFirstFrameReceived[wsInd])
+                            {
+                                _previewFirstFrameReceived[wsInd] = true;
+                                OnPreviewStatus(wsInd, iCamIdx, 0,
+                                    $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 已收到并显示首帧，PixelFormat={stFrameInfo.stFrameInfo.enPixelType}");
+                            }
+                        }
+                        else if (!_previewDisplayFailureLogged[wsInd])
+                        {
+                            _previewDisplayFailureLogged[wsInd] = true;
+                            OnPreviewStatus(wsInd, iCamIdx, -1,
+                                $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: DisplayOneFrame失败，SDK=0x{unchecked((uint)displayRet):X8}");
+                        }
                     }
 
                     camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
                 }
                 else
                 {
+                    if (!_previewGetBufferFailureLogged[wsInd] || _previewLastGetBufferError[wsInd] != nRet)
+                    {
+                        _previewGetBufferFailureLogged[wsInd] = true;
+                        _previewLastGetBufferError[wsInd] = nRet;
+                        OnPreviewStatus(wsInd, iCamIdx, -1,
+                            $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: GetImageBuffer失败，SDK=0x{unchecked((uint)nRet):X8}");
+                    }
                     Thread.Sleep(5);
                 }
             }
@@ -3062,7 +3156,7 @@ namespace VisionControl
                // case 0: return picSub1;    // A面
              //   case 1: return picSub2;    // B面
                 //2026年6月23日
-                case 0: return cogRDMainUser;    // A面
+                case 0: return iModelRole == 10 ? (Control)cogRDMain.Display : cogRDMainUser;    // A面
                 case 1: return cogRDSub1;    // B面
                 default: return null;
             }
@@ -3151,7 +3245,6 @@ namespace VisionControl
         {
             try
             {
-                ClearRDRecord(wsInd);
                 int iCamInd = cup.p_CD.camInd[wsInd];
                 int iImageType= acqFIFO.GrabOneFrameCogFromFile(iFileInd, cup.p_CD.bListProcess, wsInd, iCamInd);
                 ICogImage ci=null;
@@ -3162,7 +3255,10 @@ namespace VisionControl
                 else if (iImageType == 1)
                 {
                     ci = acqFIFO.ci24ColorAcq[iCamInd];
-                }                 
+                }
+
+                if (ci != null)
+                    ClearRawImageDisplayGraphicsByJobIndex(wsInd);
 
                 switch (wsInd)
                 {
@@ -3249,57 +3345,32 @@ namespace VisionControl
             string[] strImageFileS = new string[maxCameraNum];
             try
             {
-                int iCamIndex = cup.p_CD.camInd[wsInd];
-                //   GrabThreadProcessHalcon();
-                // 将海康数据类型转为Mat
-                if (cup.p_CD.bListProcess[wsInd])
-                {
-                    ClearRDRecord(wsInd);
-                    //黑白
-                    if (cup.p_Cam[iCamIndex].iMonoType == 0)
-                    {
-                        acqFIFO.GrabOneFrameCog(wsInd);
-                        Thread.Sleep(2);
-                        if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci8gAcq[iCamIndex] != null)  //启用的检测面 
-                        { 
-                            switch(wsInd)
-                            {
-                                case 0:
-                                    cogRDMainUser.Image = acqFIFO.ci8gAcq[iCamIndex];
-                                    break;
-                                case 1:
-                                    cogRDSub1.Image= acqFIFO.ci8gAcq[iCamIndex];
-                                    break;
-                            }
-                        }
-                    }
-                    else  //彩色
-                    {
-                        acqFIFO.GrabOneFrameCogColor(wsInd, iCamIndex);
-                        Thread.Sleep(2);
-                        if (cup.p_CD.bListProcess[wsInd] && acqFIFO.ci24ColorAcq[iCamIndex] != null)  //启用的检测面 
-                        {
-                            /*if (iModelRole == 10)
-                            {
-                                cogRDMain.Display.Image = acqFIFO.ci24ColorAcq[wsInd];
-                            }
-                            else
-                            {
-                                cogRDMainUser.Image = acqFIFO.ci24ColorAcq[wsInd];
-                            }*/
-                            switch (wsInd)
-                            {
-                                case 0:
-                                    cogRDMainUser.Image = acqFIFO.ci24ColorAcq[iCamIndex];
-                                    break;
-                                case 1:
-                                    cogRDSub1.Image = acqFIFO.ci24ColorAcq[iCamIndex];
-                                    break;
-                            }
-                        }
-                    }
+                if (wsInd < 0 || wsInd >= maxCameraNum || !cup.p_CD.bListProcess[wsInd])
+                    return false;
 
+                int iCamIndex = cup.p_CD.camInd[wsInd];
+                if (iCamIndex < 0 || cup.p_Cam == null || iCamIndex >= cup.p_Cam.Length)
+                {
+                    OnVisionError(wsInd, $"采集图像失败: Job{wsInd} 的物理相机索引 {iCamIndex} 无效");
+                    return false;
                 }
+
+                ICogImage acquiredImage;
+                if (cup.p_Cam[iCamIndex].iMonoType == 0)
+                    acquiredImage = acqFIFO.GrabOneFrameCog(wsInd, iCamIndex);
+                else
+                    acquiredImage = acqFIFO.GrabOneFrameCogColor(wsInd, iCamIndex);
+
+                if (acquiredImage == null)
+                {
+                    OnVisionError(wsInd, $"采集图像失败: Job{wsInd}, Cam{iCamIndex} 本轮取图返回空图像");
+                    return false;
+                }
+
+                // “采集图像”只显示本工位对应物理相机的原图，不进入 Paddle/VPP。
+                ClearRawImageDisplayGraphicsByJobIndex(wsInd);
+                DisplayImageByJobIndex(wsInd, acquiredImage);
+
                 //存储
                 if (bRecord)
                 {
@@ -3318,7 +3389,7 @@ namespace VisionControl
                             if (cup.p_Cam[iCamIndex].iMonoType == 0 && acqFIFO.ci8gAcq[iCamIndex] != null)
                                 mImageFile.Append(acqFIFO.CogFlipRotateIm(acqFIFO.ci8gAcq[iCamIndex],wsInd)); 
                             else if (acqFIFO.ci24ColorAcq[iCamIndex] != null)
-                                mImageFile.Append(acqFIFO.CogFlipRotateIm(acqFIFO.ci8gAcq[iCamIndex], wsInd));
+                                mImageFile.Append(acqFIFO.CogFlipRotateIm(acqFIFO.ci24ColorAcq[iCamIndex], wsInd));
 
                             mImageFile.Close();
                         }
@@ -3329,14 +3400,52 @@ namespace VisionControl
             }
             catch(Exception ex)
             {
-                // MessageBox.Show(se.Message);
-                // picMain.Image = bitmap;
-                OnVisionError(wsInd, $"采集图像失败{ex.Message}");
+                OnVisionError(wsInd, $"采集图像失败: {ex.Message}");
+                return false;
             }
-           
+
             return true;
+        }
 
+        /// <summary>
+        /// 清理“采集图像”切换到原图显示时遗留的图形覆盖层，不修改检测结果数据。
+        /// </summary>
+        private void ClearRawImageDisplayGraphicsByJobIndex(int jobIndex)
+        {
+            switch (jobIndex)
+            {
+                case 0:
+                    if (iModelRole == 10)
+                    {
+                        cogRDMain.Display.StaticGraphics.Clear();
+                        cogRDMain.Display.InteractiveGraphics.Clear();
+                    }
+                    else
+                    {
+                        cogRDMainUser.StaticGraphics.Clear();
+                        cogRDMainUser.InteractiveGraphics.Clear();
+                    }
+                    break;
+                case 1:
+                    cogRDSub1.StaticGraphics.Clear();
+                    cogRDSub1.InteractiveGraphics.Clear();
+                    break;
+            }
+        }
 
+        private void ClearDisplayImageByJobIndex(int jobIndex)
+        {
+            Control displayControl = GetDisplayControlForJob(jobIndex);
+            if (displayControl is CogRecordDisplay cogDisplay)
+            {
+                cogDisplay.Image = null;
+                cogDisplay.StaticGraphics.Clear();
+                cogDisplay.InteractiveGraphics.Clear();
+            }
+            else if (displayControl is PictureBox pictureBox)
+            {
+                pictureBox.Image = null;
+            }
         }
       
 
@@ -3386,6 +3495,53 @@ namespace VisionControl
             }
         }
         public bool bEqualDisr = false;
+
+        /// <summary>
+        /// 根据主界面的工位模式切换显示：0=A面，1=B面，-1=A/B同步。
+        /// 仅调整显示控件的位置和可见性，不清理现有图像或检测图形。
+        /// </summary>
+        public void SetWorkstationDisplayMode(int jobIndex)
+        {
+            int viewWidth = Math.Max(1, Width - 2);
+            int viewHeight = Math.Max(1, Height - 2);
+            bool showA = jobIndex == 0 || jobIndex == -1;
+            bool showB = jobIndex == 1 || jobIndex == -1;
+            bool showAdminA = showA && iModelRole == 10;
+
+            picSub1.Visible = false;
+            picSub2.Visible = false;
+            cogRDSub2.Visible = false;
+
+            if (!showA && !showB)
+            {
+                ViewLayout(1);
+                return;
+            }
+
+            int aWidth = showA && showB ? viewWidth / 2 : viewWidth;
+            int bLeft = showA && showB ? aWidth + 1 : 1;
+            int bWidth = showA && showB ? viewWidth - aWidth - 1 : viewWidth;
+
+            cogRDMain.Left = 1;
+            cogRDMain.Top = 1;
+            cogRDMain.Width = aWidth;
+            cogRDMain.Height = viewHeight;
+
+            cogRDMainUser.Left = 1;
+            cogRDMainUser.Top = 1;
+            cogRDMainUser.Width = aWidth;
+            cogRDMainUser.Height = viewHeight;
+
+            cogRDSub1.Left = bLeft;
+            cogRDSub1.Top = 1;
+            cogRDSub1.Width = bWidth;
+            cogRDSub1.Height = viewHeight;
+
+            cogRDMain.Visible = showAdminA;
+            cogRDMainUser.Visible = showA && !showAdminA;
+            cogRDSub1.Visible = showB;
+        }
+
         public void ViewLayout(int winNum)
         {
             int mainWindWidth = this.Width - 3;

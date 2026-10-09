@@ -47,7 +47,7 @@ namespace CommonCls
         /// <summary>
         /// 枚举所有相机并返回可读信息列表。
         /// </summary>
-        /// <returns>相机信息字符串列表，格式如 "GEV: 用户定义名称" 或 "U3V: 制造商 型号 序列号"</returns>
+        /// <returns>相机信息字符串列表；最后一段始终为硬件序列号，供工位稳定绑定。</returns>
         public List<string> EnumDevices()
         {
             uint num = CameraNum();
@@ -63,18 +63,20 @@ namespace CommonCls
                 {
                     var gigeInfo = (MyCamera.MV_GIGE_DEVICE_INFO)MyCamera.ByteToStruct(
                         device.SpecialInfo.stGigEInfo, typeof(MyCamera.MV_GIGE_DEVICE_INFO));
-                    string info = !string.IsNullOrEmpty(gigeInfo.chUserDefinedName)
-                        ? $"GEV: {gigeInfo.chUserDefinedName}"
-                        : $"GEV: {gigeInfo.chManufacturerName} {gigeInfo.chModelName}";
+                    string displayName = !string.IsNullOrWhiteSpace(gigeInfo.chUserDefinedName)
+                        ? gigeInfo.chUserDefinedName
+                        : $"{gigeInfo.chManufacturerName} {gigeInfo.chModelName}";
+                    string info = $"GEV: {displayName} {gigeInfo.chSerialNumber}";
                     cameraInfos.Add(info);
                 }
                 else if (device.nTLayerType == MyCamera.MV_USB_DEVICE)
                 {
                     var usbInfo = (MyCamera.MV_USB3_DEVICE_INFO)MyCamera.ByteToStruct(
                         device.SpecialInfo.stUsb3VInfo, typeof(MyCamera.MV_USB3_DEVICE_INFO));
-                    string info = !string.IsNullOrEmpty(usbInfo.chUserDefinedName)
-                        ? $"U3V: {usbInfo.chUserDefinedName}"
-                        : $"U3V: {usbInfo.chManufacturerName} {usbInfo.chModelName} {usbInfo.chSerialNumber}";
+                    string displayName = !string.IsNullOrWhiteSpace(usbInfo.chUserDefinedName)
+                        ? usbInfo.chUserDefinedName
+                        : $"{usbInfo.chManufacturerName} {usbInfo.chModelName}";
+                    string info = $"U3V: {displayName} {usbInfo.chSerialNumber}";
                     cameraInfos.Add(info);
                 }
             }
@@ -780,26 +782,19 @@ namespace CommonCls
         /// <summary>
         /// 开始指定索引相机的采集。
         /// </summary>
-        public bool StartGrabbing(int index)
+        public int StartGrabbing(int index)
         {
-            try
-            {
-                MyCamera cam = null;
-                if (index >= 0 && index < _cameraCount)
-                    cam = _cameraArray[index];
-                else
-                    cam = _singleCamera;
+            if (index < 0 || index >= _cameraCount)
+                throw new ArgumentOutOfRangeException(nameof(index));
 
-                if (cam == null) return false;
-                _frameInfo.nFrameLen = 0;
-                _frameInfo.enPixelType = MyCamera.MvGvspPixelType.PixelType_Gvsp_Undefined;
-                cam.MV_CC_StartGrabbing_NET();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            MyCamera cam = _cameraArray[index];
+
+            if (cam == null)
+                throw new InvalidOperationException($"相机{index}尚未初始化");
+
+            _frameInfo.nFrameLen = 0;
+            _frameInfo.enPixelType = MyCamera.MvGvspPixelType.PixelType_Gvsp_Undefined;
+            return cam.MV_CC_StartGrabbing_NET();
         }
 
         /// <summary>

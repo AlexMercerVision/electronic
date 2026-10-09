@@ -59,6 +59,9 @@ namespace CommonCls
         /// <summary>海康SDK返回值</summary>
         private int nRet = 0;
 
+        /// <summary>每台物理相机独立的单帧取图锁。</summary>
+        private readonly object[] _cameraFrameLocks = new object[maxCameraNum];
+
         /// <summary>输出帧信息结构体</summary>
         public MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();
 
@@ -227,6 +230,7 @@ namespace CommonCls
                 cogImFlipRotate[i] = new CogIPOneImageFlipRotate();
                 imgTool[i] = new CogIPOneImageTool();
                 mImageFile[i] = new CogImageFile();
+                _cameraFrameLocks[i] = new object();
                 _rotateFlipTypes[i] = 0;   // 默认无旋转镜像，可根据需要调整
             }
         }
@@ -330,140 +334,177 @@ namespace CommonCls
         /// <summary>采集单帧灰度图像转Cog格式,VP 算法使用
         public CogImage8Grey GrabOneFrameCog(int jobIndex,int iCamIndex)
         {
-            try
+            if (iCamIndex < 0 || iCamIndex >= maxCameraNum)
             {
-                CameraStatus currentStatus = GetCurrentCameraStatus();
-                if (_cameraStatus.iStatus[iCamIndex] < 2)
-                    return null;
-                strTime[jobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
-                if (_cameraType == 0)
-                {
-                    nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
-                    if (nRet == MyCamera.MV_OK)
-                    {
-                        //保留byte[]型数据
-                        IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
-                        cogImage8Root.Initialize((Int32)stFrameInfo.nWidth, (Int32)stFrameInfo.nHeight, m_BufForDriverS[iCamIndex], (Int32)stFrameInfo.nWidth, null);
-                        cogImage8Grey.SetRoot(cogImage8Root);
-
-                    }
-                    else
-                    {
-                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
-                        return null;
-                    }
-                }
-                else
-                {
-                    nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
-                    if (nRet == MyCamera.MV_OK)
-                    {
-                        // 从 frameInfoForOther 中获取图像宽高和像素数据指针
-
-                        IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
-                        //保留byte[]型数据
-                        int width = (int)stFrameInfoWithData.stFrameInfo.nWidth;
-                        int height = (int)stFrameInfoWithData.stFrameInfo.nHeight;
-
-                        IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
-
-                        // 初始化 CogImage8Root
-                        cogImage8Root.Initialize(width, height, imagePtr, width, null);
-                        cogImage8Grey.SetRoot(cogImage8Root);
-                        // 应用旋转/镜像（如果需要）
-
-                    }
-                    else
-                    {
-                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
-                        return null;
-                    }
-                }
-                ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(cogImage8Grey, jobIndex);
-                // ci8gAcq[iCamInd] = cogImage8Grey.Copy();
-                return ci8gAcq[iCamIndex];
-            }
-            catch(Exception ex)
-            {
-                OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): {ex.Message}");
+                OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 相机索引无效");
                 return null;
+            }
+
+            lock (_cameraFrameLocks[iCamIndex])
+            {
+                MyCamera.MV_FRAME_OUT frame = new MyCamera.MV_FRAME_OUT();
+                bool frameAcquired = false;
+                try
+                {
+                    CameraStatus currentStatus = GetCurrentCameraStatus();
+                    if (currentStatus.iStatus[iCamIndex] < 2 ||
+                        _cameras == null || _cameras[iCamIndex] == null)
+                    {
+                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 相机未就绪");
+                        return null;
+                    }
+
+                    strTime[jobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+                    int frameResult = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref frame, 1000);
+                    if (frameResult != MyCamera.MV_OK)
+                    {
+                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): GetImageBuffer失败，SDK=0x{unchecked((uint)frameResult):X8}");
+                        return null;
+                    }
+
+                    frameAcquired = true;
+                    MyCamera.MV_FRAME_OUT_INFO_EX frameInfo = frame.stFrameInfo;
+                    if (frame.pBufAddr == IntPtr.Zero || frameInfo.nFrameLen == 0)
+                    {
+                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): SDK返回空帧");
+                        return null;
+                    }
+                    if (frameInfo.enPixelType != MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8)
+                    {
+                        OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 不支持的PixelFormat={frameInfo.enPixelType}，灰度入口仅支持Mono8");
+                        return null;
+                    }
+
+                    int frameLength = checked((int)frameInfo.nFrameLen);
+                    byte[] frameData = new byte[frameLength];
+                    Marshal.Copy(frame.pBufAddr, frameData, 0, frameLength);
+                    bImgSrcData[iCamIndex] = frameData;
+
+                    GCHandle pinnedFrame = GCHandle.Alloc(frameData, GCHandleType.Pinned);
+                    try
+                    {
+                        CogImage8Root localRoot = new CogImage8Root();
+                        localRoot.Initialize((int)frameInfo.nWidth, (int)frameInfo.nHeight,
+                            pinnedFrame.AddrOfPinnedObject(), (int)frameInfo.nWidth, null);
+                        CogImage8Grey localImage = new CogImage8Grey();
+                        localImage.SetRoot(localRoot);
+                        CogImage8Grey ownedImage = (CogImage8Grey)localImage.Copy();
+                        ci8gAcq[iCamIndex] = (CogImage8Grey)CogFlipRotateIm(ownedImage, jobIndex);
+                        return ci8gAcq[iCamIndex];
+                    }
+                    finally
+                    {
+                        pinnedFrame.Free();
+                    }
+                }
+                catch(Exception ex)
+                {
+                    OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): {ex.Message}");
+                    return null;
+                }
+                finally
+                {
+                    if (frameAcquired)
+                    {
+                        int freeResult = _cameras[iCamIndex].MV_CC_FreeImageBuffer_NET(ref frame);
+                        if (freeResult != MyCamera.MV_OK)
+                            OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): FreeImageBuffer失败，SDK=0x{unchecked((uint)freeResult):X8}");
+                    }
+                }
             }
         }
         /// <summary>采集单帧彩色图像转Cog格式,VP 算法使用     
         public CogImage24PlanarColor GrabOneFrameCogColor(int jobIndex,int iCamIndex)
         {
-            try
+            if (iCamIndex < 0 || iCamIndex >= maxCameraNum)
             {
-                CameraStatus currentStatus = GetCurrentCameraStatus();
-                if (currentStatus.iStatus[iCamIndex] < 2)
-                    return null;
-                strTime[jobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
-                /*if (_cameraStatus.iStatus[iCamIndex] < 2)
-                    return null;*/
-                if (_cameraType == 0)
-                {
-                    nRet = _cameras[iCamIndex].MV_CC_GetOneFrameTimeout_NET(m_BufForDriverS[iCamIndex], nPayloadSizeS[iCamIndex], ref stFrameInfo, 10000);
-                    if (nRet == MyCamera.MV_OK)
-                    {
-                        //保留byte[]型数据
-                        IntPtrToByteArray(m_BufForDriverS[iCamIndex], (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
-                        ci24ColorAcq[iCamIndex] = new CogImage24PlanarColor(IntPtrToBitmap(m_BufForDriverS[iCamIndex], stFrameInfo.nWidth, stFrameInfo.nHeight));
-                        //  nRet = _cameras[iCamInd].MV_CC_FreeImageBuffer_NET(ref stFrameInfoWithData);
-
-                    }
-                    else
-                    {
-                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
-                        return null;
-                    }
-                }
-                else
-                {
-                    nRet = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref stFrameInfoWithData, 1000);
-                    if (nRet == MyCamera.MV_OK)
-                    {
-                        MyCamera.MvGvspPixelType enType = MyCamera.MvGvspPixelType.PixelType_Gvsp_Undefined;
-                        if (IsColorPixelFormat(stFrameInfoWithData.stFrameInfo.enPixelType))
-                        {
-                            enType = MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed;
-
-                        }
-                        else if (IsMonoPixelFormat(stFrameInfoWithData.stFrameInfo.enPixelType))
-                        {
-                            enType = MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8;
-
-                        }
-                        else
-                        {
-                            Console.WriteLine("Don't need to convert!");
-                        }
-
-                        // 从 frameInfoForOther 中获取图像宽高和像素数据指针
-                        int width = (int)stFrameInfoWithData.stFrameInfo.nWidth;
-                        int height = (int)stFrameInfoWithData.stFrameInfo.nHeight;
-
-                        IntPtr imagePtr = stFrameInfoWithData.pBufAddr;
-                        //保留byte[]型数据
-                        IntPtrToByteArray(imagePtr, (int)nPayloadSizeS[iCamIndex], ref bImgSrcData[iCamIndex]);
-
-                        ci24ColorAcq[iCamIndex] = new CogImage24PlanarColor(IntPtrToBitmap(stFrameInfoWithData.pBufAddr, width, height));
-                        nRet = _cameras[iCamIndex].MV_CC_FreeImageBuffer_NET(ref stFrameInfoWithData);
-                    }
-                    else
-                    {
-                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 错误代码：{nRet}");
-                        return null;
-                    }
-                }
-                ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)CogFlipRotateIm(ci24ColorAcq[iCamIndex], jobIndex);
-                return ci24ColorAcq[iCamIndex];
-            }
-            catch (Exception ex)
-            {
-                OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): {ex.Message}");
+                OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 相机索引无效");
                 return null;
             }
 
+            lock (_cameraFrameLocks[iCamIndex])
+            {
+                MyCamera.MV_FRAME_OUT frame = new MyCamera.MV_FRAME_OUT();
+                bool frameAcquired = false;
+                try
+                {
+                    CameraStatus currentStatus = GetCurrentCameraStatus();
+                    if (currentStatus.iStatus[iCamIndex] < 2 ||
+                        _cameras == null || _cameras[iCamIndex] == null)
+                    {
+                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 相机未就绪");
+                        return null;
+                    }
+
+                    strTime[jobIndex] = DateTime.Now.ToString("yyyyMMddHHmmssFF");
+                    int frameResult = _cameras[iCamIndex].MV_CC_GetImageBuffer_NET(ref frame, 1000);
+                    if (frameResult != MyCamera.MV_OK)
+                    {
+                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): GetImageBuffer失败，SDK=0x{unchecked((uint)frameResult):X8}");
+                        return null;
+                    }
+
+                    frameAcquired = true;
+                    MyCamera.MV_FRAME_OUT_INFO_EX frameInfo = frame.stFrameInfo;
+                    if (frame.pBufAddr == IntPtr.Zero || frameInfo.nFrameLen == 0)
+                    {
+                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): SDK返回空帧");
+                        return null;
+                    }
+                    if (frameInfo.enPixelType != MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed &&
+                        frameInfo.enPixelType != MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed &&
+                        !IsBayerPixelFormat(frameInfo.enPixelType))
+                    {
+                        OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): 不支持的PixelFormat={frameInfo.enPixelType}，彩色入口仅支持BGR8/RGB8/Bayer8");
+                        return null;
+                    }
+
+                    int frameLength = checked((int)frameInfo.nFrameLen);
+                    byte[] frameData = new byte[frameLength];
+                    Marshal.Copy(frame.pBufAddr, frameData, 0, frameLength);
+
+                    int width = checked((int)frameInfo.nWidth);
+                    int height = checked((int)frameInfo.nHeight);
+                    int bgrLength = checked(width * height * 3);
+                    byte[] bgrData;
+                    if (IsBayerPixelFormat(frameInfo.enPixelType))
+                    {
+                        bgrData = BayerToBGR(frameData, width, height, frameInfo.enPixelType);
+                    }
+                    else
+                    {
+                        if (frameData.Length < bgrLength)
+                            throw new ArgumentException($"{frameInfo.enPixelType}帧长度小于BGR图像尺寸要求");
+
+                        bgrData = new byte[bgrLength];
+                        Buffer.BlockCopy(frameData, 0, bgrData, 0, bgrLength);
+                        if (frameInfo.enPixelType == MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed)
+                            ConvertRgbToBgrInPlace(bgrData, width, height);
+                    }
+
+                    bImgSrcData[iCamIndex] = bgrData;
+                    using (Bitmap bitmap = CreateBgrBitmap(bgrData, width, height))
+                    {
+                        CogImage24PlanarColor ownedImage = new CogImage24PlanarColor(bitmap);
+                        ci24ColorAcq[iCamIndex] = (CogImage24PlanarColor)CogFlipRotateIm(ownedImage, jobIndex);
+                    }
+                    return ci24ColorAcq[iCamIndex];
+                }
+                catch (Exception ex)
+                {
+                    OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): {ex.Message}");
+                    return null;
+                }
+                finally
+                {
+                    if (frameAcquired)
+                    {
+                        int freeResult = _cameras[iCamIndex].MV_CC_FreeImageBuffer_NET(ref frame);
+                        if (freeResult != MyCamera.MV_OK)
+                            OnErrorOccurred($"CogImage24PlanarColor (Job{jobIndex}, Cam{iCamIndex}): FreeImageBuffer失败，SDK=0x{unchecked((uint)freeResult):X8}");
+                    }
+                }
+            }
         }
         //采集一帧Cog格式图像
         public bool GrabOneFrameCogFormat(bool bRecord, bool bListProcess,int wsInd, int iCamIndex)
@@ -483,10 +524,27 @@ namespace CommonCls
 
             try
             {
+                ICogImage acquiredImage;
                 if (cup.p_Cam[iCamIndex].iMonoType == 0)
-                    GrabOneFrameCog(wsInd,iCamIndex);         //实时运行时采集一帧黑白Cog格式图像
+                {
+                    ci8gAcq[iCamIndex] = null;
+                    bImgSrcData[iCamIndex] = null;
+                    acquiredImage = GrabOneFrameCog(wsInd, iCamIndex); //实时运行时只采集当前工位对应相机
+                }
                 else
-                    GrabOneFrameCogColor(wsInd, iCamIndex);    //实时运行时采集一帧彩色Cog格式图像
+                {
+                    ci24ColorAcq[iCamIndex] = null;
+                    bImgSrcData[iCamIndex] = null;
+                    acquiredImage = GrabOneFrameCogColor(wsInd, iCamIndex); //实时运行时只采集当前工位对应相机
+                }
+
+                if (acquiredImage == null)
+                {
+                    strErrInfo = $"Job{wsInd} 对应 Cam{iCamIndex} 本轮取图失败";
+                    OnErrorOccurred($"GrabOneFrameCogFormat (Job{wsInd}, Cam{iCamIndex}): 本轮取图返回空图像");
+                    return false;
+                }
+
              //   OnErrorOccurred($"是否存储图像:{bRecord}");
                 if (bRecord)                        //判断保存运行时采集图像条件
                 {
@@ -1431,19 +1489,95 @@ namespace CommonCls
                     return false;
             }
         }
-        /// <summary>将 Bayer 格式字节数组转换为 BGR 字节数组</summary>
-        private byte[] BayerToBGR(byte[] bayerData, int width, int height, string bayerType)
+
+        private bool IsBayerPixelFormat(MyCamera.MvGvspPixelType pixelType)
         {
+            switch (pixelType)
+            {
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerRG8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGB8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGR8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerBG8:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void ConvertRgbToBgrInPlace(byte[] imageData, int width, int height)
+        {
+            int pixelDataLength = checked(width * height * 3);
+            if (imageData == null || imageData.Length < pixelDataLength)
+                throw new ArgumentException("RGB8帧长度小于图像尺寸要求");
+
+            for (int index = 0; index < pixelDataLength; index += 3)
+            {
+                byte red = imageData[index];
+                imageData[index] = imageData[index + 2];
+                imageData[index + 2] = red;
+            }
+        }
+
+        private Bitmap CreateBgrBitmap(byte[] imageData, int width, int height)
+        {
+            int sourceStride = checked(width * 3);
+            int requiredLength = checked(sourceStride * height);
+            if (imageData == null || imageData.Length < requiredLength)
+                throw new ArgumentException("BGR8帧长度小于图像尺寸要求");
+
+            Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            try
+            {
+                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                    ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+                try
+                {
+                    for (int row = 0; row < height; row++)
+                    {
+                        IntPtr destination = IntPtr.Add(bitmapData.Scan0, row * bitmapData.Stride);
+                        Marshal.Copy(imageData, row * sourceStride, destination, sourceStride);
+                    }
+                }
+                finally
+                {
+                    bitmap.UnlockBits(bitmapData);
+                }
+                return bitmap;
+            }
+            catch
+            {
+                bitmap.Dispose();
+                throw;
+            }
+        }
+
+        /// <summary>将 Bayer 格式字节数组转换为 BGR 字节数组</summary>
+        private byte[] BayerToBGR(byte[] bayerData, int width, int height, MyCamera.MvGvspPixelType pixelType)
+        {
+            int requiredLength = checked(width * height);
+            if (bayerData == null || bayerData.Length < requiredLength)
+                throw new ArgumentException($"{pixelType}帧长度小于Bayer图像尺寸要求");
+
             using (Mat bayerMat = new Mat(height, width, MatType.CV_8UC1, bayerData))
             using (Mat bgrMat = new Mat())
             {
-                ColorConversionCodes code = ColorConversionCodes.BayerBG2BGR;  //COLOR_BayerBG2BGR
-                switch (bayerType)
+                ColorConversionCodes code;
+                switch (pixelType)
                 {
-                    case "BayerRG": code = ColorConversionCodes.BayerRG2BGR; break;
-                    case "BayerGB": code = ColorConversionCodes.BayerGB2BGR; break;
-                    case "BayerGR": code = ColorConversionCodes.BayerGR2BGR; break;
-                    default: code = ColorConversionCodes.BayerBG2BGR; break;
+                    case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerRG8:
+                        code = ColorConversionCodes.BayerBG2BGR;
+                        break;
+                    case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGB8:
+                        code = ColorConversionCodes.BayerGR2BGR;
+                        break;
+                    case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGR8:
+                        code = ColorConversionCodes.BayerGB2BGR;
+                        break;
+                    case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerBG8:
+                        code = ColorConversionCodes.BayerRG2BGR;
+                        break;
+                    default:
+                        throw new NotSupportedException($"不支持的Bayer像素格式: {pixelType}");
                 }
                 Cv2.CvtColor(bayerMat, bgrMat, code);
                 byte[] result = new byte[bgrMat.Total() * bgrMat.Channels()];
@@ -1478,13 +1612,11 @@ namespace CommonCls
                 }
                 return bgr;
             }
-            else if (frameInfo.enPixelType >= MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerRG8 &&
-                     frameInfo.enPixelType <= MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerBG8)
+            else if (IsBayerPixelFormat(frameInfo.enPixelType))
             {
                 byte[] bayer = new byte[frameLen];
                 Marshal.Copy(bufferPtr, bayer, 0, frameLen);
-                string bayerType = frameInfo.enPixelType.ToString().Replace("PixelType_Gvsp_", "");
-                return BayerToBGR(bayer, width, height, bayerType);
+                return BayerToBGR(bayer, width, height, frameInfo.enPixelType);
             }
             else
             {
