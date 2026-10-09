@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Local GPU test runtime bundle (models, binaries, logs and test outputs)
+/bin_gpu_test/
