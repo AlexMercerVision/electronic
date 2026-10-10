@@ -42,6 +42,10 @@ namespace VisionApplication
         // 1. 常量
         private const int maxCameraNum = 2;                     // 最大支持的相机数量（工位数量）
         private const int maxJobNum = maxCameraNum;
+        private const int ioFeedbackJobCount = 2;               // 当前COM3控制器只接收Job0、Job1结果
+        private const int lightControllerSlotCount = 3;         // 前三路串口槽可用于光源，第4路固定为外部IO
+        private const int lightChannelCount = 4;                // 单台光源控制器固定四通道
+        private const string authorizationManagerMac = "345A60F4B131"; // 授权端物理主机
         // 2. 字段 - UI相关
         private Frm_Welcome fw;                                 // 欢迎窗体对象，用于显示启动进度
         private Protect mPasswordFile = new Protect("C:\\Users\\GearDet\\authentication.txt");  // 授权文件保护类
@@ -135,8 +139,8 @@ namespace VisionApplication
         private string strPlaybackFileList = "";                // 回放文件列表路径
         private int iProcess = 0;                               // 启动进度百分比
         private System.Timers.Timer timerIOIn;                  // IO输入检测定时器
-        private string[] strPortName;                           // 系统可用串口名称数组
         private List<int> comInd = new List<int>();              // 排序后的串口COM号列表
+        private readonly bool[] serialConfigErrorLogged = new bool[4]; // 防止定时重连重复记录同一配置错误
 
         // 11. 字段 - 统计相关
         private int iAcquisitionsTimes = 0;                     // 图像采集总次数
@@ -151,6 +155,17 @@ namespace VisionApplication
         private string strLogPath = "";                         // 日志文件保存路径
         private string strOrder = "";                           // 当前执行的指令
         private int icamSelectInd = -1;                         // 当前选中的相机索引（UI用）
+        private readonly List<int> cameraListPhysicalIndices = new List<int>(); // 相机列表项对应的物理相机索引
+        private readonly List<int> cameraListJobIndices = new List<int>();      // 相机列表项对应的工位索引
+        private readonly bool[,] lightOnStates = new bool[lightControllerSlotCount, lightChannelCount]; // 控制器槽×CH1~CH4最近一次成功状态
+        private readonly object ioFeedbackSync = new object();
+        private readonly bool[] ioFeedbackResult = new bool[ioFeedbackJobCount];
+        private readonly bool[] ioFeedbackReady = new bool[ioFeedbackJobCount];
+        private readonly bool[] ioFeedbackStarted = new bool[ioFeedbackJobCount];
+        private readonly bool[] ioFeedbackParticipating = new bool[ioFeedbackJobCount];
+        private bool ioFeedbackCycleActive = false;
+        private bool ioFeedbackOutputInProgress = false;
+        private long ioFeedbackCycleId = 0;
         private PMAlignParam pmaParam = new PMAlignParam();     // PMAlign参数
         private double[] dCalibPoint = new double[36];          // 标定点数据（图像坐标+物理坐标）
         private double[] dCalibPointIm = new double[18];        // 图像坐标（9点）
@@ -175,8 +190,18 @@ namespace VisionApplication
         public FrmMainUI()
         {            
             CheckForIllegalCrossThreadCalls = false;
-            InitializeComponent(); 
+            InitializeComponent();
+            InitializeIOFeedbackMenu();
+            tabControl1.TabPages.Remove(tabPageBase); // 主界面不显示未使用的模板匹配参数页
             InitUserParam(); 
+        }
+
+        private void InitializeIOFeedbackMenu()
+        {
+            // 菜单可见性由WinForms Designer维护；这里只调整现有菜单项的业务含义。
+            menuTask_OK.Text = "IO组合输出测试...";
+            menuTask_NG.Text = "Y1～Y8全部关闭";
+            menuTask_NG2.Visible = false;
         }
 
         // 15. 初始化方法
@@ -211,7 +236,10 @@ namespace VisionApplication
             {
                 vpWin.Width = mainWindWidth;
                 vpWin.Height = mainWindHeight;
-                vpWin.ViewLayout(iLayoutType); //调整控件分布
+                if (iJobIndex == 0 || iJobIndex == 1 || iJobIndex == -1)
+                    vpWin.SetWorkstationDisplayMode(iJobIndex);
+                else
+                    vpWin.ViewLayout(iLayoutType); //调整控件分布
             }            
         } 
       
@@ -233,38 +261,64 @@ namespace VisionApplication
                 case 4:
                     strErr = "AcqFifo状态异常"; 
                     break;
+                case 5:
+                    strErr = "VPP长度测量接口不匹配";
+                    if (vpWin != null && !string.IsNullOrWhiteSpace(vpWin.VppInterfaceValidationError))
+                        strErr += "：" + vpWin.VppInterfaceValidationError;
+                    break;
                  default:
                     strErr = "未知原因";
                     break;
             }
             return strErr;
         }
+
+        private static void WriteStartupLog(string message)
+        {
+            try
+            {
+                string logDir = "UserData";
+                if (!Directory.Exists(logDir))
+                    Directory.CreateDirectory(logDir);
+
+                string logPath = Path.Combine(logDir, "dl_init_debug.log");
+                File.AppendAllText(
+                    logPath,
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message + Environment.NewLine);
+            }
+            catch
+            {
+            }
+        }
         
         private void LoadVPFile(bool bReLoad)  //2025年10月4日  修改
         {
             string strVPPFile = "";
-           //判断算法文件是否存在
-            if (File.Exists(cup.p_Paf.strVPPFilePath))
+            string configuredVPP = cup.p_Paf.strVPPFilePath;
+            string vppFileName = Path.GetFileName(configuredVPP);
+            string bundledVPP = string.IsNullOrWhiteSpace(vppFileName)
+                ? ""
+                : Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VPP", vppFileName));
+
+            WriteStartupLog("[VPP] load start");
+            WriteStartupLog("[VPP] configured=" + (configuredVPP ?? ""));
+            WriteStartupLog("[VPP] bundled=" + bundledVPP);
+
+            // 优先使用用户配置的完整路径；配置文件不存在时才回退到程序 bin\VPP。
+            if (!string.IsNullOrWhiteSpace(configuredVPP) && File.Exists(configuredVPP))
             {
-                strVPPFile = cup.p_Paf.strVPPFilePath;
+                strVPPFile = Path.GetFullPath(configuredVPP);
                 rts.initStatus.bVPPFileExist = true;
             }
-            else //在VPP文件中查找
+            else if (!string.IsNullOrEmpty(bundledVPP) && File.Exists(bundledVPP))
             {
-                Path.GetFileName(cup.p_Paf.strVPPFilePath);
-                if (File.Exists(@".\VPP\"+ Path.GetFileName(cup.p_Paf.strVPPFilePath)))
-                {
-                    strVPPFile = @".\VPP\" + Path.GetFileName(cup.p_Paf.strVPPFilePath);
-                    rts.initStatus.bVPPFileExist = true;
-                }
-                else if(File.Exists(@".\" + Path.GetFileName(cup.p_Paf.strVPPFilePath)))
-                {
-                    strVPPFile = @".\VPP\" + Path.GetFileName(cup.p_Paf.strVPPFilePath);
-                    rts.initStatus.bVPPFileExist = true;
-                }
-                else
-                    rts.initStatus.bVPPFileExist = false;
+                strVPPFile = bundledVPP;
+                rts.initStatus.bVPPFileExist = true;
             }
+            else
+                rts.initStatus.bVPPFileExist = false;
+
+            WriteStartupLog("[VPP] selected=" + strVPPFile);
 
             if (rts.initStatus.bVPPFileExist)  //文件存在
             {
@@ -282,6 +336,7 @@ namespace VisionApplication
                     if(rts.initStatus.iVPPStatus==0)
                     {
                         rts.initStatus.bVPPInit = true;  //vpp文件完成初始化
+                        WriteStartupLog("[VPP] load success");
                         if (!bVPWinAttached)
                         {
                             bVPWinAttached = true;
@@ -299,6 +354,8 @@ namespace VisionApplication
                     else
                     {
                         rts.initStatus.bVPPInit = false;
+                        WriteStartupLog("[VPP] load failed; status=" + rts.initStatus.iVPPStatus
+                            + "; reason=" + VPPinitErr(rts.initStatus.iVPPStatus));
                         operLog.strOperEvent = "加载视觉算法文件";
                         operLog.iEventStatus = -1;
                         operLog.strFailReason =  VPPinitErr(rts.initStatus.iVPPStatus);
@@ -308,15 +365,16 @@ namespace VisionApplication
                     //  toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
                     if (cup.p_VPPRTP.bVisionInfer)
                     {
-                        this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                        this.Text = "电极帽检测   " + strVPPFile;
                     }
                     else
                         this.Text = "电极帽检测   " + cup.p_DL.modelPath;
 
                 }
-                catch
+                catch (Exception ex)
                 {
                     rts.initStatus.bVPPInit = false;
+                    WriteStartupLog("[VPP] load failed; exception=" + ex.GetType().FullName + ": " + ex.Message);
                     operLog.strOperEvent = "加载视觉算法文件";
                     operLog.iEventStatus = -1;
                     operLog.strFailReason =  VPPinitErr(rts.initStatus.iVPPStatus);
@@ -326,6 +384,7 @@ namespace VisionApplication
             }
             else    //**2023年7月30日  //文件不存在
             {
+                WriteStartupLog("[VPP] load failed; file not found");
 
                 this.vpWin = new VisionControl.VisionControl();
                 
@@ -371,6 +430,7 @@ namespace VisionApplication
         //初始化VisionControl
         private void InitVisionControl()
         {
+            WriteStartupLog("[VisionControl] init start");
             try
             {
                 csd.p_LS = cup.p_LS;
@@ -389,6 +449,8 @@ namespace VisionApplication
                 vpWin.SetAcqFIFO(acqFIFO);
                 vpWin.JobResultReady -= OnJobResultReady;
                 vpWin.JobResultReady += OnJobResultReady;
+                vpWin.PreviewStatusChanged -= OnPreviewStatusFromVP;
+                vpWin.PreviewStatusChanged += OnPreviewStatusFromVP;
                 vpWin.InitBG();
                 operLog.iEventStatus = 0;
 
@@ -400,10 +462,12 @@ namespace VisionApplication
                 }
                 // 订阅 AcqFIFO 错误事件
                 acqFIFO.ErrorOccurred += OnAcqFIFOError;
+                WriteStartupLog("[VisionControl] init completed");
             }
-            catch
+            catch (Exception ex)
             {
                 operLog.iEventStatus = -1;
+                WriteStartupLog("[VisionControl] init failed; exception=" + ex.GetType().FullName + ": " + ex.Message);
             }
            
         }
@@ -416,6 +480,31 @@ namespace VisionApplication
             operLog.strFailReason = errorMessage;
             AddLog();
         }
+
+        private void OnPreviewStatusFromVP(int jobIndex, int cameraIndex, int status, string message)
+        {
+            if (IsDisposed)
+                return;
+
+            if (InvokeRequired)
+            {
+                try
+                {
+                    BeginInvoke(new Action<int, int, int, string>(OnPreviewStatusFromVP),
+                        jobIndex, cameraIndex, status, message);
+                }
+                catch (InvalidOperationException)
+                {
+                    // 窗体关闭过程中不再写入界面日志。
+                }
+                return;
+            }
+
+            operLog.iEventStatus = status;
+            operLog.strOperEvent = $"实时预览-工位{jobIndex + 1}/相机{cameraIndex + 1}";
+            operLog.strFailReason = message;
+            AddLog();
+        }
         private void OnAcqFIFOError(object sender, string errorMessage)
         {
             // 调用日志记录（AddLog 内部已处理跨线程）
@@ -426,7 +515,7 @@ namespace VisionApplication
         }
         //初始化深度学习模型
         //初始化深度学习模型
-        private void InitDL()
+        private int InitDL()
         {
             int iRet = -1;
             operLog.strOperEvent = "加载深度学习模型";
@@ -436,7 +525,7 @@ namespace VisionApplication
                 try
                 {
                     iRet = cdl.InitDL(cup.p_DL);
-                    if (iRet == -1)
+                    if (iRet != 0)
                     {
                         rts.initStatus.bDLModelInit = false;
                         cup.p_VPPRTP.bDeepInfer = false;
@@ -468,6 +557,7 @@ namespace VisionApplication
                 }
                 catch
                 {
+                    rts.initStatus.bDLModelInit = false;
                     cup.p_VPPRTP.bDeepInfer = false;
                     menuTask_DeepInfer.Checked = false;
                     operLog.iEventStatus = -1;
@@ -478,6 +568,7 @@ namespace VisionApplication
             }
             else
             {
+                rts.initStatus.bDLModelInit = false;
                 cup.p_VPPRTP.bDeepInfer = false;
                 rts.initStatus.bDLModelPathExist = false;
                 menuTask_DeepInfer.Checked = false;
@@ -495,60 +586,68 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
             }
             AddLog();
+            return iRet;
         }
         //工程拷贝后可能存在盘符不一致情况，修改路径盘符
         private void ReplaceDrive()
         {
-            string tmppath;
-            string curDriver = Environment.CurrentDirectory.Substring(0, 1);
-            if (!File.Exists(cup.p_Paf.strVPPFilePath))
+            string oldVppPath = cup.p_Paf.strVPPFilePath;
+            string oldConSavePath = cup.p_Paf.strConSavePath;
+            string oldErrPath = cup.p_Paf.strErrPath;
+            string oldExportPath = cup.p_Paf.strExportPath;
+            string oldLogPath = cup.p_Paf.strLogPath;
+            string oldPlaybackPath = cup.p_Paf.strPlaybackPath;
+            string oldResSavePath = cup.p_Paf.strResSavePath;
+            string oldSigSavePath = cup.p_Paf.strSigSavePath;
+
+            cup.p_Paf.strVPPFilePath = ReplaceDriveIfExists(oldVppPath, true);
+            cup.p_Paf.strConSavePath = ReplaceDriveIfExists(oldConSavePath, false);
+            cup.p_Paf.strErrPath = ReplaceDriveIfExists(oldErrPath, false);
+            cup.p_Paf.strExportPath = ReplaceDriveIfExists(oldExportPath, false);
+            cup.p_Paf.strLogPath = ReplaceDriveIfExists(oldLogPath, false);
+            cup.p_Paf.strPlaybackPath = ReplaceDriveIfExists(oldPlaybackPath, false);
+            cup.p_Paf.strResSavePath = ReplaceDriveIfExists(oldResSavePath, false);
+            cup.p_Paf.strSigSavePath = ReplaceDriveIfExists(oldSigSavePath, false);
+
+            if (!string.Equals(oldVppPath, cup.p_Paf.strVPPFilePath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldConSavePath, cup.p_Paf.strConSavePath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldErrPath, cup.p_Paf.strErrPath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldExportPath, cup.p_Paf.strExportPath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldLogPath, cup.p_Paf.strLogPath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldPlaybackPath, cup.p_Paf.strPlaybackPath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldResSavePath, cup.p_Paf.strResSavePath, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(oldSigSavePath, cup.p_Paf.strSigSavePath, StringComparison.OrdinalIgnoreCase))
             {
-                tmppath = curDriver + cup.p_Paf.strVPPFilePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strVPPFilePath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strConSavePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strConSavePath = tmppath;
-                }
-                try { tmppath = curDriver + cup.p_Paf.strErrPath.Substring(1); }
-                catch { };
-                
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strErrPath = tmppath;
-                }
-                try { tmppath = curDriver + cup.p_Paf.strExportPath.Substring(1); }
-                catch { }  ;
-             
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strExportPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strLogPath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strLogPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strPlaybackPath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strPlaybackPath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strResSavePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strResSavePath = tmppath;
-                }
-                tmppath = curDriver + cup.p_Paf.strSigSavePath.Substring(1);
-                if (File.Exists(tmppath))
-                {
-                    cup.p_Paf.strSigSavePath = tmppath;
-                }
                 SaveUserParam();
             }
+        }
+
+        private string ReplaceDriveIfExists(string path, bool isFile)
+        {
+            if (string.IsNullOrWhiteSpace(path) ||
+                !Path.IsPathRooted(path) ||
+                path.Length < 3 ||
+                path[1] != ':')
+            {
+                return path;
+            }
+
+            bool originalExists = isFile ? File.Exists(path) : Directory.Exists(path);
+            if (originalExists)
+                return path;
+
+            string currentRoot = Path.GetPathRoot(Environment.CurrentDirectory);
+            string sourceRoot = Path.GetPathRoot(path);
+            if (string.IsNullOrEmpty(currentRoot) ||
+                string.IsNullOrEmpty(sourceRoot) ||
+                string.Equals(currentRoot, sourceRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return path;
+            }
+
+            string candidate = currentRoot + path.Substring(sourceRoot.Length);
+            bool candidateExists = isFile ? File.Exists(candidate) : Directory.Exists(candidate);
+            return candidateExists ? candidate : path;
         }
         //初始化用户参数
         private void InitUserParam()
@@ -558,7 +657,6 @@ namespace VisionApplication
 
             //初始化运行时状态，开机可用
             {
-                cup.p_VPPRTP.bAcqFromCam = true;
                 cup.p_VPPRTP.bRecord = false;
                  
             }
@@ -694,14 +792,21 @@ namespace VisionApplication
         private bool InitLocalFile()
         {
             int len = 0;
+            int expectedGroupLen = -1;
             bool bRet = true;
+            bool hasEnabledCamera = false;
+            iFileGroupLen = 0;
+            strFiles = new string[maxCameraNum][];
+            acqFIFO.strFiles = strFiles;
+            rts.initStatus.bLocalFileExist = false;
+            rts.initStatus.bLocalFileRegular = false;
             operLog.strOperEvent = "回放数据检查";
+            operLog.strFailReason = string.Empty;
             if (!Directory.Exists(cup.p_Paf.strPlaybackPath))
             {
-                rts.initStatus.bLocalFileExist = false;
                 bRet = false;
                 operLog.iEventStatus = -1;
-                operLog.strFailReason = "回放数据目录不存在";
+                operLog.strFailReason = "回放数据目录不存在: " + cup.p_Paf.strPlaybackPath;
             }
             else
             {
@@ -711,19 +816,15 @@ namespace VisionApplication
                     {
                         if (cup.p_CD.bListProcess[i])
                         {
-                            string strPathDir = cup.p_Paf.strPlaybackPath + cup.p_LI.strCamPrefix[i];
-                            if (cup.p_Paf.strPlaybackPath.Substring(cup.p_Paf.strPlaybackPath.Length - 1, 1) != "\\")
-                            {
-                                strPathDir = cup.p_Paf.strPlaybackPath + "\\" + cup.p_LI.strCamPrefix[i];
-                            }
-
-
+                            hasEnabledCamera = true;
+                            string strPathDir = Path.Combine(
+                                cup.p_Paf.strPlaybackPath,
+                                cup.p_LI.strCamPrefix[i] ?? string.Empty);
                             if (!Directory.Exists(strPathDir))  //不存在子文件夹
                             {
-                                rts.initStatus.bLocalFileExist = false;
                                 bRet = false;
                                 operLog.iEventStatus = -1;
-                                operLog.strFailReason = "回放数据子目录不存在";
+                                operLog.strFailReason = "回放数据子目录不存在: " + strPathDir;
                             }
                             else
                             {
@@ -743,46 +844,51 @@ namespace VisionApplication
 
                                 if (strFiles[i] != null && strFiles[i].Length > 0)
                                 {
-                                    if (i == 0)
+                                    if (iPerGroupLen <= 0 || strFiles[i].Length % iPerGroupLen != 0)
                                     {
-                                        len = strFiles[i].Length / iPerGroupLen;
+                                        bRet = false;
+                                        rts.initStatus.bLocalFileRegular = false;
+                                        operLog.strFailReason = "回放图片数量无法组成完整图片组: " + strPathDir;
                                     }
-                                    acqFIFO.cmAcqNum = 1;
-
+                                    else
+                                    {
+                                        int currentGroupLen = strFiles[i].Length / iPerGroupLen;
+                                        if (expectedGroupLen < 0)
+                                        {
+                                            expectedGroupLen = currentGroupLen;
+                                            len = currentGroupLen;
+                                        }
+                                        else if (currentGroupLen != expectedGroupLen)
+                                        {
+                                            bRet = false;
+                                            rts.initStatus.bLocalFileRegular = false;
+                                            operLog.strFailReason = "各回放子目录图片数量不一致: " + strPathDir;
+                                        }
+                                        acqFIFO.cmAcqNum = 1;
+                                    }
                                 }
-                                else   //没有图像文件
+                                else
                                 {
-                                    rts.initStatus.bLocalFileRegular = false;
                                     bRet = false;
-                                    operLog.strFailReason = "子目录图像文件不存在";
-                                    //operLog.strOperEvent = "回放数据图像文件检查";
+                                    operLog.strFailReason = "子目录图像文件不存在: " + strPathDir;
                                 }
                             }
 
                         }
                     }
-                    if (bRet)  //文件夹存在，图像文件存在，比较文件是否数量是否正常
+                    if (!hasEnabledCamera)
                     {
-                        for (int i = 0; i < maxCameraNum; i++)
-                        {
-                            if (cup.p_CD.bListProcess[i])
-                            {
-                                /* if( strFiles[i].Length%6 !=0 || strFiles[i].Length / 6!=len)
-                                  {
-                                      rts.initStatus.bLocalFileRegular = false;
-                                      bRet = false;
-                                      operLog.strFailReason = "子目录图像文件数量异常";
-                                     // operLog.strOperEvent = "回放数据图像文件检查";
-                                  }*/
-                            }
-                        }
+                        bRet = false;
+                        operLog.strFailReason = "没有启用任何回放工位";
+                    }
+                    else if (expectedGroupLen <= 0)
+                    {
+                        bRet = false;
+                        operLog.strFailReason = "回放图片组数量为 0";
                     }
                 }
                 catch (Exception ex)
                 {
-                    rts.initStatus.bLocalFileExist = false;
-                    rts.initStatus.bLocalFileRegular = false;
-                    // operLog.strOperEvent = "回放数据文件夹检查";
                     operLog.strFailReason = ex.Message;
                     bRet = false;
                 }
@@ -798,6 +904,7 @@ namespace VisionApplication
                 iFileGroupLen = len;
                 acqFIFO.strFiles = strFiles;
                 rts.initStatus.bLocalFileExist = true;
+                rts.initStatus.bLocalFileRegular = true;
                 //   operLog.strOperEvent = "回放数据检查";
                 operLog.iEventStatus = 0;
                 //   AddLog();
@@ -859,7 +966,7 @@ namespace VisionApplication
                         if (cup.p_CD.bListProcess[i])
                         {
                             string strPathDir = strLivePath + cup.p_LI.strCamPrefix[i];
-                            if (strLivePath.Substring(cup.p_Paf.strPlaybackPath.Length - 1, 1) != "\\")
+                            if (strLivePath.Substring(strLivePath.Length - 1, 1) != "\\")
                             {
                                 strPathDir = strLivePath + "\\" + cup.p_LI.strCamPrefix[i];
                             }
@@ -1168,17 +1275,30 @@ namespace VisionApplication
                     operLog.strFailReason = "获取相机数据量大小失败";
                     AddLog();
                     break;
+                case -7:
+                    rts.initStatus.bCamPrepared = false;
+                    rts.initStatus.bCamInit = false;
+                    rts.initStatus.strCamInit = "相机序列号映射失败";
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "初始化相机";
+                    operLog.strFailReason = "A/B工位序列号缺失、重复或对应相机未连接";
+                    AddLog();
+                    break;
                     // ... 其他 case 保持不变 ...
             }
 
             // ✅ 更新相机列表信息（只显示启用的相机）
             cbDeviceList.Items.Clear();
+            cameraListPhysicalIndices.Clear();
+            cameraListJobIndices.Clear();
             for (int i = 0; i < maxCameraNum; i++)
             {
                 // 只有当任务启用且相机索引有效时才添加到列表
                 if (cup.p_CD.bListProcess[i] && cup.p_CD.camInd[i] < cameraNum && items.Count > cup.p_CD.camInd[i])
                 {
                     cbDeviceList.Items.Add(items[cup.p_CD.camInd[i]]);
+                    cameraListPhysicalIndices.Add(cup.p_CD.camInd[i]);
+                    cameraListJobIndices.Add(i);
                 }
             }
 
@@ -1332,6 +1452,172 @@ namespace VisionApplication
             return bSucc;
         }
        
+        private static string GetCameraSerialKey(string cameraIdentity)
+        {
+            if (string.IsNullOrWhiteSpace(cameraIdentity))
+                return string.Empty;
+
+            string[] parts = cameraIdentity.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length == 0 ? string.Empty : parts[parts.Length - 1];
+        }
+
+        private void EnsureCameraSerialBindingArray()
+        {
+            int requiredLength = cup.p_CD.camInd != null ? cup.p_CD.camInd.Length : cup.p_Cam.Length;
+            if (cup.p_CD.camSerial != null && cup.p_CD.camSerial.Length >= requiredLength)
+                return;
+
+            string[] bindings = new string[requiredLength];
+            if (cup.p_CD.camSerial != null)
+                Array.Copy(cup.p_CD.camSerial, bindings, cup.p_CD.camSerial.Length);
+            cup.p_CD.camSerial = bindings;
+        }
+
+        /// <summary>
+        /// 使用每个工位保存的硬件序列号生成本次运行的物理索引。
+        /// 旧参数没有工位序列号时，只迁移一次，并确保同一物理相机不会分配给两个启用工位。
+        /// </summary>
+        private bool TryMapJobsByCameraSerial(List<string> deviceNames, out bool mappingChanged)
+        {
+            mappingChanged = false;
+            EnsureCameraSerialBindingArray();
+
+            string[] legacyPhysicalNames = new string[cup.p_Cam.Length];
+            for (int i = 0; i < cup.p_Cam.Length; i++)
+                legacyPhysicalNames[i] = cup.p_Cam[i].strCamName;
+
+            Dictionary<string, int> serialToIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            string[] enumeratedSerials = new string[deviceNames.Count];
+            bool mappingValid = true;
+
+            for (int i = 0; i < deviceNames.Count; i++)
+            {
+                string serial = GetCameraSerialKey(deviceNames[i]);
+                enumeratedSerials[i] = serial;
+                if (string.IsNullOrEmpty(serial) || serialToIndex.ContainsKey(serial))
+                {
+                    mappingValid = false;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "相机序列号异常";
+                    operLog.strFailReason = string.IsNullOrEmpty(serial)
+                        ? $"无法从设备信息中提取序列号: {deviceNames[i]}"
+                        : $"序列号 {serial} 出现多次";
+                    AddLog();
+                    continue;
+                }
+                serialToIndex.Add(serial, i);
+            }
+
+            bool[] usedPhysicalIndices = new bool[deviceNames.Count];
+            bool[] mappedJobs = new bool[maxJobNum];
+
+            // 第一阶段：优先恢复已经保存的工位序列号，枚举顺序变化不会改变工位归属。
+            for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
+            {
+                if (!cup.p_CD.bListProcess[jobIndex])
+                    continue;
+
+                string savedSerial = GetCameraSerialKey(cup.p_CD.camSerial[jobIndex]);
+                if (string.IsNullOrEmpty(savedSerial))
+                    continue;
+
+                if (!serialToIndex.TryGetValue(savedSerial, out int physicalIndex))
+                {
+                    mappingValid = false;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{jobIndex + 1}相机映射失败";
+                    operLog.strFailReason = $"未找到绑定序列号:{savedSerial}; 当前相机:{string.Join(",", enumeratedSerials)}";
+                    AddLog();
+                    continue;
+                }
+
+                if (usedPhysicalIndices[physicalIndex])
+                {
+                    mappingValid = false;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{jobIndex + 1}相机映射失败";
+                    operLog.strFailReason = $"序列号 {savedSerial} 已被其他启用工位占用";
+                    AddLog();
+                    continue;
+                }
+
+                if (cup.p_CD.camInd[jobIndex] != physicalIndex ||
+                    !string.Equals(cup.p_CD.camSerial[jobIndex], savedSerial, StringComparison.Ordinal))
+                    mappingChanged = true;
+
+                cup.p_CD.camInd[jobIndex] = physicalIndex;
+                cup.p_CD.camSerial[jobIndex] = savedSerial;
+                usedPhysicalIndices[physicalIndex] = true;
+                mappedJobs[jobIndex] = true;
+            }
+
+            // 第二阶段：仅迁移没有工位序列号的旧参数。优先使用旧槽位中仍有效且未占用的序列号，
+            // 否则分配唯一的剩余相机；迁移后以后启动不再依赖相机1/相机2编号。
+            for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
+            {
+                if (!cup.p_CD.bListProcess[jobIndex] || mappedJobs[jobIndex] ||
+                    !string.IsNullOrEmpty(GetCameraSerialKey(cup.p_CD.camSerial[jobIndex])))
+                    continue;
+
+                int physicalIndex = -1;
+                int oldIndex = cup.p_CD.camInd[jobIndex];
+                string legacySerial = oldIndex >= 0 && oldIndex < legacyPhysicalNames.Length
+                    ? GetCameraSerialKey(legacyPhysicalNames[oldIndex])
+                    : string.Empty;
+
+                if (!string.IsNullOrEmpty(legacySerial) &&
+                    serialToIndex.TryGetValue(legacySerial, out int legacyIndex) &&
+                    !usedPhysicalIndices[legacyIndex])
+                {
+                    physicalIndex = legacyIndex;
+                }
+                else
+                {
+                    for (int i = 0; i < usedPhysicalIndices.Length; i++)
+                    {
+                        if (!usedPhysicalIndices[i])
+                        {
+                            physicalIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (physicalIndex < 0)
+                {
+                    mappingValid = false;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{jobIndex + 1}相机映射失败";
+                    operLog.strFailReason = "没有未占用的物理相机可用于旧参数迁移";
+                    AddLog();
+                    continue;
+                }
+
+                cup.p_CD.camInd[jobIndex] = physicalIndex;
+                cup.p_CD.camSerial[jobIndex] = enumeratedSerials[physicalIndex];
+                usedPhysicalIndices[physicalIndex] = true;
+                mappedJobs[jobIndex] = true;
+                mappingChanged = true;
+
+                operLog.iEventStatus = 0;
+                operLog.strOperEvent = $"工位{jobIndex + 1}相机序列号迁移";
+                operLog.strFailReason = $"绑定序列号:{enumeratedSerials[physicalIndex]}, 物理索引:{physicalIndex}";
+                AddLog();
+            }
+
+            // p_Cam 仍按物理索引保存参数，只刷新该槽位当前真实设备名称，不改变其他参数语义。
+            for (int i = 0; i < deviceNames.Count && i < cup.p_Cam.Length; i++)
+            {
+                if (!string.Equals(cup.p_Cam[i].strCamName, deviceNames[i], StringComparison.Ordinal))
+                {
+                    cup.p_Cam[i].strCamName = deviceNames[i];
+                    mappingChanged = true;
+                }
+            }
+
+            return mappingValid;
+        }
+
         private void InitCam()
         {
             int iInitType = 0; // 0:正常初始化 -1:没有可用相机
@@ -1350,100 +1636,19 @@ namespace VisionApplication
                 items = hIKVisionCamera.EnumDevices();
 
 
-                // ---- 新增：序列号重映射 ----
+                // 按工位保存的硬件序列号重建本次运行的物理索引。
                 if (items.Count > 0)
                 {
-                    // 1. 建立当前枚举的 序列号→物理索引 映射
-                    Dictionary<string, int> serialToIndex = new Dictionary<string, int>();
-                    for (int i = 0; i < items.Count; i++)
-                    {
-                        if (!serialToIndex.ContainsKey(items[i]))
-                        {
-                            serialToIndex.Add(items[i], i);
-                            
-                        }
-                        else
-                        {
-                            // 理论上序列号唯一，若重复则记录错误
-                            operLog.iEventStatus = -1;
-                            operLog.strOperEvent = "相机序列号重复";
-                            operLog.strFailReason = $"序列号 {items[i]} 出现多次";
-                            AddLog();
-                        }
-                    }
-
-                    // 2. 遍历所有工位，重新映射物理索引
-                    bool mappingChanged = false;
-                    for (int i = 0; i < maxJobNum; i++)
-                    {
-                        if (!cup.p_CD.bListProcess[i]) continue;   // 未启用的工位跳过
-
-                        int oldIdx = cup.p_CD.camInd[i];            // 当前配置的物理索引
-                        string savedSerial = "";
-                        if (oldIdx >= 0 && oldIdx < cup.p_Cam.Length)
-                            savedSerial = cup.p_Cam[oldIdx].strCamName;  // 该索引下保存的序列号
-
-                        if (!string.IsNullOrEmpty(savedSerial) && serialToIndex.TryGetValue(savedSerial, out int newIdx))
-                        {
-                            // 找到匹配，更新物理索引
-                            if (oldIdx != newIdx)
-                            {
-                                // 索引变化：参数应跟随相机（复制参数到新索引）
-                                // CopyCameraParam(cup.p_Cam[oldIdx], ref cup.p_Cam[newIdx]);
-                                // 清空旧索引的序列号，避免后续误用
-                                //   cup.p_Cam[oldIdx].strCamName = "";
-                                cup.p_Cam[oldIdx].strCamName = items[newIdx];  // 更新当前相机的序列号
-                                cup.p_CD.camInd[i] = newIdx;
-                                mappingChanged = true;
-
-                                operLog.iEventStatus = 2;
-                                operLog.strOperEvent = $"工位{i + 1}相机映射更新";
-                                operLog.strFailReason = $"序列号 {savedSerial} 从索引 {oldIdx} 移至 {newIdx}";
-                                AddLog();
-                            }
-                            // 确保当前索引的序列号正确（防止手动修改）
-                          //  cup.p_Cam[newIdx].strCamName = savedSerial;
-                        }
-                        else
-                        {
-                            // 未找到匹配：可能是新相机或序列号丢失，自动分配一个空闲索引
-                            // 简单策略：从0开始找第一个未被任何工位使用的索引
-                            bool[] used = new bool[cameraNum];
-                            for (int j = 0; j < maxCameraNum; j++)
-                            {
-                                if (cup.p_CD.bListProcess[j] && cup.p_CD.camInd[j] < cameraNum)
-                                    used[cup.p_CD.camInd[j]] = true;
-                            }
-                            int freeIdx = -1;
-                            for (int k = 0; k < cameraNum; k++)
-                            {
-                                if (!used[k]) { freeIdx = k; break; }
-                            }
-                            if (freeIdx >= 0)
-                            {
-                                cup.p_CD.camInd[i] = freeIdx;
-                                // 将该相机的序列号保存到新索引
-                                cup.p_Cam[freeIdx].strCamName = items[freeIdx];
-                                mappingChanged = true;
-                                operLog.iEventStatus = -1;
-                                operLog.strOperEvent = $"工位{i + 1}未匹配序列号，自动分配索引{freeIdx}";
-                                operLog.strFailReason = $"保存序列号:{savedSerial}, 当前可用序列号:{string.Join(",", items)}";
-                                AddLog();
-                            }
-                            else
-                            {
-                                // 无空闲索引，保持原索引（可能越界），但记录错误
-                                operLog.iEventStatus = -1;
-                                operLog.strOperEvent = $"工位{i + 1}映射失败";
-                                operLog.strFailReason = $"无可用相机索引，原序列号:{savedSerial}";
-                                AddLog();
-                            }
-                        }
-                    }
-
-                    // 如果映射发生变化，保存配置
+                    bool mappingValid = TryMapJobsByCameraSerial(items, out bool mappingChanged);
                     if (mappingChanged)
                         SaveUserParam();
+
+                    if (!mappingValid)
+                    {
+                        iInitType = -7;
+                        bNeedCleanup = true;
+                        goto outofInit;
+                    }
                 }
                 // 2. 检查每个工位配置的相机编号是否有效，无效则禁用
                 bool bAnyProcessEnabled = false;
@@ -1759,31 +1964,91 @@ namespace VisionApplication
             return true;
         }
 
-        private void StartGrab(int iCamInd)
+        private bool StartGrab(int iCamInd)
         {
-            if (hIKVisionCamera.StartGrabbing(iCamInd))
+            try
             {
-                rts.cs.iStatus[iCamInd] = 3;    //相机开启采集
-                /*
-                                operLog.strOperEvent = items[iCamInd] + "-" + (iCamInd + 1) + "启动采集";
-                                operLog.iEventStatus = 0;*/
+                int sdkResult = hIKVisionCamera.StartGrabbing(iCamInd);
+                bool success = sdkResult == MyCamera.MV_OK;
+                SyncCameraStatus(iCamInd, success ? 3 : 1);
+
+                string serial = cup.p_Cam != null && iCamInd >= 0 && iCamInd < cup.p_Cam.Length
+                    ? cup.p_Cam[iCamInd].strCamName
+                    : string.Empty;
+                string jobs = GetJobsForCamera(iCamInd);
+                string runtimeState = GetCameraRuntimeState(iCamInd);
+
+                operLog.strOperEvent = $"启动相机采集-Cam{iCamInd}";
+                operLog.iEventStatus = success ? 0 : -1;
+                operLog.strFailReason =
+                    $"Jobs={jobs}, Cam{iCamInd}, Serial={serial}, StartGrabbing SDK=0x{unchecked((uint)sdkResult):X8}; {runtimeState}";
+                AddLog();
+                return success;
             }
-            else
+            catch (Exception ex)
             {
-                // strError = items[iCamInd] + "-" + (iCamInd + 1) + "启动采集失败";
-                /*  operLog.strOperEvent = items[iCamInd] + "-" + (iCamInd + 1) + "启动采集";
-                  operLog.iEventStatus = -1;*/
+                SyncCameraStatus(iCamInd, 1);
+                operLog.strOperEvent = $"启动相机采集-Cam{iCamInd}";
+                operLog.iEventStatus = -1;
+                operLog.strFailReason = $"Cam{iCamInd} StartGrabbing异常: {ex.Message}";
+                AddLog();
+                return false;
             }
-            //   AddLog();
         }
-        private void StartGrab()
+
+        private bool StartGrab()
         {
-            //   string strError;
+            bool allSucceeded = true;
             for (int iCamInd = 0; iCamInd < cameraNum; iCamInd++)
             {
-                StartGrab(iCamInd);
+                if (!StartGrab(iCamInd))
+                    allSucceeded = false;
             }
+            return allSucceeded;
+        }
 
+        private string GetJobsForCamera(int cameraIndex)
+        {
+            List<string> jobs = new List<string>();
+            for (int jobIndex = 0; jobIndex < maxCameraNum; jobIndex++)
+            {
+                if (cup.p_CD.bListProcess[jobIndex] && cup.p_CD.camInd[jobIndex] == cameraIndex)
+                    jobs.Add($"Job{jobIndex}");
+            }
+            return jobs.Count > 0 ? string.Join(",", jobs) : "未分配启用工位";
+        }
+
+        private string GetCameraRuntimeState(int cameraIndex)
+        {
+            if (camera2 == null || cameraIndex < 0 || cameraIndex >= camera2.Length || camera2[cameraIndex] == null)
+                return "TriggerMode/TriggerSource/PixelFormat=相机对象无效";
+
+            try
+            {
+                MyCamera.MVCC_ENUMVALUE triggerMode = new MyCamera.MVCC_ENUMVALUE();
+                MyCamera.MVCC_ENUMVALUE triggerSource = new MyCamera.MVCC_ENUMVALUE();
+                MyCamera.MVCC_ENUMVALUE pixelFormat = new MyCamera.MVCC_ENUMVALUE();
+                int modeResult = camera2[cameraIndex].MV_CC_GetEnumValue_NET("TriggerMode", ref triggerMode);
+                int sourceResult = camera2[cameraIndex].MV_CC_GetEnumValue_NET("TriggerSource", ref triggerSource);
+                int pixelResult = camera2[cameraIndex].MV_CC_GetEnumValue_NET("PixelFormat", ref pixelFormat);
+
+                string modeText = modeResult == MyCamera.MV_OK
+                    ? $"{(MyCamera.MV_CAM_TRIGGER_MODE)triggerMode.nCurValue}({triggerMode.nCurValue})"
+                    : $"读取失败(0x{unchecked((uint)modeResult):X8})";
+                string sourceText = sourceResult == MyCamera.MV_OK
+                    ? $"{(MyCamera.MV_CAM_TRIGGER_SOURCE)triggerSource.nCurValue}({triggerSource.nCurValue})"
+                    : $"读取失败(0x{unchecked((uint)sourceResult):X8})";
+                string pixelText = pixelResult == MyCamera.MV_OK
+                    ? $"{(MyCamera.MvGvspPixelType)pixelFormat.nCurValue}(0x{pixelFormat.nCurValue:X8})"
+                    : $"读取失败(0x{unchecked((uint)pixelResult):X8})";
+
+                return $"TriggerMode={modeText}, TriggerSource={sourceText}, PixelFormat={pixelText}";
+            }
+            catch (Exception ex)
+            {
+                // 诊断读取失败不能改变 StartGrabbing 的真实结果。
+                return $"TriggerMode/TriggerSource/PixelFormat读取异常: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -1841,6 +2106,27 @@ namespace VisionApplication
         #endregion
 
         #region 自定义操作区
+        private List<int> GetCurrentJobTargets()
+        {
+            List<int> jobIndices = new List<int>();
+            if (iJobIndex >= 0 && iJobIndex < maxCameraNum)
+            {
+                if (cup.p_CD.bListProcess[iJobIndex])
+                    jobIndices.Add(iJobIndex);
+                return jobIndices;
+            }
+
+            if (iJobIndex == -1)
+            {
+                for (int jobIndex = 0; jobIndex < maxCameraNum; jobIndex++)
+                {
+                    if (cup.p_CD.bListProcess[jobIndex])
+                        jobIndices.Add(jobIndex);
+                }
+            }
+            return jobIndices;
+        }
+
         private bool OpenOrCloseCam(bool bOpen)
         {
             if (bOpen)
@@ -1848,36 +2134,41 @@ namespace VisionApplication
                 // 用线程更新显示
                 if (chooseHIK)
                 {
-                    operLog.strOperEvent = "启动图像预览";
+                    operLog.strOperEvent = "启动图像预览线程";
                     try
                     {
-                        // 用线程更新显示
-
-                        // vpWin.OpenOrCloseCam(true);
-                        for (int i = 0; i < maxCameraNum; i++)
+                        bool anyEnabled = false;
+                        bool anyStarted = false;
+                        bool allStarted = true;
+                        List<int> targetJobs = GetCurrentJobTargets();
+                        foreach (int i in targetJobs)
                         {
-                            if (!cup.p_CD.bListProcess[i]) continue;
-                            vpWin.previewOnlive(true, i);
+                            anyEnabled = true;
+                            bool started = vpWin.previewOnlive(true, i);
+                            anyStarted |= started;
+                            allStarted &= started;
                         }
-                        hikCanGrab = true;
-                        operLog.iEventStatus = 0;
-                        menuCam_Connect.Text = "关闭图像预览";
 
+                        hikCanGrab = anyStarted;
+                        operLog.iEventStatus = anyEnabled && allStarted ? 0 : -1;
+                        operLog.strFailReason = !anyEnabled
+                            ? "当前工位模式没有启用的目标工位"
+                            : allStarted
+                                ? "目标工位的Preview线程已启动，等待逐路首帧确认"
+                                : "至少一个目标工位的Preview线程启动失败；各路结果见独立日志";
+                        menuCam_Connect.Text = anyStarted ? "关闭图像预览" : "启动图像预览";
+                        AddLog();
+                        return anyStarted;
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         hikCanGrab = false;
-                        //     hikGrabThread.Join();
-                        // MessageBox.Show("开始采集失败！", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         menuCam_Connect.Text = "启动图像预览";
                         operLog.iEventStatus = -1;
-                        operLog.strFailReason = "启动预览线程失败";
+                        operLog.strFailReason = "启动预览线程失败: " + ex.Message;
                         AddLog();
                         return false;
                     }
-
-                    AddLog();
-
                 }
             }
             else
@@ -1985,11 +2276,8 @@ namespace VisionApplication
             // 记录日志
             AddLog();
 
-            // 如果启用了IO输出，调用对应工位的输出方法
-            if (cup.p_RTSP.bUpdateIO)
-            {
-                ExeIOOut(jobIndex);
-            }
+            // IO结果由各运行完成路径在取得最终pmaRes[jobIndex].bOk后提交。
+            // 日志/UI更新函数不再重复提交，避免同一检测结果跨批次污染。
         }
         /*private void AnaEventForJob(int jobIndex)
         {
@@ -2116,75 +2404,314 @@ namespace VisionApplication
                 AddLog();
             }
         }
-        //2025年10月7日  执行一次运算输出IO信号
-        private async void ExeIOOut(int jobIndex) 
+        // 提交单个工位本轮真实结果；全部参与工位完成后一次输出组合位图。
+        private void ExeIOOut(int jobIndex, long cycleId)
         {
-            
-            // 发送 IO 信号（假设此方法不会阻塞）
-            if (csd.SendResultToIO(sPortCy, jobIndex == 0, cup.p_IOPP))
+            if (jobIndex < 0 || jobIndex >= ioFeedbackJobCount)
+                return;
+
+            SubmitIOFeedbackResult(jobIndex, pmaRes[jobIndex].bOk, cycleId);
+        }
+
+        private bool TryBeginIOFeedbackRun(int jobIndex, bool singleJobCycle,
+            out long cycleId, out string errorMessage)
+        {
+            cycleId = 0;
+            errorMessage = string.Empty;
+            if (!cup.p_RTSP.bUpdateIO)
+                return true;
+            if (jobIndex < 0 || jobIndex >= ioFeedbackJobCount)
             {
-                // 1. 变红
-                if (jobIndex == 0)
-                    lblOut1.ForeColor = Color.Red;
-                else if (jobIndex == 1)
-                    lblOut2.ForeColor = Color.Red;
+                errorMessage = $"Job{jobIndex}不属于当前COM3 IO反馈范围";
+                return false;
+            }
 
-                // 2. 异步等待 1 秒，不阻塞 UI
-                await Task.Delay(1000);
+            lock (ioFeedbackSync)
+            {
+                if (!ioFeedbackCycleActive)
+                {
+                    bool anyParticipant = false;
+                    for (int i = 0; i < ioFeedbackJobCount; i++)
+                    {
+                        ioFeedbackParticipating[i] = singleJobCycle
+                            ? i == jobIndex
+                            : cup.p_CD.bListProcess != null &&
+                              i < cup.p_CD.bListProcess.Length &&
+                              cup.p_CD.bListProcess[i];
+                        anyParticipant |= ioFeedbackParticipating[i];
+                        ioFeedbackStarted[i] = false;
+                        ioFeedbackReady[i] = false;
+                        ioFeedbackResult[i] = false;
+                    }
 
-                // 3. 变绿
-                if (jobIndex == 0)
-                    lblOut1.ForeColor = Color.Green;
-                else if (jobIndex == 1)
-                    lblOut2.ForeColor = Color.Green;
+                    if (!anyParticipant || !ioFeedbackParticipating[jobIndex])
+                    {
+                        ResetIOFeedbackCycleNoLock();
+                        errorMessage = $"Job{jobIndex}不属于当前IO反馈批次";
+                        return false;
+                    }
+
+                    ioFeedbackCycleId++;
+                    ioFeedbackCycleActive = true;
+                }
+
+                cycleId = ioFeedbackCycleId;
+                if (ioFeedbackOutputInProgress)
+                {
+                    errorMessage = $"IO反馈批次{cycleId}正在输出";
+                    return false;
+                }
+                if (!ioFeedbackParticipating[jobIndex])
+                {
+                    errorMessage = $"Job{jobIndex}未参与IO反馈批次{cycleId}";
+                    return false;
+                }
+                if (ioFeedbackStarted[jobIndex])
+                {
+                    errorMessage = $"Job{jobIndex}已开始IO反馈批次{cycleId}，拒绝跨轮重复运行";
+                    return false;
+                }
+
+                ioFeedbackStarted[jobIndex] = true;
+                return true;
             }
         }
-        private void ExeIOOut()
+
+        private void SubmitIOFeedbackResult(int jobIndex, bool isOk, long cycleId)
         {
-            switch (rts.onLS.iFeedbackType)                  //启用了结果自动反馈
+            if (!cup.p_RTSP.bUpdateIO || jobIndex < 0 || jobIndex >= ioFeedbackJobCount)
+                return;
+
+            byte outputBitmap = 0;
+            string prepareError = string.Empty;
+            bool shouldSend = false;
+
+            lock (ioFeedbackSync)
             {
-                case 1:
-                   
-                    if(csd.SendResultToIO(sPortCy, pmaRes[currentCardSN].bOk, cup.p_IOPP))
+                if (!ioFeedbackCycleActive || cycleId <= 0 || cycleId != ioFeedbackCycleId)
+                {
+                    prepareError = $"Job{jobIndex}提交了已失效的IO反馈批次{cycleId}，当前批次为" +
+                        (ioFeedbackCycleActive ? ioFeedbackCycleId.ToString() : "无");
+                }
+                else if (!ioFeedbackParticipating[jobIndex] || !ioFeedbackStarted[jobIndex])
+                {
+                    prepareError = $"Job{jobIndex}未开始IO反馈批次{cycleId}";
+                }
+                else if (ioFeedbackReady[jobIndex])
+                {
+                    prepareError = $"Job{jobIndex}已提交IO反馈批次{cycleId}，拒绝重复结果";
+                }
+                else
+                {
+                    ioFeedbackResult[jobIndex] = isOk;
+                    ioFeedbackReady[jobIndex] = true;
+
+                    bool allReady = true;
+                    for (int i = 0; i < ioFeedbackJobCount; i++)
                     {
-                        if (pmaRes[currentCardSN].bOk)
-                            lblOut1.ForeColor = Color.Red;
+                        if (ioFeedbackParticipating[i] && !ioFeedbackReady[i])
+                        {
+                            allReady = false;
+                            break;
+                        }
+                    }
+
+                    if (allReady && !ioFeedbackOutputInProgress)
+                    {
+                        if (TryBuildIOOutputBitmap(ioFeedbackResult, ioFeedbackParticipating,
+                            out outputBitmap, out prepareError))
+                        {
+                            ioFeedbackOutputInProgress = true;
+                            shouldSend = true;
+                        }
                         else
-                            lblOut2.ForeColor = Color.Red;
-                        if (!timerIOOut.Enabled)
-                            timerIOOut.Start();
+                        {
+                            ResetIOFeedbackCycleNoLock();
+                        }
                     }
-                    break;
-                case 2:
-                    //固定反馈OK
-                    
-                    if(csd.SendResultToIO(sPortCy, true, cup.p_IOPP))
-                    {
-                        lblOut1.ForeColor = Color.Red;
-                        if (!timerIOOut.Enabled)
-                            timerIOOut.Start();
-                    }
-                     
-                    break;
-                case 3:
-                    
-                    if(csd.SendResultToIO(sPortCy, false, cup.p_IOPP)) //固定反馈NG 
-                    {
-                        lblOut2.ForeColor = Color.Red;
-                        if (!timerIOOut.Enabled)
-                            timerIOOut.Start();
-                    }
-                    break; 
-                case 0:         //不反馈，等待手动
-                    break; 
+                }
             }
-            if (!timerIOOut.Enabled)
-                timerIOOut.Start();
+
+            if (!string.IsNullOrEmpty(prepareError))
+            {
+                WriteIOFeedbackLog(-1, "IO组合结果", prepareError);
+                return;
+            }
+            if (!shouldSend)
+            {
+                WriteIOFeedbackLog(0, "IO结果就绪",
+                    $"批次{cycleId} Job{jobIndex}={(isOk ? "OK" : "NG")}，等待其他参与工位");
+                return;
+            }
+
+            string sendError;
+            bool sendSucceeded = csd.SendIOOutputBitmapPulse(
+                sPortCy, outputBitmap, cup.p_IOPP.IOTimeDelay, out sendError);
+
+            lock (ioFeedbackSync)
+            {
+                if (ioFeedbackCycleActive && ioFeedbackCycleId == cycleId)
+                    ResetIOFeedbackCycleNoLock();
+            }
+
+            if (sendSucceeded)
+            {
+                WriteIOFeedbackLog(0, "IO组合输出",
+                    $"批次{cycleId} 位图0x{outputBitmap:X2}发送完成，保持{cup.p_IOPP.IOTimeDelay}ms后Y1～Y8已关闭");
+            }
+            else
+            {
+                WriteIOFeedbackLog(-1, "IO组合输出失败",
+                    $"批次{cycleId} 位图0x{outputBitmap:X2}：{sendError}");
+            }
+        }
+
+        private bool TryBuildIOOutputBitmap(bool[] results, bool[] participants,
+            out byte outputBitmap, out string errorMessage)
+        {
+            outputBitmap = 0;
+            errorMessage = string.Empty;
+
+            if (!ValidateIOOutputMapping(out errorMessage))
+                return false;
+
+            for (int jobIndex = 0; jobIndex < ioFeedbackJobCount; jobIndex++)
+            {
+                if (!participants[jobIndex])
+                    continue;
+
+                int outputNo = results[jobIndex]
+                    ? cup.p_IOPP.JobOkOut[jobIndex]
+                    : cup.p_IOPP.JobNGOut[jobIndex];
+                outputBitmap |= (byte)(1 << (outputNo - 1));
+            }
+            return outputBitmap != 0;
+        }
+
+        private bool ValidateIOOutputMapping(out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (cup.p_IOPP.JobOkOut == null || cup.p_IOPP.JobOkOut.Length < ioFeedbackJobCount ||
+                cup.p_IOPP.JobNGOut == null || cup.p_IOPP.JobNGOut.Length < ioFeedbackJobCount)
+            {
+                errorMessage = "IO输出映射缺失";
+                return false;
+            }
+
+            HashSet<int> usedOutputs = new HashSet<int>();
+            for (int jobIndex = 0; jobIndex < ioFeedbackJobCount; jobIndex++)
+            {
+                int okOutput = cup.p_IOPP.JobOkOut[jobIndex];
+                int ngOutput = cup.p_IOPP.JobNGOut[jobIndex];
+                if (okOutput < 1 || okOutput > 8 || ngOutput < 1 || ngOutput > 8)
+                {
+                    errorMessage = $"Job{jobIndex}输出必须在Y1～Y8范围内";
+                    return false;
+                }
+                if (okOutput == ngOutput)
+                {
+                    errorMessage = $"Job{jobIndex}的OK与NG不能使用同一输出Y{okOutput}";
+                    return false;
+                }
+                if (!usedOutputs.Add(okOutput) || !usedOutputs.Add(ngOutput))
+                {
+                    errorMessage = "Job0/Job1的OK、NG输出通道不能重复";
+                    return false;
+                }
+            }
+            if (cup.p_IOPP.JobOkOut[0] != 1 || cup.p_IOPP.JobNGOut[0] != 2 ||
+                cup.p_IOPP.JobOkOut[1] != 3 || cup.p_IOPP.JobNGOut[1] != 4)
+            {
+                errorMessage = "本轮IO映射固定为Job0 OK/NG→Y1/Y2、Job1 OK/NG→Y3/Y4";
+                return false;
+            }
+            return true;
+        }
+
+        private bool CanAcceptIOFeedbackRun(int jobIndex, out string reason)
+        {
+            reason = string.Empty;
+            if (!cup.p_RTSP.bUpdateIO || jobIndex < 0 || jobIndex >= ioFeedbackJobCount)
+                return true;
+
+            lock (ioFeedbackSync)
+            {
+                if (!ioFeedbackCycleActive)
+                    return true;
+                if (ioFeedbackOutputInProgress)
+                {
+                    reason = $"IO反馈批次{ioFeedbackCycleId}正在输出";
+                    return false;
+                }
+                if (!ioFeedbackParticipating[jobIndex])
+                {
+                    reason = $"Job{jobIndex}不属于IO反馈批次{ioFeedbackCycleId}";
+                    return false;
+                }
+                if (ioFeedbackStarted[jobIndex])
+                {
+                    reason = $"Job{jobIndex}已进入IO反馈批次{ioFeedbackCycleId}，正在运行或等待另一工位";
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        private void AbortIOFeedbackCycle(int failedJobIndex, long cycleId, string reason)
+        {
+            long abortedCycleId = 0;
+            lock (ioFeedbackSync)
+            {
+                if (!ioFeedbackCycleActive || cycleId <= 0 || ioFeedbackCycleId != cycleId)
+                    return;
+                abortedCycleId = ioFeedbackCycleId;
+                ResetIOFeedbackCycleNoLock();
+            }
+            WriteIOFeedbackLog(-1, "IO反馈批次取消",
+                $"批次{abortedCycleId}因Job{failedJobIndex}失败而清除：{reason}");
+        }
+
+        private void ResetIOFeedbackCycleNoLock()
+        {
+            for (int i = 0; i < ioFeedbackJobCount; i++)
+            {
+                ioFeedbackResult[i] = false;
+                ioFeedbackReady[i] = false;
+                ioFeedbackStarted[i] = false;
+                ioFeedbackParticipating[i] = false;
+            }
+            ioFeedbackCycleActive = false;
+            ioFeedbackOutputInProgress = false;
+        }
+
+        private void ResetIOFeedbackCycle(string reason)
+        {
+            lock (ioFeedbackSync)
+                ResetIOFeedbackCycleNoLock();
+            if (!string.IsNullOrEmpty(reason))
+                WriteIOFeedbackLog(0, "IO反馈批次复位", reason);
+        }
+
+        private void WriteIOFeedbackLog(int status, string operEvent, string detail)
+        {
+            operLog.iEventStatus = status;
+            operLog.strOperEvent = operEvent;
+            operLog.strFailReason = detail;
+            AddLog();
         }
         private void menuTask_Clear_Click(object sender, EventArgs e)
         {
             strOrder = "清除";
-            csd.ClearOutput(sPortCy);
+            string errorMessage;
+            if (csd.ClearIOOutputs(sPortCy, out errorMessage))
+            {
+                ResetIOFeedbackCycle("手动全部关闭");
+                WriteIOFeedbackLog(0, "IO全部关闭", "Y1～Y8已发送全部OFF");
+            }
+            else
+            {
+                WriteIOFeedbackLog(-1, "IO全部关闭失败", errorMessage);
+            }
         }
          
         //  DateTime dtOperLog = new DateTime();
@@ -2225,7 +2752,7 @@ namespace VisionApplication
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                         break;
                     case -2:
-                        dgvLog.Rows[ind].Cells[2].Value = "执行失败";
+                        dgvLog.Rows[ind].Cells[2].Value = "执行正常";
                         dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
                         break;
                     case 1:
@@ -2421,14 +2948,14 @@ namespace VisionApplication
             string strEnableMAC = mPasswordFile.GetCID();
 
             int iModelRole = -1;
-            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "00E269A99B04")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
+            if (strMAC == strEnableMAC || strMAC == authorizationManagerMac || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85" || strMAC == "00E269A99B04")  //E4:5E:37:62:A1:3D   00FFCF3A6322
             {
                 rts.initStatus.bModelRoleCert = true;
 
                 DateVerify(iModelRole);
                 if (rts.iModelRole == 0)
                 {
-                    if (strMAC == "00E04C7825321" /*|| strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85"*/)   //调试专用功能
+                    if (strMAC == authorizationManagerMac || strMAC == "207BD2D2CA3E")   //授权端/调试专用功能
                     {
                         iModelRole = 9;
                         btFunSet.Visible = true;
@@ -2477,11 +3004,25 @@ namespace VisionApplication
             { 
                  
                 iProcess = 20;
-                fw.SetProgress(20, "正在加载机器视觉环境");
-                LoadVPFile(false);            //VP控件初始化，加载VPP文件和VisionControl控件
+                fw.SetProgress(20, "正在加载深度推理环境");
+                rts.initStatus.bDLModelInit = false;
+                if (cup.p_VPPRTP.bDeepInfer)
+                {
+                    menuTask_DeepInfer.Checked = true;
+                    menuTask_VisionInfer.Checked = false;
+                    WriteStartupLog("[Startup] DeepInfer init start");
+                    int dlInitRet = InitDL();
+                    WriteStartupLog("[Startup] DeepInfer InitDL returned=" + dlInitRet);
+                }
+                else
+                {
+                    menuTask_VisionInfer.Checked = true;
+                    menuTask_DeepInfer.Checked = false;
+                }
 
                 iProcess = 30;
-                fw.SetProgress(30, "正在初始化视图"); 
+                fw.SetProgress(30, "正在加载机器视觉环境");
+                LoadVPFile(false);            //VP控件初始化，加载VPP文件和VisionControl控件
 
                 iProcess = 40;
                 fw.SetProgress(40, "正在加载硬件驱动"); 
@@ -2513,19 +3054,7 @@ namespace VisionApplication
                 InitLocalFile();    //加载回放数据                            //  bSucc = vpWin.SetDiagParam(cup);
 
                 iProcess = 80;
-                fw.SetProgress(80, "正在加深度载推理环境");
-                rts.initStatus.bDLModelInit = false;
-                if (cup.p_VPPRTP.bDeepInfer)
-                {
-                    menuTask_DeepInfer.Checked = true;
-                    menuTask_VisionInfer.Checked = false;
-                    InitDL();
-                }
-                else
-                {
-                    menuTask_VisionInfer.Checked = true;
-                    menuTask_DeepInfer.Checked = false;
-                }
+                fw.SetProgress(80, "正在检查初始化状态");
                 btFunSet.Visible = cup.p_VPPRTP.bVisionInfer;
 
 
@@ -4170,23 +4699,40 @@ namespace VisionApplication
           //  csd.MachineStartOrStop(sPortCy, false);
         }
          
-        private void menuTask_OK_Click(object sender, EventArgs e)
+        private async void menuTask_OK_Click(object sender, EventArgs e)
         {
-            operLog.strOperEvent = "OK反馈";
-            strOrder = "Ok";
-            //  csd.SendResult(sPortCy, true);
-            if (csd.SendResultToIO(sPortCy, true, cup.p_IOPP))
+            bool[] testResults;
+            DialogResult dialogResult = ShowIOCombinationTestDialog(out testResults);
+            if (dialogResult == DialogResult.Abort)
             {
-                lblOut1.ForeColor = Color.Red;
-                if(!timerIOOut.Enabled)
-                    timerIOOut.Start();
-                operLog.iEventStatus = 0;
+                await ClearIOOutputsFromMenuAsync("测试窗口全部关闭");
+                return;
+            }
+            if (dialogResult != DialogResult.OK)
+                return;
+
+            bool[] participants = { true, true };
+            byte outputBitmap;
+            string errorMessage;
+            if (!TryBuildIOOutputBitmap(testResults, participants, out outputBitmap, out errorMessage))
+            {
+                WriteIOFeedbackLog(-1, "IO测试组合无效", errorMessage);
+                MessageBox.Show(errorMessage, "IO输出测试", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            bool succeeded = await Task.Run(() =>
+                csd.SendIOOutputBitmapPulse(sPortCy, outputBitmap, cup.p_IOPP.IOTimeDelay, out errorMessage));
+            if (succeeded)
+            {
+                WriteIOFeedbackLog(0, "IO测试组合",
+                    $"位图0x{outputBitmap:X2}发送完成，保持{cup.p_IOPP.IOTimeDelay}ms后已全部关闭");
             }
             else
             {
-                operLog.iEventStatus = -1;
+                WriteIOFeedbackLog(-1, "IO测试组合失败", errorMessage);
+                MessageBox.Show(errorMessage, "IO输出测试", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
         }
 
         private void menuTask_FeedBack_Click(object sender, EventArgs e)
@@ -4195,33 +4741,87 @@ namespace VisionApplication
         }
 
         //检测反馈NG
-        private void menuTask_NG_Click(object sender, EventArgs e)
+        private async void menuTask_NG_Click(object sender, EventArgs e)
         {
-            operLog.strOperEvent = "NG反馈";
-            strOrder = "NG凹口";
-            if (csd.SendResultToIO(sPortCy, false, cup.p_IOPP))
-            {
-                lblOut2.ForeColor = Color.Red;
-                if (!timerIOOut.Enabled)
-                    timerIOOut.Start();
-                operLog.iEventStatus = 0;
-            }
-            else
-            {
-                operLog.iEventStatus = -1;
-            }
+            await ClearIOOutputsFromMenuAsync("反馈控制菜单全部关闭");
         }
         private void menuTask_NG2_Click(object sender, EventArgs e)
         {
-            operLog.strOperEvent = "NG反馈";
-            strOrder = "NG平口";
-            if (csd.SendResultToIO(sPortCy, false, cup.p_IOPP))
+            menuTask_NG_Click(sender, e);
+        }
+
+        private DialogResult ShowIOCombinationTestDialog(out bool[] testResults)
+        {
+            testResults = new bool[ioFeedbackJobCount];
+            using (Form dialog = new Form())
+            using (ComboBox cmbJob0 = new ComboBox())
+            using (ComboBox cmbJob1 = new ComboBox())
+            using (Button btSend = new Button())
+            using (Button btClear = new Button())
+            using (Button btCancel = new Button())
             {
-                operLog.iEventStatus = 0;
+                dialog.Text = "IO组合输出测试";
+                dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dialog.StartPosition = FormStartPosition.CenterParent;
+                dialog.ClientSize = new Size(330, 165);
+                dialog.MaximizeBox = false;
+                dialog.MinimizeBox = false;
+
+                Label lblJob0 = new Label { Text = "工位1 / Job0", AutoSize = true, Location = new Point(24, 24) };
+                Label lblJob1 = new Label { Text = "工位2 / Job1", AutoSize = true, Location = new Point(24, 62) };
+                cmbJob0.DropDownStyle = ComboBoxStyle.DropDownList;
+                cmbJob1.DropDownStyle = ComboBoxStyle.DropDownList;
+                cmbJob0.Items.AddRange(new object[] { "OK", "NG" });
+                cmbJob1.Items.AddRange(new object[] { "OK", "NG" });
+                cmbJob0.SelectedIndex = 0;
+                cmbJob1.SelectedIndex = 0;
+                cmbJob0.Location = new Point(135, 20);
+                cmbJob1.Location = new Point(135, 58);
+                cmbJob0.Width = cmbJob1.Width = 150;
+
+                btSend.Text = "发送测试组合";
+                btSend.Location = new Point(24, 110);
+                btSend.Size = new Size(100, 30);
+                btSend.DialogResult = DialogResult.OK;
+                btClear.Text = "全部关闭";
+                btClear.Location = new Point(132, 110);
+                btClear.Size = new Size(80, 30);
+                btClear.DialogResult = DialogResult.Abort;
+                btCancel.Text = "取消";
+                btCancel.Location = new Point(220, 110);
+                btCancel.Size = new Size(65, 30);
+                btCancel.DialogResult = DialogResult.Cancel;
+
+                dialog.Controls.AddRange(new Control[]
+                {
+                    lblJob0, lblJob1, cmbJob0, cmbJob1, btSend, btClear, btCancel
+                });
+                dialog.AcceptButton = btSend;
+                dialog.CancelButton = btCancel;
+
+                DialogResult result = dialog.ShowDialog(this);
+                if (result == DialogResult.OK)
+                {
+                    testResults[0] = cmbJob0.SelectedIndex == 0;
+                    testResults[1] = cmbJob1.SelectedIndex == 0;
+                }
+                return result;
+            }
+        }
+
+        private async Task ClearIOOutputsFromMenuAsync(string reason)
+        {
+            string errorMessage = string.Empty;
+            bool succeeded = await Task.Run(() => csd.ClearIOOutputs(sPortCy, out errorMessage));
+            if (succeeded)
+            {
+                ResetIOFeedbackCycle(reason);
+                WriteIOFeedbackLog(0, "IO全部关闭", "Y1～Y8已发送全部OFF");
             }
             else
             {
-                operLog.iEventStatus = -1;
+                WriteIOFeedbackLog(-1, "IO全部关闭失败", errorMessage);
+                MessageBox.Show(errorMessage, "IO输出", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         private void menuTask_EnableTriggle_Click(object sender, EventArgs e)
@@ -4263,20 +4863,14 @@ namespace VisionApplication
 
         }
         /// <summary>
-        /// 光源控制（根据当前选中的工位控制对应的光源）
-        /// </summary>
-        /// <summary>
-        /// 光源控制（根据当前选中的工位控制对应的光源）
-        /// </summary>
-        /// <summary>
-        /// 光源控制（根据当前选中的工位控制对应的光源）
-        /// 打开状态：按四个分区各自保存的亮度独立设置
-        /// 关闭状态：所有分区亮度设为 0
+        /// 控制右侧当前所选相机对应的光源。
+        /// 普通模式只切换当前CH；同步模式同时切换CH1～CH4。
         /// </summary>
         private void LightControlTurnOn()
         {
-            // 检查相机是否已选择
-            if (icamSelectInd < 0)
+            int cameraIndex;
+            int lightJobIndex;
+            if (!TryGetSelectedCameraBinding(out cameraIndex, out lightJobIndex))
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "光源控制";
@@ -4285,63 +4879,72 @@ namespace VisionApplication
                 return;
             }
 
-            bool open = !toolBtSta_Triggle.Checked;
-            toolBtSta_Triggle.Checked = open;
-            toolBtSta_Triggle.Image = open
-                ? global::VisionApplication.Properties.Resources.LightOn
-                : global::VisionApplication.Properties.Resources.LightOff;
+            string failureReason;
+            int controllerSlot = ResolveLightControllerSlot(lightJobIndex, out failureReason);
+            if (controllerSlot < 0)
+            {
+                LogLightControllerResolution(lightJobIndex);
+                RefreshSelectedCameraLightUI();
+                return;
+            }
+
+            SerialPort port = GetLightPortForJob(lightJobIndex);
+            if (port == null || !port.IsOpen)
+            {
+                LogLightControllerResolution(lightJobIndex);
+                RefreshSelectedCameraLightUI();
+                return;
+            }
 
             int ch1, ch2, ch3, ch4;
-
-            if (iJobIndex == 0)  // A面 - 主光源
-            {
-                if (open)
-                {
-                    // 从配置读取四个独立通道亮度值（保留上次设置的值）
-                    ch1 = cup.p_LS.indent[1];
-                    ch2 = cup.p_LS.indent[2];
-                    ch3 = cup.p_LS.indent[3];
-                    ch4 = cup.p_LS.indent[4];
-                }
-                else
-                {
-                    // 关闭：全部设为0
-                    ch1 = ch2 = ch3 = ch4 = 0;
-                }
-                // 发送一条命令设置所有通道
-                SendAllChannelsCommand(0, ch1, ch2, ch3, ch4);
-            }
-            else if (iJobIndex == 1)  // B面 - 侧光源1
-            {
-                if (open)
-                {
-                    ch1 = cup.p_LS2[0].indent[1];
-                    ch2 = cup.p_LS2[0].indent[2];
-                    ch3 = cup.p_LS2[0].indent[3];
-                    ch4 = cup.p_LS2[0].indent[4];
-                }
-                else
-                {
-                    ch1 = ch2 = ch3 = ch4 = 0;
-                }
-                SendAllChannelsCommand(1, ch1, ch2, ch3, ch4);
-            }
-            else
+            if (!TryGetLightValues(lightJobIndex, out ch1, out ch2, out ch3, out ch4))
             {
                 operLog.iEventStatus = -1;
                 operLog.strOperEvent = "光源控制";
-                operLog.strFailReason = "不支持的工位索引";
+                operLog.strFailReason = "当前相机光源参数无效";
                 AddLog();
                 return;
             }
 
-            // 记录日志
-            operLog.iEventStatus = 0;
-            operLog.strOperEvent = $"光源控制-{(open ? "打开" : "关闭")}(工位{iJobIndex + 1})";
-            operLog.strFailReason = open
-                ? $"CH1={ch1}, CH2={ch2}, CH3={ch3}, CH4={ch4}"
-                : "全部关闭";
-            AddLog();
+            int channel = cmbLs_Channel.SelectedIndex + 1;
+            if (channel < 1 || channel > lightChannelCount)
+                channel = 1;
+
+            bool sync = chkLS_Sync.Checked;
+            bool[] nextStates = new bool[lightChannelCount];
+            bool allOn = true;
+            for (int channelIndex = 0; channelIndex < lightChannelCount; channelIndex++)
+            {
+                nextStates[channelIndex] = lightOnStates[controllerSlot, channelIndex];
+                allOn &= nextStates[channelIndex];
+            }
+
+            bool open = sync ? !allOn : !nextStates[channel - 1];
+            if (sync)
+            {
+                for (int channelIndex = 0; channelIndex < lightChannelCount; channelIndex++)
+                    nextStates[channelIndex] = open;
+            }
+            else
+            {
+                nextStates[channel - 1] = open;
+            }
+
+            int sendCh1 = nextStates[0] ? ch1 : 0;
+            int sendCh2 = nextStates[1] ? ch2 : 0;
+            int sendCh3 = nextStates[2] ? ch3 : 0;
+            int sendCh4 = nextStates[3] ? ch4 : 0;
+            string target = sync ? $"SYNC-{(open ? "ON" : "OFF")}" : $"CH{channel}-{(open ? "ON" : "OFF")}";
+            if (!SendAllChannelsCommand(lightJobIndex, sendCh1, sendCh2, sendCh3, sendCh4, target))
+            {
+                RefreshSelectedCameraLightUI();
+                return;
+            }
+
+            // 串口写入成功后才提交新的通道开关状态。
+            for (int channelIndex = 0; channelIndex < lightChannelCount; channelIndex++)
+                lightOnStates[controllerSlot, channelIndex] = nextStates[channelIndex];
+            SetLightButtonState(lightJobIndex, true);
         }
         /// <summary>
         /// 获取当前工位对应的光源亮度配置值
@@ -4976,6 +5579,20 @@ namespace VisionApplication
 
             int iCamSuccNum = 0;
             int iCamFailNum = 0;
+            for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
+            {
+                if (!cup.p_CD.bListProcess[jobIndex])
+                    continue;
+
+                int cameraIndex = cup.p_CD.camInd[jobIndex];
+                bool bCamReady = cameraIndex >= 0 && cameraIndex < maxCameraNum &&
+                    acqFIFO.IsCamConn(cameraIndex) && rts.cs.iStatus[cameraIndex] == 3;
+                if (bCamReady)
+                    iCamSuccNum++;
+                else
+                    iCamFailNum++;
+            }
+
             // 自动重连（仅在启用且从相机采集时）
             if (cup.p_RTSP.bAutoConnCam)
             {
@@ -5052,10 +5669,6 @@ namespace VisionApplication
                 {
 
                     //尝试连接
-                    if (strPortName == null || strPortName.Length < i + 1)
-                    {
-                        strPortName = SerialPort.GetPortNames();
-                    }
                     bool bSucc = InitSerialIndex(i);
 
                     if (!bSucc)
@@ -5139,10 +5752,6 @@ namespace VisionApplication
             if (cup.p_SD.bUsed[3] && (sPortAll[3] == null || !sPortAll[3].IsOpen))
             {
                 //尝试连接
-                if (strPortName == null || strPortName.Length < 4)
-                {
-                    strPortName = SerialPort.GetPortNames();
-                }
                 bool bSucc = InitSerialIndex(3);
                 if (!bSucc)
                 {
@@ -5349,7 +5958,7 @@ namespace VisionApplication
             FrmExpiration fe = new FrmExpiration(mPasswordFile, rts.iModelRole);
             if(fe.ShowDialog()==DialogResult.OK)
             {
-                rts.iModelRole = 9;
+                RoleCheck();
             }
             operLog.iEventStatus = rts.iModelRole;
             operLog.strOperEvent = "身份验证";
@@ -5650,28 +6259,33 @@ namespace VisionApplication
 
         private bool InitSerialIndex(int i)
         {
-            if (strPortName == null || strPortName.Length <= i)
+            if (i < 0 || i >= sPortAll.Length || cup.p_SD.serInd == null || i >= cup.p_SD.serInd.Length)
                 return false;
-            bool bSucc = false;
-            try
-            {
-                if (openSer(sPortAll[i], strPortName[serialInd[i]]))
-                {
-                    bSucc = true;
-                }
-                else
-                {
-                    bSucc = false;
-                }
-            }
-            catch
-            {
-                bSucc = false;
 
+            List<string> availablePorts = GetSortedPorts();
+            int configIndex = cup.p_SD.serInd[i];
+            string portName;
+            if (!TryGetPortNameByConfigIndex(configIndex, availablePorts, out portName))
+            {
+                LogInvalidSerialConfigurationOnce(i, configIndex, availablePorts.Count);
+                return false;
             }
 
-            //    AddLog();
-            return bSucc;
+            serialConfigErrorLogged[i] = false;
+            return OpenSerialPort(sPortAll[i], portName);
+        }
+
+        private void LogInvalidSerialConfigurationOnce(int serialSlot, int configIndex, int availableCount)
+        {
+            if (serialSlot < 0 || serialSlot >= serialConfigErrorLogged.Length ||
+                serialConfigErrorLogged[serialSlot])
+                return;
+
+            serialConfigErrorLogged[serialSlot] = true;
+            operLog.iEventStatus = -1;
+            operLog.strOperEvent = $"串口{serialSlot + 1}配置";
+            operLog.strFailReason = $"配置索引{configIndex}超出已排序可用串口范围(共{availableCount}个)，未打开其他串口";
+            AddLog();
         }
 
         /// <summary>
@@ -5721,26 +6335,19 @@ namespace VisionApplication
         /// </summary>
         /// <param name="configIndex">配置索引(0-3)</param>
         /// <returns>串口名称，如果未找到返回空字符串</returns>
-        private string GetPortNameByConfigIndex(int configIndex)
+        private bool TryGetPortNameByConfigIndex(int configIndex, IList<string> sortedPorts, out string portName)
         {
-            List<string> sortedPorts = GetSortedPorts();
+            portName = "";
+            if (sortedPorts == null)
+                return false;
 
             if (configIndex >= 0 && configIndex < sortedPorts.Count)
             {
-                return sortedPorts[configIndex];
+                portName = sortedPorts[configIndex];
+                return !string.IsNullOrWhiteSpace(portName);
             }
 
-            // 如果配置索引超出范围，尝试返回可用的第一个串口
-            if (sortedPorts.Count > 0)
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "串口配置";
-                operLog.strFailReason = $"配置索引{configIndex}超出可用串口范围(共{sortedPorts.Count}个)，使用默认串口{sortedPorts[0]}";
-                AddLog();
-                return sortedPorts[0];
-            }
-
-            return "";
+            return false;
         }
 
         /// <summary>
@@ -5785,17 +6392,16 @@ namespace VisionApplication
                 int configIndex = cup.p_SD.serInd[i];
 
                 // 获取对应的串口名称
-                string portName = GetPortNameByConfigIndex(configIndex);
+                string portName;
 
-                if (string.IsNullOrEmpty(portName))
+                if (!TryGetPortNameByConfigIndex(configIndex, availablePorts, out portName))
                 {
-                    operLog.iEventStatus = -1;
-                    operLog.strOperEvent = $"串口{i + 1}初始化";
-                    operLog.strFailReason = $"配置索引{configIndex}超出可用范围";
-                    AddLog();
+                    LogInvalidSerialConfigurationOnce(i, configIndex, availablePorts.Count);
                     UpdateSerialStatusIndicator(i, SerialStatus.Failed);
                     continue;
                 }
+
+                serialConfigErrorLogged[i] = false;
 
                 // 打开串口
                 if (OpenSerialPort(sPortAll[i], portName))
@@ -5837,6 +6443,7 @@ namespace VisionApplication
 
             // 更新UI显示
             UpdateSerialUIStatus();
+            InitializeLightBrightness();
         }
 
         /// <summary>
@@ -6380,6 +6987,8 @@ namespace VisionApplication
                 }
                 toolStripStatus_Ser.Text = "串口未连接";
                 toolStripStatus_Ser.ForeColor = Color.Red;
+                Array.Clear(lightOnStates, 0, lightOnStates.Length);
+                RefreshSelectedCameraLightUI();
                  
             }
             catch(Exception ex)
@@ -6413,57 +7022,73 @@ namespace VisionApplication
             rts.iTaskType = vpWin._iTaskType;
             iAcquisitionsTimes++;
             bool bRet = false;
+            bool anyEnabledJob = false;
+            bool allEnabledJobsSucceeded = true;
+            List<int> targetJobs = GetCurrentJobTargets();
             operLog.strOperEvent = "采集图像";
             vpWin.bMainTaskFinished = false;
             if (cup.p_VPPRTP.bAcqFromCam)  //实时采集
             {
                 rts.dtLastAcq = DateTime.Now;
-                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                foreach (int wsInd in targetJobs)
                 {
-                    if(cup.p_CD.bListProcess[wsInd])
-                        bRet = vpWin.PreViewOneImage(wsInd);
-                    if (!bRet)
-                    {
-                        operLog.strFailReason = "采集异常错误";
-                    }
+                    anyEnabledJob = true;
+                    bool jobResult = vpWin.PreViewOneImage(wsInd);
+                    allEnabledJobsSucceeded &= jobResult;
+                    LogSingleImageCaptureResult(wsInd, jobResult, "真实相机");
                 }
             }
             else if (!bSingleFrameModel)  //回放模式
             {
+                if (iFileGroupLen <= 0)
+                {
+                    operLog.strFailReason = "回放图片未初始化或图片组数量为 0";
+                    operLog.iEventStatus = -1;
+                    AddLog();
+                    return;
+                }
                 iFileIndex = iNextFileIndex;
                 iFileIndex = iFileIndex % iFileGroupLen;
                 vpWin.iFileIndex = iFileIndex;
                 if (!bCrackPlayback)
                     iNextFileIndex = (++iNextFileIndex) % iFileGroupLen;
 
-                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                foreach (int wsInd in targetJobs)
                 {
-                    if (cup.p_CD.bListProcess[wsInd])
-                        bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, wsInd);
-                    if (!bRet)
-                    {
-                        operLog.strFailReason = "回放异常错误";
-                    }
+                    anyEnabledJob = true;
+                    bool jobResult = vpWin.PreViewOneImageFromFile(iFileIndex, false, wsInd);
+                    allEnabledJobsSucceeded &= jobResult;
+                    LogSingleImageCaptureResult(wsInd, jobResult, "回放文件");
                 } 
             }
             else
             {
+                if (iFileGroupLen <= 0)
+                {
+                    operLog.strFailReason = "回放图片未初始化或图片组数量为 0";
+                    operLog.iEventStatus = -1;
+                    AddLog();
+                    return;
+                }
                 iFileIndex = iNextFileIndex;
                 iFileIndex = iFileIndex % (iFileGroupLen * 6);
 
-                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+                foreach (int wsInd in targetJobs)
                 {
-                    if (cup.p_CD.bListProcess[wsInd])
-                        bRet = vpWin.PreViewOneImageFromFile(iFileIndex, false, wsInd);
-                    if (!bRet)
-                    {
-                        operLog.strFailReason = "回放异常错误";
-                    }
+                    anyEnabledJob = true;
+                    bool jobResult = vpWin.PreViewOneImageFromFile(iFileIndex, false, wsInd);
+                    allEnabledJobsSucceeded &= jobResult;
+                    LogSingleImageCaptureResult(wsInd, jobResult, "单帧回放文件");
                 }  
                 iNextFileIndex = (iFileIndex + 1) % (iFileGroupLen * 6);
                 
             }
 
+            bRet = anyEnabledJob && allEnabledJobsSucceeded;
+            operLog.strOperEvent = "采集图像";
+            operLog.strFailReason = bRet
+                ? "当前工位模式的目标工位均已采集并显示原图"
+                : anyEnabledJob ? "至少一个目标工位采集失败，详见逐工位日志" : "当前工位模式没有启用的目标工位";
             if (bRet)
             {
                 operLog.iEventStatus = 0;
@@ -6489,6 +7114,17 @@ namespace VisionApplication
             vpWin.FitAllWin();
             AddLog();
 
+        }
+
+        private void LogSingleImageCaptureResult(int jobIndex, bool succeeded, string source)
+        {
+            int cameraIndex = cup.p_CD.camInd[jobIndex];
+            operLog.strOperEvent = $"采集图像-工位{jobIndex + 1}";
+            operLog.iEventStatus = succeeded ? 0 : -1;
+            operLog.strFailReason = succeeded
+                ? $"{source}: Job{jobIndex} 已取得并显示本轮原图"
+                : $"{source}: Job{jobIndex}, Cam{cameraIndex} 本轮采集失败";
+            AddLog();
         }
         private void StartPreview()
         {
@@ -6780,11 +7416,14 @@ namespace VisionApplication
                 return false;
             }
             //回放模式，文件没有就绪
-            if (!cup.p_VPPRTP.bAcqFromCam && !rts.initStatus.bLocalFileExist)
+            if (!cup.p_VPPRTP.bAcqFromCam &&
+                (!rts.initStatus.bLocalFileExist || iFileGroupLen <= 0))
             {
                 operLog.strOperEvent = "数据检测";
                 operLog.iEventStatus = -1;
-                operLog.strFailReason = "回放文件夹不存在或者图像文件不存在";
+                operLog.strFailReason = iFileGroupLen <= 0
+                    ? "回放图片未初始化或图片组数量为 0"
+                    : "回放文件夹不存在或者图像文件不存在";
                 AddLog();
                 return false;
             }
@@ -6878,6 +7517,15 @@ namespace VisionApplication
                 {
                     if (!cup.p_VPPRTP.bAcqFromCam/* && !toolBtSta_LockImage.Checked*/)  //从文件读取
                     {
+                        if (iFileGroupLen <= 0)
+                        {
+                            vpWin._iTaskType = -1;
+                            operLog.strOperEvent = "运行一次";
+                            operLog.iEventStatus = -1;
+                            operLog.strFailReason = "回放图片未初始化或图片组数量为 0";
+                            AddLog();
+                            return;
+                        }
                         iFileIndex = iNextFileIndex;
 
                         iFileIndex = iFileIndex % iFileGroupLen;
@@ -6965,7 +7613,7 @@ namespace VisionApplication
         /// </summary>
         /*private void btSetROIFull_Click(object sender, EventArgs e)
         {
-            int icamInd = cbDeviceList.SelectedIndex;
+            int icamInd = icamSelectInd;
             if (icamInd < 0)
             {
                 MessageBox.Show("请先选择相机");
@@ -7021,7 +7669,7 @@ namespace VisionApplication
         }*/
         private void btSetROIFull_Click(object sender, EventArgs e)
         {
-            int icamInd = cbDeviceList.SelectedIndex;
+            int icamInd = icamSelectInd;
             if (icamInd < 0) return;
             if (camera2 == null || camera2[icamInd] == null) return;
 
@@ -7755,40 +8403,19 @@ namespace VisionApplication
 
         private void cmbLs_Channel_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (iJobIndex < 0 || iJobIndex > 1) return;
-            _isUpdatingUI = true;
-            try
-            {
-                int channel = cmbLs_Channel.SelectedIndex + 1; // 1~4
-                int brightness = 0;
-
-                // 根据工位选择正确的光源配置
-                if (iJobIndex == 0) // A面 -> 主光源
-                {
-                    if (cup.p_LS.indent != null && cup.p_LS.indent.Length > channel)
-                        brightness = cup.p_LS.indent[channel];
-                }
-                else if (iJobIndex == 1) // B面 -> 侧光源1
-                {
-                    if (cup.p_LS2 != null && cup.p_LS2.Length > 0 &&
-                        cup.p_LS2[0].indent != null && cup.p_LS2[0].indent.Length > channel)
-                        brightness = cup.p_LS2[0].indent[channel];
-                }
-
-                tbBirghtness.Value = brightness;
-                nudContrast.Value = brightness;
-            }
-            finally
-            {
-                _isUpdatingUI = false;
-            }
+            if (_isUpdatingUI || _isUpdatingLightUI) return;
+            RefreshSelectedCameraLightUI();
         }
 
         private void chkLS_Sync_Click(object sender, EventArgs e)
         {
             if (chkLS_Sync.Checked)
             {
-                ApplyLightBrightness(iJobIndex, null, tbBirghtness.Value);
+                ApplySelectedCameraLightBrightness(null, tbBirghtness.Value);
+            }
+            else
+            {
+                RefreshSelectedCameraLightUI();
             }
           //  ApplyLightBrightness(iJobIndex);
         }
@@ -8196,7 +8823,7 @@ namespace VisionApplication
                 try
                 {
                     rts.iIsRunning = 1;
-                    RunOneTimeForFace(selectedJobIndex).GetAwaiter().GetResult();
+                    RunOneTimeForFace(selectedJobIndex, true).GetAwaiter().GetResult();
                     rts.iIsRunning = 0;
                 }
                 catch (Exception ex)
@@ -8227,6 +8854,14 @@ namespace VisionApplication
             try
             {
                 int legacyJobIndex = iJobIndex;
+                long legacyIOCycleToken;
+                string legacyIOError;
+                if (!TryBeginIOFeedbackRun(legacyJobIndex, true,
+                    out legacyIOCycleToken, out legacyIOError))
+                {
+                    WriteIOFeedbackLog(-1, "单次运行IO批次拒绝", legacyIOError);
+                    return;
+                }
                 rts.iIsRunning = 1;
                 vpWin._bRunOneTimeFinished[legacyJobIndex] = 0;
                 if (vpWin.RunOneTimeSplite(legacyJobIndex))
@@ -8241,8 +8876,13 @@ namespace VisionApplication
                         count++;
                     }
 
+                    bool legacyRunCompleted = vpWin._bRunOneTimeFinished[legacyJobIndex] == 2;
                     vpWin._bRunOneTimeFinished[legacyJobIndex] = 2;  // 强制结束
                     pmaRes[legacyJobIndex] = vpWin._PMARes[legacyJobIndex];
+                    if (legacyRunCompleted)
+                        ExeIOOut(legacyJobIndex, legacyIOCycleToken);
+                    else
+                        AbortIOFeedbackCycle(legacyJobIndex, legacyIOCycleToken, "单次运行超时");
 
                     // 视觉检测完成后，判断是否需要激光标刻
                     if (rts.onLS.bLock && rts.initStatus.bJCZ == 0 && pmaRes[legacyJobIndex].bLocated)
@@ -8341,6 +8981,8 @@ namespace VisionApplication
                 return;
             }
 
+            long activeIOCycleToken = 0;
+            int activeIOJobIndex = -1;
             try
             {
                 rts.iIsRunning = 1;
@@ -8349,6 +8991,15 @@ namespace VisionApplication
                 // 顺序执行每个工位（若需并行，可改为 Parallel.ForEach 或 Task 并行）
                 foreach (int jobIndex in jobIndices)
                 {
+                    string ioFeedbackError;
+                    if (!TryBeginIOFeedbackRun(jobIndex, !syncMode,
+                        out activeIOCycleToken, out ioFeedbackError))
+                    {
+                        WriteIOFeedbackLog(-1, "运行IO批次拒绝", ioFeedbackError);
+                        break;
+                    }
+                    activeIOJobIndex = jobIndex;
+
                     // 重置完成标志（假设 vpWin._bRunOneTimeFinished 为数组）
                     vpWin._bRunOneTimeFinished[jobIndex] = 0;
 
@@ -8361,12 +9012,16 @@ namespace VisionApplication
                         operLog.strOperEvent = $"工位{jobIndex + 1}运行一次";
                         operLog.strFailReason = vpWin.strErrInfo?[jobIndex] ?? "启动失败";
                         AddLog();
+                        AbortIOFeedbackCycle(jobIndex, activeIOCycleToken, "同步运行启动失败");
+                        if (syncMode && activeIOCycleToken > 0)
+                            break;
                         continue;
                     }
 
                     // 等待该工位完成（轮询直到 _bRunOneTimeFinished 变为 2 或超时）
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5; // 假设 runTimeOut 单位为毫秒
+                    bool jobRunFailed = false;
                     while (vpWin._bRunOneTimeFinished[jobIndex] != 2 && count < maxTimes)
                     {
                         Thread.Sleep(5);
@@ -8381,11 +9036,14 @@ namespace VisionApplication
                         operLog.strOperEvent = $"工位{jobIndex + 1}运行一次";
                         operLog.strFailReason = "视觉检测超时";
                         AddLog();
+                        AbortIOFeedbackCycle(jobIndex, activeIOCycleToken, "同步运行超时");
+                        jobRunFailed = true;
                     }
                     else
                     {
                         // 正常完成，获取结果（假设 pmaRes 数组存储每个工位的 PMA 结果）
                         pmaRes[jobIndex] = vpWin._PMARes[jobIndex];
+                        ExeIOOut(jobIndex, activeIOCycleToken);
                     }
 
                     // 更新该工位的 UI（必须在主线程执行）
@@ -8393,6 +9051,9 @@ namespace VisionApplication
                         this.Invoke(new Action(() => UpdateUIExeForJob(jobIndex)));
                     else
                         UpdateUIExeForJob(jobIndex);
+
+                    if (jobRunFailed && syncMode && activeIOCycleToken > 0)
+                        break;
                 }
 
                 rts.iIsRunning = 0;
@@ -8400,6 +9061,7 @@ namespace VisionApplication
             }
             catch (Exception ex)
             {
+                AbortIOFeedbackCycle(activeIOJobIndex, activeIOCycleToken, "单次运行异常");
                 rts.iIsRunning = -1;
                 vpWin.bMainTaskFinished = true;
                 operLog.iEventStatus = -1;
@@ -8457,6 +9119,25 @@ namespace VisionApplication
 
             while (vpWin._bContRun)
             {
+                if (!cup.p_VPPRTP.bAcqFromCam && iFileGroupLen <= 0)
+                {
+                    vpWin._bContRun = false;
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = "连续运行";
+                    operLog.strFailReason = "回放图片未初始化或图片组数量为 0";
+                    AddLog();
+                    break;
+                }
+
+                long continuousIOCycleToken;
+                string continuousIOError;
+                if (!TryBeginIOFeedbackRun(selectedJobIndex, true,
+                    out continuousIOCycleToken, out continuousIOError))
+                {
+                    WriteIOFeedbackLog(-1, "连续运行IO批次拒绝", continuousIOError);
+                    break;
+                }
+
                 if (vpWin.RunOneTime(selectedJobIndex))
                 {
                     int count = 0;
@@ -8471,8 +9152,13 @@ namespace VisionApplication
                     {
 
                     }*/
+                    bool continuousRunCompleted = vpWin._bRunOneTimeFinished[selectedJobIndex] == 2;
                     vpWin._bRunOneTimeFinished[selectedJobIndex] = 2;  //强制结束
                     pmaRes[selectedJobIndex] = vpWin._PMARes[selectedJobIndex];
+                    if (continuousRunCompleted)
+                        ExeIOOut(selectedJobIndex, continuousIOCycleToken);
+                    else
+                        AbortIOFeedbackCycle(selectedJobIndex, continuousIOCycleToken, "连续运行超时");
                     if(!pmaRes[selectedJobIndex].bOk)
                     {
                       //  vpWin._bContRun = false;
@@ -8504,7 +9190,7 @@ namespace VisionApplication
                 }
                 else
                 {
-
+                    AbortIOFeedbackCycle(selectedJobIndex, continuousIOCycleToken, "连续运行启动失败");
                 }
             }
             vpWin._iTaskType = -1;

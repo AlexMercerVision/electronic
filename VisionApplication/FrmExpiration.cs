@@ -13,6 +13,7 @@ namespace VisionApplication
 {
     public partial class FrmExpiration : Form
     {
+        private const string authorizationManagerMac = "345A60F4B131";
         private Protect mPasswordFile;
         private DateTime dtDeadLine;
         private int iModelRole;
@@ -55,10 +56,10 @@ namespace VisionApplication
             string strEnableMAC = mPasswordFile.GetCID();
 
          //   int iModelRole = -1;
-            if (strMAC == strEnableMAC || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")  //E4:5E:37:62:A1:3D   00FFCF3A6322  
+            if (strMAC == strEnableMAC || strMAC == authorizationManagerMac || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")  //E4:5E:37:62:A1:3D   00FFCF3A6322
             { 
                 DateVerify(iModelRole);
-                if (strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A632" || strMAC == "8C32233F2B85")   //调试专用功能
+                if (strMAC == authorizationManagerMac || strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A632" || strMAC == "8C32233F2B85")   //授权端/调试专用功能
                 {
                     iModelRole = 9;
 
@@ -120,15 +121,21 @@ namespace VisionApplication
 
         private void bt_OK_Click(object sender, EventArgs e)
         {
-            if (!bReg)
+            if (iModelRole >= 8)
             {
-                MessageBox.Show("注册失败");
+                if (chkForever.Checked)
+                {
+                    mPasswordFile.SetDate(DateType.DeadLine, dTPicker_DeadLIne.Value);
+                    mPasswordFile.WritePasswordFile();
+                    MessageBox.Show("永久授权设置成功");
+                }
                 return;
             }
-            if (iModelRole>0)
+
+            if (!bReg)
             {
-                mPasswordFile.SetDate(DateType.DeadLine, dTPicker_DeadLIne.Value);
-                mPasswordFile.WritePasswordFile();
+                this.DialogResult = DialogResult.None;
+                MessageBox.Show("注册失败");
             }
         }
 
