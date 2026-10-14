@@ -738,6 +738,7 @@ namespace VisionApplication
             }
             string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
             fo.ReadRunTimeStatus(strPath, ref rts);
+            rts.initStatus.bSerInit = false; // 本轮串口状态由 InitSerial 重新确认，不能沿用历史连接状态。
             rts.initStatus.bUserParamFileInit = bUserParamInit;
             detStat = rts.detS;
             
@@ -2161,7 +2162,7 @@ namespace VisionApplication
                 stage = "PixelFormat";
                 if (!hIKVisionCamera.SetPixelFormat(ref local.iMonoType, camera)) return false;
                 stage = "Sharpness";
-                if (!hIKVisionCamera.SetSharpness(ref local.iSharp, camera)) return false;
+                if (!hIKVisionCamera.SetSharpness(ref local.iSharp, camera, skipUnavailable: true)) return false;
                 stage = "Gamma";
                 if (!hIKVisionCamera.SetGamma(ref local.dGamma, camera)) return false;
                 stage = "Resolution";

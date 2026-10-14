@@ -82,3 +82,12 @@
 - 保留Create/Open、最终PixelFormat、ROI写入及有效索引的原有判断、参数局部副本与异常堆栈；映射、默认值、配置、回放、IO和长度修复未改。AcqFIFO及VisionControlExtention源码哈希未变，预览Join保护、finally归还和同路取帧互斥保留。失败SDK日志简化为调用名称、原始码、物理索引/序列号；Start持久化真实返回码。
 - 备份与产物位于tmp/camera-connection-restore-20261013-181717。基于提取旧/新方法的假SDK对比67项通过，覆盖辅助失败继续执行、写入失败仍返回false、SDK调用/目标值与旧版一致、读回失败不改判Start结果。真实VisionBasedLaser.sln全部11项目Debug/x64完整Build退出码0，0错误、83警告；未出现构建期程序集冲突。公共bin的274文件哈希未变，未新增文件；未运行EXE或相机。
 - 需要部署本轮CommonCls.dll及激光除胶.exe；与本轮主程序配套使用同批xbVP_Control.dll及调试符号，保持现场配置/模型/VPP不覆盖。仅确认代码回归撤销和完整构建通过，双路冷启动、一次热连接及连续预览仍需现场验证；若最终Sharpness/Gamma/尺寸写入仍失败，保留实际SDK错误，不将辅助读取失败与最终写入失败混为一谈。
+
+## 启动光源状态与可选锐度恢复（2026-10-14）
+
+- 现场 ErrorLog/CameraLog 确认两路 PixelFormat 候选及 Sharpness 节点报 0x80000106，随后 StartGrabbing 返回成功；12:37 上一轮双路预览实际收到并显示 280/242 帧。候选格式失败、参数恢复失败和设备启动结果须分别判断。本轮未扩大修改 PixelFormat、其他参数、采集线程、IO 或相机初始化汇总代码。
+- 光源启动红字 job=0 controllerSlot=2 port=unknown not-open 来自历史 RTS 的 bSerInit=true：InitCam 选中相机时触发光源诊断，InitSerial 尚未创建串口。本轮在 ReadRunTimeStatus 后立即重置 bSerInit=false，由本轮 InitSerial 重建状态；槽位、COM 映射及统计保留。
+- 对照 D:/E盘备份文件/VB_Det 原版：原流程无条件读写 Sharpness/SharpnessAuto，不主动开启 SharpnessEnable。业务修改限于 CommonCls/HIKDeviceSource.cs 和 VisionApplication/FrmMainUI.cs；保留 SetSharpness 两参数接口，新增仅供参数恢复使用的可选节点跳过入口。设备连接且节点查询成功，确认 Sharpness 未实现/不可用/只读或 SharpnessEnable=false 时跳过，保存值不变，不产生失败记录；锐度可用时恢复原设置，不写入不可用的 SharpnessAuto。辅助查询无法确定能力时沿用原参数调用，不据查询失败新增连接阻断；实际范围读取或写入失败仍报告，范围读取失败不按空范围写入零值，断连异常保留堆栈。原两参数/UI 调用语义保留。
+- 验证产物位于 tmp/startup-sharpness-20261014。提取实际方法的假 SDK/历史状态检查 17 项通过；真实 VisionBasedLaser.sln 全部 11 项目 Debug/x64 完整 Build 退出码0、0错误、83警告。沙箱内首次停在 BJJCZ 的 x86 资源宿主启动，取消后经批准在沙箱外完成相同配置 Build；未修改项目引用、工程或目标平台，输出/中间目录隔离，引用搜索指向同批构建产物。
+- 全部 11 个编译器命令确认 CommonCls/xbVP_Control 引用来自本轮 build；主程序和 VisionControl 引用的 CommonCls=1.0.0.0，主程序引用的 xbVP_Control=1.0.9783.28265 与本轮 DLL 一致；四项基础依赖版本符合 AGENTS.md。公共 bin 274 文件哈希无变化、无新增，工程、AcqFIFO、VisionControlExtention 和 Designer 哈希保留。
+- 实机只读节点检查 EnumDevices=0x00000000、设备数0，未取得两台相机真实节点状态，未启动主程序或验证新产物采集；不能声称现场故障已修复。配套产物仍须整体使用本轮 CommonCls.dll、激光除胶.exe、xbVP_Control.dll 及对应 PDB，不覆盖配置/模型/VPP；现场需确认光源启动无提前诊断失败、双路冷启动/热连接和持续预览，以及可用锐度节点实际写入结果。

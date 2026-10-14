@@ -603,11 +603,51 @@ namespace CommonCls
         /// </summary>
         public bool SetSharpness(ref uint value, MyCamera cam)
         {
+            return SetSharpness(ref value, cam, false);
+        }
+
+        public bool SetSharpness(ref uint value, MyCamera cam, bool skipUnavailable)
+        {
+            if (skipUnavailable)
+            {
+                if (!cam.MV_CC_IsDeviceConnected_NET())
+                    throw new InvalidOperationException("锐度节点检查时相机已断开连接");
+
+                var access = MyCamera.MV_XML_AccessMode.AM_Undefined;
+                int accessRet = cam.MV_XML_GetNodeAccessMode_NET("Sharpness", ref access);
+                if (accessRet == MyCamera.MV_OK &&
+                    (access == MyCamera.MV_XML_AccessMode.AM_NI ||
+                     access == MyCamera.MV_XML_AccessMode.AM_NA ||
+                     access == MyCamera.MV_XML_AccessMode.AM_RO))
+                    return true; // 启动恢复不要求可选锐度节点可写，也不改变保存值。
+
+                var enableAccess = MyCamera.MV_XML_AccessMode.AM_Undefined;
+                int enableAccessRet = cam.MV_XML_GetNodeAccessMode_NET("SharpnessEnable", ref enableAccess);
+                if (enableAccessRet == MyCamera.MV_OK &&
+                    (enableAccess == MyCamera.MV_XML_AccessMode.AM_RO ||
+                     enableAccess == MyCamera.MV_XML_AccessMode.AM_RW))
+                {
+                    bool enabled = false;
+                    int enableRet = cam.MV_CC_GetBoolValue_NET("SharpnessEnable", ref enabled);
+                    if (enableRet == MyCamera.MV_OK && !enabled)
+                        return true; // 原流程不主动开启锐度，关闭时无需恢复其数值。
+                }
+                // 辅助查询无法确认可用性时沿用原参数调用，由实际读写结果判定。
+            }
+
             var range = new MyCamera.MVCC_INTVALUE();
-            // 恢复旧版调用顺序：范围/自动模式错误只记录，最终写入仍决定结果。
-            CheckSdkResult(cam, "Sharpness.GetRange", value.ToString(), cam.MV_CC_GetSharpness_NET(ref range));
+            bool rangeRead = CheckSdkResult(cam, "Sharpness.GetRange", value.ToString(), cam.MV_CC_GetSharpness_NET(ref range));
+            if (skipUnavailable && !rangeRead) return false;
             uint adjusted = Clamp(value, range.nMin, range.nMax);
-            SetEnumValueChecked(cam, "SharpnessAuto", 0);
+            var autoAccess = MyCamera.MV_XML_AccessMode.AM_Undefined;
+            int autoAccessRet = skipUnavailable
+                ? cam.MV_XML_GetNodeAccessMode_NET("SharpnessAuto", ref autoAccess)
+                : MyCamera.MV_E_SUPPORT;
+            if (autoAccessRet != MyCamera.MV_OK ||
+                (autoAccess != MyCamera.MV_XML_AccessMode.AM_NI &&
+                 autoAccess != MyCamera.MV_XML_AccessMode.AM_NA &&
+                 autoAccess != MyCamera.MV_XML_AccessMode.AM_RO))
+                SetEnumValueChecked(cam, "SharpnessAuto", 0);
             if (!CheckSdkResult(cam, "Sharpness", adjusted.ToString(), cam.MV_CC_SetSharpness_NET(adjusted))) return false;
             value = adjusted;
             return true;

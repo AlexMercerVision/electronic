@@ -1,0 +1,64 @@
+[
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/CommonCls.dll",
+    "current_dependencies": []
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/xbVP_Control.dll",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/激光除胶.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll",
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\xbVP_Control.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/ParamSet.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/LS_UartAssist.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/PerMang.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/CamDebug.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/BJJCZ_Server.exe",
+    "current_dependencies": []
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/PipeChanel.dll",
+    "current_dependencies": []
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/xbDet.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll"
+    ]
+  },
+  {
+    "output": "E:/jieyawenjian/VB_Det/tmp/startup-sharpness-20261014/obj/MarkManager.exe",
+    "current_dependencies": [
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\CommonCls.dll",
+      "E:\\jieyawenjian\\VB_Det\\tmp\\startup-sharpness-20261014\\build\\xbVP_Control.dll"
+    ]
+  }
+]

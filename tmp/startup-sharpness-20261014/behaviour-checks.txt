@@ -1,0 +1,18 @@
+PASS optional-unavailable-AM_NI
+PASS optional-unavailable-AM_NA
+PASS optional-unavailable-AM_RO
+PASS disabled-feature-preserves-zero-and-no-errors
+PASS startup-does-not-enable-previously-disabled-feature
+PASS enabled-feature-clamps-and-writes-original-values
+PASS missing-auto-node-does-not-block-supported-sharpness
+PASS read-only-auto-node-is-not-written
+PASS camera-without-enable-node-keeps-original-write
+PASS unavailable-access-query-falls-back-to-original-calls
+PASS real-range-failure-does-not-write-zero
+PASS real-write-failure-is-retained-without-saving-adjustment
+PASS disconnected-device-is-not-treated-as-optional-skip
+PASS explicit-ui-setting-keeps-real-write-failure
+PASS existing-two-argument-behaviour-preserves-legacy-range-path
+PASS history-resets-serial-and-preserves-statistics-True
+PASS history-resets-serial-and-preserves-statistics-False
+TOTAL 17 passed

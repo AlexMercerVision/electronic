@@ -1,0 +1,59 @@
+{
+  "Assemblies": [
+    {
+      "File": "CommonCls.dll",
+      "Identity": "CommonCls, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "Hash": "947320A1B71F80FE32AB5EB35DB13A401CA1188F353C31E6192D27553E047BF1",
+      "References": []
+    },
+    {
+      "File": "xbVP_Control.dll",
+      "Identity": "xbVP_Control, Version=1.0.9783.28265, Culture=neutral, PublicKeyToken=null",
+      "Hash": "1AA5FE6DA36B1C504F08CC380E7535B243EA0C3CEF2F21C0A6F12C22A185FBDC",
+      "References": [
+        {
+          "Name": "CommonCls",
+          "Version": "1.0.0.0"
+        }
+      ]
+    },
+    {
+      "File": "激光除胶.exe",
+      "Identity": "激光除胶, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "Hash": "230B76A60030AEC6534CCC57AB7938245F3D9D936A26D47DC246AFB807550D05",
+      "References": [
+        {
+          "Name": "CommonCls",
+          "Version": "1.0.0.0"
+        },
+        {
+          "Name": "xbVP_Control",
+          "Version": "1.0.9783.28265"
+        }
+      ]
+    }
+  ],
+  "BclVersions": [
+    {
+      "File": "System.Memory.dll",
+      "Version": "4.0.1.2"
+    },
+    {
+      "File": "System.Buffers.dll",
+      "Version": "4.0.3.0"
+    },
+    {
+      "File": "System.Numerics.Vectors.dll",
+      "Version": "4.1.4.0"
+    },
+    {
+      "File": "System.Runtime.CompilerServices.Unsafe.dll",
+      "Version": "6.0.0.0"
+    }
+  ],
+  "PublicBinFiles": 274,
+  "PublicBinModified": 0,
+  "PublicBinAdded": 0,
+  "PreservedFiles": 7,
+  "AssemblyReferenceVersionsMatch": true
+}
