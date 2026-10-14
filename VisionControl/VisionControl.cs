@@ -712,6 +712,9 @@ namespace VisionControl
                 vppJobResultProcessed[jobIndex] = false;
                 vppJobStopped[jobIndex] = false;
                 vppJobCompletionPending[jobIndex] = true;
+                vppJobResultValid[jobIndex] = false;
+                pmaRes[jobIndex].bOk = false;
+                pmaRes[jobIndex].dPMAScore = 0;
                 bRunOneTimeFinished[jobIndex] = 0;
                 jobBusy[jobIndex] = true;
                 return true;
@@ -729,6 +732,9 @@ namespace VisionControl
                 vppJobStopped[jobIndex] = false;
                 vppJobCompletionPending[jobIndex] = false;
                 bRunOneTimeFinished[jobIndex] = 2;
+                vppJobResultValid[jobIndex] = false;
+                pmaRes[jobIndex].bOk = false;
+                pmaRes[jobIndex].dPMAScore = 0;
                 jobBusy[jobIndex] = false;
             }
         }
@@ -783,16 +789,39 @@ namespace VisionControl
             try
             {
                 RunOneTimeFinished(jobIndex);
+                if (!SkipImageUpdateForCurrentRun)
+                {
+                    if (InvokeRequired)
+                        Invoke(new Action(() => {
+                            ClearRawImageDisplayGraphicsByJobIndex(jobIndex);
+                            DirectShowImage(jobIndex);
+                        }));
+                    else
+                    {
+                        ClearRawImageDisplayGraphicsByJobIndex(jobIndex);
+                        DirectShowImage(jobIndex);
+                    }
+                }
+                JobResultReady?.Invoke(jobIndex);
+            }
+            catch (Exception ex)
+            {
+                vppJobResultValid[jobIndex] = false;
+                pmaRes[jobIndex].bOk = false;
+                pmaRes[jobIndex].dPMAScore = 0;
+                strErrInfo[jobIndex] = $"jobIndex={jobIndex} 本轮结果显示/通知失败: {ex}";
+                OnVisionError(jobIndex, strErrInfo[jobIndex]);
             }
             finally
             {
                 lock (vppJobCompletionLock)
                 {
                     jobBusy[jobIndex] = false;
+                    // 图像和本轮结果已经更新，最后释放等待线程。
+                    bRunOneTimeFinished[jobIndex] = 2;
                 }
             }
 
-            JobResultReady?.Invoke(jobIndex);
         }
 
         //任务运行回调，单次运行每个job被回调1次
@@ -865,8 +894,6 @@ namespace VisionControl
 
                     try
                     {
-                        if (!SkipImageUpdateForCurrentRun)
-                            DirectShowImage(idx);
                         infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
                         start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
                         cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
@@ -1112,13 +1139,7 @@ namespace VisionControl
         private int? HandleUserResults()
         {
             ICogRecord result = mJM.UserResult();
-            int count = 0;
-            //防止结果为空
-            while(result==null && count<20)
-            {
-                Thread.Sleep(100);
-                count++;
-            }
+            // 队列已空时立即退出；新结果由下一次UserResultAvailable事件处理。
             if (result != null)
             {
                 string jobName = (string)result.SubRecords["JobName"].Content;
@@ -1220,18 +1241,43 @@ namespace VisionControl
             try
             {
 
-                bool bOk = (string)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result") == "OK";
-                double length = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("length");
+                CogToolGroup group = mJM.Job(jobIndex).VisionTool as CogToolGroup;
+                if (group == null || group.RunStatus.Result != CogToolResultConstants.Accept)
+                    throw new InvalidOperationException("本轮视觉工具组运行失败");
+                int tuneType = Convert.ToInt32(group.GetScriptTerminalData("tuneType"));
+                for (int edge = 1; edge <= 2; edge++)
+                {
+                    ICogTool tool = group.Tools[(tuneType == 1 ? "CogCaliperTool" : "CogFindLineTool") + edge];
+                    if (tool == null || group.DisabledTools.Contains(tool) ||
+                        tool.RunStatus.Result != CogToolResultConstants.Accept)
+                        throw new InvalidOperationException($"本轮边缘工具{edge}运行失败");
+                }
+                object resultValue = group.GetScriptTerminalData("Result");
+                object lengthValue = group.GetScriptTerminalData("length");
+                string result = resultValue as string;
+                if ((result != "OK" && result != "NG") || !(lengthValue is double))
+                    throw new InvalidOperationException("本轮Result/length输出类型或内容无效");
+                double length = (double)lengthValue;
+                double threshold = Convert.ToDouble(group.GetScriptTerminalData("lenTh"));
+                if (double.IsNaN(length) || double.IsInfinity(length) || length < 0 ||
+                    double.IsNaN(threshold) || double.IsInfinity(threshold) || threshold <= 0 ||
+                    (result == "OK") != (length >= threshold))
+                    throw new InvalidOperationException($"本轮测量输出无效: Result={result}, length={length}, lenTh={threshold}");
+                bool bOk = result == "OK";
                 pmaRes[jobIndex].bOk = bOk;             //复用模板匹配结果
                 pmaRes[jobIndex].dPMAScore = length;
                 // 触发等待事件
               //  jobCompletedEvents[iJobIndex]?.Set();
-                bRunOneTimeFinished[jobIndex] = 2;
+                vppJobResultValid[jobIndex] = true;
             }
             catch (Exception ex)
             {
-                 bRunOneTimeFinished[jobIndex] = 2;
-                OnVisionError(jobIndex, $"工位{jobIndex + 1}长度测量异常：" + ex.Message); // ✅ 添加此处
+                vppJobResultValid[jobIndex] = false;
+                pmaRes[jobIndex].bOk = false;
+                pmaRes[jobIndex].dPMAScore = 0;
+                pmaRes[jobIndex].bLocated = false;
+                strErrInfo[jobIndex] = $"jobIndex={jobIndex} 本轮长度测量失败: {ex}";
+                OnVisionError(jobIndex, strErrInfo[jobIndex]);
             }
         }
 

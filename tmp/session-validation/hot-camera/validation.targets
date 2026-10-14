@@ -1,0 +1,16 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- 隔离验证专用：不改工程、不覆盖公共 bin。 -->
+  <Target Name="_GetProjectReferenceTargetFrameworkProperties" />
+  <Target Name="ResolveProjectReferences">
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'VisionApplication'">
+      <_ResolvedProjectReferencePaths Include="E:/jieyawenjian/VB_Det/tmp/session-validation/hot-camera/common/CommonCls.dll" />
+      <_ResolvedProjectReferencePaths Include="E:/jieyawenjian/VB_Det/tmp/session-validation/hot-camera/control/xbVP_Control.dll" />
+    </ItemGroup>
+  </Target>
+  <Target Name="HotCameraReferences" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="$([System.String]::Copy('%(Reference.Identity)').StartsWith('CommonCls'))" />
+      <Reference Include="E:/jieyawenjian/VB_Det/tmp/session-validation/hot-camera/common/CommonCls.dll" />
+    </ItemGroup>
+  </Target>
+</Project>

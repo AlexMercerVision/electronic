@@ -21,6 +21,42 @@ namespace CommonCls
         private readonly MyCamera[] _cameraArray = new MyCamera[MaxCameraNum]; // 多相机模式数组
         private int _cameraCount;                         // 实际初始化的相机数量
         private MyCamera.MV_CC_DEVICE_INFO_LIST _deviceList; // 设备列表
+        private int _lastEnumResult = MyCamera.MV_OK;
+        public event Action<string> CameraDiagnostic;
+
+        public bool CheckSdkResult(MyCamera cam, string node, string target, int result,
+            int cameraIndex = -1, string serial = null)
+        {
+            if (result == MyCamera.MV_OK) return true;
+            if (cameraIndex < 0) cameraIndex = Array.IndexOf(_cameraArray, cam);
+            if (serial == null)
+            {
+                try { serial = GetConnectedCameraSerial(cameraIndex); }
+                catch (Exception ex)
+                {
+                    serial = "unknown";
+                    CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, node=DeviceSerialNumber, target=read, exception={ex}");
+                }
+            }
+            CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, serial={serial}, node={node}, SDK=0x{unchecked((uint)result):X8}");
+            return false;
+        }
+
+        public bool SetEnumValueChecked(MyCamera cam, string node, uint value)
+        {
+            return CheckSdkResult(cam, node, value.ToString(), cam.MV_CC_SetEnumValue_NET(node, value));
+        }
+
+        public bool SetIntValueChecked(MyCamera cam, string node, uint value)
+        {
+            return CheckSdkResult(cam, node, value.ToString(), cam.MV_CC_SetIntValue_NET(node, value));
+        }
+
+        /// <summary>最近一次设备枚举的 SDK 返回码。</summary>
+        public int LastEnumResult
+        {
+            get { return _lastEnumResult; }
+        }
 
         // 帧信息（用于取流，当前未完全实现转换逻辑）
         private  MyCamera.MV_FRAME_OUT_INFO_EX _frameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();
@@ -40,7 +76,13 @@ namespace CommonCls
         public uint CameraNum()
         {
             // 枚举 GigE 和 USB 设备
-            MyCamera.MV_CC_EnumDevices_NET(MyCamera.MV_GIGE_DEVICE | MyCamera.MV_USB_DEVICE, ref _deviceList);
+            _lastEnumResult = MyCamera.MV_CC_EnumDevices_NET(
+                MyCamera.MV_GIGE_DEVICE | MyCamera.MV_USB_DEVICE, ref _deviceList);
+            if (_lastEnumResult != MyCamera.MV_OK)
+            {
+                _deviceList = new MyCamera.MV_CC_DEVICE_INFO_LIST();
+                return 0;
+            }
             return _deviceList.nDeviceNum;
         }
 
@@ -175,7 +217,8 @@ namespace CommonCls
                 if (_cameraArray[index] == null)
                     _cameraArray[index] = new MyCamera();
 
-                if (InitializeCamera(_cameraArray[index], device))
+                int createRet, openRet;
+                if (InitializeCamera(_cameraArray[index], device, out createRet, out openRet, index))
                 {
                     status[index] = 1;
                 }
@@ -191,14 +234,26 @@ namespace CommonCls
         /// <returns>是否成功</returns>
         private bool InitializeCamera(MyCamera camera, MyCamera.MV_CC_DEVICE_INFO device)
         {
+            int createRet;
+            int openRet;
+            return InitializeCamera(camera, device, out createRet, out openRet);
+        }
+
+        /// <summary>
+        /// 初始化单个相机并返回 Create/Open 的原始 SDK 返回码。
+        /// </summary>
+        private bool InitializeCamera(MyCamera camera, MyCamera.MV_CC_DEVICE_INFO device,
+            out int createRet, out int openRet, int cameraIndex = -1)
+        {
             // 创建设备
-            int ret = camera.MV_CC_CreateDevice_NET(ref device);
-            if (ret != MyCamera.MV_OK)
+            createRet = camera.MV_CC_CreateDevice_NET(ref device);
+            openRet = int.MinValue; // Open 尚未执行
+            if (createRet != MyCamera.MV_OK)
                 return false;
 
             // 打开设备
-            ret = camera.MV_CC_OpenDevice_NET();
-            if (ret != MyCamera.MV_OK)
+            openRet = camera.MV_CC_OpenDevice_NET();
+            if (openRet != MyCamera.MV_OK)
             {
                 camera.MV_CC_DestroyDevice_NET();
                 return false;
@@ -215,12 +270,166 @@ namespace CommonCls
             }
 
             // 设置采集模式为连续采集，触发模式关闭
-            camera.MV_CC_SetEnumValue_NET("AcquisitionMode",
-                (uint)MyCamera.MV_CAM_ACQUISITION_MODE.MV_ACQ_MODE_CONTINUOUS);
-            camera.MV_CC_SetEnumValue_NET("TriggerMode",
-                (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF);
+            string serial = device.nTLayerType == MyCamera.MV_USB_DEVICE
+                ? ((MyCamera.MV_USB3_DEVICE_INFO)MyCamera.ByteToStruct(device.SpecialInfo.stUsb3VInfo, typeof(MyCamera.MV_USB3_DEVICE_INFO))).chSerialNumber
+                : ((MyCamera.MV_GIGE_DEVICE_INFO)MyCamera.ByteToStruct(device.SpecialInfo.stGigEInfo, typeof(MyCamera.MV_GIGE_DEVICE_INFO))).chSerialNumber;
+            uint acquisition = (uint)MyCamera.MV_CAM_ACQUISITION_MODE.MV_ACQ_MODE_CONTINUOUS;
+            uint trigger = (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF;
+            CheckSdkResult(camera, "AcquisitionMode", acquisition.ToString(),
+                camera.MV_CC_SetEnumValue_NET("AcquisitionMode", acquisition), cameraIndex, serial);
+            CheckSdkResult(camera, "TriggerMode", trigger.ToString(),
+                camera.MV_CC_SetEnumValue_NET("TriggerMode", trigger), cameraIndex, serial);
 
             return true;
+        }
+
+        /// <summary>
+        /// 返回内部多相机数组。数组实例稳定，便于主界面增量连接后同步给 AcqFIFO。
+        /// </summary>
+        public MyCamera[] GetCameraArray()
+        {
+            return _cameraArray;
+        }
+
+        /// <summary>
+        /// 使用最近一次 EnumDevices 得到的设备信息连接到指定物理槽位。
+        /// 已经在线的相机不会重复 Create/Open；失效对象会先安全释放。
+        /// </summary>
+        public bool TryConnectCamera(int deviceIndex, int slotIndex,
+            out int createRet, out int openRet,
+            out int releaseStopRet, out int releaseCloseRet, out int releaseDestroyRet)
+        {
+            createRet = int.MinValue;
+            openRet = int.MinValue;
+            releaseStopRet = int.MinValue;
+            releaseCloseRet = int.MinValue;
+            releaseDestroyRet = int.MinValue;
+
+            if (deviceIndex < 0 || deviceIndex >= _deviceList.nDeviceNum ||
+                slotIndex < 0 || slotIndex >= MaxCameraNum)
+                return false;
+
+            MyCamera current = _cameraArray[slotIndex];
+            bool currentConnected = false;
+            if (current != null)
+            {
+                try
+                {
+                    currentConnected = current.MV_CC_IsDeviceConnected_NET();
+                }
+                catch (Exception ex)
+                {
+                    CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=IsDeviceConnected, exception={ex}");
+                    currentConnected = false;
+                }
+            }
+
+            if (currentConnected)
+            {
+                _cameraCount = Math.Max(_cameraCount, slotIndex + 1);
+                return true;
+            }
+
+            if (current != null)
+            {
+                ReleaseCamera(slotIndex, out releaseStopRet, out releaseCloseRet, out releaseDestroyRet);
+            }
+
+            MyCamera candidate = null;
+            try
+            {
+                var device = (MyCamera.MV_CC_DEVICE_INFO)Marshal.PtrToStructure(
+                    _deviceList.pDeviceInfo[deviceIndex], typeof(MyCamera.MV_CC_DEVICE_INFO));
+                candidate = new MyCamera();
+                if (!InitializeCamera(candidate, device, out createRet, out openRet, slotIndex))
+                {
+                    // Create/Open 失败时 InitializeCamera 已处理 Destroy；不要把半成品放入数组。
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=InitializeCamera, exception={ex}");
+                try
+                {
+                    if (candidate != null)
+                        candidate.MV_CC_DestroyDevice_NET();
+                }
+                catch (Exception cleanupEx)
+                {
+                    CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=DestroyDevice, exception={cleanupEx}");
+                    // 连接失败仍然返回 false，由调用方记录本次 SDK 阶段。
+                }
+                return false;
+            }
+
+            _cameraArray[slotIndex] = candidate;
+            _cameraCount = Math.Max(_cameraCount, slotIndex + 1);
+            return true;
+        }
+
+        /// <summary>
+        /// 释放指定槽位的旧句柄，并返回 Stop/Close/Destroy 的 SDK 结果。
+        /// </summary>
+        public bool ReleaseCamera(int slotIndex, out int stopRet, out int closeRet, out int destroyRet)
+        {
+            stopRet = int.MinValue;
+            closeRet = int.MinValue;
+            destroyRet = int.MinValue;
+            if (slotIndex < 0 || slotIndex >= MaxCameraNum || _cameraArray[slotIndex] == null)
+                return true;
+
+            MyCamera camera = _cameraArray[slotIndex];
+            try
+            {
+                stopRet = camera.MV_CC_StopGrabbing_NET();
+            }
+            catch (Exception ex)
+            {
+                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=StopGrabbing, exception={ex}");
+                stopRet = int.MinValue;
+            }
+            try
+            {
+                closeRet = camera.MV_CC_CloseDevice_NET();
+            }
+            catch (Exception ex)
+            {
+                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=CloseDevice, exception={ex}");
+                closeRet = int.MinValue;
+            }
+            try
+            {
+                destroyRet = camera.MV_CC_DestroyDevice_NET();
+            }
+            catch (Exception ex)
+            {
+                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=DestroyDevice, exception={ex}");
+                destroyRet = int.MinValue;
+            }
+            _cameraArray[slotIndex] = null;
+
+            while (_cameraCount > 0 && _cameraArray[_cameraCount - 1] == null)
+                _cameraCount--;
+
+            return stopRet == MyCamera.MV_OK &&
+                   closeRet == MyCamera.MV_OK &&
+                   destroyRet == MyCamera.MV_OK;
+        }
+
+        /// <summary>
+        /// 获取已连接槽位的设备序列号，用于防止枚举顺序变化造成 A/B 交换。
+        /// </summary>
+        public string GetConnectedCameraSerial(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= MaxCameraNum || _cameraArray[slotIndex] == null)
+                return string.Empty;
+
+            var value = new MyCamera.MVCC_STRINGVALUE();
+            int ret = _cameraArray[slotIndex].MV_CC_GetStringValue_NET("DeviceSerialNumber", ref value);
+            if (ret != MyCamera.MV_OK)
+                return string.Empty;
+            return value.chCurValue == null ? string.Empty : value.chCurValue.Trim();
         }
 
         /// <summary>
@@ -292,6 +501,7 @@ namespace CommonCls
             if (type == 0)
             {
                 int ret = cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8);
+                CheckSdkResult(cam, "PixelFormat", "Mono8", ret);
                 if (ret == MyCamera.MV_OK)
                 {
                     // 确保外部类型为 0
@@ -314,6 +524,7 @@ namespace CommonCls
             foreach (uint fmt in colorFormats)
             {
                 int ret = cam.MV_CC_SetPixelFormat_NET(fmt);
+                CheckSdkResult(cam, "PixelFormat", $"0x{fmt:X8} (候选格式)", ret);
                 if (ret == MyCamera.MV_OK)
                 {
                     // 彩色格式设置成功，保持 type = 1
@@ -323,7 +534,8 @@ namespace CommonCls
             }
 
             // 所有彩色格式都失败，回退到黑白模式
-            if (cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8) == MyCamera.MV_OK)
+            int fallbackRet = cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8);
+            if (CheckSdkResult(cam, "PixelFormat", "Mono8 (原有回退)", fallbackRet))
             {
                 type = 0;
                 return true;
@@ -358,15 +570,18 @@ namespace CommonCls
         public bool SetResolution(ref uint width, ref uint height, MyCamera cam)
         {
             var range = new MyCamera.MVCC_INTVALUE();
-            cam.MV_CC_GetWidth_NET(ref range);
-            width = Clamp(width, range.nMin, range.nMax);
-            int retW = cam.MV_CC_SetWidth_NET(width);
+            CheckSdkResult(cam, "Width.GetRange", width.ToString(), cam.MV_CC_GetWidth_NET(ref range));
+            uint newWidth = Clamp(width, range.nMin, range.nMax);
+            bool widthSet = CheckSdkResult(cam, "Width", newWidth.ToString(), cam.MV_CC_SetWidth_NET(newWidth));
 
-            cam.MV_CC_GetHeight_NET(ref range);
-            height = Clamp(height, range.nMin, range.nMax);
-            int retH = cam.MV_CC_SetHeight_NET(height);
+            CheckSdkResult(cam, "Height.GetRange", height.ToString(), cam.MV_CC_GetHeight_NET(ref range));
+            uint newHeight = Clamp(height, range.nMin, range.nMax);
+            bool heightSet = CheckSdkResult(cam, "Height", newHeight.ToString(), cam.MV_CC_SetHeight_NET(newHeight));
+            if (!widthSet || !heightSet) return false;
 
-            return retW == MyCamera.MV_OK && retH == MyCamera.MV_OK;
+            width = newWidth;
+            height = newHeight;
+            return true;
         }
 
         /// <summary>
@@ -375,11 +590,12 @@ namespace CommonCls
         public bool SetBrightness(ref uint value, MyCamera cam)
         {
             var range = new MyCamera.MVCC_INTVALUE();
-            cam.MV_CC_GetBrightness_NET(ref range);
-            value = Clamp(value, range.nMin, range.nMax);
-            cam.MV_CC_SetEnumValue_NET("BrightnessAuto", 0);
-            int ret = cam.MV_CC_SetBrightness_NET(value);
-            return ret == MyCamera.MV_OK;
+            if (!CheckSdkResult(cam, "Brightness.GetRange", value.ToString(), cam.MV_CC_GetBrightness_NET(ref range))) return false;
+            uint adjusted = Clamp(value, range.nMin, range.nMax);
+            if (!SetEnumValueChecked(cam, "BrightnessAuto", 0)) return false;
+            if (!CheckSdkResult(cam, "Brightness", adjusted.ToString(), cam.MV_CC_SetBrightness_NET(adjusted))) return false;
+            value = adjusted;
+            return true;
         }
 
         /// <summary>
@@ -388,11 +604,13 @@ namespace CommonCls
         public bool SetSharpness(ref uint value, MyCamera cam)
         {
             var range = new MyCamera.MVCC_INTVALUE();
-            cam.MV_CC_GetSharpness_NET(ref range);
-            value = Clamp(value, range.nMin, range.nMax);
-            cam.MV_CC_SetEnumValue_NET("SharpnessAuto", 0);
-            int ret = cam.MV_CC_SetSharpness_NET(value);
-            return ret == MyCamera.MV_OK;
+            // 恢复旧版调用顺序：范围/自动模式错误只记录，最终写入仍决定结果。
+            CheckSdkResult(cam, "Sharpness.GetRange", value.ToString(), cam.MV_CC_GetSharpness_NET(ref range));
+            uint adjusted = Clamp(value, range.nMin, range.nMax);
+            SetEnumValueChecked(cam, "SharpnessAuto", 0);
+            if (!CheckSdkResult(cam, "Sharpness", adjusted.ToString(), cam.MV_CC_SetSharpness_NET(adjusted))) return false;
+            value = adjusted;
+            return true;
         }
 
         /// <summary>
@@ -401,11 +619,12 @@ namespace CommonCls
         public bool SetGamma(ref float value, MyCamera cam)
         {
             var range = new MyCamera.MVCC_FLOATVALUE();
-            cam.MV_CC_GetGamma_NET(ref range);
-            value = Clamp(value, range.fMin, range.fMax);
-            cam.MV_CC_SetEnumValue_NET("GammaAuto", 0);
-            int ret = cam.MV_CC_SetGamma_NET(value);
-            return ret == MyCamera.MV_OK;
+            CheckSdkResult(cam, "Gamma.GetRange", value.ToString(), cam.MV_CC_GetGamma_NET(ref range));
+            float adjusted = Clamp(value, range.fMin, range.fMax);
+            SetEnumValueChecked(cam, "GammaAuto", 0);
+            if (!CheckSdkResult(cam, "Gamma", adjusted.ToString(), cam.MV_CC_SetGamma_NET(adjusted))) return false;
+            value = adjusted;
+            return true;
         }
         /// <summary>
         /// 设置 Gamma 使能（开启/关闭）
@@ -474,11 +693,12 @@ namespace CommonCls
         public bool SetGain(ref float value, MyCamera cam)
         {
             var range = new MyCamera.MVCC_FLOATVALUE();
-            cam.MV_CC_GetGain_NET(ref range);
-            value = Clamp(value, range.fMin, range.fMax);
-            cam.MV_CC_SetEnumValue_NET("GainAuto", 0);
-            int ret = cam.MV_CC_SetGain_NET(value);
-            return ret == MyCamera.MV_OK;
+            if (!CheckSdkResult(cam, "Gain.GetRange", value.ToString(), cam.MV_CC_GetGain_NET(ref range))) return false;
+            float adjusted = Clamp(value, range.fMin, range.fMax);
+            if (!SetEnumValueChecked(cam, "GainAuto", 0)) return false;
+            if (!CheckSdkResult(cam, "Gain", adjusted.ToString(), cam.MV_CC_SetGain_NET(adjusted))) return false;
+            value = adjusted;
+            return true;
         }
 
         /// <summary>
@@ -487,23 +707,24 @@ namespace CommonCls
         public bool SetExposure(ref float value, MyCamera cam)
         {
             var range = new MyCamera.MVCC_FLOATVALUE();
-            cam.MV_CC_GetExposureTime_NET(ref range);
-            int ret = MyCamera.MV_OK;
+            if (!CheckSdkResult(cam, "ExposureTime.GetRange", value.ToString(), cam.MV_CC_GetExposureTime_NET(ref range))) return false;
+            float adjusted = value;
 
             if (value <= 0)
             {
-                cam.MV_CC_SetEnumValue_NET("ExposureAuto",
-                    (uint)MyCamera.MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS);
-                cam.MV_CC_GetExposureTime_NET(ref range);
-                value = range.fCurValue;
+                if (!SetEnumValueChecked(cam, "ExposureAuto",
+                    (uint)MyCamera.MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS)) return false;
+                if (!CheckSdkResult(cam, "ExposureTime.ReadBack", "read", cam.MV_CC_GetExposureTime_NET(ref range))) return false;
+                adjusted = range.fCurValue;
             }
             else
             {
-                value = Clamp(value, range.fMin, range.fMax);
-                cam.MV_CC_SetEnumValue_NET("ExposureAuto", 0);
-                ret = cam.MV_CC_SetExposureTime_NET(value);
+                adjusted = Clamp(value, range.fMin, range.fMax);
+                if (!SetEnumValueChecked(cam, "ExposureAuto", 0)) return false;
+                if (!CheckSdkResult(cam, "ExposureTime", adjusted.ToString(), cam.MV_CC_SetExposureTime_NET(adjusted))) return false;
             }
-            return ret == MyCamera.MV_OK;
+            value = adjusted;
+            return true;
         }
 
         /// <summary>
@@ -522,21 +743,21 @@ namespace CommonCls
             return success;
         }
         // 设置参数
-        public void SetParam(float gain, float exposure, ref string gainString, ref string exposureString, MyCamera cam)
+        public bool SetParam(float gain, float exposure, ref string gainString, ref string exposureString, MyCamera cam)
         {
 
 
             // 曝光时间
             // 获取当前Exposure、最大Exposure、最小Exposure
             MyCamera.MVCC_FLOATVALUE exposureValue = new MyCamera.MVCC_FLOATVALUE();
-            cam.MV_CC_GetExposureTime_NET(ref exposureValue);
+            bool success = CheckSdkResult(cam, "ExposureTime.GetRange", exposure.ToString(), cam.MV_CC_GetExposureTime_NET(ref exposureValue));
             //float exposure = exposureValue.fCurValue;
             float maxExposure = exposureValue.fMax;
             float minExposure = exposureValue.fMin;
             // 判断是否处于最小到最大值之间
             if (exposure <= 0)
             {
-                cam.MV_CC_SetEnumValue_NET("ExposureAuto", (uint)MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS);
+                success &= SetEnumValueChecked(cam, "ExposureAuto", (uint)MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS);
             }
             else
             {
@@ -552,11 +773,12 @@ namespace CommonCls
                 }
 
                 // 关闭自动设置
-                cam.MV_CC_SetEnumValue_NET("ExposureAuto", 0);
+                success &= SetEnumValueChecked(cam, "ExposureAuto", 0);
                 // 设置ExposureTime
-                cam.MV_CC_SetFloatValue_NET("ExposureTime", exposure);
+                success &= CheckSdkResult(cam, "ExposureTime", exposure.ToString(), cam.MV_CC_SetFloatValue_NET("ExposureTime", exposure));
                 exposureString = exposure.ToString("F0");
             }
+            return success;
         }
         /// <summary>
         /// 批量获取相机参数。

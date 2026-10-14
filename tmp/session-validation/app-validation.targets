@@ -1,0 +1,10 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- 仅供隔离编译：使用本轮已编译依赖，不修改旧式工程引用。 -->
+  <Target Name="_GetProjectReferenceTargetFrameworkProperties" />
+  <Target Name="ResolveProjectReferences">
+    <ItemGroup>
+      <_ResolvedProjectReferencePaths Include="E:/jieyawenjian/VB_Det/tmp/session-validation/common/CommonCls.dll" />
+      <_ResolvedProjectReferencePaths Include="E:/jieyawenjian/VB_Det/tmp/session-validation/control/xbVP_Control.dll" />
+    </ItemGroup>
+  </Target>
+</Project>

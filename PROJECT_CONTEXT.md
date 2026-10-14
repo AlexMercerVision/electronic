@@ -35,3 +35,50 @@
 - `ClientTools.csproj` 不在主解决方案且仍可能输出旧依赖，专项统一前不要单独构建。
 - IO 主动上报 `0x45` 的 10/25 字节格式、输入偏移和 CRC 尚未用现场抓包最终确认；COM 打开、协议有效、业务触发、物理动作必须分层判断。
 - 相机序列号与物理槽/工位绑定的长期整理尚未实施；非零旋转/镜像时原始缓存与显示方向差异也未扩大处理。
+
+## P0 现场问题与本轮修复（2026-10-12）
+
+- 现场四次冷启动约三次出现 A 面黑屏、状态栏“部分相机连接成功”、`视觉工位1异常` 与 `启动相机采集-Cam1` 失败；截图中的 PMA/精定位错误必须与相机启动错误分开判读。
+- 已确认的启动越界缺陷：`FrmMainUI.InitCam()` 在发现 `cup.p_CD.camInd[ind]` 超出当前 `cameraNum` 后仅设置状态变化，随后仍直接访问 `camera2[iCamInd]` 和 `rts.cs.iStatus[iCamInd]`，可能抛 `IndexOutOfRangeException` 并进入全局清理，影响另一工位。已在访问前增加边界检查，单个无效工位只记录并跳过；`CheckCamPrepared()` 同步增加状态数组边界检查。
+- 已将 `InitCam`、`StartGrabbing`、PMA 参数和精定位异常改为记录完整 `Exception.ToString()`、工位索引、数组长度和初始化阶段。PMA 在源码中指 Cognex PMAlign 模块，当前证据表明其错误来自 `VisionControlExtention.SetPMARunParam/GetPMAParam/SetUseTuneLocation` 的异常包装，不等于相机 SDK 失败。
+- 本轮未改动预览与检测并发取帧、序列号映射/对象槽位、关闭线程等待三项风险；它们分别仍需现场日志确认运行时取帧、重连顺序和关闭阶段影响。
+- 验证：`CommonCls` Build 通过，`VisionControl` Build 通过；当前环境缺少可用完整 MSBuild，`VisionApplication.csproj` 未能获得有效编译诊断，主程序 Build 不判定为通过。未启动 EXE，未连接真实硬件。
+
+## PMA 与视觉工位异常修复（2026-10-12）
+
+- `视觉工位1异常` 的唯一界面生成点是 `FrmMainUI.OnVisionErrorFromVP`；`jobIndex=0` 对应 A 面及配置中的物理相机0（当前 `serUserParam.json` 为 `DA8696070`）。它是 VisionControl 错误事件的统一显示，不等同于相机连接失败。
+- PMA 越界根因是 `VisionControlExtention.SetPMARunParam/GetPMAParam` 直接使用固定长度为2的 `pma[jobIndex]`，而 UI 的“全部工位”会传 `-1`，预留工位会传 `2`。现已在 Job、PMA 数组、ToolGroup、`CogPMAlignTool1` 四层校验；数组未扩容，工具为空和工位未初始化分别报告。
+- PMA 参数、模板、测试图像及精定位 UI 入口均拒绝未启用单工位；`InitParamUI`/工位切换仅在有效 Job0/Job1 读取参数。无效 `jobIndex` 的视觉回调显示为“视觉操作异常”，避免把 `-1` 误标为工位1。
+- 静态验证：`VisionControl.csproj` 使用 `dotnet msbuild` 通过；主项目无法由当前 dotnet MSBuild 完成旧式项目引用解析，未获得有效源码编译诊断。未启动 EXE，未连接真实设备；相机流程和“部分相机连接成功”提示未改动。
+
+## 双工位回放长度测量修复（2026-10-13）
+
+- 现场 `D:/data/Log/ErrorLog_20261013.txt` 多次记录 Job0 超时后取消同步 IO 批次。原 `RunOneTimeThread(bool)` 随即退出工位循环，Job1 未进入检测；超时后仍更新完成日志和统计，截图中的 A 面长度不保证属于该轮。
+- `VisionControl.HandleUserResults()` 取到空队列后原有 20×100ms 等待没有重新取结果，现改为空队列立即返回，保留后续 UserResultAvailable 事件处理以及结果处理完成/Job Stopped 双条件完成机制。
+- `FrmMainUI.RunOneTimeThread(bool)` 的 VPP 路径不再提前清零完成标志，交由检测入口在检查/恢复 busy 后初始化；同步长度测量逐工位执行，一路启动失败/超时或 IO 批次拒绝不阻断另一路检测。取消的组合 IO 批次在该轮不重建、不提交后续工位结果，保持完整批次输出语义；超时的测量工位不记录完成或更新统计。测量算法、超时配置、缺陷检测成功路径及 Designer 未改动。
+- 验证：基于实际运行方法和 busy 初始化方法编译的隔离桩验证通过 9 项场景，覆盖双成功、A/B 启动失败/超时、A busy、超时后恢复、IO 禁用/拒绝及缺陷成功路径。`VisionControl` 在指定现有 bin 引用路径后隔离 Build 通过；主项目仍在旧式项目引用解析阶段失败，未获得完整 Build 结果。未启动 EXE 或执行实际 Measure.vpp，需现场连续回放确认 A/B 各自本轮结果及 IO 批次输出，首次超时的事件耗时仍需现场记录。
+
+## 回放、IO竞争及长度结果/参数修复（2026-10-13）
+
+- 当前映射 Job0→Cam1、Job1→Cam0。修复 AcqFIFO 文件回放中工位目录与物理相机缓存索引混用；图像格式、原图及字节缓存统一按物理相机槽读写，离线推理与 VPP 输入同步使用该槽。映射配置未修改。
+- 手动单次运行增加所属线程完成标志，结果回调不再通过跨轮累计计数提前调用 FinalizeRun；每轮/新IO批次初始化计数。IO入口仅在成功加入后返回可提交/取消的批次令牌，拒绝请求不取消他人批次；输出期间不由取消路径释放，发送退出时在 finally 释放批次。位图、通道、IOTimeDelay、bUpdateIO 配置未改动。
+- VPP分别记录处理完成与测量有效。验证工具运行状态、当前模式工具启用状态、输出类型、有限非负长度及动态lenTh判定一致性；失败清除本轮缓存中的旧OK/长度，保留完成信号。结果确认后在UI线程切换显示，最后释放工位等待线程；显示先于IO提交。无效测量不提交IO、不记录正常完成或统计。上层超时不得直接清除仍待结果/Stopped汇合的VPP busy。
+- 长度参数Get/Set返回真实成功状态；获取读取当前Job的lenTh，设置后读回核对。只有读写及界面同步成功才记录成功，检测期间拒绝修改该Job参数。未修改SaveVPP、持久化、Designer、LD.vpp、测量脚本或模型。
+- 验证：CommonCls、VisionControl隔离Build通过；主程序使用本轮编译依赖和仅供验证的外置targets完成Compile，完整Build仍退出失败且未给出有效错误诊断。构建输出位于tmp/session-validation，未覆盖公共bin。未启动EXE、未执行现场VPP或连接硬件；冷启动回放、连续触发/PLC脉冲时序、动态lenTh边界及参数会话效果均需现场验证。
+
+## 双 USB3 热连接与预览可靠性（2026-10-13）
+
+- 现场错误日志确认：DA8696070、DA8696075 均在 Create/Open 后、StartGrabbing 前发生参数恢复失败；清理 Stop=0x80000003 不是参数节点的原始错误。后续 Job0/Cam0/DA8696070 多次 GetImageBuffer=0x80000007，仅能确认无数据，不能判定 USB 带宽不足或缺少触发。
+- 修改范围限于 CommonCls/HIKDeviceSource.cs、CommonCls/AcqFIFO.cs、VisionApplication/FrmMainUI.cs、VisionControl/VisionControlExtention.cs。参数恢复使用结构体及 ROI 数组的局部副本，全部成功才提交；SDK 范围读取失败立即返回，逐节点保留目标值、原始返回码、索引/序列号及异常堆栈。AcquisitionMode/TriggerMode 写入检查返回码，参数恢复和启动后读回采集/触发状态；未完成参数和缓冲初始化不得启动采集，热连接整体成功要求有效映射且所有启用工位成功。
+- 预览停止确认 Join 退出后才清空引用或释放缓冲；超时保留资源并拒绝重启/重连，增量连接及 InitCam 都检查旧预览线程。同路预览使用生命周期锁和物理相机占用；常规灰度/彩色单帧入口拒绝预览占用，预览与这两入口共用取帧锁。Get 成功后的显示/翻转置于 try/finally，检查 Free 返回码；非无数据错误、设备断开或异常记录原因后退出，不强制终止线程。
+- 新增运行期 CameraLog_yyyyMMdd.txt（使用现有日志目录）：持久化成功/失败的连接与 StartGrabbing、采集模式读回、首帧时间、每 5 秒取帧/显示计数、连续及累计无数据计数、最近取帧/显示时间、线程 ID 和退出原因/完整异常。旧错误日志和 UI 提示继续保留。
+- 验证输出隔离到 tmp/session-validation/hot-camera。CommonCls、VisionControl Build 通过，主工程使用本轮隔离依赖及外置 targets 的 Compile 通过；未将主工程判为完整发布 Build。假 SDK 验证 25 项通过，覆盖 Join 超时资源保护、重复预览拒绝、异常后 Free、无数据/退出区分、参数失败不污染保存值及范围失败不写入。公共 bin 的主程序、配置、CommonCls.dll、xbVP_Control.dll 哈希未变。未运行实际程序或相机，未修改 Designer、工程、映射配置及曝光/增益/ROI 默认值。
+- 保留疑点：具体失败参数节点及单帧冻结的直接原因仍需新日志确认，不能宣称现场故障完全修复。旧光度/字节采集入口未扩大修改；若现场进入这些入口，仍需核实是否与预览并行消费。观察两路后续成功帧数是否持续增长、显示计数是否跟随、线程是否仍在运行，以及失败节点的实际 SDK 返回码。
+
+## 双相机连接回归的精准撤销（2026-10-13）
+
+- 现场确认两路 Sharpness.GetRange=0x80000106 后均未启动采集。Git旧方法与15:28旧CommonCls DLL的IL一致：范围读取和SharpnessAuto结果原本不阻断后续写入；旧StartGrab无初始化状态门槛，模式读回仅用于诊断。用户本轮明确授权以恢复旧连接行为为最高优先级，撤销上一节新增的辅助调用强制失败条件，不新增恢复策略。上一节关于范围读取失败即返回、模式读回决定启动成功的描述不再代表当前行为。
+- 本轮业务源码仅修改CommonCls/HIKDeviceSource.cs和VisionApplication/FrmMainUI.cs：锐度/Gamma/尺寸范围恢复旧范围计算及SDK调用顺序，范围和自动模式失败只记录；保留原有锐度/Gamma/宽高最终写入失败判断。曝光和触发恢复旧入口不以返回值阻断；连续/触发初始设置和模式读回失败不关闭已打开的句柄、不阻断恢复。StartGrabbing恢复按SDK真实返回码设置采集状态，不再被状态门槛或读回失败改判。
+- 保留Create/Open、最终PixelFormat、ROI写入及有效索引的原有判断、参数局部副本与异常堆栈；映射、默认值、配置、回放、IO和长度修复未改。AcqFIFO及VisionControlExtention源码哈希未变，预览Join保护、finally归还和同路取帧互斥保留。失败SDK日志简化为调用名称、原始码、物理索引/序列号；Start持久化真实返回码。
+- 备份与产物位于tmp/camera-connection-restore-20261013-181717。基于提取旧/新方法的假SDK对比67项通过，覆盖辅助失败继续执行、写入失败仍返回false、SDK调用/目标值与旧版一致、读回失败不改判Start结果。真实VisionBasedLaser.sln全部11项目Debug/x64完整Build退出码0，0错误、83警告；未出现构建期程序集冲突。公共bin的274文件哈希未变，未新增文件；未运行EXE或相机。
+- 需要部署本轮CommonCls.dll及激光除胶.exe；与本轮主程序配套使用同批xbVP_Control.dll及调试符号，保持现场配置/模型/VPP不覆盖。仅确认代码回归撤销和完整构建通过，双路冷启动、一次热连接及连续预览仍需现场验证；若最终Sharpness/Gamma/尺寸写入仍失败，保留实际SDK错误，不将辅助读取失败与最终写入失败混为一谈。

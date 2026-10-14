@@ -1489,7 +1489,7 @@ namespace VisionApplication
             if (vpWin == null)
                 return;
 
-            vpWin.bMainTaskFinished = !AnyFaceVisionActive();
+            vpWin.bMainTaskFinished = System.Threading.Volatile.Read(ref manualSingleRunActive) == 0 && !AnyFaceVisionActive();
         }
 
         private bool CanRunFaceAutoTrigger(int faceIndex, string operEvent)
@@ -1681,7 +1681,7 @@ namespace VisionApplication
             cmbPMATrainAlg.SelectedIndex = 2;
             cmbPMARunAlg.SelectedIndex = 2;
 
-            if (rts.initStatus.bVPPInit)
+            if (rts.initStatus.bVPPInit && IsValidSinglePMAJob(iJobIndex))
             {
                 UpdateLaserVisionCalibTemplate2UIFromVar();
                 UpdateLaserVisionCalibParam2UIFromVP();
@@ -3081,7 +3081,10 @@ namespace VisionApplication
                 ShowCurrentTaskNotFinishedWarning();
                 return;
             }
-            vpWin.GetPMAParam(ref pmaParam, iJobIndex);
+            int pmaJobIndex;
+            if (!TryGetSelectedPMAJob("获取PMA参数", out pmaJobIndex))
+                return;
+            vpWin.GetPMAParam(ref pmaParam, pmaJobIndex);
             UpdateUIFromPMAParam();
         }
 
@@ -3096,8 +3099,11 @@ namespace VisionApplication
                 ShowCurrentTaskNotFinishedWarning();
                 return;
             }
+            int pmaJobIndex;
+            if (!TryGetSelectedPMAJob("设置PMA参数", out pmaJobIndex))
+                return;
             UpdatePMAParamFromUI();
-            vpWin.SetPMAParam(pmaParam, iJobIndex); 
+            vpWin.SetPMAParam(pmaParam, pmaJobIndex);
             bVPPParamChanged = true;
         }
 
@@ -3128,18 +3134,21 @@ namespace VisionApplication
                     operLog.strFailReason = "流程文件初始化失败";
                     return;
                 }
+                int pmaJobIndex;
+                if (!TryGetSelectedPMAJob("模板定位", out pmaJobIndex))
+                    return;
                 operLog.strOperEvent = "模板定位";
 
                 bPMAEdit = !bPMAEdit;
                 if (bPMAEdit)
                 {
                     iTmpType = vpWin._iTaskType;
-                   if (pmaV2[iJobIndex]==null)
-                        pmaV2[iJobIndex] = new CogPMAlignEditV2();
-                    pmaV2[iJobIndex].Subject = vpWin._pmaMT;
+                   if (pmaV2[pmaJobIndex]==null)
+                        pmaV2[pmaJobIndex] = new CogPMAlignEditV2();
+                    pmaV2[pmaJobIndex].Subject = vpWin._pmaMT;
                     
-                    splitContainer2.Panel1.Controls.Add(pmaV2[iJobIndex]);
-                    pmaV2[iJobIndex].Dock = DockStyle.Fill;
+                    splitContainer2.Panel1.Controls.Add(pmaV2[pmaJobIndex]);
+                    pmaV2[pmaJobIndex].Dock = DockStyle.Fill;
                     vpWin.Visible = false;
                     vpWin._iTaskType = 5;
                     vpWin.bEnableActivate = false;
@@ -3151,10 +3160,10 @@ namespace VisionApplication
                 }
                 else
                 {
-                    bool bSetPMA = vpWin.setPMA(pmaV2[iJobIndex].Subject,iJobIndex);
-                    vpWin.SaveTrainImage(iJobIndex, pmaV2[iJobIndex].Subject);  //保存模板图像
+                    bool bSetPMA = vpWin.setPMA(pmaV2[pmaJobIndex].Subject,pmaJobIndex);
+                    vpWin.SaveTrainImage(pmaJobIndex, pmaV2[pmaJobIndex].Subject);  //保存模板图像
 
-                    splitContainer2.Panel1.Controls.Remove(pmaV2[iJobIndex]);
+                    splitContainer2.Panel1.Controls.Remove(pmaV2[pmaJobIndex]);
                     
 
 
@@ -3168,11 +3177,11 @@ namespace VisionApplication
                     {
                         string pmaFailReason = "PMA模板写回未确认，继续发送对齐参数";
                         if (vpWin.strErrInfo != null &&
-                            iJobIndex >= 0 &&
-                            iJobIndex < vpWin.strErrInfo.Length &&
-                            !string.IsNullOrWhiteSpace(vpWin.strErrInfo[iJobIndex]))
+                            pmaJobIndex >= 0 &&
+                            pmaJobIndex < vpWin.strErrInfo.Length &&
+                            !string.IsNullOrWhiteSpace(vpWin.strErrInfo[pmaJobIndex]))
                         {
-                            pmaFailReason += ": " + vpWin.strErrInfo[iJobIndex];
+                            pmaFailReason += ": " + vpWin.strErrInfo[pmaJobIndex];
                         }
 
                         operLog.iEventStatus = 0;
@@ -3191,7 +3200,7 @@ namespace VisionApplication
                         await SendAlignParamToJCZServer(card);
 
                         // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
-                        await RunSilentOnceForJob(iJobIndex);
+                        await RunSilentOnceForJob(pmaJobIndex);
                     }
                  //   pmaV2.Dispose();
                 }
@@ -3222,15 +3231,18 @@ namespace VisionApplication
         {
             try
             {
+                int pmaJobIndex;
+                if (!TryGetSelectedPMAJob("训练PMA模板", out pmaJobIndex))
+                    return;
                 //从界面更新参数到pmaParam
                 UpdatePMATrainParamFromUI();
                 //从pmaParam更新参数到VP中的PMA工具
-                vpWin.SetPMATrainParam(pmaParam, iJobIndex);
+                vpWin.SetPMATrainParam(pmaParam, pmaJobIndex);
                 //从新训练PMA模板
-                vpWin.ReTrainPMA(iJobIndex);
-                if (!CheckPMATrainedWithPrompt(iJobIndex))
+                vpWin.ReTrainPMA(pmaJobIndex);
+                if (!CheckPMATrainedWithPrompt(pmaJobIndex))
                     return;
-                int jobIndex = iJobIndex;
+                int jobIndex = pmaJobIndex;
                 
                 if (jobIndex >= 0 && jobIndex < MaxLaserCards)
                 {
@@ -3241,7 +3253,7 @@ namespace VisionApplication
                 }
 
                 // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
-                await RunSilentOnceForJob(iJobIndex);
+                await RunSilentOnceForJob(pmaJobIndex);
 
                 bVPPParamChanged = true;
             }
@@ -3251,26 +3263,29 @@ namespace VisionApplication
         {
             try
             {
+                int pmaJobIndex;
+                if (!TryGetSelectedPMAJob("定位测试", out pmaJobIndex))
+                    return;
                 //从界面更新参数到pmaParam
                 UpdatePMARunParamFromUI();
                 //从pmaParam更新参数到VP中的PMA工具
-                vpWin.SetPMARunParam(pmaParam, iJobIndex);
-                if (!CheckPMATrainedWithPrompt(iJobIndex))
+                vpWin.SetPMARunParam(pmaParam, pmaJobIndex);
+                if (!CheckPMATrainedWithPrompt(pmaJobIndex))
                 {
                     bVPPParamChanged = true;
                     return;
                 }
                 //从新训练PMA模板
-               bool bLocate= vpWin.ReRunPMA(iJobIndex);
+                bool bLocate= vpWin.ReRunPMA(pmaJobIndex);
                 bVPPParamChanged = true;
                 if (bLocate)
                 {
                     operLog.iEventStatus = 2;
                     operLog.strOperEvent = "定位测试";
-                    pmaRes[iJobIndex] = vpWin.GetJobResult(iJobIndex);
-                    operLog.strFailReason = "分数:" + pmaRes[iJobIndex].dPMAScore.ToString("0.00")
-                   + "，X:" + pmaRes[iJobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[iJobIndex].dTY.ToString("0.00")
-                   + "，R:" + pmaRes[iJobIndex].dTR.ToString("0.00");
+                    pmaRes[pmaJobIndex] = vpWin.GetJobResult(pmaJobIndex);
+                    operLog.strFailReason = "分数:" + pmaRes[pmaJobIndex].dPMAScore.ToString("0.00")
+                   + "，X:" + pmaRes[pmaJobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[pmaJobIndex].dTY.ToString("0.00")
+                   + "，R:" + pmaRes[pmaJobIndex].dTR.ToString("0.00");
                   //  operLog.strFailReason = "";
                    AddLog();
                 }
@@ -3286,7 +3301,10 @@ namespace VisionApplication
         private void btPMASearchRegion_Click(object sender, EventArgs e)
         {
             try { 
-            vpWin.SetPMASearchRegion(iJobIndex);
+            int pmaJobIndex;
+            if (!TryGetSelectedPMAJob("提取PMA测试图像", out pmaJobIndex))
+                return;
+            vpWin.SetPMASearchRegion(pmaJobIndex);
             bVPPParamChanged = true;
             }
             catch { }
@@ -3295,8 +3313,11 @@ namespace VisionApplication
         {
             try
             {
+                int pmaJobIndex;
+                if (!TryGetSelectedPMAJob("提取PMA训练图像", out pmaJobIndex))
+                    return;
                 bVPPParamChanged = true;
-                vpWin.ExtraTrainImage(iJobIndex, rts.onLS.bAcqFromCam, rts.onLS.bLock);
+                vpWin.ExtraTrainImage(pmaJobIndex, rts.onLS.bAcqFromCam, rts.onLS.bLock);
             }
             catch { }
         } 
@@ -4815,7 +4836,7 @@ namespace VisionApplication
             cmbPMATrainAlg.SelectedIndex = 2;
             cmbPMARunAlg.SelectedIndex = 2;
 
-            if (rts.initStatus.bVPPInit)
+            if (rts.initStatus.bVPPInit && IsValidSinglePMAJob(iJobIndex))
             {
                // UpdateLaserVisionCalibTemplate2UIFromVar();
               //  UpdateLaserVisionCalibParam2UIFromVP();
@@ -4824,22 +4845,58 @@ namespace VisionApplication
             }
             UpdateCamParam2UI();
            
-            //精定位界面初始化
-            if (cup.p_VPPRTP.iXBType == 1)
+            //精定位界面初始化。未选择有效单工位时不调用单工位工具接口。
+            if (IsValidSinglePMAJob(iJobIndex))
             {
-                rdBT_Caliper.Checked = true;
-                rdBT_FindLine_Click(null, null);
+                if (cup.p_VPPRTP.iXBType == 1)
+                {
+                    rdBT_Caliper.Checked = true;
+                    rdBT_FindLine_Click(null, null);
+                }
+                else
+                {
+                    rdBT_FindLine.Checked = true;
+                }
+                cmbCLPEdgeLeft.SelectedIndex = 0;
             }
-            else
-            {
-                rdBT_FindLine.Checked = true;
-            }
-            cmbCLPEdgeLeft.SelectedIndex = 0;
 
           //  menuWSJobS_Click(menuWS_Job1, null);
             ViewLayout();
             SyncCurrentCardSelection(true);
             toolBtSta_MarkAfterLocated.Checked= rts.onLS.bLock;
+        }
+
+        private bool IsValidSinglePMAJob(int jobIndex)
+        {
+            return jobIndex >= 0 && jobIndex < maxJobNum &&
+                cup != null && cup.p_CD.bListProcess != null &&
+                jobIndex < cup.p_CD.bListProcess.Length && cup.p_CD.bListProcess[jobIndex];
+        }
+
+        private bool TryGetSelectedPMAJob(string operation, out int jobIndex)
+        {
+            jobIndex = iJobIndex;
+            if (!IsValidSinglePMAJob(jobIndex))
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operation;
+                operLog.strFailReason =
+                    $"PMA仅支持已启用的单工位，当前jobIndex={jobIndex}，有效范围[0,{maxJobNum - 1}]；" +
+                    "同步/全部工位或预留工位不能直接执行该操作";
+                AddLog();
+                return false;
+            }
+
+            if (vpWin == null || !rts.initStatus.bVPPInit)
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operation;
+                operLog.strFailReason = $"视觉工程未初始化，jobIndex={jobIndex}";
+                AddLog();
+                return false;
+            }
+
+            return true;
         }
 
         #endregion
@@ -4865,17 +4922,12 @@ namespace VisionApplication
 
             pmaRes[jobIndex] = vpWin.GetJobResult(jobIndex);
 
-            UpdateStatisticsForJob(jobIndex);
+            if (System.Threading.Volatile.Read(ref manualSingleRunActive) == 0 &&
+                (!cup.p_VPPRTP.bVisionInfer || vpWin.IsVppJobResultValid(jobIndex)))
+                UpdateStatisticsForJob(jobIndex);
        //     AnaEventForJob(jobIndex);
-            vpWin._bRunOneTimeFinished[jobIndex] = 2;
-            completedJobCount++;
-            if (completedJobCount >= GetEnabledJobCount())
-            {
-                allJobsDone = true;
-                this.BeginInvoke(new Action(() => {
-                    FinalizeRun();
-                }));
-            }
+            // 回调只通知结果；所属运行线程在检测和IO处理结束后释放整轮。
+            allJobsDone = System.Threading.Interlocked.Increment(ref completedJobCount) >= GetEnabledJobCount();
         }
 
         /// <summary>
@@ -4906,7 +4958,9 @@ namespace VisionApplication
 
        //     ExeIOOut();
 
-            vpWin.bMainTaskFinished = true;
+            if (System.Threading.Volatile.Read(ref manualSingleRunActive) != 0)
+                return;
+            vpWin.bMainTaskFinished = !AnyFaceVisionActive();
             btFunRunOneTime.FlatStyle = FlatStyle.Popup;
             btFunRunCont.Enabled = true;
         }
@@ -4971,7 +5025,7 @@ namespace VisionApplication
                         if (vpWin._bRunOneTimeFinished[faceIndex] == 2)
                         {
                             pmaRes[faceIndex] = vpWin._PMARes[faceIndex];
-                            visionOk = true;
+                            visionOk = !cup.p_VPPRTP.bVisionInfer || vpWin.IsVppJobResultValid(faceIndex);
                         }
                         else
                         {

@@ -338,17 +338,8 @@ namespace VisionApplication
 
         private string GetCameraDisplayName(int cameraIndex)
         {
-            if (cup.p_Cam == null || cameraIndex < 0 || cameraIndex >= cup.p_Cam.Length)
-                return "未识别相机";
-
-            string cameraName = cup.p_Cam[cameraIndex].strCamName;
-            if (string.IsNullOrWhiteSpace(cameraName))
-                return "未识别相机";
-
-            const string usbPrefix = "U3V: ";
-            return cameraName.StartsWith(usbPrefix, StringComparison.OrdinalIgnoreCase)
-                ? cameraName.Substring(usbPrefix.Length)
-                : cameraName;
+            // 下拉框只显示稳定、可区分的槽位名称；真实序列号继续显示在右侧只读文本框。
+            return cameraIndex >= 0 ? "相机" + (cameraIndex + 1).ToString() : "未识别相机";
         }
 
         private void RefreshCameraSelectionItems()
@@ -2452,7 +2443,8 @@ namespace VisionApplication
                 return;
 
             serialTextBox.Text = cameraIndex >= 0 && cameraIndex < maxCameraNum
-                ? GetCameraDisplayName(cameraIndex)
+                && cup.p_Cam != null && cameraIndex < cup.p_Cam.Length
+                ? cup.p_Cam[cameraIndex].strCamName ?? string.Empty
                 : string.Empty;
         }
 

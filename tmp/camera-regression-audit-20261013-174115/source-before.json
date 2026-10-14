@@ -1,0 +1,42 @@
+[
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\AGENTS.md",
+    "Hash": "0E40D87E12333970433B638FA252F52FC8385347B1E67F4B5560B152A268557F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CommonCls\\AcqFIFO.cs",
+    "Hash": "A63B42622D7A3182AB7DA4E613E5241E367C75BE40830EC75D92A58A13CB78B4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CommonCls\\HIKDeviceSource.cs",
+    "Hash": "C4FBE79CC5763BA027426539C8F79D67DDDEAEBA1F512D9E6F9683454E0BFD67"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\PROJECT_CONTEXT.md",
+    "Hash": "A1ADF71EA6A15C93E299DEB7F1A8165583D082B84AE7CD33833F285DD24CE781"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmMainUI.cs",
+    "Hash": "22B227159875294DF659CFE0312C39E3DA9C8FCA8D9089F0B4C71A9CD75467A2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmMainUIExtention.cs",
+    "Hash": "D3D9B459619DEFCE5FC008BA51842EAA53AE9CCCE94E9EE2C060AE7E932A4A4C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmMain_Laser.cs",
+    "Hash": "1DB0AC6DD9562191A3580A17AFF8543ACFC453A613B0C7F80E47196BC1FE865F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Frm_RuntimeSet.cs",
+    "Hash": "DED0CB842D132606895408F5295D32BAEE4A6006128DB3CB84BD5CB95A7D04FD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionControl\\VisionControl.cs",
+    "Hash": "989FFAA911826B5AD8CB3DA600EA4EADB25DAEAA66C777B2EA2214003569DC0B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionControl\\VisionControlExtention.cs",
+    "Hash": "26BE7F6E6401357DA660ABAFA55160BC703DB70E9CD23BF2FDADD308E06D3301"
+  }
+]

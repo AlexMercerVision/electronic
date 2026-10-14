@@ -1,0 +1,8 @@
+SyntaxErrors=0
+GlobalStatements=0
+OpenBraces=337, CloseBraces=337
+CogFlipRotateImInit: ClassMember=True, HasBody=True, Public=True
+TryReservePreview: ClassMember=True, HasBody=True, Public=True
+ReleasePreview: ClassMember=True, HasBody=True, Public=True
+IsCameraGrabbing: ClassMember=True, HasBody=True, Public=True
+GetCameraFrameLock: ClassMember=True, HasBody=True, Public=True

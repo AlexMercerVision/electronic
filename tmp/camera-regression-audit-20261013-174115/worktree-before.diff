@@ -1,0 +1,3692 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 342867f..fbfd528 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -28,3 +28,7 @@
+ - 输出链和 `IOTimeDelay` 的语义以当前源码为准；任何通道、解析、串口修复都不得与光源/相机混改，须先说明证据和影响。
+ 
+ 历史修复和现场验证记录统一放在 `PROJECT_CONTEXT.md`，本文件只保留当前约束。
++
++当前 P0 约束：启动初始化必须先验证工位 `camInd`、相机对象数组和状态数组边界；单个工位索引无效时只记录可定位错误并隔离该工位，不得因数组越界清理已正常连接的另一台相机。PMA/精定位异常必须保留完整异常堆栈与工位索引，不能只记录 `ex.Message`。
++
++本轮 PMA 约束：单工位参数/模板/精定位入口只接受已启用的 Job0/Job1；“全部工位”(`-1`) 和预留工位索引不得访问 PMA 数组，数组仍保持两个工具对象。无效选择记录带 `jobIndex` 的操作失败，真实工具或 Job 未初始化仍保留异常堆栈。
+diff --git a/CommonCls/AcqFIFO.cs b/CommonCls/AcqFIFO.cs
+index 9231db7..d63549c 100644
+--- a/CommonCls/AcqFIFO.cs
++++ b/CommonCls/AcqFIFO.cs
+@@ -61,6 +61,35 @@ namespace CommonCls
+ 
+         /// <summary>每台物理相机独立的单帧取图锁。</summary>
+         private readonly object[] _cameraFrameLocks = new object[maxCameraNum];
++        private readonly int[] _previewOwners = new int[maxCameraNum]; // 0=无预览，Job+1=预览占用
++
++        public object GetCameraFrameLock(int cameraIndex)
++        {
++            return _cameraFrameLocks[cameraIndex];
++        }
++
++        public bool IsCameraGrabbing(int cameraIndex)
++        {
++            CameraStatus status = GetCurrentCameraStatus();
++            return cameraIndex >= 0 && cameraIndex < maxCameraNum && status.iStatus != null &&
++                cameraIndex < status.iStatus.Length && status.iStatus[cameraIndex] == 3 && IsCamConn(cameraIndex);
++        }
++
++        public bool TryReservePreview(int cameraIndex, int jobIndex)
++        {
++            lock (_cameraFrameLocks[cameraIndex])
++            {
++                if (_previewOwners[cameraIndex] != 0) return false;
++                _previewOwners[cameraIndex] = jobIndex + 1;
++                return true;
++            }
++        }
++
++        public void ReleasePreview(int cameraIndex, int jobIndex)
++        {
++            lock (_cameraFrameLocks[cameraIndex])
++                if (_previewOwners[cameraIndex] == jobIndex + 1) _previewOwners[cameraIndex] = 0;
++        }
+ 
+         /// <summary>输出帧信息结构体</summary>
+         public MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();
+@@ -342,6 +371,11 @@ namespace CommonCls
+ 
+             lock (_cameraFrameLocks[iCamIndex])
+             {
++                if (_previewOwners[iCamIndex] != 0)
++                {
++                    OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 相机正由预览Job{_previewOwners[iCamIndex] - 1}占用，拒绝并发单次采集");
++                    return null;
++                }
+                 MyCamera.MV_FRAME_OUT frame = new MyCamera.MV_FRAME_OUT();
+                 bool frameAcquired = false;
+                 try
+@@ -424,6 +458,11 @@ namespace CommonCls
+ 
+             lock (_cameraFrameLocks[iCamIndex])
+             {
++                if (_previewOwners[iCamIndex] != 0)
++                {
++                    OnErrorOccurred($"GrabOneFrameCogColor (Job{jobIndex}, Cam{iCamIndex}): 相机正由预览Job{_previewOwners[iCamIndex] - 1}占用，拒绝并发单次采集");
++                    return null;
++                }
+                 MyCamera.MV_FRAME_OUT frame = new MyCamera.MV_FRAME_OUT();
+                 bool frameAcquired = false;
+                 try
+@@ -806,22 +845,26 @@ namespace CommonCls
+                         if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height * 3)
+                             bImgSrcData[iCamIndex] = new byte[width * height * 3];
+ 
+-                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap());
++                        using (Bitmap bitmap = ci24ColorAcq[iCamIndex].ToBitmap())
++                            bImgSrcData[iCamIndex] = BitmapToBytes(bitmap);
+ 
+                         return 1;
+                     }
+                     else
+                     {
+-                        ci8gAcq[wsInd] = (CogImage8Grey)ci;
+-                        cup.p_Cam[wsInd].iMonoType = 0;
++                        if (ci == null)
++                            throw new InvalidOperationException($"Job{wsInd} 回放图片读取失败");
++                        ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
++                        cup.p_Cam[iCamIndex].iMonoType = 0;
+ 
+ 
+-                        int width = ci8gAcq[wsInd].Width;
+-                        int height = ci8gAcq[wsInd].Height;
+-                        if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
+-                            bImgSrcData[wsInd] = new byte[width * height * 3];
++                        int width = ci8gAcq[iCamIndex].Width;
++                        int height = ci8gAcq[iCamIndex].Height;
++                        if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height)
++                            bImgSrcData[iCamIndex] = new byte[width * height];
+ 
+-                          bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap()); 
++                        using (Bitmap bitmap = ci8gAcq[iCamIndex].ToBitmap())
++                            bImgSrcData[iCamIndex] = BitmapToBytes(bitmap);
+ 
+                         return 0;
+                     }
+diff --git a/CommonCls/HIKDeviceSource.cs b/CommonCls/HIKDeviceSource.cs
+index 15ed579..fb239c0 100644
+--- a/CommonCls/HIKDeviceSource.cs
++++ b/CommonCls/HIKDeviceSource.cs
+@@ -21,6 +21,42 @@ namespace CommonCls
+         private readonly MyCamera[] _cameraArray = new MyCamera[MaxCameraNum]; // 多相机模式数组
+         private int _cameraCount;                         // 实际初始化的相机数量
+         private MyCamera.MV_CC_DEVICE_INFO_LIST _deviceList; // 设备列表
++        private int _lastEnumResult = MyCamera.MV_OK;
++        public event Action<string> CameraDiagnostic;
++
++        public bool CheckSdkResult(MyCamera cam, string node, string target, int result,
++            int cameraIndex = -1, string serial = null)
++        {
++            if (result == MyCamera.MV_OK) return true;
++            if (cameraIndex < 0) cameraIndex = Array.IndexOf(_cameraArray, cam);
++            if (serial == null)
++            {
++                try { serial = GetConnectedCameraSerial(cameraIndex); }
++                catch (Exception ex)
++                {
++                    serial = "unknown";
++                    CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, node=DeviceSerialNumber, target=read, exception={ex}");
++                }
++            }
++            CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, serial={serial}, node={node}, target={target}, SDK=0x{unchecked((uint)result):X8}");
++            return false;
++        }
++
++        public bool SetEnumValueChecked(MyCamera cam, string node, uint value)
++        {
++            return CheckSdkResult(cam, node, value.ToString(), cam.MV_CC_SetEnumValue_NET(node, value));
++        }
++
++        public bool SetIntValueChecked(MyCamera cam, string node, uint value)
++        {
++            return CheckSdkResult(cam, node, value.ToString(), cam.MV_CC_SetIntValue_NET(node, value));
++        }
++
++        /// <summary>最近一次设备枚举的 SDK 返回码。</summary>
++        public int LastEnumResult
++        {
++            get { return _lastEnumResult; }
++        }
+ 
+         // 帧信息（用于取流，当前未完全实现转换逻辑）
+         private  MyCamera.MV_FRAME_OUT_INFO_EX _frameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();
+@@ -40,7 +76,13 @@ namespace CommonCls
+         public uint CameraNum()
+         {
+             // 枚举 GigE 和 USB 设备
+-            MyCamera.MV_CC_EnumDevices_NET(MyCamera.MV_GIGE_DEVICE | MyCamera.MV_USB_DEVICE, ref _deviceList);
++            _lastEnumResult = MyCamera.MV_CC_EnumDevices_NET(
++                MyCamera.MV_GIGE_DEVICE | MyCamera.MV_USB_DEVICE, ref _deviceList);
++            if (_lastEnumResult != MyCamera.MV_OK)
++            {
++                _deviceList = new MyCamera.MV_CC_DEVICE_INFO_LIST();
++                return 0;
++            }
+             return _deviceList.nDeviceNum;
+         }
+ 
+@@ -175,7 +217,8 @@ namespace CommonCls
+                 if (_cameraArray[index] == null)
+                     _cameraArray[index] = new MyCamera();
+ 
+-                if (InitializeCamera(_cameraArray[index], device))
++                int createRet, openRet;
++                if (InitializeCamera(_cameraArray[index], device, out createRet, out openRet, index))
+                 {
+                     status[index] = 1;
+                 }
+@@ -190,15 +233,27 @@ namespace CommonCls
+         /// <param name="device">设备信息</param>
+         /// <returns>是否成功</returns>
+         private bool InitializeCamera(MyCamera camera, MyCamera.MV_CC_DEVICE_INFO device)
++        {
++            int createRet;
++            int openRet;
++            return InitializeCamera(camera, device, out createRet, out openRet);
++        }
++
++        /// <summary>
++        /// 初始化单个相机并返回 Create/Open 的原始 SDK 返回码。
++        /// </summary>
++        private bool InitializeCamera(MyCamera camera, MyCamera.MV_CC_DEVICE_INFO device,
++            out int createRet, out int openRet, int cameraIndex = -1)
+         {
+             // 创建设备
+-            int ret = camera.MV_CC_CreateDevice_NET(ref device);
+-            if (ret != MyCamera.MV_OK)
++            createRet = camera.MV_CC_CreateDevice_NET(ref device);
++            openRet = int.MinValue; // Open 尚未执行
++            if (createRet != MyCamera.MV_OK)
+                 return false;
+ 
+             // 打开设备
+-            ret = camera.MV_CC_OpenDevice_NET();
+-            if (ret != MyCamera.MV_OK)
++            openRet = camera.MV_CC_OpenDevice_NET();
++            if (openRet != MyCamera.MV_OK)
+             {
+                 camera.MV_CC_DestroyDevice_NET();
+                 return false;
+@@ -215,14 +270,173 @@ namespace CommonCls
+             }
+ 
+             // 设置采集模式为连续采集，触发模式关闭
+-            camera.MV_CC_SetEnumValue_NET("AcquisitionMode",
+-                (uint)MyCamera.MV_CAM_ACQUISITION_MODE.MV_ACQ_MODE_CONTINUOUS);
+-            camera.MV_CC_SetEnumValue_NET("TriggerMode",
+-                (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF);
++            string serial = device.nTLayerType == MyCamera.MV_USB_DEVICE
++                ? ((MyCamera.MV_USB3_DEVICE_INFO)MyCamera.ByteToStruct(device.SpecialInfo.stUsb3VInfo, typeof(MyCamera.MV_USB3_DEVICE_INFO))).chSerialNumber
++                : ((MyCamera.MV_GIGE_DEVICE_INFO)MyCamera.ByteToStruct(device.SpecialInfo.stGigEInfo, typeof(MyCamera.MV_GIGE_DEVICE_INFO))).chSerialNumber;
++            uint acquisition = (uint)MyCamera.MV_CAM_ACQUISITION_MODE.MV_ACQ_MODE_CONTINUOUS;
++            uint trigger = (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF;
++            if (!CheckSdkResult(camera, "AcquisitionMode", acquisition.ToString(),
++                    camera.MV_CC_SetEnumValue_NET("AcquisitionMode", acquisition), cameraIndex, serial) ||
++                !CheckSdkResult(camera, "TriggerMode", trigger.ToString(),
++                    camera.MV_CC_SetEnumValue_NET("TriggerMode", trigger), cameraIndex, serial))
++            {
++                CheckSdkResult(camera, "CloseDevice", "初始化失败清理", camera.MV_CC_CloseDevice_NET(), cameraIndex, serial);
++                CheckSdkResult(camera, "DestroyDevice", "初始化失败清理", camera.MV_CC_DestroyDevice_NET(), cameraIndex, serial);
++                return false;
++            }
+ 
+             return true;
+         }
+ 
++        /// <summary>
++        /// 返回内部多相机数组。数组实例稳定，便于主界面增量连接后同步给 AcqFIFO。
++        /// </summary>
++        public MyCamera[] GetCameraArray()
++        {
++            return _cameraArray;
++        }
++
++        /// <summary>
++        /// 使用最近一次 EnumDevices 得到的设备信息连接到指定物理槽位。
++        /// 已经在线的相机不会重复 Create/Open；失效对象会先安全释放。
++        /// </summary>
++        public bool TryConnectCamera(int deviceIndex, int slotIndex,
++            out int createRet, out int openRet,
++            out int releaseStopRet, out int releaseCloseRet, out int releaseDestroyRet)
++        {
++            createRet = int.MinValue;
++            openRet = int.MinValue;
++            releaseStopRet = int.MinValue;
++            releaseCloseRet = int.MinValue;
++            releaseDestroyRet = int.MinValue;
++
++            if (deviceIndex < 0 || deviceIndex >= _deviceList.nDeviceNum ||
++                slotIndex < 0 || slotIndex >= MaxCameraNum)
++                return false;
++
++            MyCamera current = _cameraArray[slotIndex];
++            bool currentConnected = false;
++            if (current != null)
++            {
++                try
++                {
++                    currentConnected = current.MV_CC_IsDeviceConnected_NET();
++                }
++                catch (Exception ex)
++                {
++                    CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=IsDeviceConnected, exception={ex}");
++                    currentConnected = false;
++                }
++            }
++
++            if (currentConnected)
++            {
++                _cameraCount = Math.Max(_cameraCount, slotIndex + 1);
++                return true;
++            }
++
++            if (current != null)
++            {
++                ReleaseCamera(slotIndex, out releaseStopRet, out releaseCloseRet, out releaseDestroyRet);
++            }
++
++            MyCamera candidate = null;
++            try
++            {
++                var device = (MyCamera.MV_CC_DEVICE_INFO)Marshal.PtrToStructure(
++                    _deviceList.pDeviceInfo[deviceIndex], typeof(MyCamera.MV_CC_DEVICE_INFO));
++                candidate = new MyCamera();
++                if (!InitializeCamera(candidate, device, out createRet, out openRet, slotIndex))
++                {
++                    // Create/Open 失败时 InitializeCamera 已处理 Destroy；不要把半成品放入数组。
++                    return false;
++                }
++            }
++            catch (Exception ex)
++            {
++                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=InitializeCamera, exception={ex}");
++                try
++                {
++                    if (candidate != null)
++                        candidate.MV_CC_DestroyDevice_NET();
++                }
++                catch (Exception cleanupEx)
++                {
++                    CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=DestroyDevice, exception={cleanupEx}");
++                    // 连接失败仍然返回 false，由调用方记录本次 SDK 阶段。
++                }
++                return false;
++            }
++
++            _cameraArray[slotIndex] = candidate;
++            _cameraCount = Math.Max(_cameraCount, slotIndex + 1);
++            return true;
++        }
++
++        /// <summary>
++        /// 释放指定槽位的旧句柄，并返回 Stop/Close/Destroy 的 SDK 结果。
++        /// </summary>
++        public bool ReleaseCamera(int slotIndex, out int stopRet, out int closeRet, out int destroyRet)
++        {
++            stopRet = int.MinValue;
++            closeRet = int.MinValue;
++            destroyRet = int.MinValue;
++            if (slotIndex < 0 || slotIndex >= MaxCameraNum || _cameraArray[slotIndex] == null)
++                return true;
++
++            MyCamera camera = _cameraArray[slotIndex];
++            try
++            {
++                stopRet = camera.MV_CC_StopGrabbing_NET();
++            }
++            catch (Exception ex)
++            {
++                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=StopGrabbing, exception={ex}");
++                stopRet = int.MinValue;
++            }
++            try
++            {
++                closeRet = camera.MV_CC_CloseDevice_NET();
++            }
++            catch (Exception ex)
++            {
++                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=CloseDevice, exception={ex}");
++                closeRet = int.MinValue;
++            }
++            try
++            {
++                destroyRet = camera.MV_CC_DestroyDevice_NET();
++            }
++            catch (Exception ex)
++            {
++                CameraDiagnostic?.Invoke($"cameraIndex={slotIndex}, phase=DestroyDevice, exception={ex}");
++                destroyRet = int.MinValue;
++            }
++            _cameraArray[slotIndex] = null;
++
++            while (_cameraCount > 0 && _cameraArray[_cameraCount - 1] == null)
++                _cameraCount--;
++
++            return stopRet == MyCamera.MV_OK &&
++                   closeRet == MyCamera.MV_OK &&
++                   destroyRet == MyCamera.MV_OK;
++        }
++
++        /// <summary>
++        /// 获取已连接槽位的设备序列号，用于防止枚举顺序变化造成 A/B 交换。
++        /// </summary>
++        public string GetConnectedCameraSerial(int slotIndex)
++        {
++            if (slotIndex < 0 || slotIndex >= MaxCameraNum || _cameraArray[slotIndex] == null)
++                return string.Empty;
++
++            var value = new MyCamera.MVCC_STRINGVALUE();
++            int ret = _cameraArray[slotIndex].MV_CC_GetStringValue_NET("DeviceSerialNumber", ref value);
++            if (ret != MyCamera.MV_OK)
++                return string.Empty;
++            return value.chCurValue == null ? string.Empty : value.chCurValue.Trim();
++        }
++
+         /// <summary>
+         /// 销毁单相机对象，释放资源。
+         /// </summary>
+@@ -292,6 +506,7 @@ namespace CommonCls
+             if (type == 0)
+             {
+                 int ret = cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8);
++                CheckSdkResult(cam, "PixelFormat", "Mono8", ret);
+                 if (ret == MyCamera.MV_OK)
+                 {
+                     // 确保外部类型为 0
+@@ -314,6 +529,7 @@ namespace CommonCls
+             foreach (uint fmt in colorFormats)
+             {
+                 int ret = cam.MV_CC_SetPixelFormat_NET(fmt);
++                CheckSdkResult(cam, "PixelFormat", $"0x{fmt:X8} (候选格式)", ret);
+                 if (ret == MyCamera.MV_OK)
+                 {
+                     // 彩色格式设置成功，保持 type = 1
+@@ -323,7 +539,8 @@ namespace CommonCls
+             }
+ 
+             // 所有彩色格式都失败，回退到黑白模式
+-            if (cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8) == MyCamera.MV_OK)
++            int fallbackRet = cam.MV_CC_SetPixelFormat_NET((uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8);
++            if (CheckSdkResult(cam, "PixelFormat", "Mono8 (原有回退)", fallbackRet))
+             {
+                 type = 0;
+                 return true;
+@@ -358,15 +575,17 @@ namespace CommonCls
+         public bool SetResolution(ref uint width, ref uint height, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_INTVALUE();
+-            cam.MV_CC_GetWidth_NET(ref range);
+-            width = Clamp(width, range.nMin, range.nMax);
+-            int retW = cam.MV_CC_SetWidth_NET(width);
++            if (!CheckSdkResult(cam, "Width.GetRange", width.ToString(), cam.MV_CC_GetWidth_NET(ref range))) return false;
++            uint newWidth = Clamp(width, range.nMin, range.nMax);
++            if (!CheckSdkResult(cam, "Width", newWidth.ToString(), cam.MV_CC_SetWidth_NET(newWidth))) return false;
+ 
+-            cam.MV_CC_GetHeight_NET(ref range);
+-            height = Clamp(height, range.nMin, range.nMax);
+-            int retH = cam.MV_CC_SetHeight_NET(height);
++            if (!CheckSdkResult(cam, "Height.GetRange", height.ToString(), cam.MV_CC_GetHeight_NET(ref range))) return false;
++            uint newHeight = Clamp(height, range.nMin, range.nMax);
++            if (!CheckSdkResult(cam, "Height", newHeight.ToString(), cam.MV_CC_SetHeight_NET(newHeight))) return false;
+ 
+-            return retW == MyCamera.MV_OK && retH == MyCamera.MV_OK;
++            width = newWidth;
++            height = newHeight;
++            return true;
+         }
+ 
+         /// <summary>
+@@ -375,11 +594,12 @@ namespace CommonCls
+         public bool SetBrightness(ref uint value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_INTVALUE();
+-            cam.MV_CC_GetBrightness_NET(ref range);
+-            value = Clamp(value, range.nMin, range.nMax);
+-            cam.MV_CC_SetEnumValue_NET("BrightnessAuto", 0);
+-            int ret = cam.MV_CC_SetBrightness_NET(value);
+-            return ret == MyCamera.MV_OK;
++            if (!CheckSdkResult(cam, "Brightness.GetRange", value.ToString(), cam.MV_CC_GetBrightness_NET(ref range))) return false;
++            uint adjusted = Clamp(value, range.nMin, range.nMax);
++            if (!SetEnumValueChecked(cam, "BrightnessAuto", 0)) return false;
++            if (!CheckSdkResult(cam, "Brightness", adjusted.ToString(), cam.MV_CC_SetBrightness_NET(adjusted))) return false;
++            value = adjusted;
++            return true;
+         }
+ 
+         /// <summary>
+@@ -388,11 +608,12 @@ namespace CommonCls
+         public bool SetSharpness(ref uint value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_INTVALUE();
+-            cam.MV_CC_GetSharpness_NET(ref range);
+-            value = Clamp(value, range.nMin, range.nMax);
+-            cam.MV_CC_SetEnumValue_NET("SharpnessAuto", 0);
+-            int ret = cam.MV_CC_SetSharpness_NET(value);
+-            return ret == MyCamera.MV_OK;
++            if (!CheckSdkResult(cam, "Sharpness.GetRange", value.ToString(), cam.MV_CC_GetSharpness_NET(ref range))) return false;
++            uint adjusted = Clamp(value, range.nMin, range.nMax);
++            if (!SetEnumValueChecked(cam, "SharpnessAuto", 0)) return false;
++            if (!CheckSdkResult(cam, "Sharpness", adjusted.ToString(), cam.MV_CC_SetSharpness_NET(adjusted))) return false;
++            value = adjusted;
++            return true;
+         }
+ 
+         /// <summary>
+@@ -401,11 +622,12 @@ namespace CommonCls
+         public bool SetGamma(ref float value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_FLOATVALUE();
+-            cam.MV_CC_GetGamma_NET(ref range);
+-            value = Clamp(value, range.fMin, range.fMax);
+-            cam.MV_CC_SetEnumValue_NET("GammaAuto", 0);
+-            int ret = cam.MV_CC_SetGamma_NET(value);
+-            return ret == MyCamera.MV_OK;
++            if (!CheckSdkResult(cam, "Gamma.GetRange", value.ToString(), cam.MV_CC_GetGamma_NET(ref range))) return false;
++            float adjusted = Clamp(value, range.fMin, range.fMax);
++            if (!SetEnumValueChecked(cam, "GammaAuto", 0)) return false;
++            if (!CheckSdkResult(cam, "Gamma", adjusted.ToString(), cam.MV_CC_SetGamma_NET(adjusted))) return false;
++            value = adjusted;
++            return true;
+         }
+         /// <summary>
+         /// 设置 Gamma 使能（开启/关闭）
+@@ -474,11 +696,12 @@ namespace CommonCls
+         public bool SetGain(ref float value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_FLOATVALUE();
+-            cam.MV_CC_GetGain_NET(ref range);
+-            value = Clamp(value, range.fMin, range.fMax);
+-            cam.MV_CC_SetEnumValue_NET("GainAuto", 0);
+-            int ret = cam.MV_CC_SetGain_NET(value);
+-            return ret == MyCamera.MV_OK;
++            if (!CheckSdkResult(cam, "Gain.GetRange", value.ToString(), cam.MV_CC_GetGain_NET(ref range))) return false;
++            float adjusted = Clamp(value, range.fMin, range.fMax);
++            if (!SetEnumValueChecked(cam, "GainAuto", 0)) return false;
++            if (!CheckSdkResult(cam, "Gain", adjusted.ToString(), cam.MV_CC_SetGain_NET(adjusted))) return false;
++            value = adjusted;
++            return true;
+         }
+ 
+         /// <summary>
+@@ -487,23 +710,24 @@ namespace CommonCls
+         public bool SetExposure(ref float value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_FLOATVALUE();
+-            cam.MV_CC_GetExposureTime_NET(ref range);
+-            int ret = MyCamera.MV_OK;
++            if (!CheckSdkResult(cam, "ExposureTime.GetRange", value.ToString(), cam.MV_CC_GetExposureTime_NET(ref range))) return false;
++            float adjusted = value;
+ 
+             if (value <= 0)
+             {
+-                cam.MV_CC_SetEnumValue_NET("ExposureAuto",
+-                    (uint)MyCamera.MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS);
+-                cam.MV_CC_GetExposureTime_NET(ref range);
+-                value = range.fCurValue;
++                if (!SetEnumValueChecked(cam, "ExposureAuto",
++                    (uint)MyCamera.MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS)) return false;
++                if (!CheckSdkResult(cam, "ExposureTime.ReadBack", "read", cam.MV_CC_GetExposureTime_NET(ref range))) return false;
++                adjusted = range.fCurValue;
+             }
+             else
+             {
+-                value = Clamp(value, range.fMin, range.fMax);
+-                cam.MV_CC_SetEnumValue_NET("ExposureAuto", 0);
+-                ret = cam.MV_CC_SetExposureTime_NET(value);
++                adjusted = Clamp(value, range.fMin, range.fMax);
++                if (!SetEnumValueChecked(cam, "ExposureAuto", 0)) return false;
++                if (!CheckSdkResult(cam, "ExposureTime", adjusted.ToString(), cam.MV_CC_SetExposureTime_NET(adjusted))) return false;
+             }
+-            return ret == MyCamera.MV_OK;
++            value = adjusted;
++            return true;
+         }
+ 
+         /// <summary>
+@@ -522,21 +746,21 @@ namespace CommonCls
+             return success;
+         }
+         // 设置参数
+-        public void SetParam(float gain, float exposure, ref string gainString, ref string exposureString, MyCamera cam)
++        public bool SetParam(float gain, float exposure, ref string gainString, ref string exposureString, MyCamera cam)
+         {
+ 
+ 
+             // 曝光时间
+             // 获取当前Exposure、最大Exposure、最小Exposure
+             MyCamera.MVCC_FLOATVALUE exposureValue = new MyCamera.MVCC_FLOATVALUE();
+-            cam.MV_CC_GetExposureTime_NET(ref exposureValue);
++            if (!CheckSdkResult(cam, "ExposureTime.GetRange", exposure.ToString(), cam.MV_CC_GetExposureTime_NET(ref exposureValue))) return false;
+             //float exposure = exposureValue.fCurValue;
+             float maxExposure = exposureValue.fMax;
+             float minExposure = exposureValue.fMin;
+             // 判断是否处于最小到最大值之间
+             if (exposure <= 0)
+             {
+-                cam.MV_CC_SetEnumValue_NET("ExposureAuto", (uint)MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS);
++                if (!SetEnumValueChecked(cam, "ExposureAuto", (uint)MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS)) return false;
+             }
+             else
+             {
+@@ -552,11 +776,12 @@ namespace CommonCls
+                 }
+ 
+                 // 关闭自动设置
+-                cam.MV_CC_SetEnumValue_NET("ExposureAuto", 0);
++                if (!SetEnumValueChecked(cam, "ExposureAuto", 0)) return false;
+                 // 设置ExposureTime
+-                cam.MV_CC_SetFloatValue_NET("ExposureTime", exposure);
++                if (!CheckSdkResult(cam, "ExposureTime", exposure.ToString(), cam.MV_CC_SetFloatValue_NET("ExposureTime", exposure))) return false;
+                 exposureString = exposure.ToString("F0");
+             }
++            return true;
+         }
+         /// <summary>
+         /// 批量获取相机参数。
+diff --git a/PROJECT_CONTEXT.md b/PROJECT_CONTEXT.md
+index 7246e73..27ded91 100644
+--- a/PROJECT_CONTEXT.md
++++ b/PROJECT_CONTEXT.md
+@@ -35,3 +35,42 @@
+ - `ClientTools.csproj` 不在主解决方案且仍可能输出旧依赖，专项统一前不要单独构建。
+ - IO 主动上报 `0x45` 的 10/25 字节格式、输入偏移和 CRC 尚未用现场抓包最终确认；COM 打开、协议有效、业务触发、物理动作必须分层判断。
+ - 相机序列号与物理槽/工位绑定的长期整理尚未实施；非零旋转/镜像时原始缓存与显示方向差异也未扩大处理。
++
++## P0 现场问题与本轮修复（2026-10-12）
++
++- 现场四次冷启动约三次出现 A 面黑屏、状态栏“部分相机连接成功”、`视觉工位1异常` 与 `启动相机采集-Cam1` 失败；截图中的 PMA/精定位错误必须与相机启动错误分开判读。
++- 已确认的启动越界缺陷：`FrmMainUI.InitCam()` 在发现 `cup.p_CD.camInd[ind]` 超出当前 `cameraNum` 后仅设置状态变化，随后仍直接访问 `camera2[iCamInd]` 和 `rts.cs.iStatus[iCamInd]`，可能抛 `IndexOutOfRangeException` 并进入全局清理，影响另一工位。已在访问前增加边界检查，单个无效工位只记录并跳过；`CheckCamPrepared()` 同步增加状态数组边界检查。
++- 已将 `InitCam`、`StartGrabbing`、PMA 参数和精定位异常改为记录完整 `Exception.ToString()`、工位索引、数组长度和初始化阶段。PMA 在源码中指 Cognex PMAlign 模块，当前证据表明其错误来自 `VisionControlExtention.SetPMARunParam/GetPMAParam/SetUseTuneLocation` 的异常包装，不等于相机 SDK 失败。
++- 本轮未改动预览与检测并发取帧、序列号映射/对象槽位、关闭线程等待三项风险；它们分别仍需现场日志确认运行时取帧、重连顺序和关闭阶段影响。
++- 验证：`CommonCls` Build 通过，`VisionControl` Build 通过；当前环境缺少可用完整 MSBuild，`VisionApplication.csproj` 未能获得有效编译诊断，主程序 Build 不判定为通过。未启动 EXE，未连接真实硬件。
++
++## PMA 与视觉工位异常修复（2026-10-12）
++
++- `视觉工位1异常` 的唯一界面生成点是 `FrmMainUI.OnVisionErrorFromVP`；`jobIndex=0` 对应 A 面及配置中的物理相机0（当前 `serUserParam.json` 为 `DA8696070`）。它是 VisionControl 错误事件的统一显示，不等同于相机连接失败。
++- PMA 越界根因是 `VisionControlExtention.SetPMARunParam/GetPMAParam` 直接使用固定长度为2的 `pma[jobIndex]`，而 UI 的“全部工位”会传 `-1`，预留工位会传 `2`。现已在 Job、PMA 数组、ToolGroup、`CogPMAlignTool1` 四层校验；数组未扩容，工具为空和工位未初始化分别报告。
++- PMA 参数、模板、测试图像及精定位 UI 入口均拒绝未启用单工位；`InitParamUI`/工位切换仅在有效 Job0/Job1 读取参数。无效 `jobIndex` 的视觉回调显示为“视觉操作异常”，避免把 `-1` 误标为工位1。
++- 静态验证：`VisionControl.csproj` 使用 `dotnet msbuild` 通过；主项目无法由当前 dotnet MSBuild 完成旧式项目引用解析，未获得有效源码编译诊断。未启动 EXE，未连接真实设备；相机流程和“部分相机连接成功”提示未改动。
++
++## 双工位回放长度测量修复（2026-10-13）
++
++- 现场 `D:/data/Log/ErrorLog_20261013.txt` 多次记录 Job0 超时后取消同步 IO 批次。原 `RunOneTimeThread(bool)` 随即退出工位循环，Job1 未进入检测；超时后仍更新完成日志和统计，截图中的 A 面长度不保证属于该轮。
++- `VisionControl.HandleUserResults()` 取到空队列后原有 20×100ms 等待没有重新取结果，现改为空队列立即返回，保留后续 UserResultAvailable 事件处理以及结果处理完成/Job Stopped 双条件完成机制。
++- `FrmMainUI.RunOneTimeThread(bool)` 的 VPP 路径不再提前清零完成标志，交由检测入口在检查/恢复 busy 后初始化；同步长度测量逐工位执行，一路启动失败/超时或 IO 批次拒绝不阻断另一路检测。取消的组合 IO 批次在该轮不重建、不提交后续工位结果，保持完整批次输出语义；超时的测量工位不记录完成或更新统计。测量算法、超时配置、缺陷检测成功路径及 Designer 未改动。
++- 验证：基于实际运行方法和 busy 初始化方法编译的隔离桩验证通过 9 项场景，覆盖双成功、A/B 启动失败/超时、A busy、超时后恢复、IO 禁用/拒绝及缺陷成功路径。`VisionControl` 在指定现有 bin 引用路径后隔离 Build 通过；主项目仍在旧式项目引用解析阶段失败，未获得完整 Build 结果。未启动 EXE 或执行实际 Measure.vpp，需现场连续回放确认 A/B 各自本轮结果及 IO 批次输出，首次超时的事件耗时仍需现场记录。
++
++## 回放、IO竞争及长度结果/参数修复（2026-10-13）
++
++- 当前映射 Job0→Cam1、Job1→Cam0。修复 AcqFIFO 文件回放中工位目录与物理相机缓存索引混用；图像格式、原图及字节缓存统一按物理相机槽读写，离线推理与 VPP 输入同步使用该槽。映射配置未修改。
++- 手动单次运行增加所属线程完成标志，结果回调不再通过跨轮累计计数提前调用 FinalizeRun；每轮/新IO批次初始化计数。IO入口仅在成功加入后返回可提交/取消的批次令牌，拒绝请求不取消他人批次；输出期间不由取消路径释放，发送退出时在 finally 释放批次。位图、通道、IOTimeDelay、bUpdateIO 配置未改动。
++- VPP分别记录处理完成与测量有效。验证工具运行状态、当前模式工具启用状态、输出类型、有限非负长度及动态lenTh判定一致性；失败清除本轮缓存中的旧OK/长度，保留完成信号。结果确认后在UI线程切换显示，最后释放工位等待线程；显示先于IO提交。无效测量不提交IO、不记录正常完成或统计。上层超时不得直接清除仍待结果/Stopped汇合的VPP busy。
++- 长度参数Get/Set返回真实成功状态；获取读取当前Job的lenTh，设置后读回核对。只有读写及界面同步成功才记录成功，检测期间拒绝修改该Job参数。未修改SaveVPP、持久化、Designer、LD.vpp、测量脚本或模型。
++- 验证：CommonCls、VisionControl隔离Build通过；主程序使用本轮编译依赖和仅供验证的外置targets完成Compile，完整Build仍退出失败且未给出有效错误诊断。构建输出位于tmp/session-validation，未覆盖公共bin。未启动EXE、未执行现场VPP或连接硬件；冷启动回放、连续触发/PLC脉冲时序、动态lenTh边界及参数会话效果均需现场验证。
++
++## 双 USB3 热连接与预览可靠性（2026-10-13）
++
++- 现场错误日志确认：DA8696070、DA8696075 均在 Create/Open 后、StartGrabbing 前发生参数恢复失败；清理 Stop=0x80000003 不是参数节点的原始错误。后续 Job0/Cam0/DA8696070 多次 GetImageBuffer=0x80000007，仅能确认无数据，不能判定 USB 带宽不足或缺少触发。
++- 修改范围限于 CommonCls/HIKDeviceSource.cs、CommonCls/AcqFIFO.cs、VisionApplication/FrmMainUI.cs、VisionControl/VisionControlExtention.cs。参数恢复使用结构体及 ROI 数组的局部副本，全部成功才提交；SDK 范围读取失败立即返回，逐节点保留目标值、原始返回码、索引/序列号及异常堆栈。AcquisitionMode/TriggerMode 写入检查返回码，参数恢复和启动后读回采集/触发状态；未完成参数和缓冲初始化不得启动采集，热连接整体成功要求有效映射且所有启用工位成功。
++- 预览停止确认 Join 退出后才清空引用或释放缓冲；超时保留资源并拒绝重启/重连，增量连接及 InitCam 都检查旧预览线程。同路预览使用生命周期锁和物理相机占用；常规灰度/彩色单帧入口拒绝预览占用，预览与这两入口共用取帧锁。Get 成功后的显示/翻转置于 try/finally，检查 Free 返回码；非无数据错误、设备断开或异常记录原因后退出，不强制终止线程。
++- 新增运行期 CameraLog_yyyyMMdd.txt（使用现有日志目录）：持久化成功/失败的连接与 StartGrabbing、采集模式读回、首帧时间、每 5 秒取帧/显示计数、连续及累计无数据计数、最近取帧/显示时间、线程 ID 和退出原因/完整异常。旧错误日志和 UI 提示继续保留。
++- 验证输出隔离到 tmp/session-validation/hot-camera。CommonCls、VisionControl Build 通过，主工程使用本轮隔离依赖及外置 targets 的 Compile 通过；未将主工程判为完整发布 Build。假 SDK 验证 25 项通过，覆盖 Join 超时资源保护、重复预览拒绝、异常后 Free、无数据/退出区分、参数失败不污染保存值及范围失败不写入。公共 bin 的主程序、配置、CommonCls.dll、xbVP_Control.dll 哈希未变。未运行实际程序或相机，未修改 Designer、工程、映射配置及曝光/增益/ROI 默认值。
++- 保留疑点：具体失败参数节点及单帧冻结的直接原因仍需新日志确认，不能宣称现场故障完全修复。旧光度/字节采集入口未扩大修改；若现场进入这些入口，仍需核实是否与预览并行消费。观察两路后续成功帧数是否持续增长、显示计数是否跟随、线程是否仍在运行，以及失败节点的实际 SDK 返回码。
+diff --git a/VisionApplication/FrmMainUI.cs b/VisionApplication/FrmMainUI.cs
+index 52c79b4..55f1851 100644
+--- a/VisionApplication/FrmMainUI.cs
++++ b/VisionApplication/FrmMainUI.cs
+@@ -103,6 +103,8 @@ namespace VisionApplication
+         private DateTime _lastReconnectAttempt = DateTime.MinValue;
+         private bool _isReconnecting = false;
+         private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(30); // 重试间隔
++        private readonly object _cameraConnectionSync = new object();
++        private bool _cameraConnectionInProgress;
+ 
+         // 7. 字段 - 状态标志
+         private uint cameraNum = 0;                             // 实际搜索到的相机数量
+@@ -165,6 +167,7 @@ namespace VisionApplication
+         private readonly bool[] ioFeedbackParticipating = new bool[ioFeedbackJobCount];
+         private bool ioFeedbackCycleActive = false;
+         private bool ioFeedbackOutputInProgress = false;
++        private int manualSingleRunActive = 0;
+         private long ioFeedbackCycleId = 0;
+         private PMAlignParam pmaParam = new PMAlignParam();     // PMAlign参数
+         private double[] dCalibPoint = new double[36];          // 标定点数据（图像坐标+物理坐标）
+@@ -191,6 +194,7 @@ namespace VisionApplication
+         {            
+             CheckForIllegalCrossThreadCalls = false;
+             InitializeComponent();
++            hIKVisionCamera.CameraDiagnostic += detail => LogCameraConnection("相机SDK", false, detail);
+             InitializeIOFeedbackMenu();
+             tabControl1.TabPages.Remove(tabPageBase); // 主界面不显示未使用的模板匹配参数页
+             InitUserParam(); 
+@@ -476,12 +480,20 @@ namespace VisionApplication
+         {
+             // AddLog 内部已处理跨线程 Invoke，可直接调用
+             operLog.iEventStatus = -1;
+-            operLog.strOperEvent = $"视觉工位{jobIndex + 1}异常";
++            operLog.strOperEvent = jobIndex >= 0 && jobIndex < maxJobNum
++                ? $"视觉工位{jobIndex + 1}异常"
++                : "视觉操作异常";
+             operLog.strFailReason = errorMessage;
+             AddLog();
+         }
+ 
+         private void OnPreviewStatusFromVP(int jobIndex, int cameraIndex, int status, string message)
++        {
++            WriteCameraDiagnostic("实时预览", status, message);
++            ShowPreviewStatusOnUi(jobIndex, cameraIndex, status, message);
++        }
++
++        private void ShowPreviewStatusOnUi(int jobIndex, int cameraIndex, int status, string message)
+         {
+             if (IsDisposed)
+                 return;
+@@ -490,7 +502,7 @@ namespace VisionApplication
+             {
+                 try
+                 {
+-                    BeginInvoke(new Action<int, int, int, string>(OnPreviewStatusFromVP),
++                    BeginInvoke(new Action<int, int, int, string>(ShowPreviewStatusOnUi),
+                         jobIndex, cameraIndex, status, message);
+                 }
+                 catch (InvalidOperationException)
+@@ -739,10 +751,18 @@ namespace VisionApplication
+             rts.initStatus.bCamPrepared = true;
+             for (int i = 0; i < maxCameraNum; i++)
+             {
+-                if (cup.p_CD.bListProcess[i] && rts.cs.iStatus[cup.p_CD.camInd[i]] < 3)
++                if (!cup.p_CD.bListProcess[i])
++                    continue;
++
++                int cameraIndex = cup.p_CD.camInd[i];
++                if (cameraIndex < 0 || rts.cs.iStatus == null || cameraIndex >= rts.cs.iStatus.Length)
+                 {
+                     rts.initStatus.bCamPrepared = false;
++                    continue;
+                 }
++
++                if (rts.cs.iStatus[cameraIndex] < 3)
++                    rts.initStatus.bCamPrepared = false;
+             }
+             if (!rts.initStatus.bCamPrepared)
+             {
+@@ -1318,7 +1338,7 @@ namespace VisionApplication
+                 }
+ 
+                 int iCamInd = cup.p_CD.camInd[ind];
+-                if (iCamInd < cameraNum)
++                if (iCamInd >= 0 && iCamInd < cameraNum)
+                 {
+                     if (rts.cs.iStatus[iCamInd] == 3)
+                         ((ToolStripStatusLabel)statusStrip1.Items[ind + 1]).ForeColor = Color.Green;
+@@ -1345,111 +1365,333 @@ namespace VisionApplication
+         /// <returns>是否初始化成功</returns>
+         private bool InitJobCamInd(int ind)
+         {
+-            bool bSucc = false;
+-            int iCamInd = cup.p_CD.camInd[ind];          // 物理相机索引
++            List<string> latestItems;
++            if (!RefreshCameraDevices("自动重连", out latestItems))
++                return false;
+ 
++            bool mappingChanged;
++            bool mappingValid = TryMapJobsByCameraSerial(latestItems, out mappingChanged);
++            if (mappingChanged)
++                SaveUserParam();
+ 
+-            // 在 InitCamInd 开头增加
+-            if (camera2[iCamInd] == null)
+-                return false;
++            // 某一工位的绑定缺失时只拒绝该工位，不影响其他已经能唯一匹配的相机。
++            return ConnectJobCamera(ind, latestItems, "自动重连", mappingValid);
++        }
+ 
+-            // 先尝试获取一个简单参数（如设备型号），若失败则视为离线
+-            MyCamera.MVCC_STRINGVALUE stStr = new MyCamera.MVCC_STRINGVALUE();
+-            int ret = camera2[iCamInd].MV_CC_GetStringValue_NET("DeviceModelName", ref stStr);
+-            if (ret != MyCamera.MV_OK)
++        private void LogCameraConnection(string operation, bool success, string detail)
++        {
++            WriteCameraDiagnostic(operation, success ? 0 : -1, detail);
++            operLog.iEventStatus = success ? 0 : -1;
++            operLog.strOperEvent = operation;
++            operLog.strFailReason = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + detail;
++            AddLog();
++        }
++
++        private readonly object _cameraDiagnosticLogSync = new object();
++        private void WriteCameraDiagnostic(string operation, int status, string detail)
++        {
++            try
+             {
+-                // 相机可能已断开，清理资源后返回
+-                camera2[iCamInd] = null;
+-                SyncCameraStatus(iCamInd, 0);
+-                return false;
++                string directory = cup.p_Paf.strLogPath;
++                if (string.IsNullOrEmpty(directory)) return;
++                lock (_cameraDiagnosticLogSync)
++                {
++                    Directory.CreateDirectory(directory);
++                    File.AppendAllText(Path.Combine(directory, $"CameraLog_{DateTime.Now:yyyyMMdd}.txt"),
++                        $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {operation} | status={status} | {detail}{Environment.NewLine}");
++                }
+             }
+-
+-            // 1. 检查相机名称是否发生变化，若变化则记录日志
+-            if (cup.p_Cam[iCamInd].strCamName != items[iCamInd])
++            catch (Exception ex)
+             {
+-                cup.p_Cam[iCamInd].strCamName = items[iCamInd];
+-                operLog.iEventStatus = 0;
+-                operLog.strOperEvent = "相机" + (ind + 1).ToString() + "发生更换";
+-                operLog.strFailReason = cup.p_Cam[iCamInd].strCamName + "->" + items[iCamInd];
+-                AddLog();
++                System.Diagnostics.Debug.WriteLine($"相机诊断日志写入失败: {ex}");
+             }
++        }
+ 
+-            // 2. 重新初始化相机对象（如果之前已存在则先销毁）
+-            camera2 = hIKVisionCamera.CameraInit(iCamInd, ref rts.cs.iStatus);
+-            if (camera2[iCamInd] == null)
++        /// <summary>
++        /// 主动连接和自动重连共用的最新设备枚举入口。
++        /// </summary>
++        private bool RefreshCameraDevices(string operation, out List<string> latestItems)
++        {
++            latestItems = null;
++            try
+             {
+-                operLog.iEventStatus = -1;
+-                operLog.strOperEvent = "相机初始化失败";
+-                operLog.strFailReason = "异常错误,相机初始化状态："+ rts.cs.iStatus[iCamInd];
+-                AddLog();
++                latestItems = hIKVisionCamera.EnumDevices();
++                int enumRet = hIKVisionCamera.LastEnumResult;
++                cameraNum = (uint)latestItems.Count;
++                rts.cs.camNum = latestItems.Count;
++                if (vpWin != null)
++                    vpWin._cameraNum = cameraNum;
+ 
+-                // 更新状态
+-                SyncCameraStatus(iCamInd, 0);
++                if (enumRet != MyCamera.MV_OK)
++                {
++                    LogCameraConnection(operation, false,
++                        $"设备枚举失败，SDK=0x{unchecked((uint)enumRet):X8}");
++                    return false;
++                }
++
++                for (int i = 0; i < latestItems.Count; i++)
++                {
++                    LogCameraConnection(operation, true,
++                        $"枚举设备 cameraIndex={i}, serial={GetCameraSerialKey(latestItems[i])}, info={latestItems[i]}");
++                }
++
++                if (latestItems.Count == 0)
++                {
++                    LogCameraConnection(operation, false, "未发现在线相机");
++                    return false;
++                }
++
++                chooseHIK = true;
++                return true;
++            }
++            catch (Exception ex)
++            {
++                cameraNum = 0;
++                rts.cs.camNum = 0;
++                LogCameraConnection(operation, false, "设备枚举异常: " + ex);
+                 return false;
+             }
++        }
+ 
+-            // 3. 获取图像数据载荷大小（PayloadSize）
+-            MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
+-            uint nPayloadSize = 0;
+-            if (camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam) != 0)
++        /// <summary>
++        /// 按当前序列号映射连接一个工位。已就绪的对象不重复 Create/Open/Start。
++        /// </summary>
++        private bool ConnectJobCamera(int jobIndex, List<string> latestItems,
++            string operation, bool mappingValid)
++        {
++            if (jobIndex < 0 || jobIndex >= maxJobNum || !cup.p_CD.bListProcess[jobIndex])
++                return false;
++
++            int cameraIndex = -1;
++            bool createdNewConnection = false;
++            try
+             {
+-                // 部分相机无法直接获取 PayloadSize，采用抓一帧的方式
+-                MyCamera.MV_FRAME_OUT stFrameInfo1 = new MyCamera.MV_FRAME_OUT();
+-                int nRet = camera2[iCamInd].MV_CC_GetImageBuffer_NET(ref stFrameInfo1, 2000);
+-                if (nRet == MyCamera.MV_OK)
++                EnsureCameraSerialBindingArray();
++                string expectedSerial = GetCameraSerialKey(cup.p_CD.camSerial[jobIndex]);
++                if (!string.IsNullOrEmpty(expectedSerial))
+                 {
+-                    nPayloadSize = stFrameInfo1.stFrameInfo.nFrameLen;
++                    for (int i = 0; i < latestItems.Count; i++)
++                    {
++                        if (string.Equals(expectedSerial, GetCameraSerialKey(latestItems[i]),
++                            StringComparison.OrdinalIgnoreCase))
++                        {
++                            cameraIndex = i;
++                            break;
++                        }
++                    }
+                 }
+-                else
++                else if (cup.p_CD.camInd[jobIndex] >= 0 && cup.p_CD.camInd[jobIndex] < latestItems.Count)
+                 {
+-                    operLog.iEventStatus = -1;
+-                    operLog.strOperEvent = "检测位" + (ind + 1).ToString() + "获取相机数据量失败";
+-                    operLog.strFailReason = "异常错误";
+-                    AddLog();
++                    cameraIndex = cup.p_CD.camInd[jobIndex];
++                }
+ 
+-                    SyncCameraStatus(iCamInd, 0);
++                if (cameraIndex < 0 || cameraIndex >= latestItems.Count)
++                {
++                    LogCameraConnection(operation, false,
++                        $"工位Job{jobIndex}未找到唯一绑定相机，serial={expectedSerial}");
+                     return false;
+                 }
++
++                cup.p_CD.camInd[jobIndex] = cameraIndex;
++                string currentSerial = GetCameraSerialKey(latestItems[cameraIndex]);
++                if (string.IsNullOrEmpty(cup.p_CD.camSerial[jobIndex]))
++                {
++                    cup.p_CD.camSerial[jobIndex] = currentSerial;
++                    SaveUserParam();
++                }
++
++                camera2 = hIKVisionCamera.GetCameraArray();
++                if (cameraIndex < 0 || cameraIndex >= camera2.Length)
++                    return false;
++
++                bool connected = false;
++                if (camera2[cameraIndex] != null)
++                {
++                    try
++                    {
++                        connected = hIKVisionCamera.IsCamConn(cameraIndex);
++                    }
++                    catch (Exception ex)
++                    {
++                        LogCameraConnection(operation, false, $"cameraIndex={cameraIndex}, serial={currentSerial}, phase=IsCamConn, exception={ex}");
++                        connected = false;
++                    }
++                }
++                if (connected)
++                {
++                    string activeSerial = GetCameraSerialKey(hIKVisionCamera.GetConnectedCameraSerial(cameraIndex));
++                    if (!string.IsNullOrEmpty(activeSerial) && !string.IsNullOrEmpty(currentSerial) &&
++                        !string.Equals(activeSerial, currentSerial, StringComparison.OrdinalIgnoreCase))
++                    {
++                        LogCameraConnection(operation, false,
++                            $"拒绝重绑定以避免工位交换: Job{jobIndex}, slot={cameraIndex}, 已连接={activeSerial}, 期望={currentSerial}");
++                        return false;
++                    }
++
++                    if (rts.cs.iStatus[cameraIndex] == 3)
++                    {
++                        LogCameraConnection(operation, true,
++                            $"设备已连接，保留现有句柄: Job{jobIndex}, cameraIndex={cameraIndex}, serial={currentSerial}");
++                        return true;
++                    }
++                }
++
++                int createRet;
++                int openRet;
++                int releaseStopRet;
++                int releaseCloseRet;
++                int releaseDestroyRet;
++                if (vpWin != null && !vpWin.StopPreviewForCamera(cameraIndex))
++                {
++                    LogCameraConnection(operation, false,
++                        $"cameraIndex={cameraIndex}, serial={currentSerial}, 旧预览线程未退出，拒绝重连及释放句柄");
++                    return false;
++                }
++                // 先撤销旧就绪状态，避免后台重连发布新对象时预览抢先进入。
++                SyncCameraStatus(cameraIndex, 0);
++                bool connectedNow = hIKVisionCamera.TryConnectCamera(cameraIndex, cameraIndex,
++                    out createRet, out openRet, out releaseStopRet, out releaseCloseRet, out releaseDestroyRet);
++                camera2 = hIKVisionCamera.GetCameraArray();
++
++                if (releaseStopRet != int.MinValue || releaseCloseRet != int.MinValue || releaseDestroyRet != int.MinValue)
++                {
++                    LogCameraConnection(operation,
++                        releaseStopRet == MyCamera.MV_OK && releaseCloseRet == MyCamera.MV_OK && releaseDestroyRet == MyCamera.MV_OK,
++                        $"释放旧句柄 cameraIndex={cameraIndex}, Stop=0x{unchecked((uint)releaseStopRet):X8}, Close=0x{unchecked((uint)releaseCloseRet):X8}, Destroy=0x{unchecked((uint)releaseDestroyRet):X8}");
++                }
++
++                if (!connectedNow)
++                {
++                    SyncCameraStatus(cameraIndex, 0);
++                    LogCameraConnection(operation, false,
++                        $"连接失败 cameraIndex={cameraIndex}, serial={currentSerial}, CreateDevice=0x{unchecked((uint)createRet):X8}, OpenDevice=0x{unchecked((uint)openRet):X8}");
++                    return false;
++                }
++
++                createdNewConnection = !connected;
++                bool configured = SetCamParam(cameraIndex);
++                if (!configured)
++                {
++                    SyncCameraStatus(cameraIndex, 0);
++                    ReleaseNewCameraAfterFailure(cameraIndex, createdNewConnection, operation);
++                    LogCameraConnection(operation, false,
++                        $"参数恢复失败 cameraIndex={cameraIndex}, serial={currentSerial}");
++                    return false;
++                }
++
++                MyCamera.MVCC_INTVALUE payloadParam = new MyCamera.MVCC_INTVALUE();
++                int payloadRet = camera2[cameraIndex].MV_CC_GetIntValue_NET("PayloadSize", ref payloadParam);
++                if (payloadRet != MyCamera.MV_OK || payloadParam.nCurValue == 0)
++                {
++                    SyncCameraStatus(cameraIndex, 0);
++                    ReleaseNewCameraAfterFailure(cameraIndex, createdNewConnection, operation);
++                    LogCameraConnection(operation, false,
++                        $"获取PayloadSize失败 cameraIndex={cameraIndex}, SDK=0x{unchecked((uint)payloadRet):X8}");
++                    return false;
++                }
++
++                SyncCameraStatus(cameraIndex, 1);
++                if (!acqFIFO.ReallocateBuffer(cameraIndex, payloadParam.nCurValue))
++                {
++                    SyncCameraStatus(cameraIndex, 0);
++                    ReleaseNewCameraAfterFailure(cameraIndex, createdNewConnection, operation);
++                    LogCameraConnection(operation, false,
++                        $"图像缓冲区分配失败 cameraIndex={cameraIndex}, PayloadSize={payloadParam.nCurValue}");
++                    return false;
++                }
++
++                SyncCameraStatus(cameraIndex, 2);
++                if (!StartGrab(cameraIndex))
++                {
++                    ReleaseNewCameraAfterFailure(cameraIndex, createdNewConnection, operation);
++                    return false;
++                }
++
++                LogCameraConnection(operation, true,
++                    $"连接成功 Job{jobIndex}, cameraIndex={cameraIndex}, serial={currentSerial}, CreateDevice=0x{unchecked((uint)createRet):X8}, OpenDevice=0x{unchecked((uint)openRet):X8}");
++                return true;
+             }
+-            else
++            catch (Exception ex)
+             {
+-                nPayloadSize = stParam.nCurValue;
++                LogCameraConnection(operation, false,
++                    $"Job{jobIndex}, cameraIndex={cameraIndex}, serial={cup.p_CD.camSerial[jobIndex]}, 连接初始化异常: {ex}");
++                if (cameraIndex >= 0)
++                {
++                    SyncCameraStatus(cameraIndex, 0);
++                    ReleaseNewCameraAfterFailure(cameraIndex, createdNewConnection, operation);
++                }
++                return false;
+             }
++        }
+ 
+-            // 临时更新相机状态为“已获取载荷”
+-            SyncCameraStatus(iCamInd, 1);
++        private void ReleaseNewCameraAfterFailure(int cameraIndex, bool createdNewConnection, string operation)
++        {
++            if (!createdNewConnection)
++                return;
+ 
+-            // 4. 设置相机参数（曝光、增益、ROI 等）
+-            //取消过程中设置参数
+-           /* if (!SetCamParam(iCamInd))
+-            {
+-                operLog.iEventStatus = -1;
+-                operLog.strOperEvent = "设置相机参数";
+-                operLog.strFailReason = "异常错误";
+-                AddLog();
++            int stopRet;
++            int closeRet;
++            int destroyRet;
++            bool released = hIKVisionCamera.ReleaseCamera(cameraIndex, out stopRet, out closeRet, out destroyRet);
++            LogCameraConnection(operation, released,
++                $"清理本次新建句柄 cameraIndex={cameraIndex}, Stop=0x{unchecked((uint)stopRet):X8}, Close=0x{unchecked((uint)closeRet):X8}, Destroy=0x{unchecked((uint)destroyRet):X8}");
++            camera2 = hIKVisionCamera.GetCameraArray();
++        }
+ 
+-                SyncCameraStatus(iCamInd, 0);
+-                return false;
+-            }*/
+-            SyncCameraStatus(iCamInd, 2);
++        /// <summary>
++        /// 手动“连接相机”入口：只刷新枚举并补齐缺失/失效相机，不关闭已正常工作的相机。
++        /// </summary>
++        private bool TryConnectCameras(string operation)
++        {
++            lock (_cameraConnectionSync)
++            {
++                if (_cameraConnectionInProgress)
++                {
++                    LogCameraConnection(operation, false, "已有连接操作正在进行，忽略本次重复进入");
++                    return false;
++                }
++                _cameraConnectionInProgress = true;
++            }
+ 
+-            // 5. 分配/调整图像缓冲区（由 AcqFIFO 统一管理）
+-            if (!acqFIFO.ReallocateBuffer(iCamInd, nPayloadSize))
++            try
+             {
+-                operLog.iEventStatus = -1;
+-                operLog.strOperEvent = "分配数据空间";
+-                operLog.strFailReason = "AcqFIFO 分配内存失败";
+-                AddLog();
++                List<string> latestItems;
++                if (!RefreshCameraDevices(operation, out latestItems))
++                    return false;
+ 
+-                SyncCameraStatus(iCamInd, 0);
+-                return false;
+-            }
++                bool mappingChanged;
++                bool mappingValid = TryMapJobsByCameraSerial(latestItems, out mappingChanged);
++                if (mappingChanged)
++                    SaveUserParam();
+ 
+-            // 分配成功，更新相机状态为就绪
+-            SyncCameraStatus(iCamInd, 3);
+-            bSucc = true;
++                camera2 = hIKVisionCamera.GetCameraArray();
++                acqFIFO._HikCam = camera2;
+ 
+-            return bSucc;
++                int successCount = 0;
++                int enabledCount = 0;
++                for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
++                {
++                    if (!cup.p_CD.bListProcess[jobIndex])
++                        continue;
++                    enabledCount++;
++                    if (ConnectJobCamera(jobIndex, latestItems, operation, mappingValid))
++                        successCount++;
++                }
++
++                bool allSucceeded = mappingValid && enabledCount > 0 && successCount == enabledCount;
++                rts.initStatus.bCamPrepared = allSucceeded;
++                rts.initStatus.bCamInit = allSucceeded;
++                LogCameraConnection(operation, allSucceeded,
++                    $"连接结果: 成功={successCount}, 启用工位={enabledCount}, 枚举设备={latestItems.Count}, 映射有效={mappingValid}");
++                return allSucceeded;
++            }
++            finally
++            {
++                lock (_cameraConnectionSync)
++                {
++                    _cameraConnectionInProgress = false;
++                }
++            }
+         }
+        
+         private static string GetCameraSerialKey(string cameraIdentity)
+@@ -1524,6 +1766,9 @@ namespace VisionApplication
+                 if (!serialToIndex.TryGetValue(savedSerial, out int physicalIndex))
+                 {
+                     mappingValid = false;
++                    // 当前设备缺失时清除运行态物理索引，避免继续把该工位当成另一台在线相机。
++                    // 不保存此临时缺失状态；设备恢复后重新枚举即可恢复绑定。
++                    cup.p_CD.camInd[jobIndex] = -1;
+                     operLog.iEventStatus = -1;
+                     operLog.strOperEvent = $"工位{jobIndex + 1}相机映射失败";
+                     operLog.strFailReason = $"未找到绑定序列号:{savedSerial}; 当前相机:{string.Join(",", enumeratedSerials)}";
+@@ -1624,6 +1869,16 @@ namespace VisionApplication
+             bool bNeedCleanup = false;
+             bool bStatusChanged = false;
+ 
++            for (int cameraIndex = 0; cameraIndex < maxCameraNum; cameraIndex++)
++            {
++                if (vpWin != null && !vpWin.StopPreviewForCamera(cameraIndex))
++                {
++                    LogCameraConnection("初始化相机", false,
++                        $"cameraIndex={cameraIndex}, 旧预览线程未退出，拒绝重新初始化句柄");
++                    return;
++                }
++            }
++
+             if (cameraNum < 1)
+             {
+                 iInitType = -1;
+@@ -1684,6 +1939,21 @@ namespace VisionApplication
+                         continue;
+ 
+                     int iCamInd = cup.p_CD.camInd[ind];
++                    if (iCamInd < 0 || iCamInd >= cameraNum ||
++                        camera2 == null || iCamInd >= camera2.Length ||
++                        rts.cs.iStatus == null || iCamInd >= rts.cs.iStatus.Length)
++                    {
++                        bStatusChanged = true;
++                        operLog.iEventStatus = -1;
++                        operLog.strOperEvent = $"初始化相机-工位{ind + 1}";
++                        operLog.strFailReason =
++                            $"无效相机索引: jobIndex={ind}, cameraIndex={iCamInd}, " +
++                            $"cameraNum={cameraNum}, cameraArrayLength={(camera2 == null ? 0 : camera2.Length)}, " +
++                            $"statusLength={(rts.cs.iStatus == null ? 0 : rts.cs.iStatus.Length)}";
++                        AddLog();
++                        continue;
++                    }
++
+                     if (camera2[iCamInd] == null)
+                     {
+                      //   cup.p_CD.bListProcess[ind] = false;
+@@ -1764,7 +2034,14 @@ namespace VisionApplication
+             {
+                 iInitType = -6;
+                 bNeedCleanup = true;
+-                // 可添加日志记录异常信息
++                operLog.iEventStatus = -1;
++                operLog.strOperEvent = "初始化相机";
++                operLog.strFailReason =
++                    $"阶段=InitCam, cameraNum={cameraNum}, " +
++                    $"cameraArrayLength={(camera2 == null ? 0 : camera2.Length)}, " +
++                    $"statusLength={(rts.cs.iStatus == null ? 0 : rts.cs.iStatus.Length)}, " +
++                    ex.ToString();
++                AddLog();
+             }
+ 
+         outofInit:
+@@ -1795,6 +2072,7 @@ namespace VisionApplication
+         //断开相机
+         private void StopDevice()
+         {
++            if (!StopGrab()) return;
+             // 关闭海康相机
+             if (chooseHIK)
+             {
+@@ -1828,29 +2106,22 @@ namespace VisionApplication
+             }
+         }
+         //停止采集
+-        private void StopGrab()
++        private bool StopGrab()
+         {
+-            if (chooseHIK)
++            if (!chooseHIK) return true;
++            try
+             {
+-                try
+-                {
+-                    hikCanGrab = false;   // 标志位设为false
+-                                          //   vpWin.OpenOrCloseCam(false);  //停止预览线程，并未关闭相机的采集
+-                    for (int i = 0; i < maxCameraNum; i++)
+-                    {
+-                        vpWin.previewOnlive(false, i);
+-                    }
+-
+-                  //  vpWin.previewOnlive(false, iJobIndex);
+-                    //    hIKVisionCamera.StopGrabbing();
+-                }
+-                catch
+-                {
+-                    MessageBox.Show("停止采集失败，请重启！", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+-                    return;
+-                }
++                bool stopped = true;
++                for (int i = 0; i < maxCameraNum; i++)
++                    stopped &= vpWin.previewOnlive(false, i);
++                if (stopped) hikCanGrab = false;
++                return stopped;
++            }
++            catch (Exception ex)
++            {
++                LogCameraConnection("停止预览", false, $"exception={ex}");
++                return false;
+             }
+-
+         }
+ 
+         private void CloseCamStatus()
+@@ -1860,128 +2131,124 @@ namespace VisionApplication
+         }
+         private void CloseCam()
+         {
+-            StopGrab();
++            if (!StopGrab()) return;
+             StopDevice();
+             CloseCamStatus();
+         }
+  
+         private bool SetCamParam(int iCamIndex)
+         {
+-            // 1. 参数有效性检查
+-            if (iCamIndex < 0 || iCamIndex >= maxCameraNum)
+-                return false;
+-            if (!chooseHIK || camera2 == null || camera2[iCamIndex] == null)
+-                return false;
+-
++            string serial = cup.p_Cam != null && iCamIndex >= 0 && iCamIndex < cup.p_Cam.Length
++                ? cup.p_Cam[iCamIndex].strCamName : string.Empty;
++            string stage = "Validate";
+             try
+             {
+-                // 2. 设置曝光和增益
+-                float exposure = cup.p_Cam[iCamIndex].iExposeTime;
+-                float gain = (float)cup.p_Cam[iCamIndex].dGain;
+-                string gainshow = null;
+-                string exposureshow = null;
+-                hIKVisionCamera.SetParam(gain, exposure, ref gainshow, ref exposureshow, camera2[iCamIndex]);
+-
+-                // 3. 设置像素格式
+-                if (!hIKVisionCamera.SetPixelFormat(ref cup.p_Cam[iCamIndex].iMonoType, camera2[iCamIndex]))
+-                    return false;
+-
+-                // 4. 设置锐度
+-                if (!hIKVisionCamera.SetSharpness(ref cup.p_Cam[iCamIndex].iSharp, camera2[iCamIndex]))
+-                    return false;
+-
+-                // 5. 设置伽马（先确保伽马使能，如果界面有开关则根据状态设置，这里仅设置值）
+-                float gamma = cup.p_Cam[iCamIndex].dGamma;
+-                if (!hIKVisionCamera.SetGamma(ref gamma, camera2[iCamIndex]))
+-                    return false;
+-                cup.p_Cam[iCamIndex].dGamma = gamma; // 同步可能被修正的值
+-
+-                // 6. 设置分辨率（作为基准）
+-                uint iWidth = cup.p_Cam[iCamIndex].iWidth;
+-                uint iHeight = cup.p_Cam[iCamIndex].iHeight;
+-                if (!hIKVisionCamera.SetResolution(ref iWidth, ref iHeight, camera2[iCamIndex]))
+-                    return false;
+-
+-                // 7. 处理 ROI（确保数组有效）
+-                uint[] roi = cup.p_Cam[iCamIndex].iROI;
+-                if (roi == null || roi.Length < 4)
+-                {
+-                    roi = new uint[] { 0, 0, iWidth, iHeight };
+-                    cup.p_Cam[iCamIndex].iROI = roi;
+-                }
+-                // 先设置宽高，再设置偏移（顺序重要）
+-                int ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("Width", roi[2]);
+-                if (ret != MyCamera.MV_OK) return false;
+-                ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("Height", roi[3]);
+-                if (ret != MyCamera.MV_OK) return false;
+-                ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("OffsetX", roi[0]);
+-                if (ret != MyCamera.MV_OK) return false;
+-                ret = camera2[iCamIndex].MV_CC_SetIntValue_NET("OffsetY", roi[1]);
+-                if (ret != MyCamera.MV_OK) return false;
+-
+-                // 更新分辨率参数为 ROI 的实际尺寸
+-                cup.p_Cam[iCamIndex].iWidth = roi[2];
+-                cup.p_Cam[iCamIndex].iHeight = roi[3];
+-
+-                // 8. 如果当前工位是触发相机，设置触发模式
+-                if (cup.p_CD.triggleCam == iCamIndex)
++                if (iCamIndex < 0 || iCamIndex >= maxCameraNum || cup.p_Cam == null ||
++                    iCamIndex >= cup.p_Cam.Length || !chooseHIK || camera2 == null ||
++                    iCamIndex >= camera2.Length || camera2[iCamIndex] == null)
+                 {
+-                    SetTrigger(iCamIndex);
++                    LogCameraConnection("参数恢复", false, $"cameraIndex={iCamIndex}, serial={serial}, node={stage}, 相机对象或索引无效，未调用SDK");
++                    return false;
+                 }
+ 
++                // CameraParam 是结构体；ROI 数组也必须复制，全部恢复成功才提交。
++                CameraParam local = cup.p_Cam[iCamIndex];
++                local.iROI = local.iROI == null ? null : (uint[])local.iROI.Clone();
++                MyCamera camera = camera2[iCamIndex];
++                string gainshow = null, exposureshow = null;
++                stage = "ExposureTime";
++                if (!hIKVisionCamera.SetParam(local.dGain, local.iExposeTime, ref gainshow, ref exposureshow, camera)) return false;
++                stage = "PixelFormat";
++                if (!hIKVisionCamera.SetPixelFormat(ref local.iMonoType, camera)) return false;
++                stage = "Sharpness";
++                if (!hIKVisionCamera.SetSharpness(ref local.iSharp, camera)) return false;
++                stage = "Gamma";
++                if (!hIKVisionCamera.SetGamma(ref local.dGamma, camera)) return false;
++                stage = "Resolution";
++                uint width = local.iWidth, height = local.iHeight;
++                if (!hIKVisionCamera.SetResolution(ref width, ref height, camera)) return false;
++                uint[] roi = local.iROI;
++                if (roi == null || roi.Length < 4)
++                    roi = new uint[] { 0, 0, width, height };
++                stage = "ROI.Width";
++                if (!hIKVisionCamera.SetIntValueChecked(camera, "Width", roi[2])) return false;
++                stage = "ROI.Height";
++                if (!hIKVisionCamera.SetIntValueChecked(camera, "Height", roi[3])) return false;
++                stage = "ROI.OffsetX";
++                if (!hIKVisionCamera.SetIntValueChecked(camera, "OffsetX", roi[0])) return false;
++                stage = "ROI.OffsetY";
++                if (!hIKVisionCamera.SetIntValueChecked(camera, "OffsetY", roi[1])) return false;
++                stage = "Trigger";
++                if (cup.p_CD.triggleCam == iCamIndex && !SetTrigger(iCamIndex)) return false;
++                stage = "AcquisitionState.ReadBack";
++                string runtimeState;
++                if (!GetCameraRuntimeState(iCamIndex, out runtimeState)) return false;
++                WriteCameraDiagnostic("参数恢复读回", 0, $"cameraIndex={iCamIndex}, serial={serial}; {runtimeState}");
++                local.iROI = roi;
++                local.iWidth = roi[2];
++                local.iHeight = roi[3];
++                cup.p_Cam[iCamIndex] = local;
+                 return true;
+             }
+-            catch
++            catch (Exception ex)
+             {
++                LogCameraConnection("参数恢复", false,
++                    $"cameraIndex={iCamIndex}, serial={serial}, node={stage}, exception={ex}");
+                 return false;
+             }
+         }
++
+         public bool SetTrigger(int iCamIndex)
+         {
+-            if (camera2[iCamIndex] == null)
+-                return false;
+             try
+             {
++                MyCamera camera = camera2[iCamIndex];
++                if (camera == null) return false;
++                if (!hIKVisionCamera.SetEnumValueChecked(camera, "TriggerMode", cup.p_CD.bTriggle
++                    ? (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_ON
++                    : (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF)) return false;
+                 if (cup.p_CD.bTriggle)
+-                {
+-                    camera2[iCamIndex].MV_CC_SetEnumValue_NET("TriggerMode", (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_ON);
+-                    if (cup.p_CD.triggleMode == 4)
+-                        camera2[iCamIndex].MV_CC_SetEnumValue_NET("TriggerSource", (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_SOFTWARE);
+-                    else
+-                    {
+-                        camera2[iCamIndex].MV_CC_SetEnumValue_NET("TriggerSource", (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_LINE0);
+-                    }
+-                }
+-                else
+-                {
+-                    camera2[iCamIndex].MV_CC_SetEnumValue_NET("TriggerMode", (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF);
+-                }
++                    return hIKVisionCamera.SetEnumValueChecked(camera, "TriggerSource", cup.p_CD.triggleMode == 4
++                        ? (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_SOFTWARE
++                        : (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_LINE0);
++                return true;
+             }
+-            catch
++            catch (Exception ex)
+             {
++                string serial = cup.p_Cam != null && iCamIndex >= 0 && iCamIndex < cup.p_Cam.Length
++                    ? cup.p_Cam[iCamIndex].strCamName : string.Empty;
++                LogCameraConnection("触发设置", false, $"cameraIndex={iCamIndex}, serial={serial}, exception={ex}");
+                 return false;
+             }
+-            return true;
+         }
+ 
+         private bool StartGrab(int iCamInd)
+         {
+             try
+             {
++                if (iCamInd < 0 || iCamInd >= rts.cs.iStatus.Length || rts.cs.iStatus[iCamInd] < 2)
++                {
++                    LogCameraConnection("启动相机采集", false,
++                        $"cameraIndex={iCamInd}, 参数或缓冲区初始化未完成，未调用StartGrabbing");
++                    return false;
++                }
+                 int sdkResult = hIKVisionCamera.StartGrabbing(iCamInd);
+                 bool success = sdkResult == MyCamera.MV_OK;
+-                SyncCameraStatus(iCamInd, success ? 3 : 1);
+ 
+                 string serial = cup.p_Cam != null && iCamInd >= 0 && iCamInd < cup.p_Cam.Length
+                     ? cup.p_Cam[iCamInd].strCamName
+                     : string.Empty;
+                 string jobs = GetJobsForCamera(iCamInd);
+-                string runtimeState = GetCameraRuntimeState(iCamInd);
++                string runtimeState;
++                bool stateRead = GetCameraRuntimeState(iCamInd, out runtimeState);
++                success &= stateRead;
++                SyncCameraStatus(iCamInd, success ? 3 : 1);
+ 
+                 operLog.strOperEvent = $"启动相机采集-Cam{iCamInd}";
+                 operLog.iEventStatus = success ? 0 : -1;
+                 operLog.strFailReason =
+                     $"Jobs={jobs}, Cam{iCamInd}, Serial={serial}, StartGrabbing SDK=0x{unchecked((uint)sdkResult):X8}; {runtimeState}";
++                WriteCameraDiagnostic(operLog.strOperEvent, operLog.iEventStatus, operLog.strFailReason);
+                 AddLog();
+                 return success;
+             }
+@@ -1990,7 +2257,10 @@ namespace VisionApplication
+                 SyncCameraStatus(iCamInd, 1);
+                 operLog.strOperEvent = $"启动相机采集-Cam{iCamInd}";
+                 operLog.iEventStatus = -1;
+-                operLog.strFailReason = $"Cam{iCamInd} StartGrabbing异常: {ex.Message}";
++                operLog.strFailReason =
++                    $"阶段=StartGrabbing, Cam{iCamInd}, cameraNum={cameraNum}, " +
++                    $"cameraArrayLength={(camera2 == null ? 0 : camera2.Length)}, exception={ex}";
++                WriteCameraDiagnostic(operLog.strOperEvent, -1, operLog.strFailReason);
+                 AddLog();
+                 return false;
+             }
+@@ -2004,7 +2274,17 @@ namespace VisionApplication
+                 if (!StartGrab(iCamInd))
+                     allSucceeded = false;
+             }
+-            return allSucceeded;
++            bool anyEnabled = false;
++            for (int job = 0; job < maxJobNum; job++)
++            {
++                if (!cup.p_CD.bListProcess[job]) continue;
++                anyEnabled = true;
++                int cameraIndex = cup.p_CD.camInd[job];
++                allSucceeded &= cameraIndex >= 0 && cameraIndex < rts.cs.iStatus.Length && rts.cs.iStatus[cameraIndex] == 3;
++            }
++            rts.initStatus.bCamInit = anyEnabled && allSucceeded;
++            rts.initStatus.bCamPrepared = rts.initStatus.bCamInit;
++            return rts.initStatus.bCamInit;
+         }
+ 
+         private string GetJobsForCamera(int cameraIndex)
+@@ -2018,36 +2298,32 @@ namespace VisionApplication
+             return jobs.Count > 0 ? string.Join(",", jobs) : "未分配启用工位";
+         }
+ 
+-        private string GetCameraRuntimeState(int cameraIndex)
++        private bool GetCameraRuntimeState(int cameraIndex, out string state)
+         {
++            state = "相机对象无效";
+             if (camera2 == null || cameraIndex < 0 || cameraIndex >= camera2.Length || camera2[cameraIndex] == null)
+-                return "TriggerMode/TriggerSource/PixelFormat=相机对象无效";
+-
++                return false;
+             try
+             {
+-                MyCamera.MVCC_ENUMVALUE triggerMode = new MyCamera.MVCC_ENUMVALUE();
+-                MyCamera.MVCC_ENUMVALUE triggerSource = new MyCamera.MVCC_ENUMVALUE();
+-                MyCamera.MVCC_ENUMVALUE pixelFormat = new MyCamera.MVCC_ENUMVALUE();
+-                int modeResult = camera2[cameraIndex].MV_CC_GetEnumValue_NET("TriggerMode", ref triggerMode);
+-                int sourceResult = camera2[cameraIndex].MV_CC_GetEnumValue_NET("TriggerSource", ref triggerSource);
+-                int pixelResult = camera2[cameraIndex].MV_CC_GetEnumValue_NET("PixelFormat", ref pixelFormat);
+-
+-                string modeText = modeResult == MyCamera.MV_OK
+-                    ? $"{(MyCamera.MV_CAM_TRIGGER_MODE)triggerMode.nCurValue}({triggerMode.nCurValue})"
+-                    : $"读取失败(0x{unchecked((uint)modeResult):X8})";
+-                string sourceText = sourceResult == MyCamera.MV_OK
+-                    ? $"{(MyCamera.MV_CAM_TRIGGER_SOURCE)triggerSource.nCurValue}({triggerSource.nCurValue})"
+-                    : $"读取失败(0x{unchecked((uint)sourceResult):X8})";
+-                string pixelText = pixelResult == MyCamera.MV_OK
+-                    ? $"{(MyCamera.MvGvspPixelType)pixelFormat.nCurValue}(0x{pixelFormat.nCurValue:X8})"
+-                    : $"读取失败(0x{unchecked((uint)pixelResult):X8})";
+-
+-                return $"TriggerMode={modeText}, TriggerSource={sourceText}, PixelFormat={pixelText}";
++                MyCamera camera = camera2[cameraIndex];
++                string[] nodes = { "AcquisitionMode", "TriggerMode", "TriggerSource", "PixelFormat" };
++                List<string> values = new List<string>();
++                bool success = true;
++                foreach (string node in nodes)
++                {
++                    MyCamera.MVCC_ENUMVALUE value = new MyCamera.MVCC_ENUMVALUE();
++                    int ret = camera.MV_CC_GetEnumValue_NET(node, ref value);
++                    success &= hIKVisionCamera.CheckSdkResult(camera, node + ".ReadBack", "read", ret);
++                    values.Add(ret == MyCamera.MV_OK ? $"{node}={value.nCurValue}" : $"{node}=读取失败(0x{unchecked((uint)ret):X8})");
++                }
++                state = string.Join(", ", values);
++                return success;
+             }
+             catch (Exception ex)
+             {
+-                // 诊断读取失败不能改变 StartGrabbing 的真实结果。
+-                return $"TriggerMode/TriggerSource/PixelFormat读取异常: {ex.Message}";
++                state = $"cameraIndex={cameraIndex}, 状态读回异常: {ex}";
++                LogCameraConnection("采集状态读回", false, state);
++                return false;
+             }
+         }
+ 
+@@ -2165,7 +2441,8 @@ namespace VisionApplication
+                         hikCanGrab = false;
+                         menuCam_Connect.Text = "启动图像预览";
+                         operLog.iEventStatus = -1;
+-                        operLog.strFailReason = "启动预览线程失败: " + ex.Message;
++                        operLog.strFailReason = "启动预览线程失败: " + ex;
++                        WriteCameraDiagnostic(operLog.strOperEvent, -1, operLog.strFailReason);
+                         AddLog();
+                         return false;
+                     }
+@@ -2176,7 +2453,7 @@ namespace VisionApplication
+                 operLog.strOperEvent = "关闭图像预览";
+                 try
+                 {
+-                    StopGrab();
++                    if (!StopGrab()) return false;
+                     // vpWin.OpenOrCloseCam(false);
+                     operLog.iEventStatus = 0;
+                     menuCam_Connect.Text = "启动图像预览";
+@@ -2410,6 +2687,11 @@ namespace VisionApplication
+             if (jobIndex < 0 || jobIndex >= ioFeedbackJobCount)
+                 return;
+ 
++            if (cup.p_VPPRTP.bVisionInfer && !vpWin.IsVppJobResultValid(jobIndex))
++            {
++                AbortIOFeedbackCycle(jobIndex, cycleId, "本轮长度测量结果无效");
++                return;
++            }
+             SubmitIOFeedbackResult(jobIndex, pmaRes[jobIndex].bOk, cycleId);
+         }
+ 
+@@ -2453,26 +2735,28 @@ namespace VisionApplication
+ 
+                     ioFeedbackCycleId++;
+                     ioFeedbackCycleActive = true;
++                    System.Threading.Interlocked.Exchange(ref completedJobCount, 0);
++                    allJobsDone = false;
+                 }
+ 
+-                cycleId = ioFeedbackCycleId;
+                 if (ioFeedbackOutputInProgress)
+                 {
+-                    errorMessage = $"IO反馈批次{cycleId}正在输出";
++                    errorMessage = $"IO反馈批次{ioFeedbackCycleId}正在输出";
+                     return false;
+                 }
+                 if (!ioFeedbackParticipating[jobIndex])
+                 {
+-                    errorMessage = $"Job{jobIndex}未参与IO反馈批次{cycleId}";
++                    errorMessage = $"Job{jobIndex}未参与IO反馈批次{ioFeedbackCycleId}";
+                     return false;
+                 }
+                 if (ioFeedbackStarted[jobIndex])
+                 {
+-                    errorMessage = $"Job{jobIndex}已开始IO反馈批次{cycleId}，拒绝跨轮重复运行";
++                    errorMessage = $"Job{jobIndex}已开始IO反馈批次{ioFeedbackCycleId}，拒绝跨轮重复运行";
+                     return false;
+                 }
+ 
+                 ioFeedbackStarted[jobIndex] = true;
++                cycleId = ioFeedbackCycleId; // 仅成功加入的请求取得取消/提交权限。
+                 return true;
+             }
+         }
+@@ -2544,14 +2828,24 @@ namespace VisionApplication
+                 return;
+             }
+ 
+-            string sendError;
+-            bool sendSucceeded = csd.SendIOOutputBitmapPulse(
+-                sPortCy, outputBitmap, cup.p_IOPP.IOTimeDelay, out sendError);
+-
+-            lock (ioFeedbackSync)
++            string sendError = string.Empty;
++            bool sendSucceeded = false;
++            try
++            {
++                sendSucceeded = csd.SendIOOutputBitmapPulse(
++                    sPortCy, outputBitmap, cup.p_IOPP.IOTimeDelay, out sendError);
++            }
++            catch (Exception ex)
+             {
+-                if (ioFeedbackCycleActive && ioFeedbackCycleId == cycleId)
+-                    ResetIOFeedbackCycleNoLock();
++                sendError = ex.ToString();
++            }
++            finally
++            {
++                lock (ioFeedbackSync)
++                {
++                    if (ioFeedbackCycleActive && ioFeedbackCycleId == cycleId)
++                        ResetIOFeedbackCycleNoLock();
++                }
+             }
+ 
+             if (sendSucceeded)
+@@ -2662,7 +2956,7 @@ namespace VisionApplication
+             long abortedCycleId = 0;
+             lock (ioFeedbackSync)
+             {
+-                if (!ioFeedbackCycleActive || cycleId <= 0 || ioFeedbackCycleId != cycleId)
++                if (!ioFeedbackCycleActive || cycleId <= 0 || ioFeedbackCycleId != cycleId || ioFeedbackOutputInProgress)
+                     return;
+                 abortedCycleId = ioFeedbackCycleId;
+                 ResetIOFeedbackCycleNoLock();
+@@ -3257,11 +3551,7 @@ namespace VisionApplication
+                 return;
+             }
+ 
+-            CloseCam();
+-            SearchCam();     //
+-            InitCam();
+-            StartGrab();
+-            InitVisionControl();
++            TryConnectCameras("手动连接");
+         }
+ 
+        
+@@ -3895,11 +4185,7 @@ namespace VisionApplication
+                 return;
+             }
+ 
+-            CloseCam();
+-            SearchCam();             //
+-            InitCam();
+-            StartGrab();
+-             InitVisionControl();
++            TryConnectCameras("手动连接");
+         }
+ 
+         private void 软触发一次ToolStripMenuItem_Click(object sender, EventArgs e)
+@@ -5442,8 +5728,8 @@ namespace VisionApplication
+                     {
+                         //判断相机是否在线
+                         int iCamIndex = cup.p_CD.camInd[i];
+-                        if (!acqFIFO.IsCamConn(iCamIndex))
+-                            rts.cs.iStatus[i] = 0;
++                        if (iCamIndex >= 0 && iCamIndex < maxCameraNum && !acqFIFO.IsCamConn(iCamIndex))
++                            SyncCameraStatus(iCamIndex, 0);
+                     }
+                 }
+                 //2026年7月2日 暂时不要更新信息
+@@ -5599,29 +5885,27 @@ namespace VisionApplication
+                 for (int i = 0; i < maxJobNum; i++)
+                 {
+                     int iCamInd = cup.p_CD.camInd[i];
+-                    if (cup.p_VPPRTP.bAcqFromCam && cup.p_CD.bListProcess[i] && rts.cs.iStatus[iCamInd] < 2)
++                    bool cameraNeedsReconnect = iCamInd < 0 || iCamInd >= rts.cs.iStatus.Length ||
++                        rts.cs.iStatus[iCamInd] < 2;
++                    if (cup.p_VPPRTP.bAcqFromCam && cup.p_CD.bListProcess[i] && cameraNeedsReconnect)
+                     {
+                         if (!_isReconnecting && (DateTime.Now - _lastReconnectAttempt) > _reconnectInterval)
+                         {
+                             _lastReconnectAttempt = DateTime.Now;
++                            _isReconnecting = true;
+                             ThreadPool.QueueUserWorkItem(state =>
+                             {
+-                                // 重连逻辑（原代码不变）
+-                                _isReconnecting = true;
+                                 try
+                                 {
+-                                    int index = (int)state;
+-                                    bool success = InitJobCamInd(index);
+-                                    if (success)
+-                                    {
+-                                        StartGrab(iCamInd);
+-                                    }
++                                    // 自动重连也走与手动按钮相同的“重新枚举+按序列号补齐”路径，
++                                    // 但不会关闭仍然在线的相机。
++                                    TryConnectCameras("自动重连");
+                                 }
+                                 catch (Exception ex)
+                                 {
+                                     operLog.iEventStatus = -1;
+                                     operLog.strOperEvent = "相机后台重连";
+-                                    operLog.strFailReason = ex.Message;
++                                    operLog.strFailReason = ex.ToString();
+                                     AddLog();
+                                 }
+                                 finally
+@@ -7451,7 +7735,7 @@ namespace VisionApplication
+             {
+                 if (IsLivePreviewRunning() && !StopLivePreviewForTrigger("\u8fd0\u884c\u4e00\u6b21"))
+                     return false;
+-                if (!vpWin.bMainTaskFinished)   //如果当前有任务在执行，即不能重复运行
++                if (System.Threading.Volatile.Read(ref manualSingleRunActive) != 0 || !vpWin.bMainTaskFinished)
+                 {
+                     operLog.iEventStatus = -1;
+                     operLog.strOperEvent = "运行一次";
+@@ -7539,9 +7823,21 @@ namespace VisionApplication
+ 
+                 vpWin.bMainTaskFinished = false;
+ 
++                System.Threading.Interlocked.Exchange(ref manualSingleRunActive, 1);
++                System.Threading.Interlocked.Exchange(ref completedJobCount, 0);
++                allJobsDone = false;
+                 //    oneTimeThread = new Thread(RunOneTimeThread);
+                 oneTimeThread = new Thread(() => RunOneTimeThread(iJobIndex==-1));
+-                oneTimeThread.Start();
++                try
++                {
++                    oneTimeThread.Start();
++                }
++                catch
++                {
++                    System.Threading.Interlocked.Exchange(ref manualSingleRunActive, 0);
++                    vpWin.bMainTaskFinished = true;
++                    throw;
++                }
+ 
+ 
+                 // operLog.iEventStatus = 0;
+@@ -8967,6 +9263,8 @@ namespace VisionApplication
+                     operLog.iEventStatus = -1;
+                     operLog.strOperEvent = "单次运行";
+                     operLog.strFailReason = "当前工位未启用";
++                    System.Threading.Interlocked.Exchange(ref manualSingleRunActive, 0);
++                    vpWin.bMainTaskFinished = true;
+                     AddLog();
+                     return;
+                 }
+@@ -8977,12 +9275,16 @@ namespace VisionApplication
+                 operLog.iEventStatus = -1;
+                 operLog.strOperEvent = "单次运行";
+                 operLog.strFailReason = "没有启用的工位";
++                System.Threading.Interlocked.Exchange(ref manualSingleRunActive, 0);
++                vpWin.bMainTaskFinished = true;
+                 AddLog();
+                 return;
+             }
+ 
+             long activeIOCycleToken = 0;
+             int activeIOJobIndex = -1;
++            bool independentVisionJobs = syncMode && cup.p_VPPRTP.bVisionInfer;
++            bool ioFeedbackCancelled = false;
+             try
+             {
+                 rts.iIsRunning = 1;
+@@ -8992,16 +9294,20 @@ namespace VisionApplication
+                 foreach (int jobIndex in jobIndices)
+                 {
+                     string ioFeedbackError;
+-                    if (!TryBeginIOFeedbackRun(jobIndex, !syncMode,
++                    if (!ioFeedbackCancelled && !TryBeginIOFeedbackRun(jobIndex, !syncMode,
+                         out activeIOCycleToken, out ioFeedbackError))
+                     {
+                         WriteIOFeedbackLog(-1, "运行IO批次拒绝", ioFeedbackError);
+-                        break;
++                        if (!independentVisionJobs)
++                            break;
++                        ioFeedbackCancelled = true;
++                        activeIOCycleToken = 0;
+                     }
+                     activeIOJobIndex = jobIndex;
+ 
+-                    // 重置完成标志（假设 vpWin._bRunOneTimeFinished 为数组）
+-                    vpWin._bRunOneTimeFinished[jobIndex] = 0;
++                    // VPP入口先检查/恢复该工位busy，再初始化完成标志。
++                    if (!cup.p_VPPRTP.bVisionInfer)
++                        vpWin._bRunOneTimeFinished[jobIndex] = 0;
+ 
+                     // 执行该工位的检测
+                     if (!vpWin.RunOneTime(jobIndex))
+@@ -9013,7 +9319,9 @@ namespace VisionApplication
+                         operLog.strFailReason = vpWin.strErrInfo?[jobIndex] ?? "启动失败";
+                         AddLog();
+                         AbortIOFeedbackCycle(jobIndex, activeIOCycleToken, "同步运行启动失败");
+-                        if (syncMode && activeIOCycleToken > 0)
++                        if (independentVisionJobs)
++                            ioFeedbackCancelled = true;
++                        if (syncMode && activeIOCycleToken > 0 && !independentVisionJobs)
+                             break;
+                         continue;
+                     }
+@@ -9037,15 +9345,28 @@ namespace VisionApplication
+                         operLog.strFailReason = "视觉检测超时";
+                         AddLog();
+                         AbortIOFeedbackCycle(jobIndex, activeIOCycleToken, "同步运行超时");
++                        if (independentVisionJobs)
++                            ioFeedbackCancelled = true;
+                         jobRunFailed = true;
+                     }
+                     else
+                     {
+                         // 正常完成，获取结果（假设 pmaRes 数组存储每个工位的 PMA 结果）
+                         pmaRes[jobIndex] = vpWin._PMARes[jobIndex];
+-                        ExeIOOut(jobIndex, activeIOCycleToken);
++                        if (cup.p_VPPRTP.bVisionInfer && !vpWin.IsVppJobResultValid(jobIndex))
++                        {
++                            AbortIOFeedbackCycle(jobIndex, activeIOCycleToken, "本轮长度测量结果无效");
++                            ioFeedbackCancelled = true;
++                            jobRunFailed = true;
++                        }
++                        else if (!ioFeedbackCancelled)
++                            ExeIOOut(jobIndex, activeIOCycleToken);
+                     }
+ 
++                    // 超时没有本轮有效结果，不能记录完成或累加统计。
++                    if (jobRunFailed && cup.p_VPPRTP.bVisionInfer)
++                        continue;
++
+                     // 更新该工位的 UI（必须在主线程执行）
+                     if (this.InvokeRequired)
+                         this.Invoke(new Action(() => UpdateUIExeForJob(jobIndex)));
+@@ -9072,6 +9393,7 @@ namespace VisionApplication
+             finally
+             {
+                 // 恢复按钮样式（在 UI 线程执行）
++                System.Threading.Interlocked.Exchange(ref manualSingleRunActive, 0);
+                 if (btFunRunOneTime.InvokeRequired)
+                     btFunRunOneTime.Invoke(new Action(() => btFunRunOneTime.FlatStyle = FlatStyle.Popup));
+                 else
+@@ -9088,6 +9410,8 @@ namespace VisionApplication
+         {
+             if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                 return;
++            if (cup.p_VPPRTP.bVisionInfer && !vpWin.IsVppJobResultValid(jobIndex))
++                return;
+ 
+             // ★★★ 如果当前是静默运行，则跳过累加，重置标志并返回 ★★★
+             if (_skipStatUpdateForCurrentRun)
+diff --git a/VisionApplication/FrmMainUIExtention.cs b/VisionApplication/FrmMainUIExtention.cs
+index 21569c8..b828d79 100644
+--- a/VisionApplication/FrmMainUIExtention.cs
++++ b/VisionApplication/FrmMainUIExtention.cs
+@@ -1695,9 +1695,13 @@ namespace VisionApplication
+         {
+             try
+             {
++                int tuneJobIndex;
++                if (!TryGetSelectedPMAJob("获取边缘定位参数", out tuneJobIndex))
++                    return;
+                 calipFindLineParam cflParam = new calipFindLineParam();
+-                vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
+-                UpdateUIFromCLPParam(cflParam);
++                if (!vpWin.GetCLPParam(ref cflParam, tuneJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0) ||
++                    !UpdateUIFromCLPParam(cflParam))
++                    return;
+                 operLog.strOperEvent = "获取边缘定位参数";
+                 operLog.iEventStatus = 0;
+                 
+@@ -1719,11 +1723,16 @@ namespace VisionApplication
+         {
+             try
+             {
++                int tuneJobIndex;
++                if (!TryGetSelectedPMAJob("设置边缘定位参数", out tuneJobIndex))
++                    return;
+                 calipFindLineParam cflParam = new calipFindLineParam();
+ 
+-                UpdateCLPParamFromUI(ref cflParam);
++                if (!UpdateCLPParamFromUI(ref cflParam))
++                    return;
+ 
+-                vpWin.SetCLPParam(cflParam, iJobIndex,cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
++                if (!vpWin.SetCLPParam(cflParam, tuneJobIndex,cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0))
++                    return;
+                 operLog.strOperEvent = "设置边缘定位参数";
+                 operLog.iEventStatus = 0;
+ 
+@@ -1742,13 +1751,16 @@ namespace VisionApplication
+         {
+             try
+             {
++                int tuneJobIndex;
++                if (!TryGetSelectedPMAJob("设置定位搜索区域", out tuneJobIndex))
++                    return;
+                 int index = cmbCLPEdgeLeft.SelectedIndex + 1;
+                 if (index < 1 || index > 2)
+                 {
+                     MessageBox.Show("请选择定位边缘");
+                     return;
+                 }
+-                vpWin.SetFindLineSearchRegion(iJobIndex, index, cup.p_VPPRTP.iXBType);
++                vpWin.SetFindLineSearchRegion(tuneJobIndex, index, cup.p_VPPRTP.iXBType);
+                 bVPPParamChanged = true;
+             }
+             catch { }
+@@ -1758,13 +1770,16 @@ namespace VisionApplication
+         {
+             try
+             {
++                int tuneJobIndex;
++                if (!TryGetSelectedPMAJob("获取定位搜索结果", out tuneJobIndex))
++                    return;
+                 int index = cmbCLPEdgeLeft.SelectedIndex + 1;
+                 if (index < 1 || index > 2)
+                 {
+                     MessageBox.Show("请选择定位边缘");
+                     return;
+                 }
+-                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_VPPRTP.iXBType);
++                vpWin.GetFindLineSearchRes(tuneJobIndex, index, cup.p_VPPRTP.iXBType);
+                 bVPPParamChanged = true;
+             }
+             catch { }
+@@ -1777,8 +1792,11 @@ namespace VisionApplication
+         {
+             try
+             {
++                int tuneJobIndex;
++                if (!TryGetSelectedPMAJob("提取定位基准", out tuneJobIndex))
++                    return;
+                 bVPPParamChanged = true;
+-                vpWin.ExtractLocateBase(iJobIndex, cup.p_VPPRTP.iXBType);
++                vpWin.ExtractLocateBase(tuneJobIndex, cup.p_VPPRTP.iXBType);
+                 operLog.iEventStatus = 0;
+                 operLog.strOperEvent = "提取定位基准";
+                 AddLog();
+@@ -1820,6 +1838,9 @@ namespace VisionApplication
+         
+         private void rdBT_FindLine_Click(object sender, EventArgs e)
+         {
++            int tuneJobIndex;
++            if (!TryGetSelectedPMAJob("设置精定位", out tuneJobIndex))
++                return;
+             if (rdBT_FindLine.Checked)
+             { 
+                 cup.p_VPPRTP.iXBType=0;
+@@ -1831,23 +1852,32 @@ namespace VisionApplication
+             }
+             CaliperControlVisSet(cup.p_VPPRTP.iXBType);
+              calipFindLineParam cflParam = new calipFindLineParam();
+-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
++            if (!vpWin.GetCLPParam(ref cflParam, tuneJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0))
++                return;
+             UpdateUIFromCLPParam(cflParam); 
+-            vpWin.SetUseTuneLocation(iJobIndex, true, cup.p_VPPRTP.iXBType); 
++            vpWin.SetUseTuneLocation(tuneJobIndex, true, cup.p_VPPRTP.iXBType);
+         }
+         private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
+         {
++            int tuneJobIndex;
++            if (!TryGetSelectedPMAJob("获取边缘定位参数", out tuneJobIndex))
++                return;
+             calipFindLineParam cflParam = new calipFindLineParam();
+-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
++            if (!vpWin.GetCLPParam(ref cflParam, tuneJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0))
++                return;
+             UpdateUIFromCLPParam(cflParam);
+         }
+         /// <summary>
+         /// 由VP参数更新UI
+         /// </summary>
+-        private void UpdateUIFromCLPParam(calipFindLineParam cflParam)
++        private bool UpdateUIFromCLPParam(calipFindLineParam cflParam)
+         {
+             try
+             {
++                decimal lenTh = (decimal)cflParam.dRes1;
++                if (lenTh < nudLenTh.Minimum || lenTh > nudLenTh.Maximum)
++                    throw new InvalidOperationException($"当前Job的lenTh={lenTh}超出界面可显示范围");
++                nudLenTh.Value = lenTh;
+                 if(cup.p_VPPRTP.iXBType==0)
+                 {
+                   //   chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
+@@ -1869,6 +1899,7 @@ namespace VisionApplication
+                     //    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
+                 }
+ 
++                return true;
+             }
+             catch(Exception ex)
+             {
+@@ -1876,13 +1907,14 @@ namespace VisionApplication
+                 operLog.iEventStatus = -1;
+                 operLog.strFailReason = ex.ToString();
+                 AddLog();
++                return false;
+             }
+ 
+         }
+         /// <summary>
+         /// 由UI参数更新VP
+         /// </summary>
+-        private void UpdateCLPParamFromUI(ref calipFindLineParam cflParam)
++        private bool UpdateCLPParamFromUI(ref calipFindLineParam cflParam)
+         {
+             try
+             {
+@@ -1906,7 +1938,9 @@ namespace VisionApplication
+                     cflParam.dRes1 = (double)nudLenTh.Value;
+                     //cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
+                 }
+-                
++                else
++                    throw new ArgumentOutOfRangeException("iXBType");
++                return true;
+             }
+             catch (Exception ex)
+             {
+@@ -1914,6 +1948,7 @@ namespace VisionApplication
+                 operLog.iEventStatus = -1;
+                 operLog.strFailReason = ex.ToString();
+                 AddLog();
++                return false;
+             }
+         } 
+        
+diff --git a/VisionApplication/FrmMain_Laser.cs b/VisionApplication/FrmMain_Laser.cs
+index 3a9c398..f800f5d 100644
+--- a/VisionApplication/FrmMain_Laser.cs
++++ b/VisionApplication/FrmMain_Laser.cs
+@@ -1489,7 +1489,7 @@ namespace VisionApplication
+             if (vpWin == null)
+                 return;
+ 
+-            vpWin.bMainTaskFinished = !AnyFaceVisionActive();
++            vpWin.bMainTaskFinished = System.Threading.Volatile.Read(ref manualSingleRunActive) == 0 && !AnyFaceVisionActive();
+         }
+ 
+         private bool CanRunFaceAutoTrigger(int faceIndex, string operEvent)
+@@ -1681,7 +1681,7 @@ namespace VisionApplication
+             cmbPMATrainAlg.SelectedIndex = 2;
+             cmbPMARunAlg.SelectedIndex = 2;
+ 
+-            if (rts.initStatus.bVPPInit)
++            if (rts.initStatus.bVPPInit && IsValidSinglePMAJob(iJobIndex))
+             {
+                 UpdateLaserVisionCalibTemplate2UIFromVar();
+                 UpdateLaserVisionCalibParam2UIFromVP();
+@@ -3081,7 +3081,10 @@ namespace VisionApplication
+                 ShowCurrentTaskNotFinishedWarning();
+                 return;
+             }
+-            vpWin.GetPMAParam(ref pmaParam, iJobIndex);
++            int pmaJobIndex;
++            if (!TryGetSelectedPMAJob("获取PMA参数", out pmaJobIndex))
++                return;
++            vpWin.GetPMAParam(ref pmaParam, pmaJobIndex);
+             UpdateUIFromPMAParam();
+         }
+ 
+@@ -3096,8 +3099,11 @@ namespace VisionApplication
+                 ShowCurrentTaskNotFinishedWarning();
+                 return;
+             }
++            int pmaJobIndex;
++            if (!TryGetSelectedPMAJob("设置PMA参数", out pmaJobIndex))
++                return;
+             UpdatePMAParamFromUI();
+-            vpWin.SetPMAParam(pmaParam, iJobIndex); 
++            vpWin.SetPMAParam(pmaParam, pmaJobIndex);
+             bVPPParamChanged = true;
+         }
+ 
+@@ -3128,18 +3134,21 @@ namespace VisionApplication
+                     operLog.strFailReason = "流程文件初始化失败";
+                     return;
+                 }
++                int pmaJobIndex;
++                if (!TryGetSelectedPMAJob("模板定位", out pmaJobIndex))
++                    return;
+                 operLog.strOperEvent = "模板定位";
+ 
+                 bPMAEdit = !bPMAEdit;
+                 if (bPMAEdit)
+                 {
+                     iTmpType = vpWin._iTaskType;
+-                   if (pmaV2[iJobIndex]==null)
+-                        pmaV2[iJobIndex] = new CogPMAlignEditV2();
+-                    pmaV2[iJobIndex].Subject = vpWin._pmaMT;
++                   if (pmaV2[pmaJobIndex]==null)
++                        pmaV2[pmaJobIndex] = new CogPMAlignEditV2();
++                    pmaV2[pmaJobIndex].Subject = vpWin._pmaMT;
+                     
+-                    splitContainer2.Panel1.Controls.Add(pmaV2[iJobIndex]);
+-                    pmaV2[iJobIndex].Dock = DockStyle.Fill;
++                    splitContainer2.Panel1.Controls.Add(pmaV2[pmaJobIndex]);
++                    pmaV2[pmaJobIndex].Dock = DockStyle.Fill;
+                     vpWin.Visible = false;
+                     vpWin._iTaskType = 5;
+                     vpWin.bEnableActivate = false;
+@@ -3151,10 +3160,10 @@ namespace VisionApplication
+                 }
+                 else
+                 {
+-                    bool bSetPMA = vpWin.setPMA(pmaV2[iJobIndex].Subject,iJobIndex);
+-                    vpWin.SaveTrainImage(iJobIndex, pmaV2[iJobIndex].Subject);  //保存模板图像
++                    bool bSetPMA = vpWin.setPMA(pmaV2[pmaJobIndex].Subject,pmaJobIndex);
++                    vpWin.SaveTrainImage(pmaJobIndex, pmaV2[pmaJobIndex].Subject);  //保存模板图像
+ 
+-                    splitContainer2.Panel1.Controls.Remove(pmaV2[iJobIndex]);
++                    splitContainer2.Panel1.Controls.Remove(pmaV2[pmaJobIndex]);
+                     
+ 
+ 
+@@ -3168,11 +3177,11 @@ namespace VisionApplication
+                     {
+                         string pmaFailReason = "PMA模板写回未确认，继续发送对齐参数";
+                         if (vpWin.strErrInfo != null &&
+-                            iJobIndex >= 0 &&
+-                            iJobIndex < vpWin.strErrInfo.Length &&
+-                            !string.IsNullOrWhiteSpace(vpWin.strErrInfo[iJobIndex]))
++                            pmaJobIndex >= 0 &&
++                            pmaJobIndex < vpWin.strErrInfo.Length &&
++                            !string.IsNullOrWhiteSpace(vpWin.strErrInfo[pmaJobIndex]))
+                         {
+-                            pmaFailReason += ": " + vpWin.strErrInfo[iJobIndex];
++                            pmaFailReason += ": " + vpWin.strErrInfo[pmaJobIndex];
+                         }
+ 
+                         operLog.iEventStatus = 0;
+@@ -3191,7 +3200,7 @@ namespace VisionApplication
+                         await SendAlignParamToJCZServer(card);
+ 
+                         // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
+-                        await RunSilentOnceForJob(iJobIndex);
++                        await RunSilentOnceForJob(pmaJobIndex);
+                     }
+                  //   pmaV2.Dispose();
+                 }
+@@ -3222,15 +3231,18 @@ namespace VisionApplication
+         {
+             try
+             {
++                int pmaJobIndex;
++                if (!TryGetSelectedPMAJob("训练PMA模板", out pmaJobIndex))
++                    return;
+                 //从界面更新参数到pmaParam
+                 UpdatePMATrainParamFromUI();
+                 //从pmaParam更新参数到VP中的PMA工具
+-                vpWin.SetPMATrainParam(pmaParam, iJobIndex);
++                vpWin.SetPMATrainParam(pmaParam, pmaJobIndex);
+                 //从新训练PMA模板
+-                vpWin.ReTrainPMA(iJobIndex);
+-                if (!CheckPMATrainedWithPrompt(iJobIndex))
++                vpWin.ReTrainPMA(pmaJobIndex);
++                if (!CheckPMATrainedWithPrompt(pmaJobIndex))
+                     return;
+-                int jobIndex = iJobIndex;
++                int jobIndex = pmaJobIndex;
+                 
+                 if (jobIndex >= 0 && jobIndex < MaxLaserCards)
+                 {
+@@ -3241,7 +3253,7 @@ namespace VisionApplication
+                 }
+ 
+                 // ★★★ 训练完成后，执行一次静默运行，刷新状态 ★★★
+-                await RunSilentOnceForJob(iJobIndex);
++                await RunSilentOnceForJob(pmaJobIndex);
+ 
+                 bVPPParamChanged = true;
+             }
+@@ -3251,26 +3263,29 @@ namespace VisionApplication
+         {
+             try
+             {
++                int pmaJobIndex;
++                if (!TryGetSelectedPMAJob("定位测试", out pmaJobIndex))
++                    return;
+                 //从界面更新参数到pmaParam
+                 UpdatePMARunParamFromUI();
+                 //从pmaParam更新参数到VP中的PMA工具
+-                vpWin.SetPMARunParam(pmaParam, iJobIndex);
+-                if (!CheckPMATrainedWithPrompt(iJobIndex))
++                vpWin.SetPMARunParam(pmaParam, pmaJobIndex);
++                if (!CheckPMATrainedWithPrompt(pmaJobIndex))
+                 {
+                     bVPPParamChanged = true;
+                     return;
+                 }
+                 //从新训练PMA模板
+-               bool bLocate= vpWin.ReRunPMA(iJobIndex);
++                bool bLocate= vpWin.ReRunPMA(pmaJobIndex);
+                 bVPPParamChanged = true;
+                 if (bLocate)
+                 {
+                     operLog.iEventStatus = 2;
+                     operLog.strOperEvent = "定位测试";
+-                    pmaRes[iJobIndex] = vpWin.GetJobResult(iJobIndex);
+-                    operLog.strFailReason = "分数:" + pmaRes[iJobIndex].dPMAScore.ToString("0.00")
+-                   + "，X:" + pmaRes[iJobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[iJobIndex].dTY.ToString("0.00")
+-                   + "，R:" + pmaRes[iJobIndex].dTR.ToString("0.00");
++                    pmaRes[pmaJobIndex] = vpWin.GetJobResult(pmaJobIndex);
++                    operLog.strFailReason = "分数:" + pmaRes[pmaJobIndex].dPMAScore.ToString("0.00")
++                   + "，X:" + pmaRes[pmaJobIndex].dTX.ToString("0.00") + "，Y:" + pmaRes[pmaJobIndex].dTY.ToString("0.00")
++                   + "，R:" + pmaRes[pmaJobIndex].dTR.ToString("0.00");
+                   //  operLog.strFailReason = "";
+                    AddLog();
+                 }
+@@ -3286,7 +3301,10 @@ namespace VisionApplication
+         private void btPMASearchRegion_Click(object sender, EventArgs e)
+         {
+             try { 
+-            vpWin.SetPMASearchRegion(iJobIndex);
++            int pmaJobIndex;
++            if (!TryGetSelectedPMAJob("提取PMA测试图像", out pmaJobIndex))
++                return;
++            vpWin.SetPMASearchRegion(pmaJobIndex);
+             bVPPParamChanged = true;
+             }
+             catch { }
+@@ -3295,8 +3313,11 @@ namespace VisionApplication
+         {
+             try
+             {
++                int pmaJobIndex;
++                if (!TryGetSelectedPMAJob("提取PMA训练图像", out pmaJobIndex))
++                    return;
+                 bVPPParamChanged = true;
+-                vpWin.ExtraTrainImage(iJobIndex, rts.onLS.bAcqFromCam, rts.onLS.bLock);
++                vpWin.ExtraTrainImage(pmaJobIndex, rts.onLS.bAcqFromCam, rts.onLS.bLock);
+             }
+             catch { }
+         } 
+@@ -4815,7 +4836,7 @@ namespace VisionApplication
+             cmbPMATrainAlg.SelectedIndex = 2;
+             cmbPMARunAlg.SelectedIndex = 2;
+ 
+-            if (rts.initStatus.bVPPInit)
++            if (rts.initStatus.bVPPInit && IsValidSinglePMAJob(iJobIndex))
+             {
+                // UpdateLaserVisionCalibTemplate2UIFromVar();
+               //  UpdateLaserVisionCalibParam2UIFromVP();
+@@ -4824,17 +4845,20 @@ namespace VisionApplication
+             }
+             UpdateCamParam2UI();
+            
+-            //精定位界面初始化
+-            if (cup.p_VPPRTP.iXBType == 1)
+-            {
+-                rdBT_Caliper.Checked = true;
+-                rdBT_FindLine_Click(null, null);
+-            }
+-            else
++            //精定位界面初始化。未选择有效单工位时不调用单工位工具接口。
++            if (IsValidSinglePMAJob(iJobIndex))
+             {
+-                rdBT_FindLine.Checked = true;
++                if (cup.p_VPPRTP.iXBType == 1)
++                {
++                    rdBT_Caliper.Checked = true;
++                    rdBT_FindLine_Click(null, null);
++                }
++                else
++                {
++                    rdBT_FindLine.Checked = true;
++                }
++                cmbCLPEdgeLeft.SelectedIndex = 0;
+             }
+-            cmbCLPEdgeLeft.SelectedIndex = 0;
+ 
+           //  menuWSJobS_Click(menuWS_Job1, null);
+             ViewLayout();
+@@ -4842,6 +4866,39 @@ namespace VisionApplication
+             toolBtSta_MarkAfterLocated.Checked= rts.onLS.bLock;
+         }
+ 
++        private bool IsValidSinglePMAJob(int jobIndex)
++        {
++            return jobIndex >= 0 && jobIndex < maxJobNum &&
++                cup != null && cup.p_CD.bListProcess != null &&
++                jobIndex < cup.p_CD.bListProcess.Length && cup.p_CD.bListProcess[jobIndex];
++        }
++
++        private bool TryGetSelectedPMAJob(string operation, out int jobIndex)
++        {
++            jobIndex = iJobIndex;
++            if (!IsValidSinglePMAJob(jobIndex))
++            {
++                operLog.iEventStatus = -1;
++                operLog.strOperEvent = operation;
++                operLog.strFailReason =
++                    $"PMA仅支持已启用的单工位，当前jobIndex={jobIndex}，有效范围[0,{maxJobNum - 1}]；" +
++                    "同步/全部工位或预留工位不能直接执行该操作";
++                AddLog();
++                return false;
++            }
++
++            if (vpWin == null || !rts.initStatus.bVPPInit)
++            {
++                operLog.iEventStatus = -1;
++                operLog.strOperEvent = operation;
++                operLog.strFailReason = $"视觉工程未初始化，jobIndex={jobIndex}";
++                AddLog();
++                return false;
++            }
++
++            return true;
++        }
++
+         #endregion
+ 
+         #region  对象操作（占位）
+@@ -4865,17 +4922,12 @@ namespace VisionApplication
+ 
+             pmaRes[jobIndex] = vpWin.GetJobResult(jobIndex);
+ 
+-            UpdateStatisticsForJob(jobIndex);
++            if (System.Threading.Volatile.Read(ref manualSingleRunActive) == 0 &&
++                (!cup.p_VPPRTP.bVisionInfer || vpWin.IsVppJobResultValid(jobIndex)))
++                UpdateStatisticsForJob(jobIndex);
+        //     AnaEventForJob(jobIndex);
+-            vpWin._bRunOneTimeFinished[jobIndex] = 2;
+-            completedJobCount++;
+-            if (completedJobCount >= GetEnabledJobCount())
+-            {
+-                allJobsDone = true;
+-                this.BeginInvoke(new Action(() => {
+-                    FinalizeRun();
+-                }));
+-            }
++            // 回调只通知结果；所属运行线程在检测和IO处理结束后释放整轮。
++            allJobsDone = System.Threading.Interlocked.Increment(ref completedJobCount) >= GetEnabledJobCount();
+         }
+ 
+         /// <summary>
+@@ -4906,7 +4958,9 @@ namespace VisionApplication
+ 
+        //     ExeIOOut();
+ 
+-            vpWin.bMainTaskFinished = true;
++            if (System.Threading.Volatile.Read(ref manualSingleRunActive) != 0)
++                return;
++            vpWin.bMainTaskFinished = !AnyFaceVisionActive();
+             btFunRunOneTime.FlatStyle = FlatStyle.Popup;
+             btFunRunCont.Enabled = true;
+         }
+@@ -4971,7 +5025,7 @@ namespace VisionApplication
+                         if (vpWin._bRunOneTimeFinished[faceIndex] == 2)
+                         {
+                             pmaRes[faceIndex] = vpWin._PMARes[faceIndex];
+-                            visionOk = true;
++                            visionOk = !cup.p_VPPRTP.bVisionInfer || vpWin.IsVppJobResultValid(faceIndex);
+                         }
+                         else
+                         {
+diff --git a/VisionApplication/Frm_RuntimeSet.cs b/VisionApplication/Frm_RuntimeSet.cs
+index b714d63..7a8c72b 100644
+--- a/VisionApplication/Frm_RuntimeSet.cs
++++ b/VisionApplication/Frm_RuntimeSet.cs
+@@ -338,17 +338,8 @@ namespace VisionApplication
+ 
+         private string GetCameraDisplayName(int cameraIndex)
+         {
+-            if (cup.p_Cam == null || cameraIndex < 0 || cameraIndex >= cup.p_Cam.Length)
+-                return "未识别相机";
+-
+-            string cameraName = cup.p_Cam[cameraIndex].strCamName;
+-            if (string.IsNullOrWhiteSpace(cameraName))
+-                return "未识别相机";
+-
+-            const string usbPrefix = "U3V: ";
+-            return cameraName.StartsWith(usbPrefix, StringComparison.OrdinalIgnoreCase)
+-                ? cameraName.Substring(usbPrefix.Length)
+-                : cameraName;
++            // 下拉框只显示稳定、可区分的槽位名称；真实序列号继续显示在右侧只读文本框。
++            return cameraIndex >= 0 ? "相机" + (cameraIndex + 1).ToString() : "未识别相机";
+         }
+ 
+         private void RefreshCameraSelectionItems()
+@@ -2452,7 +2443,8 @@ namespace VisionApplication
+                 return;
+ 
+             serialTextBox.Text = cameraIndex >= 0 && cameraIndex < maxCameraNum
+-                ? GetCameraDisplayName(cameraIndex)
++                && cup.p_Cam != null && cameraIndex < cup.p_Cam.Length
++                ? cup.p_Cam[cameraIndex].strCamName ?? string.Empty
+                 : string.Empty;
+         }
+ 
+diff --git a/VisionControl/VisionControl.cs b/VisionControl/VisionControl.cs
+index 4c6a3f6..aff8123 100644
+--- a/VisionControl/VisionControl.cs
++++ b/VisionControl/VisionControl.cs
+@@ -712,6 +712,9 @@ namespace VisionControl
+                 vppJobResultProcessed[jobIndex] = false;
+                 vppJobStopped[jobIndex] = false;
+                 vppJobCompletionPending[jobIndex] = true;
++                vppJobResultValid[jobIndex] = false;
++                pmaRes[jobIndex].bOk = false;
++                pmaRes[jobIndex].dPMAScore = 0;
+                 bRunOneTimeFinished[jobIndex] = 0;
+                 jobBusy[jobIndex] = true;
+                 return true;
+@@ -729,6 +732,9 @@ namespace VisionControl
+                 vppJobStopped[jobIndex] = false;
+                 vppJobCompletionPending[jobIndex] = false;
+                 bRunOneTimeFinished[jobIndex] = 2;
++                vppJobResultValid[jobIndex] = false;
++                pmaRes[jobIndex].bOk = false;
++                pmaRes[jobIndex].dPMAScore = 0;
+                 jobBusy[jobIndex] = false;
+             }
+         }
+@@ -783,16 +789,39 @@ namespace VisionControl
+             try
+             {
+                 RunOneTimeFinished(jobIndex);
++                if (!SkipImageUpdateForCurrentRun)
++                {
++                    if (InvokeRequired)
++                        Invoke(new Action(() => {
++                            ClearRawImageDisplayGraphicsByJobIndex(jobIndex);
++                            DirectShowImage(jobIndex);
++                        }));
++                    else
++                    {
++                        ClearRawImageDisplayGraphicsByJobIndex(jobIndex);
++                        DirectShowImage(jobIndex);
++                    }
++                }
++                JobResultReady?.Invoke(jobIndex);
++            }
++            catch (Exception ex)
++            {
++                vppJobResultValid[jobIndex] = false;
++                pmaRes[jobIndex].bOk = false;
++                pmaRes[jobIndex].dPMAScore = 0;
++                strErrInfo[jobIndex] = $"jobIndex={jobIndex} 本轮结果显示/通知失败: {ex}";
++                OnVisionError(jobIndex, strErrInfo[jobIndex]);
+             }
+             finally
+             {
+                 lock (vppJobCompletionLock)
+                 {
+                     jobBusy[jobIndex] = false;
++                    // 图像和本轮结果已经更新，最后释放等待线程。
++                    bRunOneTimeFinished[jobIndex] = 2;
+                 }
+             }
+ 
+-            JobResultReady?.Invoke(jobIndex);
+         }
+ 
+         //任务运行回调，单次运行每个job被回调1次
+@@ -865,8 +894,6 @@ namespace VisionControl
+ 
+                     try
+                     {
+-                        if (!SkipImageUpdateForCurrentRun)
+-                            DirectShowImage(idx);
+                         infer_end_time[idx] = new TimeSpan(DateTime.Now.Ticks);
+                         start2end_time[idx] = infer_end_time[idx].Subtract(infer_start_time[idx]).Duration();
+                         cost_milliseconds[idx] = (int)start2end_time[idx].TotalMilliseconds;
+@@ -1112,13 +1139,7 @@ namespace VisionControl
+         private int? HandleUserResults()
+         {
+             ICogRecord result = mJM.UserResult();
+-            int count = 0;
+-            //防止结果为空
+-            while(result==null && count<20)
+-            {
+-                Thread.Sleep(100);
+-                count++;
+-            }
++            // 队列已空时立即退出；新结果由下一次UserResultAvailable事件处理。
+             if (result != null)
+             {
+                 string jobName = (string)result.SubRecords["JobName"].Content;
+@@ -1220,18 +1241,43 @@ namespace VisionControl
+             try
+             {
+ 
+-                bool bOk = (string)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("Result") == "OK";
+-                double length = (double)(mJM.Job(jobIndex).VisionTool as CogToolGroup).GetScriptTerminalData("length");
++                CogToolGroup group = mJM.Job(jobIndex).VisionTool as CogToolGroup;
++                if (group == null || group.RunStatus.Result != CogToolResultConstants.Accept)
++                    throw new InvalidOperationException("本轮视觉工具组运行失败");
++                int tuneType = Convert.ToInt32(group.GetScriptTerminalData("tuneType"));
++                for (int edge = 1; edge <= 2; edge++)
++                {
++                    ICogTool tool = group.Tools[(tuneType == 1 ? "CogCaliperTool" : "CogFindLineTool") + edge];
++                    if (tool == null || group.DisabledTools.Contains(tool) ||
++                        tool.RunStatus.Result != CogToolResultConstants.Accept)
++                        throw new InvalidOperationException($"本轮边缘工具{edge}运行失败");
++                }
++                object resultValue = group.GetScriptTerminalData("Result");
++                object lengthValue = group.GetScriptTerminalData("length");
++                string result = resultValue as string;
++                if ((result != "OK" && result != "NG") || !(lengthValue is double))
++                    throw new InvalidOperationException("本轮Result/length输出类型或内容无效");
++                double length = (double)lengthValue;
++                double threshold = Convert.ToDouble(group.GetScriptTerminalData("lenTh"));
++                if (double.IsNaN(length) || double.IsInfinity(length) || length < 0 ||
++                    double.IsNaN(threshold) || double.IsInfinity(threshold) || threshold <= 0 ||
++                    (result == "OK") != (length >= threshold))
++                    throw new InvalidOperationException($"本轮测量输出无效: Result={result}, length={length}, lenTh={threshold}");
++                bool bOk = result == "OK";
+                 pmaRes[jobIndex].bOk = bOk;             //复用模板匹配结果
+                 pmaRes[jobIndex].dPMAScore = length;
+                 // 触发等待事件
+               //  jobCompletedEvents[iJobIndex]?.Set();
+-                bRunOneTimeFinished[jobIndex] = 2;
++                vppJobResultValid[jobIndex] = true;
+             }
+             catch (Exception ex)
+             {
+-                 bRunOneTimeFinished[jobIndex] = 2;
+-                OnVisionError(jobIndex, $"工位{jobIndex + 1}长度测量异常：" + ex.Message); // ✅ 添加此处
++                vppJobResultValid[jobIndex] = false;
++                pmaRes[jobIndex].bOk = false;
++                pmaRes[jobIndex].dPMAScore = 0;
++                pmaRes[jobIndex].bLocated = false;
++                strErrInfo[jobIndex] = $"jobIndex={jobIndex} 本轮长度测量失败: {ex}";
++                OnVisionError(jobIndex, strErrInfo[jobIndex]);
+             }
+         }
+ 
+diff --git a/VisionControl/VisionControlExtention.cs b/VisionControl/VisionControlExtention.cs
+index a5eabc5..3195801 100644
+--- a/VisionControl/VisionControlExtention.cs
++++ b/VisionControl/VisionControlExtention.cs
+@@ -83,6 +83,12 @@ namespace VisionControl
+         private readonly bool[] vppJobResultProcessed = new bool[maxJobNum];
+         private readonly bool[] vppJobStopped = new bool[maxJobNum];
+         private readonly bool[] vppJobCompletionPending = new bool[maxJobNum];
++        private readonly bool[] vppJobResultValid = new bool[maxJobNum];
++        public bool IsVppJobResultValid(int jobIndex)
++        {
++            lock (vppJobCompletionLock)
++                return jobIndex >= 0 && jobIndex < maxJobNum && vppJobResultValid[jobIndex];
++        }
+         private CUserParam cup = new CUserParam();
+ 
+         public string[] strErrInfo = new string[maxJobNum];
+@@ -193,7 +199,13 @@ namespace VisionControl
+             if (jobIndex < 0 || jobIndex >= maxCameraNum)
+                 return;
+ 
+-            jobBusy[jobIndex] = busy;
++            lock (vppJobCompletionLock)
++            {
++                // 上层超时退出不能释放尚未汇合结果/Stopped的真实VPP任务。
++                if (!busy && cup.p_VPPRTP.bVisionInfer && vppJobCompletionPending[jobIndex])
++                    return;
++                jobBusy[jobIndex] = busy;
++            }
+         }
+ 
+         private bool AnyJobBusy()
+@@ -548,16 +560,17 @@ namespace VisionControl
+         //离线文件推理
+         private void DLInferOffLine(int jobIndex)
+         {
++            int cameraIndex = cup.p_CD.camInd[jobIndex];
+             DL_result[jobIndex].AL_Rect.Clear();
+             DL_result[jobIndex].AL_score.Clear();
+             DL_result[jobIndex].AL_Type.Clear();
+             DL_result[jobIndex].Al_bDiff.Clear();
+ 
+             // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+-            if (cup.p_Cam[jobIndex].iMonoType == 0 && acqFIFO.bImgSrcData[jobIndex] != null)  //灰度图推理
+-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci8gAcq[jobIndex].Width, acqFIFO.ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+-            else if (acqFIFO.bImgSrcData[jobIndex] != null) //彩色图推理
+-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[jobIndex], acqFIFO.ci24ColorAcq[jobIndex].Width, acqFIFO.ci24ColorAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
++            if (cup.p_Cam[cameraIndex].iMonoType == 0 && acqFIFO.bImgSrcData[cameraIndex] != null)
++                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci8gAcq[cameraIndex].Width, acqFIFO.ci8gAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
++            else if (acqFIFO.bImgSrcData[cameraIndex] != null)
++                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci24ColorAcq[cameraIndex].Width, acqFIFO.ci24ColorAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+ 
+             if (DL_result[jobIndex].AL_Rect.Count > 0)
+             {
+@@ -861,7 +874,7 @@ namespace VisionControl
+         public void SetVPPImage(int jobIndex)
+         {
+             int iCamIndex = cup.p_CD.camInd[jobIndex];
+-            if (cup.p_Cam[jobIndex].iMonoType==0 && acqFIFO.ci8gAcq[iCamIndex] !=null)
++            if (cup.p_Cam[iCamIndex].iMonoType==0 && acqFIFO.ci8gAcq[iCamIndex] !=null)
+                 ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci8gAcq[iCamIndex];
+             else
+                 ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogIPOneImageToolInfo"] as CogIPOneImageTool).InputImage = acqFIFO.ci24ColorAcq[iCamIndex];
+@@ -1138,7 +1151,83 @@ namespace VisionControl
+                
+         }
+ 
+-        CogPMAlignTool[] pma = new CogPMAlignTool[2]; 
++        CogPMAlignTool[] pma = new CogPMAlignTool[2];
++
++        private bool TryGetJobToolGroup(int jobIndex, string operation,
++            out CogToolGroup toolGroup, out string error)
++        {
++            toolGroup = null;
++            error = null;
++            if (jobIndex < 0 || jobIndex >= maxJobNum)
++            {
++                error = $"{operation}拒绝：jobIndex={jobIndex} 不在有效工位范围[0,{maxJobNum - 1}]";
++                return false;
++            }
++
++            if (mJM == null)
++            {
++                error = $"{operation}失败：视觉工程未初始化，jobIndex={jobIndex}";
++                return false;
++            }
++
++            try
++            {
++                toolGroup = mJM.Job(jobIndex).VisionTool as CogToolGroup;
++                if (toolGroup == null)
++                {
++                    error = $"{operation}失败：jobIndex={jobIndex} 的 VisionTool 不是 CogToolGroup";
++                    return false;
++                }
++                return true;
++            }
++            catch (Exception ex)
++            {
++                error = $"{operation}失败：jobIndex={jobIndex} 的 Job 未初始化，exception={ex}";
++                return false;
++            }
++        }
++
++        private bool TryGetPMAToolForJob(int jobIndex, string operation,
++            out CogPMAlignTool pmaTool, out string error)
++        {
++            pmaTool = null;
++            error = null;
++            if (pma == null || jobIndex < 0 || jobIndex >= pma.Length)
++            {
++                error = $"{operation}失败：PMA数组索引无效，jobIndex={jobIndex}, " +
++                    $"pmaLength={(pma == null ? 0 : pma.Length)}, maxJobNum={maxJobNum}";
++                return false;
++            }
++
++            CogToolGroup toolGroup;
++            if (!TryGetJobToolGroup(jobIndex, operation, out toolGroup, out error))
++                return false;
++
++            try
++            {
++                pmaTool = toolGroup.Tools["CogPMAlignTool1"] as CogPMAlignTool;
++                if (pmaTool == null)
++                {
++                    error = $"{operation}失败：jobIndex={jobIndex} 未找到 CogPMAlignTool1，" +
++                        $"pmaLength={pma.Length}";
++                    return false;
++                }
++                pma[jobIndex] = pmaTool;
++                return true;
++            }
++            catch (Exception ex)
++            {
++                error = $"{operation}失败：jobIndex={jobIndex} 获取 CogPMAlignTool1 异常，" +
++                    $"pmaLength={pma.Length}, exception={ex}";
++                return false;
++            }
++        }
++
++        private void ReportPMAValidationError(int jobIndex, string error)
++        {
++            OnVisionError(jobIndex, error ?? "PMA操作失败：未知校验错误");
++        }
++
+         private CogPMAlignTool GetPMATool(int jobIndex)
+         {
+             try
+@@ -1157,7 +1246,7 @@ namespace VisionControl
+                 }
+ 
+                 pma[jobIndex] = toolGroup.Tools["CogPMAlignTool1"] as CogPMAlignTool;
+-                if (pma == null)
++                if (pma[jobIndex] == null)
+                 {
+                     SetPMAErrInfo(jobIndex, "CogPMAlignTool1 not found, cannot check PMA");
+                     return null;
+@@ -1167,7 +1256,7 @@ namespace VisionControl
+             }
+             catch (Exception ex)
+             {
+-                SetPMAErrInfo(jobIndex, "PMA train state check exception: " + ex.Message);
++                SetPMAErrInfo(jobIndex, "PMA train state check exception: " + ex);
+                 return null;
+             }
+         }
+@@ -1229,10 +1318,17 @@ namespace VisionControl
+ 
+         public void SetPMATrainParam(PMAlignParam pmaParam, int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "设置PMA训练参数", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+                 //设置训练参数
+-                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                 pma[jobIndex].Pattern.GrainLimitAutoSelect = pmaParam.TrainAutoGrun;
+                 pma[jobIndex].Pattern.GrainLimitCoarse = pmaParam.TrainCoarse;
+                 pma[jobIndex].Pattern.GrainLimitFine = pmaParam.TrainFine;
+@@ -1254,7 +1350,8 @@ namespace VisionControl
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"设置PMA失败: {ex.Message}");
++                OnVisionError(jobIndex,
++                    $"设置PMA训练参数失败：jobIndex={jobIndex}, pmaLength={pma.Length}, exception={ex}");
+             //    MessageBox.Show(ex.Message.ToString());
+             }
+         }
+@@ -1262,11 +1359,16 @@ namespace VisionControl
+         //设置PMA训练参数
+         public void SetPMARunParam(PMAlignParam pmaParam, int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "设置PMA运行参数", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+-                //设置训练参数
+-                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+-                
+                 //设置运行参数
+ 
+                 switch (pmaParam.RunAlg)
+@@ -1303,13 +1405,23 @@ namespace VisionControl
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"PMA操作失败: {ex.Message}");
++                OnVisionError(jobIndex,
++                    $"PMA操作失败: jobIndex={jobIndex}, pmaLength={(pma == null ? 0 : pma.Length)}, " +
++                    $"maxJobNum={maxJobNum}, exception={ex}");
+             //    MessageBox.Show(ex.Message.ToString());
+             }
+         }
+ 
+         public void SetPMAParam(PMAlignParam pmaParam, int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "设置PMA参数", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             SetPMATrainParam(pmaParam, jobIndex);
+             SetPMARunParam(pmaParam, jobIndex);
+ 
+@@ -1318,6 +1430,14 @@ namespace VisionControl
+         //2026年6月19日 更新九点标定坐标系后重新模式训练
+         public bool ReTrainPMAWithUpdateCS(int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "更新坐标系后训练PMA", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return false;
++            }
++
+             try
+             {
+                 pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+@@ -1331,13 +1451,21 @@ namespace VisionControl
+             }
+             catch(Exception ex)
+             {
+-                OnVisionError(jobIndex, $"模板训练失败: {ex.Message}");
++                OnVisionError(jobIndex, $"模板训练失败：jobIndex={jobIndex}, exception={ex}");
+                 return false;
+             }
+         }
+       //  CogPMAlignTool[] pma = new CogPMAlignTool[maxCameraNum];
+         public void ReTrainPMA(int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "训练PMA模板", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+                 pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+@@ -1348,7 +1476,7 @@ namespace VisionControl
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"模板训练失败: {ex.Message}");
++                OnVisionError(jobIndex, $"模板训练失败：jobIndex={jobIndex}, exception={ex}");
+               //  MessageBox.Show(ex.Message);
+             }
+         }
+@@ -1357,6 +1485,14 @@ namespace VisionControl
+ 
+         public void ExtraTrainImage(int jobIndex,bool bFrmCam,bool bLock)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "提取PMA训练图像", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+                 nPointTool[jobIndex] = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+@@ -1400,7 +1536,7 @@ namespace VisionControl
+             }
+             catch(Exception ex)
+             {
+-                OnVisionError(jobIndex, $"提取定位训练图像: {ex.Message}");
++                OnVisionError(jobIndex, $"提取定位训练图像：jobIndex={jobIndex}, exception={ex}");
+             }
+         }
+         private void ShowPMAInputImage(CogPMAlignTool pma, int jobIndex)
+@@ -1518,6 +1654,14 @@ namespace VisionControl
+ 
+         public bool ReRunPMA(int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "重新运行PMA", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return false;
++            }
++
+             pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+             if (!IsPMATrained(jobIndex))
+                 return false;
+@@ -1542,6 +1686,14 @@ namespace VisionControl
+ 
+         public void SetPMASearchRegion(int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "提取PMA测试图像", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+                 nPointTool[jobIndex] = ((mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCalibNPointToNPointTool1"] as CogCalibNPointToNPointTool);
+@@ -1802,8 +1954,15 @@ namespace VisionControl
+ 
+ 
+         //  获取边缘定位参数
+-        public void GetCLPParam(ref calipFindLineParam cflParam, int jobIndex, int iTuneType,bool bLeft)
++        public bool GetCLPParam(ref calipFindLineParam cflParam, int jobIndex, int iTuneType,bool bLeft)
+         {
++            CogToolGroup group;
++            string error;
++            if (!TryGetJobToolGroup(jobIndex, "获取边缘定位参数", out group, out error))
++            {
++                OnVisionError(jobIndex, error);
++                return false;
++            }
+             //获取训练参数
+             try
+             {
+@@ -1831,20 +1990,38 @@ namespace VisionControl
+                     cflParam.iRadius = ccT.RunParams.FilterHalfSizeInPixels;
+ 
+                 }
++                else
++                    throw new ArgumentOutOfRangeException(nameof(iTuneType));
++                cflParam.dRes1 = Convert.ToDouble(group.GetScriptTerminalData("lenTh"));
++                if (double.IsNaN(cflParam.dRes1) || double.IsInfinity(cflParam.dRes1) || cflParam.dRes1 <= 0)
++                    throw new InvalidOperationException("lenTh不是有效的正数");
++                return true;
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"设置定位参数失败: {ex.Message}");
++                OnVisionError(jobIndex, $"获取定位参数失败: jobIndex={jobIndex}, {ex}");
++                return false;
+                // MessageBox.Show(ex.Message.ToString());
+             }
+         }
+         //  设置边缘定位参数
+ 
+-        public void SetCLPParam(calipFindLineParam clpParam, int jobIndex,int iTuneType, bool bLeft)
++        public bool SetCLPParam(calipFindLineParam clpParam, int jobIndex,int iTuneType, bool bLeft)
+         {
++            CogToolGroup group;
++            string error;
++            if (!TryGetJobToolGroup(jobIndex, "设置边缘定位参数", out group, out error))
++            {
++                OnVisionError(jobIndex, error);
++                return false;
++            }
+             //获取训练参数
+             try
+             {
++                if (IsJobBusy(jobIndex))
++                    throw new InvalidOperationException("当前工位正在检测，不能修改测量参数");
++                if (double.IsNaN(clpParam.dRes1) || double.IsInfinity(clpParam.dRes1) || clpParam.dRes1 <= 0)
++                    throw new InvalidOperationException("lenTh不是有效的正数");
+                 if (iTuneType == 0)
+                 {
+                     string calipName = bLeft ? "CogFindLineTool1" : "CogFindLineTool2";
+@@ -1869,11 +2046,23 @@ namespace VisionControl
+                     cfl.RunParams.FilterHalfSizeInPixels = clpParam.iRadius;
+                     
+                 }
+-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("lenTh", clpParam.dRes1);
++                else
++                    throw new ArgumentOutOfRangeException(nameof(iTuneType));
++                group.SetScriptTerminalData("lenTh", clpParam.dRes1);
++                calipFindLineParam readBack = new calipFindLineParam();
++                if (!GetCLPParam(ref readBack, jobIndex, iTuneType, bLeft))
++                    return false;
++                if (readBack.bPolarity != clpParam.bPolarity || readBack.dThre != clpParam.dThre ||
++                    readBack.iRadius != clpParam.iRadius || readBack.iCaliperNum != clpParam.iCaliperNum ||
++                    readBack.dRes1 != clpParam.dRes1 ||
++                    (iTuneType == 0 && readBack.iRemovePoint != clpParam.iRemovePoint))
++                    throw new InvalidOperationException("测量参数写入后的读回值不一致");
++                return true;
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"获取定位参数失败: {ex.Message}");
++                OnVisionError(jobIndex, $"设置定位参数失败: jobIndex={jobIndex}, {ex}");
++                return false;
+               //  MessageBox.Show(ex.Message.ToString());
+             }
+         }
+@@ -1881,6 +2070,14 @@ namespace VisionControl
+         //  提取边缘定位基准
+         public void ExtractLocateBase(int jobIndex,int iTuneType)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "提取精定位基准", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+                 pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+@@ -1938,20 +2135,28 @@ namespace VisionControl
+         // 2026年6月19日  设置是否使用精定位
+         public void SetUseTuneLocation(int jobIndex,bool bUseTureLocation,int iTuneType)
+         {
++            CogToolGroup toolGroup;
++            string validationError;
++            if (!TryGetJobToolGroup(jobIndex, "设置精定位", out toolGroup, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             try
+             {
+ 
+-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("bUseTuneLocation", bUseTureLocation);
+-                (mJM.Job(jobIndex).VisionTool as CogToolGroup).SetScriptTerminalData("tuneType", iTuneType);
+-                CogFindLineTool cf1 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool1"] as CogFindLineTool;
+-                CogFindLineTool cf2 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogFindLineTool2"] as CogFindLineTool;
+-                CogCaliperTool cct1 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool1"] as CogCaliperTool;
+-                CogCaliperTool cct2 = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogCaliperTool2"] as CogCaliperTool;
++                toolGroup.SetScriptTerminalData("bUseTuneLocation", bUseTureLocation);
++                toolGroup.SetScriptTerminalData("tuneType", iTuneType);
++                CogFindLineTool cf1 = toolGroup.Tools["CogFindLineTool1"] as CogFindLineTool;
++                CogFindLineTool cf2 = toolGroup.Tools["CogFindLineTool2"] as CogFindLineTool;
++                CogCaliperTool cct1 = toolGroup.Tools["CogCaliperTool1"] as CogCaliperTool;
++                CogCaliperTool cct2 = toolGroup.Tools["CogCaliperTool2"] as CogCaliperTool;
+ 
+                 try
+                 {
+                    
+-                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf1);
++                    toolGroup.DisabledTools.Add(cf1);
+                 }
+                 catch 
+                 { }
+@@ -1959,20 +2164,20 @@ namespace VisionControl
+                 try
+                 {
+                     
+-                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cf2);
++                    toolGroup.DisabledTools.Add(cf2);
+                 }
+                 catch 
+                 { }
+                 try
+                 {
+                   
+-                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct1);
++                    toolGroup.DisabledTools.Add(cct1);
+                 }
+                 catch { }
+                 try
+                 {
+                    
+-                    (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Add(cct2);
++                    toolGroup.DisabledTools.Add(cct2);
+                 }
+                 catch 
+                 { }
+@@ -1981,19 +2186,21 @@ namespace VisionControl
+                 {
+                     if (iTuneType == 0)
+                     {
+-                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf1);
+-                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cf2);
++                        toolGroup.DisabledTools.Remove(cf1);
++                        toolGroup.DisabledTools.Remove(cf2);
+                     }
+                     else if (iTuneType == 1)
+                     {
+-                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct1);
+-                        (mJM.Job(jobIndex).VisionTool as CogToolGroup).DisabledTools.Remove(cct2);
++                        toolGroup.DisabledTools.Remove(cct1);
++                        toolGroup.DisabledTools.Remove(cct2);
+                     }
+                 }                
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"启用/禁用精定位失败: {ex.Message}");
++                OnVisionError(jobIndex,
++                    $"启用/禁用精定位失败: jobIndex={jobIndex}, maxJobNum={maxJobNum}, " +
++                    $"exception={ex}");
+             } 
+         }
+ 
+@@ -2511,6 +2718,14 @@ namespace VisionControl
+         //功能尚未实现，2026年6月19日
+         public void SetPMAMaskRegion(int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "设置PMA掩膜区域", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+             //  pma.Pattern.GetTrainedPatternImageMask
+         //    CogPMAlignEditV2
+@@ -2519,10 +2734,17 @@ namespace VisionControl
+         }
+         public void GetPMAParam(ref PMAlignParam pmaParam, int jobIndex)
+         {
++            CogPMAlignTool pmaTool;
++            string validationError;
++            if (!TryGetPMAToolForJob(jobIndex, "获取PMA参数", out pmaTool, out validationError))
++            {
++                ReportPMAValidationError(jobIndex, validationError);
++                return;
++            }
++
+             //获取训练参数
+             try
+             {
+-                pma[jobIndex] = (mJM.Job(jobIndex).VisionTool as CogToolGroup).Tools["CogPMAlignTool1"] as CogPMAlignTool;
+                 pmaParam.TrainAutoGrun = pma[jobIndex].Pattern.GrainLimitAutoSelect;
+                 pmaParam.TrainCoarse = pma[jobIndex].Pattern.GrainLimitCoarse;
+                 pmaParam.TrainFine = pma[jobIndex].Pattern.GrainLimitFine;
+@@ -2554,7 +2776,9 @@ namespace VisionControl
+             }
+             catch (Exception ex)
+             {
+-                OnVisionError(jobIndex, $"PMA操作失败: {ex.Message}");
++                OnVisionError(jobIndex,
++                    $"PMA操作失败: jobIndex={jobIndex}, pmaLength={(pma == null ? 0 : pma.Length)}, " +
++                    $"maxJobNum={maxJobNum}, exception={ex}");
+             //    MessageBox.Show(ex.Message.ToString());
+             }
+         }
+@@ -2763,6 +2987,9 @@ namespace VisionControl
+         #region  图像采集相关
+ 
+         // 在类内部添加： 
++        private readonly object _previewLifecycleSync = new object();
++        private int[] _previewCameraIndices = { -1, -1 };
++        private const int PreviewJoinTimeoutMs = 2000;
+         private Thread[] _previewThreads = new Thread[maxCameraNum];
+         private bool[] _previewRunning = new bool[maxCameraNum];
+         private IntPtr[] _previewBuffers = new IntPtr[maxCameraNum];
+@@ -2785,113 +3012,155 @@ namespace VisionControl
+         }
+        
+         // 启动/停止单路预览
+-        public bool previewOnlive(bool bOpen, int wsInd)
++        public bool StopPreviewForCamera(int cameraIndex)
+         {
+-            if (wsInd < 0 || wsInd >= maxCameraNum)
+-                return false;
+-
+-            int iCamIdx = cup.p_CD.camInd[wsInd];
+-            if (iCamIdx < 0 || acqFIFO._HikCam == null || iCamIdx >= acqFIFO._HikCam.Length)
++            lock (_previewLifecycleSync)
+             {
+-                OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd} 的物理相机索引无效");
+-                return false;
++                bool stopped = true;
++                for (int job = 0; job < maxCameraNum; job++)
++                    if (_previewCameraIndices[job] == cameraIndex)
++                        stopped &= previewOnlive(false, job);
++                return stopped;
+             }
++        }
+ 
+-            if (!bOpen)
+-            {   // 停止预览，释放翻转缓冲区
+-                _previewUiPending[wsInd] = 0;
+-                _previewRunning[wsInd] = false;
+-                bool stopped = true;
+-                if (_previewThreads[wsInd] != null && _previewThreads[wsInd].IsAlive)
++        public bool previewOnlive(bool bOpen, int wsInd)
++        {
++            if (wsInd < 0 || wsInd >= maxCameraNum) return false;
++            lock (_previewLifecycleSync)
++            {
++                int iCamIdx = bOpen ? cup.p_CD.camInd[wsInd] : _previewCameraIndices[wsInd];
++                Thread previous = _previewThreads[wsInd];
++                if (!bOpen)
+                 {
+-                    _previewThreads[wsInd].Join(1000);
+-                    stopped = !_previewThreads[wsInd].IsAlive;
++                    System.Threading.Volatile.Write(ref _previewRunning[wsInd], false);
++                    if (previous != null && previous.IsAlive && !previous.Join(PreviewJoinTimeoutMs))
++                    {
++                        OnPreviewStatus(wsInd, iCamIdx, -1,
++                            $"Job{wsInd}, Cam{iCamIdx}: 预览停止超时，ThreadId={previous.ManagedThreadId}，保留线程引用和缓冲区，拒绝重启/重连");
++                        return false;
++                    }
++                    _previewThreads[wsInd] = null;
++                    _previewThreadStarted[wsInd] = false;
++                    _previewCameraIndices[wsInd] = -1;
++                    _previewUiPending[wsInd] = 0;
++                    if (iCamIdx >= 0) acqFIFO.ReleasePreview(iCamIdx, wsInd);
++                    if (_flipBuffers[wsInd] != IntPtr.Zero)
++                    {
++                        Marshal.FreeHGlobal(_flipBuffers[wsInd]);
++                        _flipBuffers[wsInd] = IntPtr.Zero;
++                        _flipBufferSizes[wsInd] = 0;
++                    }
++                    if (_previewBuffers[wsInd] != IntPtr.Zero)
++                    {
++                        Marshal.FreeHGlobal(_previewBuffers[wsInd]);
++                        _previewBuffers[wsInd] = IntPtr.Zero;
++                        _previewBufferSizes[wsInd] = 0;
++                    }
++                    Control displayControl = GetPreviewControl(wsInd);
++                    if (displayControl is PictureBox pb)
++                    {
++                        Image oldImage = pb.Image;
++                        pb.Image = null;
++                        oldImage?.Dispose();
++                    }
++                    else if (displayControl is CogRecordDisplay cogDisp) cogDisp.Image = null;
++                    return true;
+                 }
+-                _previewThreads[wsInd] = null;
+-                _previewThreadStarted[wsInd] = false;
+ 
+-                if (_flipBuffers[wsInd] != IntPtr.Zero)
++                if (previous != null && previous.IsAlive)
++                {
++                    if (System.Threading.Volatile.Read(ref _previewRunning[wsInd]) && _previewCameraIndices[wsInd] == iCamIdx)
++                        return true;
++                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}: 旧预览线程尚未退出，拒绝创建第二个线程");
++                    return false;
++                }
++                if (iCamIdx < 0 || acqFIFO._HikCam == null || iCamIdx >= acqFIFO._HikCam.Length ||
++                    cup.p_Cam == null || iCamIdx >= cup.p_Cam.Length)
+                 {
+-                    Marshal.FreeHGlobal(_flipBuffers[wsInd]);
+-                    _flipBuffers[wsInd] = IntPtr.Zero;
+-                    _flipBufferSizes[wsInd] = 0;
++                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}: 相机索引无效");
++                    return false;
++                }
++                MyCamera camera = acqFIFO._HikCam[iCamIdx];
++                string serial = cup.p_Cam[iCamIdx].strCamName;
++                if (camera == null || !acqFIFO.IsCameraGrabbing(iCamIdx))
++                {
++                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 采集未就绪或设备已断开，未启动预览取帧");
++                    return false;
++                }
++                for (int job = 0; job < maxCameraNum; job++)
++                    if (job != wsInd && _previewCameraIndices[job] == iCamIdx &&
++                        _previewThreads[job] != null && _previewThreads[job].IsAlive)
++                    {
++                        OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}: 相机已有Job{job}预览线程，拒绝重复取帧");
++                        return false;
++                    }
++                // 根据配置设置镜像（在开始预览前）
++                int flipType = cup.p_Cam[iCamIdx].iFlipType;
++                if (flipType != 0)
++                {
++                    uint payloadSize = acqFIFO.GetPayloadSize(iCamIdx);
++                    if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < payloadSize)
++                    {
++                        if (_flipBuffers[wsInd] != IntPtr.Zero)
++                            Marshal.FreeHGlobal(_flipBuffers[wsInd]);
++                        _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)payloadSize);
++                        _flipBufferSizes[wsInd] = payloadSize;
++                    }
+                 }
+ 
+-                Control displayControl = GetPreviewControl(wsInd);
+-                if (displayControl is PictureBox pb)
++                switch (wsInd)
+                 {
+-                    Image oldImage = pb.Image;
+-                    pb.Image = null;
+-                    oldImage?.Dispose();
++                    case 0:
++                        AdjustPictureBoxSize(cogRDMainUser, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
++                        break;
++                    case 1:
++                        AdjustPictureBoxSize(cogRDSub1, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
++                        break;
+                 }
+-                else if (displayControl is CogRecordDisplay cogDisp)
+-                    cogDisp.Image = null;
+ 
+-                if (!stopped)
+-                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx} 预览线程未在超时内停止");
+-                return stopped;
+-            }
++                Control targetControl = GetPreviewControl(wsInd);
++                if (targetControl == null || !targetControl.IsHandleCreated)
++                    targetControl?.CreateControl();
++                _previewHwnds[wsInd] = targetControl?.Handle ?? IntPtr.Zero;
++                if (_previewHwnds[wsInd] == IntPtr.Zero)
++                {
++                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 显示窗口句柄无效");
++                    return false;
++                }
+ 
+-            MyCamera camera = acqFIFO._HikCam[iCamIdx];
+-            string serial = cup.p_Cam != null && iCamIdx < cup.p_Cam.Length
+-                ? cup.p_Cam[iCamIdx].strCamName
+-                : string.Empty;
+-            if (camera == null)
+-            {
+-                OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 相机对象为空");
+-                return false;
+-            }
+ 
+-            // 根据配置设置镜像（在开始预览前）
+-            int flipType = cup.p_Cam[iCamIdx].iFlipType;
+-            if (flipType != 0)
+-            {
+-                uint payloadSize = acqFIFO.GetPayloadSize(iCamIdx);
+-                if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < payloadSize)
++                if (!acqFIFO.TryReservePreview(iCamIdx, wsInd))
+                 {
+-                    if (_flipBuffers[wsInd] != IntPtr.Zero)
+-                        Marshal.FreeHGlobal(_flipBuffers[wsInd]);
+-                    _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)payloadSize);
+-                    _flipBufferSizes[wsInd] = payloadSize;
++                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}: 相机取帧已被其他预览占用");
++                    return false;
+                 }
+-            }
+-            if (_previewRunning[wsInd])
++                try
++                {
++                    _previewUiPending[wsInd] = 0;
++                    _previewLastUiTick[wsInd] = 0;
++                    _previewFirstFrameReceived[wsInd] = false;
++                    _previewGetBufferFailureLogged[wsInd] = false;
++                    _previewDisplayFailureLogged[wsInd] = false;
++                    _previewLastGetBufferError[wsInd] = MyCamera.MV_OK;
++                    _previewCameraIndices[wsInd] = iCamIdx;
++                    _previewFlipTypes[wsInd] = cup.p_Cam[iCamIdx].iFlipType;
++                    System.Threading.Volatile.Write(ref _previewRunning[wsInd], true);
++                    _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd, iCamIdx, serial));
++                    _previewThreads[wsInd].IsBackground = true;
++                    _previewThreads[wsInd].Start();
++                    _previewThreadStarted[wsInd] = true;
++                }
++                catch (Exception ex)
++                {
++                    System.Threading.Volatile.Write(ref _previewRunning[wsInd], false);
++                    acqFIFO.ReleasePreview(iCamIdx, wsInd);
++                    OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 预览启动异常: {ex}");
++                    return false;
++                }
++                OnPreviewStatus(wsInd, iCamIdx, 2, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: Preview线程已启动，ThreadId={_previewThreads[wsInd].ManagedThreadId}，等待首帧");
+                 return true;
+-
+-            switch (wsInd)
+-            {
+-                case 0:
+-                    AdjustPictureBoxSize(cogRDMainUser, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
+-                    break;
+-                case 1:
+-                    AdjustPictureBoxSize(cogRDSub1, (int)cup.p_Cam[iCamIdx].iWidth, (int)cup.p_Cam[iCamIdx].iHeight, wsInd);
+-                    break;
+             }
+-
+-            Control targetControl = GetPreviewControl(wsInd);
+-            if (targetControl == null || !targetControl.IsHandleCreated)
+-                targetControl?.CreateControl();
+-            _previewHwnds[wsInd] = targetControl?.Handle ?? IntPtr.Zero;
+-            if (_previewHwnds[wsInd] == IntPtr.Zero)
+-            {
+-                OnPreviewStatus(wsInd, iCamIdx, -1, $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 显示窗口句柄无效");
+-                return false;
+-            }
+-
+-            _previewUiPending[wsInd] = 0;
+-            _previewLastUiTick[wsInd] = 0;
+-            _previewFirstFrameReceived[wsInd] = false;
+-            _previewGetBufferFailureLogged[wsInd] = false;
+-            _previewDisplayFailureLogged[wsInd] = false;
+-            _previewLastGetBufferError[wsInd] = MyCamera.MV_OK;
+-            _previewRunning[wsInd] = true;
+-            _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd));
+-            _previewThreads[wsInd].IsBackground = true;
+-            _previewThreads[wsInd].Start();
+-            _previewThreadStarted[wsInd] = true;
+-            OnPreviewStatus(wsInd, iCamIdx, 2,
+-                $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: Preview线程已启动，等待首帧");
+-            return true;
+         }
+ 
+         private void AdjustPictureBoxSize(Control pic, int imgW, int imgH,int jobIndex)
+@@ -2933,59 +3202,10 @@ namespace VisionControl
+         }
+         public void previewOnliveAll(bool bOpen)
+         {
+-            if (bOpen)
+-            {
+-                // 遍历所有工位，启动已启用的工位预览
+-                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+-                {
+-                    if (!cup.p_CD.bListProcess[wsInd]) continue;
+-
+-                    int camIdx = cup.p_CD.camInd[wsInd];
+-                    MyCamera camera = acqFIFO._HikCam?[camIdx];
+-                    if (camera == null || _previewRunning[wsInd]) continue;
+-
+-                    // 启动该工位的预览线程
+-                    _previewRunning[wsInd] = true;
+-                    _previewThreads[wsInd] = new Thread(() => PreviewThreadProc(camera, wsInd));
+-                    _previewThreads[wsInd].IsBackground = true;
+-                    _previewThreads[wsInd].Start();
+-                }
+-            }
+-            else
+-            {
+-                // 停止所有工位的预览
+-                for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+-                {
+-                    if (!_previewRunning[wsInd]) continue;
+-                    _previewRunning[wsInd] = false;
+-                    if (_previewThreads[wsInd] != null && _previewThreads[wsInd].IsAlive)
+-                        _previewThreads[wsInd].Join(1000);
+-                    _previewThreads[wsInd] = null;
+-
+-                    // 释放缓冲区
+-                    lock (_previewLocks[wsInd])
+-                    {
+-                        if (_previewBuffers[wsInd] != IntPtr.Zero)
+-                        {
+-                            Marshal.FreeHGlobal(_previewBuffers[wsInd]);
+-                            _previewBuffers[wsInd] = IntPtr.Zero;
+-                            _previewBufferSizes[wsInd] = 0;
+-                        }
+-                    }
+-
+-                    // 清空对应显示控件
+-                    Control displayControl = GetDisplayControlForJob(wsInd);
+-                    if (displayControl != null)
+-                    {
+-                        if (displayControl is CogRecordDisplay cogDisp)
+-                            cogDisp.Image = null;
+-                        else if (displayControl is PictureBox picBox)
+-                            picBox.Image = null;
+-                    }
+-                }
+-            }
++            for (int job = 0; job < maxCameraNum; job++)
++                if (!bOpen || cup.p_CD.bListProcess[job]) previewOnlive(bOpen, job);
+         }
+-     
++
+         // 用于软件翻转/旋转的缓冲区（每个工位独立）
+         private IntPtr[] _flipBuffers = new IntPtr[maxCameraNum];
+         private uint[] _flipBufferSizes = new uint[maxCameraNum];
+@@ -3005,103 +3225,174 @@ namespace VisionControl
+         }
+ 
+         // 预览线程函数
+-        private void PreviewThreadProc(MyCamera camera, int wsInd)
++        private string ReadPreviewAcquisitionState(MyCamera camera)
++        {
++            List<string> values = new List<string>();
++            foreach (string node in new[] { "AcquisitionMode", "TriggerMode", "TriggerSource" })
++            {
++                MyCamera.MVCC_ENUMVALUE value = new MyCamera.MVCC_ENUMVALUE();
++                int ret = camera.MV_CC_GetEnumValue_NET(node, ref value);
++                values.Add(ret == MyCamera.MV_OK ? $"{node}={value.nCurValue}" : $"{node}=读取失败(0x{unchecked((uint)ret):X8})");
++            }
++            return string.Join(", ", values);
++        }
++
++        private void PreviewThreadProc(MyCamera camera, int wsInd, int iCamIdx, string serial)
+         {
+             MyCamera.MV_FRAME_OUT stFrameInfo = new MyCamera.MV_FRAME_OUT();
+             MyCamera.MV_DISPLAY_FRAME_INFO stDisplayInfo = new MyCamera.MV_DISPLAY_FRAME_INFO();
+-
+-            int iCamIdx = cup.p_CD.camInd[wsInd];
+-            string serial = cup.p_Cam != null && iCamIdx >= 0 && iCamIdx < cup.p_Cam.Length
+-                ? cup.p_Cam[iCamIdx].strCamName
+-                : string.Empty;
+-            _previewFlipTypes[wsInd] = cup.p_Cam[iCamIdx].iFlipType;
+-            Control displayControl = GetPreviewControl(wsInd);
+-
+-            while (_previewRunning[wsInd])
++            long successfulFrames = 0, displayedFrames = 0, consecutiveNoData = 0, totalNoData = 0;
++            DateTime? firstFrameTime = null, lastFrameTime = null, lastDisplayTime = null;
++            DateTime lastReport = DateTime.Now;
++            string exitReason = "停止请求";
++            string identity = $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}, ThreadId={Thread.CurrentThread.ManagedThreadId}";
++            try
+             {
+-                int nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
+-                if (nRet == MyCamera.MV_OK)
++                OnPreviewStatus(wsInd, iCamIdx, 2, $"{identity}: 预览采集状态; {ReadPreviewAcquisitionState(camera)}");
++                while (System.Threading.Volatile.Read(ref _previewRunning[wsInd]))
+                 {
+-                    uint frameLen = stFrameInfo.stFrameInfo.nFrameLen;
+-                    IntPtr displayPtr = stFrameInfo.pBufAddr;
+-                    uint displayLen = frameLen;
+-                    int flipType = _previewFlipTypes[wsInd];
+-
+-                    if ((flipType == 1 || flipType == 2) && frameLen > 0)
++                    bool stopForFreeFailure = false;
++                    lock (acqFIFO.GetCameraFrameLock(iCamIdx))
+                     {
+-                        if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < frameLen)
++                        if (!System.Threading.Volatile.Read(ref _previewRunning[wsInd])) break;
++                        int nRet = camera.MV_CC_GetImageBuffer_NET(ref stFrameInfo, 1000);
++                        if (nRet == MyCamera.MV_OK)
+                         {
+-                            if (_flipBuffers[wsInd] != IntPtr.Zero)
+-                                Marshal.FreeHGlobal(_flipBuffers[wsInd]);
+-                            _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)frameLen);
+-                            _flipBufferSizes[wsInd] = frameLen;
+-                        }
++                            // 一旦 Get 成功，即使翻转、显示或日志回调异常，也必须归还该帧。
++                            try
++                            {
++                                successfulFrames++;
++                                consecutiveNoData = 0;
++                                lastFrameTime = DateTime.Now;
++                                if (!firstFrameTime.HasValue)
++                                {
++                                    firstFrameTime = lastFrameTime;
++                                    OnPreviewStatus(wsInd, iCamIdx, 2, $"{identity}: 预览首帧取帧成功时间={firstFrameTime:yyyy-MM-dd HH:mm:ss.fff}");
++                                }
++                                uint frameLen = stFrameInfo.stFrameInfo.nFrameLen;
++                                IntPtr displayPtr = stFrameInfo.pBufAddr;
++                                uint displayLen = frameLen;
++                                int flipType = _previewFlipTypes[wsInd];
++
++                                if ((flipType == 1 || flipType == 2) && frameLen > 0)
++                                {
++                                    if (_flipBuffers[wsInd] == IntPtr.Zero || _flipBufferSizes[wsInd] < frameLen)
++                                    {
++                                        if (_flipBuffers[wsInd] != IntPtr.Zero)
++                                            Marshal.FreeHGlobal(_flipBuffers[wsInd]);
++                                        _flipBuffers[wsInd] = Marshal.AllocHGlobal((int)frameLen);
++                                        _flipBufferSizes[wsInd] = frameLen;
++                                    }
++
++                                    MyCamera.MV_CC_FLIP_IMAGE_PARAM flipParam = new MyCamera.MV_CC_FLIP_IMAGE_PARAM();
++                                    flipParam.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
++                                    flipParam.nWidth = stFrameInfo.stFrameInfo.nWidth;
++                                    flipParam.nHeight = stFrameInfo.stFrameInfo.nHeight;
++                                    flipParam.pSrcData = stFrameInfo.pBufAddr;
++                                    flipParam.nSrcDataLen = frameLen;
++                                    flipParam.pDstBuf = _flipBuffers[wsInd];
++                                    flipParam.nDstBufLen = frameLen;
++                                    flipParam.nDstBufSize = frameLen;
++                                    flipParam.enFlipType = flipType == 1
++                                        ? MyCamera.MV_IMG_FLIP_TYPE.MV_FLIP_HORIZONTAL
++                                        : MyCamera.MV_IMG_FLIP_TYPE.MV_FLIP_VERTICAL;
++                                    flipParam.nRes = new uint[8];
++
++                                    if (camera.MV_CC_FlipImage_NET(ref flipParam) == MyCamera.MV_OK)
++                                    {
++                                        displayPtr = _flipBuffers[wsInd];
++                                        if (flipParam.nDstBufLen > 0)
++                                            displayLen = flipParam.nDstBufLen;
++                                    }
++                                }
++
++                                if (_previewHwnds[wsInd] != IntPtr.Zero)
++                                {
++                                    // 显示
++                                    stDisplayInfo.hWnd = _previewHwnds[wsInd];
++                                    stDisplayInfo.pData = displayPtr;
++                                    stDisplayInfo.nDataLen = displayLen;
++                                    stDisplayInfo.nWidth = stFrameInfo.stFrameInfo.nWidth;
++                                    stDisplayInfo.nHeight = stFrameInfo.stFrameInfo.nHeight;
++                                    stDisplayInfo.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
++                                    int displayRet = camera.MV_CC_DisplayOneFrame_NET(ref stDisplayInfo);
++                                    if (displayRet == MyCamera.MV_OK)
++                                    {
++                                        displayedFrames++;
++                                        lastDisplayTime = DateTime.Now;
++                                        if (!_previewFirstFrameReceived[wsInd])
++                                        {
++                                            _previewFirstFrameReceived[wsInd] = true;
++                                            OnPreviewStatus(wsInd, iCamIdx, 0,
++                                                $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 已收到并显示首帧，PixelFormat={stFrameInfo.stFrameInfo.enPixelType}");
++                                        }
++                                    }
++                                    else if (!_previewDisplayFailureLogged[wsInd])
++                                    {
++                                        _previewDisplayFailureLogged[wsInd] = true;
++                                        OnPreviewStatus(wsInd, iCamIdx, -1,
++                                            $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: DisplayOneFrame失败，SDK=0x{unchecked((uint)displayRet):X8}");
++                                    }
++                                }
+ 
+-                        MyCamera.MV_CC_FLIP_IMAGE_PARAM flipParam = new MyCamera.MV_CC_FLIP_IMAGE_PARAM();
+-                        flipParam.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
+-                        flipParam.nWidth = stFrameInfo.stFrameInfo.nWidth;
+-                        flipParam.nHeight = stFrameInfo.stFrameInfo.nHeight;
+-                        flipParam.pSrcData = stFrameInfo.pBufAddr;
+-                        flipParam.nSrcDataLen = frameLen;
+-                        flipParam.pDstBuf = _flipBuffers[wsInd];
+-                        flipParam.nDstBufLen = frameLen;
+-                        flipParam.nDstBufSize = frameLen;
+-                        flipParam.enFlipType = flipType == 1
+-                            ? MyCamera.MV_IMG_FLIP_TYPE.MV_FLIP_HORIZONTAL
+-                            : MyCamera.MV_IMG_FLIP_TYPE.MV_FLIP_VERTICAL;
+-                        flipParam.nRes = new uint[8];
+-
+-                        if (camera.MV_CC_FlipImage_NET(ref flipParam) == MyCamera.MV_OK)
+-                        {
+-                            displayPtr = _flipBuffers[wsInd];
+-                            if (flipParam.nDstBufLen > 0)
+-                                displayLen = flipParam.nDstBufLen;
+-                        }
+-                    }
+ 
+-                    if (_previewHwnds[wsInd] != IntPtr.Zero)
+-                    {
+-                        // 显示
+-                        stDisplayInfo.hWnd = _previewHwnds[wsInd];
+-                        stDisplayInfo.pData = displayPtr;
+-                        stDisplayInfo.nDataLen = displayLen;
+-                        stDisplayInfo.nWidth = stFrameInfo.stFrameInfo.nWidth;
+-                        stDisplayInfo.nHeight = stFrameInfo.stFrameInfo.nHeight;
+-                        stDisplayInfo.enPixelType = stFrameInfo.stFrameInfo.enPixelType;
+-                        int displayRet = camera.MV_CC_DisplayOneFrame_NET(ref stDisplayInfo);
+-                        if (displayRet == MyCamera.MV_OK)
+-                        {
+-                            if (!_previewFirstFrameReceived[wsInd])
++                            }
++                            finally
+                             {
+-                                _previewFirstFrameReceived[wsInd] = true;
+-                                OnPreviewStatus(wsInd, iCamIdx, 0,
+-                                    $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: 已收到并显示首帧，PixelFormat={stFrameInfo.stFrameInfo.enPixelType}");
++                                int freeRet = camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
++                                if (freeRet != MyCamera.MV_OK)
++                                {
++                                    exitReason = $"FreeImageBuffer失败，SDK=0x{unchecked((uint)freeRet):X8}";
++                                    stopForFreeFailure = true;
++                                    OnPreviewStatus(wsInd, iCamIdx, -1, $"{identity}: {exitReason}");
++                                }
+                             }
+                         }
+-                        else if (!_previewDisplayFailureLogged[wsInd])
++                        else
+                         {
+-                            _previewDisplayFailureLogged[wsInd] = true;
+-                            OnPreviewStatus(wsInd, iCamIdx, -1,
+-                                $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: DisplayOneFrame失败，SDK=0x{unchecked((uint)displayRet):X8}");
++                            if (nRet == MyCamera.MV_E_NODATA) { consecutiveNoData++; totalNoData++; }
++                            else consecutiveNoData = 0;
++                            if (!camera.MV_CC_IsDeviceConnected_NET())
++                            {
++                                exitReason = $"设备已断开，GetImageBuffer SDK=0x{unchecked((uint)nRet):X8}";
++                                break;
++                            }
++                            if (!_previewGetBufferFailureLogged[wsInd] || _previewLastGetBufferError[wsInd] != nRet)
++                            {
++                                _previewGetBufferFailureLogged[wsInd] = true;
++                                _previewLastGetBufferError[wsInd] = nRet;
++                                OnPreviewStatus(wsInd, iCamIdx, -1,
++                                    $"{identity}: GetImageBuffer失败，SDK=0x{unchecked((uint)nRet):X8}, timeoutMs=1000, 线程仍在运行; {ReadPreviewAcquisitionState(camera)}");
++                            }
++                            if (nRet != MyCamera.MV_E_NODATA)
++                            {
++                                exitReason = $"GetImageBuffer错误，SDK=0x{unchecked((uint)nRet):X8}，停止预览，未重试";
++                                break;
++                            }
++                            Thread.Sleep(5);
+                         }
+                     }
+-
+-                    camera.MV_CC_FreeImageBuffer_NET(ref stFrameInfo);
+-                }
+-                else
+-                {
+-                    if (!_previewGetBufferFailureLogged[wsInd] || _previewLastGetBufferError[wsInd] != nRet)
++                    if (stopForFreeFailure) break;
++                    if ((DateTime.Now - lastReport).TotalSeconds >= 5)
+                     {
+-                        _previewGetBufferFailureLogged[wsInd] = true;
+-                        _previewLastGetBufferError[wsInd] = nRet;
+-                        OnPreviewStatus(wsInd, iCamIdx, -1,
+-                            $"Job{wsInd}, Cam{iCamIdx}, Serial={serial}: GetImageBuffer失败，SDK=0x{unchecked((uint)nRet):X8}");
++                        lastReport = DateTime.Now;
++                        OnPreviewStatus(wsInd, iCamIdx, 2,
++                            $"{identity}: 预览统计 running=True, firstFrame={firstFrameTime:yyyy-MM-dd HH:mm:ss.fff}, successfulFrames={successfulFrames}, subsequentFrames={Math.Max(0, successfulFrames - 1)}, displayedFrames={displayedFrames}, consecutiveNoData={consecutiveNoData}, totalNoData={totalNoData}, lastFrame={lastFrameTime:yyyy-MM-dd HH:mm:ss.fff}, lastDisplay={lastDisplayTime:yyyy-MM-dd HH:mm:ss.fff}");
+                     }
+-                    Thread.Sleep(5);
+                 }
+             }
++            catch (Exception ex)
++            {
++                exitReason = $"预览线程异常: {ex}";
++            }
++            finally
++            {
++                System.Threading.Volatile.Write(ref _previewRunning[wsInd], false);
++                acqFIFO.ReleasePreview(iCamIdx, wsInd);
++                OnPreviewStatus(wsInd, iCamIdx, exitReason == "停止请求" ? 2 : -1,
++                    $"{identity}: 预览线程退出 reason={exitReason}, firstFrame={firstFrameTime:yyyy-MM-dd HH:mm:ss.fff}, successfulFrames={successfulFrames}, subsequentFrames={Math.Max(0, successfulFrames - 1)}, displayedFrames={displayedFrames}, consecutiveNoData={consecutiveNoData}, totalNoData={totalNoData}, lastFrame={lastFrameTime:yyyy-MM-dd HH:mm:ss.fff}, lastDisplay={lastDisplayTime:yyyy-MM-dd HH:mm:ss.fff}");
++            }
+         }
+- 
+ 
+         private Bitmap CreatePreviewBitmap(IntPtr pData, ref MyCamera.MV_FRAME_OUT_INFO_EX frameInfo, int flipType)
+         {
+@@ -3168,8 +3459,7 @@ namespace VisionControl
+         {
+             for (int wsInd = 0; wsInd < maxCameraNum; wsInd++)
+             {
+-                if (_previewRunning[wsInd])
+-                    previewOnlive(false, wsInd);
++                previewOnlive(false, wsInd);
+             }
+         }
+ 

@@ -1,0 +1,20 @@
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1113,42): error CS1002: 应输入 ;
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1114,10): error CS1001: 应输入标识符
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,13): error CS1014: 应为 get 或 set 访问器
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,17): error CS1513: 应输入 }
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,24): error CS8124: 元组必须包含至少两个元素。
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,24): error CS1026: 应输入 )
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,24): error CS1519: 成员声明中的标记“=”无效
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,45): error CS1003: 语法错误，应输入“>”
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,45): error CS1519: 成员声明中的标记“;”无效
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,48): error CS1519: 成员声明中的标记“++”无效
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1115,48): error CS1519: 成员声明中的标记“++”无效
+tmp/syntax-repair-20261013/backup/AcqFIFO.cs(1118,27): error CS1519: 成员声明中的标记“.”无效
+SyntaxErrors=45
+GlobalStatements=27
+OpenBraces=336, CloseBraces=336
+CogFlipRotateImInit: ClassMember=True, HasBody=False, Public=True
+TryReservePreview: ClassMember=True, HasBody=True, Public=True
+ReleasePreview: ClassMember=True, HasBody=True, Public=True
+IsCameraGrabbing: ClassMember=True, HasBody=True, Public=True
+GetCameraFrameLock: ClassMember=True, HasBody=True, Public=True

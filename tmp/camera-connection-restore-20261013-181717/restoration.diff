@@ -1,0 +1,187 @@
+diff --git "a/E:\\jieyawenjian\\VB_Det\\tmp\\camera-connection-restore-20261013-181717\\backup\\CommonCls\\HIKDeviceSource.cs" b/CommonCls/HIKDeviceSource.cs
+index fb239c0..cebb283 100644
+--- "a/E:\\jieyawenjian\\VB_Det\\tmp\\camera-connection-restore-20261013-181717\\backup\\CommonCls\\HIKDeviceSource.cs"
++++ b/CommonCls/HIKDeviceSource.cs
+@@ -38,7 +38,7 @@ namespace CommonCls
+                     CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, node=DeviceSerialNumber, target=read, exception={ex}");
+                 }
+             }
+-            CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, serial={serial}, node={node}, target={target}, SDK=0x{unchecked((uint)result):X8}");
++            CameraDiagnostic?.Invoke($"cameraIndex={cameraIndex}, serial={serial}, node={node}, SDK=0x{unchecked((uint)result):X8}");
+             return false;
+         }
+ 
+@@ -275,15 +275,10 @@ namespace CommonCls
+                 : ((MyCamera.MV_GIGE_DEVICE_INFO)MyCamera.ByteToStruct(device.SpecialInfo.stGigEInfo, typeof(MyCamera.MV_GIGE_DEVICE_INFO))).chSerialNumber;
+             uint acquisition = (uint)MyCamera.MV_CAM_ACQUISITION_MODE.MV_ACQ_MODE_CONTINUOUS;
+             uint trigger = (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF;
+-            if (!CheckSdkResult(camera, "AcquisitionMode", acquisition.ToString(),
+-                    camera.MV_CC_SetEnumValue_NET("AcquisitionMode", acquisition), cameraIndex, serial) ||
+-                !CheckSdkResult(camera, "TriggerMode", trigger.ToString(),
+-                    camera.MV_CC_SetEnumValue_NET("TriggerMode", trigger), cameraIndex, serial))
+-            {
+-                CheckSdkResult(camera, "CloseDevice", "初始化失败清理", camera.MV_CC_CloseDevice_NET(), cameraIndex, serial);
+-                CheckSdkResult(camera, "DestroyDevice", "初始化失败清理", camera.MV_CC_DestroyDevice_NET(), cameraIndex, serial);
+-                return false;
+-            }
++            CheckSdkResult(camera, "AcquisitionMode", acquisition.ToString(),
++                camera.MV_CC_SetEnumValue_NET("AcquisitionMode", acquisition), cameraIndex, serial);
++            CheckSdkResult(camera, "TriggerMode", trigger.ToString(),
++                camera.MV_CC_SetEnumValue_NET("TriggerMode", trigger), cameraIndex, serial);
+ 
+             return true;
+         }
+@@ -575,13 +570,14 @@ namespace CommonCls
+         public bool SetResolution(ref uint width, ref uint height, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_INTVALUE();
+-            if (!CheckSdkResult(cam, "Width.GetRange", width.ToString(), cam.MV_CC_GetWidth_NET(ref range))) return false;
++            CheckSdkResult(cam, "Width.GetRange", width.ToString(), cam.MV_CC_GetWidth_NET(ref range));
+             uint newWidth = Clamp(width, range.nMin, range.nMax);
+-            if (!CheckSdkResult(cam, "Width", newWidth.ToString(), cam.MV_CC_SetWidth_NET(newWidth))) return false;
++            bool widthSet = CheckSdkResult(cam, "Width", newWidth.ToString(), cam.MV_CC_SetWidth_NET(newWidth));
+ 
+-            if (!CheckSdkResult(cam, "Height.GetRange", height.ToString(), cam.MV_CC_GetHeight_NET(ref range))) return false;
++            CheckSdkResult(cam, "Height.GetRange", height.ToString(), cam.MV_CC_GetHeight_NET(ref range));
+             uint newHeight = Clamp(height, range.nMin, range.nMax);
+-            if (!CheckSdkResult(cam, "Height", newHeight.ToString(), cam.MV_CC_SetHeight_NET(newHeight))) return false;
++            bool heightSet = CheckSdkResult(cam, "Height", newHeight.ToString(), cam.MV_CC_SetHeight_NET(newHeight));
++            if (!widthSet || !heightSet) return false;
+ 
+             width = newWidth;
+             height = newHeight;
+@@ -608,9 +604,10 @@ namespace CommonCls
+         public bool SetSharpness(ref uint value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_INTVALUE();
+-            if (!CheckSdkResult(cam, "Sharpness.GetRange", value.ToString(), cam.MV_CC_GetSharpness_NET(ref range))) return false;
++            // 恢复旧版调用顺序：范围/自动模式错误只记录，最终写入仍决定结果。
++            CheckSdkResult(cam, "Sharpness.GetRange", value.ToString(), cam.MV_CC_GetSharpness_NET(ref range));
+             uint adjusted = Clamp(value, range.nMin, range.nMax);
+-            if (!SetEnumValueChecked(cam, "SharpnessAuto", 0)) return false;
++            SetEnumValueChecked(cam, "SharpnessAuto", 0);
+             if (!CheckSdkResult(cam, "Sharpness", adjusted.ToString(), cam.MV_CC_SetSharpness_NET(adjusted))) return false;
+             value = adjusted;
+             return true;
+@@ -622,9 +619,9 @@ namespace CommonCls
+         public bool SetGamma(ref float value, MyCamera cam)
+         {
+             var range = new MyCamera.MVCC_FLOATVALUE();
+-            if (!CheckSdkResult(cam, "Gamma.GetRange", value.ToString(), cam.MV_CC_GetGamma_NET(ref range))) return false;
++            CheckSdkResult(cam, "Gamma.GetRange", value.ToString(), cam.MV_CC_GetGamma_NET(ref range));
+             float adjusted = Clamp(value, range.fMin, range.fMax);
+-            if (!SetEnumValueChecked(cam, "GammaAuto", 0)) return false;
++            SetEnumValueChecked(cam, "GammaAuto", 0);
+             if (!CheckSdkResult(cam, "Gamma", adjusted.ToString(), cam.MV_CC_SetGamma_NET(adjusted))) return false;
+             value = adjusted;
+             return true;
+@@ -753,14 +750,14 @@ namespace CommonCls
+             // 曝光时间
+             // 获取当前Exposure、最大Exposure、最小Exposure
+             MyCamera.MVCC_FLOATVALUE exposureValue = new MyCamera.MVCC_FLOATVALUE();
+-            if (!CheckSdkResult(cam, "ExposureTime.GetRange", exposure.ToString(), cam.MV_CC_GetExposureTime_NET(ref exposureValue))) return false;
++            bool success = CheckSdkResult(cam, "ExposureTime.GetRange", exposure.ToString(), cam.MV_CC_GetExposureTime_NET(ref exposureValue));
+             //float exposure = exposureValue.fCurValue;
+             float maxExposure = exposureValue.fMax;
+             float minExposure = exposureValue.fMin;
+             // 判断是否处于最小到最大值之间
+             if (exposure <= 0)
+             {
+-                if (!SetEnumValueChecked(cam, "ExposureAuto", (uint)MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS)) return false;
++                success &= SetEnumValueChecked(cam, "ExposureAuto", (uint)MV_CAM_EXPOSURE_AUTO_MODE.MV_EXPOSURE_AUTO_MODE_CONTINUOUS);
+             }
+             else
+             {
+@@ -776,12 +773,12 @@ namespace CommonCls
+                 }
+ 
+                 // 关闭自动设置
+-                if (!SetEnumValueChecked(cam, "ExposureAuto", 0)) return false;
++                success &= SetEnumValueChecked(cam, "ExposureAuto", 0);
+                 // 设置ExposureTime
+-                if (!CheckSdkResult(cam, "ExposureTime", exposure.ToString(), cam.MV_CC_SetFloatValue_NET("ExposureTime", exposure))) return false;
++                success &= CheckSdkResult(cam, "ExposureTime", exposure.ToString(), cam.MV_CC_SetFloatValue_NET("ExposureTime", exposure));
+                 exposureString = exposure.ToString("F0");
+             }
+-            return true;
++            return success;
+         }
+         /// <summary>
+         /// 批量获取相机参数。
+diff --git "a/E:\\jieyawenjian\\VB_Det\\tmp\\camera-connection-restore-20261013-181717\\backup\\VisionApplication\\FrmMainUI.cs" b/VisionApplication/FrmMainUI.cs
+index 55f1851..314a1c5 100644
+--- "a/E:\\jieyawenjian\\VB_Det\\tmp\\camera-connection-restore-20261013-181717\\backup\\VisionApplication\\FrmMainUI.cs"
++++ b/VisionApplication/FrmMainUI.cs
+@@ -2157,7 +2157,7 @@ namespace VisionApplication
+                 MyCamera camera = camera2[iCamIndex];
+                 string gainshow = null, exposureshow = null;
+                 stage = "ExposureTime";
+-                if (!hIKVisionCamera.SetParam(local.dGain, local.iExposeTime, ref gainshow, ref exposureshow, camera)) return false;
++                hIKVisionCamera.SetParam(local.dGain, local.iExposeTime, ref gainshow, ref exposureshow, camera);
+                 stage = "PixelFormat";
+                 if (!hIKVisionCamera.SetPixelFormat(ref local.iMonoType, camera)) return false;
+                 stage = "Sharpness";
+@@ -2179,11 +2179,10 @@ namespace VisionApplication
+                 stage = "ROI.OffsetY";
+                 if (!hIKVisionCamera.SetIntValueChecked(camera, "OffsetY", roi[1])) return false;
+                 stage = "Trigger";
+-                if (cup.p_CD.triggleCam == iCamIndex && !SetTrigger(iCamIndex)) return false;
++                if (cup.p_CD.triggleCam == iCamIndex) SetTrigger(iCamIndex);
+                 stage = "AcquisitionState.ReadBack";
+                 string runtimeState;
+-                if (!GetCameraRuntimeState(iCamIndex, out runtimeState)) return false;
+-                WriteCameraDiagnostic("参数恢复读回", 0, $"cameraIndex={iCamIndex}, serial={serial}; {runtimeState}");
++                GetCameraRuntimeState(iCamIndex, out runtimeState);
+                 local.iROI = roi;
+                 local.iWidth = roi[2];
+                 local.iHeight = roi[3];
+@@ -2204,14 +2203,14 @@ namespace VisionApplication
+             {
+                 MyCamera camera = camera2[iCamIndex];
+                 if (camera == null) return false;
+-                if (!hIKVisionCamera.SetEnumValueChecked(camera, "TriggerMode", cup.p_CD.bTriggle
++                bool success = hIKVisionCamera.SetEnumValueChecked(camera, "TriggerMode", cup.p_CD.bTriggle
+                     ? (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_ON
+-                    : (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF)) return false;
++                    : (uint)MyCamera.MV_CAM_TRIGGER_MODE.MV_TRIGGER_MODE_OFF);
+                 if (cup.p_CD.bTriggle)
+-                    return hIKVisionCamera.SetEnumValueChecked(camera, "TriggerSource", cup.p_CD.triggleMode == 4
++                    success &= hIKVisionCamera.SetEnumValueChecked(camera, "TriggerSource", cup.p_CD.triggleMode == 4
+                         ? (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_SOFTWARE
+                         : (uint)MyCamera.MV_CAM_TRIGGER_SOURCE.MV_TRIGGER_SOURCE_LINE0);
+-                return true;
++                return success;
+             }
+             catch (Exception ex)
+             {
+@@ -2226,28 +2225,20 @@ namespace VisionApplication
+         {
+             try
+             {
+-                if (iCamInd < 0 || iCamInd >= rts.cs.iStatus.Length || rts.cs.iStatus[iCamInd] < 2)
+-                {
+-                    LogCameraConnection("启动相机采集", false,
+-                        $"cameraIndex={iCamInd}, 参数或缓冲区初始化未完成，未调用StartGrabbing");
+-                    return false;
+-                }
+                 int sdkResult = hIKVisionCamera.StartGrabbing(iCamInd);
+                 bool success = sdkResult == MyCamera.MV_OK;
+ 
+                 string serial = cup.p_Cam != null && iCamInd >= 0 && iCamInd < cup.p_Cam.Length
+                     ? cup.p_Cam[iCamInd].strCamName
+                     : string.Empty;
+-                string jobs = GetJobsForCamera(iCamInd);
+                 string runtimeState;
+-                bool stateRead = GetCameraRuntimeState(iCamInd, out runtimeState);
+-                success &= stateRead;
++                GetCameraRuntimeState(iCamInd, out runtimeState);
+                 SyncCameraStatus(iCamInd, success ? 3 : 1);
+ 
+                 operLog.strOperEvent = $"启动相机采集-Cam{iCamInd}";
+                 operLog.iEventStatus = success ? 0 : -1;
+                 operLog.strFailReason =
+-                    $"Jobs={jobs}, Cam{iCamInd}, Serial={serial}, StartGrabbing SDK=0x{unchecked((uint)sdkResult):X8}; {runtimeState}";
++                    $"cameraIndex={iCamInd}, serial={serial}, StartGrabbing SDK=0x{unchecked((uint)sdkResult):X8}";
+                 WriteCameraDiagnostic(operLog.strOperEvent, operLog.iEventStatus, operLog.strFailReason);
+                 AddLog();
+                 return success;

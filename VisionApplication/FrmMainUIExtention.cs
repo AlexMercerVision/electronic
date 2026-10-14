@@ -1695,9 +1695,13 @@ namespace VisionApplication
         {
             try
             {
+                int tuneJobIndex;
+                if (!TryGetSelectedPMAJob("获取边缘定位参数", out tuneJobIndex))
+                    return;
                 calipFindLineParam cflParam = new calipFindLineParam();
-                vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
-                UpdateUIFromCLPParam(cflParam);
+                if (!vpWin.GetCLPParam(ref cflParam, tuneJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0) ||
+                    !UpdateUIFromCLPParam(cflParam))
+                    return;
                 operLog.strOperEvent = "获取边缘定位参数";
                 operLog.iEventStatus = 0;
                 
@@ -1719,11 +1723,16 @@ namespace VisionApplication
         {
             try
             {
+                int tuneJobIndex;
+                if (!TryGetSelectedPMAJob("设置边缘定位参数", out tuneJobIndex))
+                    return;
                 calipFindLineParam cflParam = new calipFindLineParam();
 
-                UpdateCLPParamFromUI(ref cflParam);
+                if (!UpdateCLPParamFromUI(ref cflParam))
+                    return;
 
-                vpWin.SetCLPParam(cflParam, iJobIndex,cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
+                if (!vpWin.SetCLPParam(cflParam, tuneJobIndex,cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0))
+                    return;
                 operLog.strOperEvent = "设置边缘定位参数";
                 operLog.iEventStatus = 0;
 
@@ -1742,13 +1751,16 @@ namespace VisionApplication
         {
             try
             {
+                int tuneJobIndex;
+                if (!TryGetSelectedPMAJob("设置定位搜索区域", out tuneJobIndex))
+                    return;
                 int index = cmbCLPEdgeLeft.SelectedIndex + 1;
                 if (index < 1 || index > 2)
                 {
                     MessageBox.Show("请选择定位边缘");
                     return;
                 }
-                vpWin.SetFindLineSearchRegion(iJobIndex, index, cup.p_VPPRTP.iXBType);
+                vpWin.SetFindLineSearchRegion(tuneJobIndex, index, cup.p_VPPRTP.iXBType);
                 bVPPParamChanged = true;
             }
             catch { }
@@ -1758,13 +1770,16 @@ namespace VisionApplication
         {
             try
             {
+                int tuneJobIndex;
+                if (!TryGetSelectedPMAJob("获取定位搜索结果", out tuneJobIndex))
+                    return;
                 int index = cmbCLPEdgeLeft.SelectedIndex + 1;
                 if (index < 1 || index > 2)
                 {
                     MessageBox.Show("请选择定位边缘");
                     return;
                 }
-                vpWin.GetFindLineSearchRes(iJobIndex, index, cup.p_VPPRTP.iXBType);
+                vpWin.GetFindLineSearchRes(tuneJobIndex, index, cup.p_VPPRTP.iXBType);
                 bVPPParamChanged = true;
             }
             catch { }
@@ -1777,8 +1792,11 @@ namespace VisionApplication
         {
             try
             {
+                int tuneJobIndex;
+                if (!TryGetSelectedPMAJob("提取定位基准", out tuneJobIndex))
+                    return;
                 bVPPParamChanged = true;
-                vpWin.ExtractLocateBase(iJobIndex, cup.p_VPPRTP.iXBType);
+                vpWin.ExtractLocateBase(tuneJobIndex, cup.p_VPPRTP.iXBType);
                 operLog.iEventStatus = 0;
                 operLog.strOperEvent = "提取定位基准";
                 AddLog();
@@ -1820,6 +1838,9 @@ namespace VisionApplication
         
         private void rdBT_FindLine_Click(object sender, EventArgs e)
         {
+            int tuneJobIndex;
+            if (!TryGetSelectedPMAJob("设置精定位", out tuneJobIndex))
+                return;
             if (rdBT_FindLine.Checked)
             { 
                 cup.p_VPPRTP.iXBType=0;
@@ -1831,23 +1852,32 @@ namespace VisionApplication
             }
             CaliperControlVisSet(cup.p_VPPRTP.iXBType);
              calipFindLineParam cflParam = new calipFindLineParam();
-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
+            if (!vpWin.GetCLPParam(ref cflParam, tuneJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0))
+                return;
             UpdateUIFromCLPParam(cflParam); 
-            vpWin.SetUseTuneLocation(iJobIndex, true, cup.p_VPPRTP.iXBType); 
+            vpWin.SetUseTuneLocation(tuneJobIndex, true, cup.p_VPPRTP.iXBType);
         }
         private void cmbCLPEdgeLeft_SelectedIndexChanged(object sender, EventArgs e)
         {
+            int tuneJobIndex;
+            if (!TryGetSelectedPMAJob("获取边缘定位参数", out tuneJobIndex))
+                return;
             calipFindLineParam cflParam = new calipFindLineParam();
-            vpWin.GetCLPParam(ref cflParam, iJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0);
+            if (!vpWin.GetCLPParam(ref cflParam, tuneJobIndex, cup.p_VPPRTP.iXBType, cmbCLPEdgeLeft.SelectedIndex == 0))
+                return;
             UpdateUIFromCLPParam(cflParam);
         }
         /// <summary>
         /// 由VP参数更新UI
         /// </summary>
-        private void UpdateUIFromCLPParam(calipFindLineParam cflParam)
+        private bool UpdateUIFromCLPParam(calipFindLineParam cflParam)
         {
             try
             {
+                decimal lenTh = (decimal)cflParam.dRes1;
+                if (lenTh < nudLenTh.Minimum || lenTh > nudLenTh.Maximum)
+                    throw new InvalidOperationException($"当前Job的lenTh={lenTh}超出界面可显示范围");
+                nudLenTh.Value = lenTh;
                 if(cup.p_VPPRTP.iXBType==0)
                 {
                   //   chkUseTuneLocation.Checked = cflParam.bUseTuneLocation;
@@ -1869,6 +1899,7 @@ namespace VisionApplication
                     //    nudCLPCaliperNum.Value = (decimal)cflParam.iCaliperNum;
                 }
 
+                return true;
             }
             catch(Exception ex)
             {
@@ -1876,13 +1907,14 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = ex.ToString();
                 AddLog();
+                return false;
             }
 
         }
         /// <summary>
         /// 由UI参数更新VP
         /// </summary>
-        private void UpdateCLPParamFromUI(ref calipFindLineParam cflParam)
+        private bool UpdateCLPParamFromUI(ref calipFindLineParam cflParam)
         {
             try
             {
@@ -1906,7 +1938,9 @@ namespace VisionApplication
                     cflParam.dRes1 = (double)nudLenTh.Value;
                     //cflParam.iRemovePoint = (int)nudCLPRemovePoint.Value;
                 }
-                
+                else
+                    throw new ArgumentOutOfRangeException("iXBType");
+                return true;
             }
             catch (Exception ex)
             {
@@ -1914,6 +1948,7 @@ namespace VisionApplication
                 operLog.iEventStatus = -1;
                 operLog.strFailReason = ex.ToString();
                 AddLog();
+                return false;
             }
         } 
        

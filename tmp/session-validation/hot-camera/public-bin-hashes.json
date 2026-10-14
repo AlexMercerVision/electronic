@@ -1,0 +1,22 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B0C0BE7F3539B65D4FED64B93045DC68EF2DF6CF7CB85434A60259EF88D6A0BB",
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\激光除胶.exe"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133",
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\激光除胶.exe.config"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4B1AE6DEDD3EC230F911DC14C9255D45F88B3655516831E33763F8904239934F",
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CommonCls.dll"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "588F66E837B2C03BD1B6BB2B4FD4121687EDC679E0DE2DA683F3CE4CB358E11B",
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\xbVP_Control.dll"
+  }
+]

@@ -61,6 +61,35 @@ namespace CommonCls
 
         /// <summary>每台物理相机独立的单帧取图锁。</summary>
         private readonly object[] _cameraFrameLocks = new object[maxCameraNum];
+        private readonly int[] _previewOwners = new int[maxCameraNum]; // 0=无预览，Job+1=预览占用
+
+        public object GetCameraFrameLock(int cameraIndex)
+        {
+            return _cameraFrameLocks[cameraIndex];
+        }
+
+        public bool IsCameraGrabbing(int cameraIndex)
+        {
+            CameraStatus status = GetCurrentCameraStatus();
+            return cameraIndex >= 0 && cameraIndex < maxCameraNum && status.iStatus != null &&
+                cameraIndex < status.iStatus.Length && status.iStatus[cameraIndex] == 3 && IsCamConn(cameraIndex);
+        }
+
+        public bool TryReservePreview(int cameraIndex, int jobIndex)
+        {
+            lock (_cameraFrameLocks[cameraIndex])
+            {
+                if (_previewOwners[cameraIndex] != 0) return false;
+                _previewOwners[cameraIndex] = jobIndex + 1;
+                return true;
+            }
+        }
+
+        public void ReleasePreview(int cameraIndex, int jobIndex)
+        {
+            lock (_cameraFrameLocks[cameraIndex])
+                if (_previewOwners[cameraIndex] == jobIndex + 1) _previewOwners[cameraIndex] = 0;
+        }
 
         /// <summary>输出帧信息结构体</summary>
         public MyCamera.MV_FRAME_OUT_INFO_EX stFrameInfo = new MyCamera.MV_FRAME_OUT_INFO_EX();
@@ -342,6 +371,11 @@ namespace CommonCls
 
             lock (_cameraFrameLocks[iCamIndex])
             {
+                if (_previewOwners[iCamIndex] != 0)
+                {
+                    OnErrorOccurred($"GrabOneFrameCog (Job{jobIndex}, Cam{iCamIndex}): 相机正由预览Job{_previewOwners[iCamIndex] - 1}占用，拒绝并发单次采集");
+                    return null;
+                }
                 MyCamera.MV_FRAME_OUT frame = new MyCamera.MV_FRAME_OUT();
                 bool frameAcquired = false;
                 try
@@ -424,6 +458,11 @@ namespace CommonCls
 
             lock (_cameraFrameLocks[iCamIndex])
             {
+                if (_previewOwners[iCamIndex] != 0)
+                {
+                    OnErrorOccurred($"GrabOneFrameCogColor (Job{jobIndex}, Cam{iCamIndex}): 相机正由预览Job{_previewOwners[iCamIndex] - 1}占用，拒绝并发单次采集");
+                    return null;
+                }
                 MyCamera.MV_FRAME_OUT frame = new MyCamera.MV_FRAME_OUT();
                 bool frameAcquired = false;
                 try
@@ -806,22 +845,26 @@ namespace CommonCls
                         if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height * 3)
                             bImgSrcData[iCamIndex] = new byte[width * height * 3];
 
-                        bImgSrcData[wsInd] = BitmapToBytes(ci24ColorAcq[wsInd].ToBitmap());
+                        using (Bitmap bitmap = ci24ColorAcq[iCamIndex].ToBitmap())
+                            bImgSrcData[iCamIndex] = BitmapToBytes(bitmap);
 
                         return 1;
                     }
                     else
                     {
-                        ci8gAcq[wsInd] = (CogImage8Grey)ci;
-                        cup.p_Cam[wsInd].iMonoType = 0;
+                        if (ci == null)
+                            throw new InvalidOperationException($"Job{wsInd} 回放图片读取失败");
+                        ci8gAcq[iCamIndex] = (CogImage8Grey)ci;
+                        cup.p_Cam[iCamIndex].iMonoType = 0;
 
 
-                        int width = ci8gAcq[wsInd].Width;
-                        int height = ci8gAcq[wsInd].Height;
-                        if (bImgSrcData[wsInd] == null || bImgSrcData[wsInd].Length != width * height * 3)
-                            bImgSrcData[wsInd] = new byte[width * height * 3];
+                        int width = ci8gAcq[iCamIndex].Width;
+                        int height = ci8gAcq[iCamIndex].Height;
+                        if (bImgSrcData[iCamIndex] == null || bImgSrcData[iCamIndex].Length != width * height)
+                            bImgSrcData[iCamIndex] = new byte[width * height];
 
-                          bImgSrcData[wsInd] = BitmapToBytes(ci8gAcq[wsInd].ToBitmap()); 
+                        using (Bitmap bitmap = ci8gAcq[iCamIndex].ToBitmap())
+                            bImgSrcData[iCamIndex] = BitmapToBytes(bitmap);
 
                         return 0;
                     }
