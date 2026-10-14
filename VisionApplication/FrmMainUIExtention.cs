@@ -60,6 +60,7 @@ namespace VisionApplication
             bool bSucc = hIKVisionCamera.SetExposure(ref cup.p_Cam[icamSelectInd].iExposeTime, camera2[icamSelectInd]);
             if (bSucc)
             {
+                _cameraAutoExposure[icamSelectInd] = false;
                 nudExposure.Value = (decimal)cup.p_Cam[icamSelectInd].iExposeTime;
                 tbExposure.Value = (int)cup.p_Cam[icamSelectInd].iExposeTime;
             }
@@ -83,6 +84,7 @@ namespace VisionApplication
             bool bSucc = hIKVisionCamera.SetExposure(ref cup.p_Cam[icamSelectInd].iExposeTime, camera2[icamSelectInd]);
             if (bSucc)
             {
+                _cameraAutoExposure[icamSelectInd] = false;
                 nudExposure.Value = (decimal)cup.p_Cam[icamSelectInd].iExposeTime;
                 tbExposure.Value = (int)cup.p_Cam[icamSelectInd].iExposeTime;
             }
@@ -112,6 +114,7 @@ namespace VisionApplication
                 bool bSucc = hIKVisionCamera.SetExposure(ref cup.p_Cam[icamSelectInd].iExposeTime, camera2[icamSelectInd]);
                 if (bSucc)
                 {
+                    _cameraAutoExposure[icamSelectInd] = true;
                     nudExposure.Value = (decimal)cup.p_Cam[icamSelectInd].iExposeTime;
                     tbExposure.Value = (int)cup.p_Cam[icamSelectInd].iExposeTime;
                 }
@@ -125,6 +128,7 @@ namespace VisionApplication
             }
             else
             {
+                _cameraAutoExposure[icamSelectInd] = false;
                 tbExposure.Enabled = true;
                 nudExposure.Enabled = true;
             }
@@ -179,50 +183,12 @@ namespace VisionApplication
         //修改锐化参数
         private void tbSharp_ValueChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
-            if (icamSelectInd < 0)
-                return;
-            if (camera2 == null || camera2[icamSelectInd] == null)
-                return;
-            cup.p_Cam[icamSelectInd].iSharp = (uint)tbSharp.Value;
-            bool bSucc = hIKVisionCamera.SetSharpness(ref cup.p_Cam[icamSelectInd].iSharp, camera2[icamSelectInd]);
-
-            if (bSucc)
-            {
-                tbSharp.Value = (int)cup.p_Cam[icamSelectInd].iSharp;
-                nudSharp.Value = (decimal)cup.p_Cam[icamSelectInd].iSharp;
-            }
-            else
-            {
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "";
-                operLog.strOperEvent = "修改相机锐化参数";
-                AddLog();
-            }
+            // 锐度功能停用。
         }
         //修改锐化参数
         private void nudSharp_ValueChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingUI) return;  // 如果是程序更新，直接返回
-            if (icamSelectInd < 0)
-                return;
-            if (camera2 == null || camera2[icamSelectInd] == null)
-                return;
-            cup.p_Cam[icamSelectInd].iSharp = (uint)nudSharp.Value;
-
-            bool bSucc = hIKVisionCamera.SetSharpness(ref cup.p_Cam[icamSelectInd].iSharp, camera2[icamSelectInd]);
-            if (bSucc)
-            {
-                tbSharp.Value = (int)cup.p_Cam[icamSelectInd].iSharp;
-                nudSharp.Value = (decimal)cup.p_Cam[icamSelectInd].iSharp;
-            }
-            else
-            {
-                operLog.iEventStatus = -1;
-                operLog.strFailReason = "";
-                operLog.strOperEvent = "修改相机锐化参数";
-                AddLog();
-            }
+            // 锐度功能停用。
         }
         //修改Gamma参数
         private void tbGamma_ValueChanged(object sender, EventArgs e)
@@ -1310,7 +1276,6 @@ namespace VisionApplication
             {
                 cup.p_Cam[icamSelectInd].iBrightness = (uint)nudContrast.Value;
                 cup.p_Cam[icamSelectInd].iExposeTime = (float)nudExposure.Value;
-                cup.p_Cam[icamSelectInd].iSharp = (uint)nudSharp.Value;
                 cup.p_Cam[icamSelectInd].dGain = (float)nudGain.Value;
                 cup.p_Cam[icamSelectInd].dGamma = (float)nudGamma.Value;
 
@@ -1431,11 +1396,19 @@ namespace VisionApplication
                 int icamInd = icamSelectInd;
                 if (icamInd >= 0)
                 {
-                    // 其他参数（曝光、增益等）保持不变
-                    nudSharp.Value = cup.p_Cam[icamInd].iSharp;
-                    nudExposure.Value = (decimal)cup.p_Cam[icamInd].iExposeTime;
-                    nudGain.Value = (decimal)cup.p_Cam[icamInd].dGain;
-                    nudGamma.Value = (decimal)cup.p_Cam[icamInd].dGamma;
+                    // 同步设备真实值时仅更新控件，所有参数事件由 _isUpdatingUI 屏蔽。
+                    SetCameraNumericValue(nudExposure, (decimal)cup.p_Cam[icamInd].iExposeTime);
+                    SetCameraNumericValue(nudGain, (decimal)cup.p_Cam[icamInd].dGain);
+                    SetCameraTrackValue(tbExposure, (int)cup.p_Cam[icamInd].iExposeTime);
+                    SetCameraTrackValue(tbGain, (int)(cup.p_Cam[icamInd].dGain * 10));
+                    chkAutoExposure.Checked = _cameraAutoExposure[icamInd];
+                    nudExposure.Enabled = tbExposure.Enabled = !chkAutoExposure.Checked;
+                    nudGamma.Enabled = tbGamma.Enabled = _cameraGammaReadable[icamInd];
+                    if (_cameraGammaReadable[icamInd])
+                    {
+                        SetCameraNumericValue(nudGamma, (decimal)cup.p_Cam[icamInd].dGamma);
+                        SetCameraTrackValue(tbGamma, (int)(cup.p_Cam[icamInd].dGamma * 10));
+                    }
                     string strRes = cup.p_Cam[icamInd].iWidth.ToString() + "*" + cup.p_Cam[icamInd].iHeight.ToString();
                     cmbResulation.Text = strRes;
                     if (cup.p_Cam[icamInd].iMonoType >= 0 && cup.p_Cam[icamInd].iMonoType < cmbPixelFormat.Items.Count)
@@ -1498,6 +1471,20 @@ namespace VisionApplication
             }
         }
 
+        private static void SetCameraNumericValue(NumericUpDown control, decimal value)
+        {
+            if (value < control.Minimum) control.Minimum = value;
+            if (value > control.Maximum) control.Maximum = value;
+            control.Value = value;
+        }
+
+        private static void SetCameraTrackValue(TrackBar control, int value)
+        {
+            if (value < control.Minimum) control.Minimum = value;
+            if (value > control.Maximum) control.Maximum = value;
+            control.Value = value;
+        }
+
         private void SetLightBrightnessFromUI(int newBrightness)
         {
             ApplySelectedCameraLightBrightness(null, newBrightness);
@@ -1542,8 +1529,7 @@ namespace VisionApplication
                 return;
             }
 
-            hIKVisionCamera.GetCamParam(cup.p_Cam[icamInd], camera2[icamInd]);
-            UpdateCamParamToUI();
+            if (ReadCamParam(icamInd)) UpdateCamParamToUI();
 
         }
 

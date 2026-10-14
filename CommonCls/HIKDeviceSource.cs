@@ -524,7 +524,7 @@ namespace CommonCls
             foreach (uint fmt in colorFormats)
             {
                 int ret = cam.MV_CC_SetPixelFormat_NET(fmt);
-                CheckSdkResult(cam, "PixelFormat", $"0x{fmt:X8} (候选格式)", ret);
+                // 候选失败属于格式适配过程；任一候选成功即成功，不产生SDK失败事件。
                 if (ret == MyCamera.MV_OK)
                 {
                     // 彩色格式设置成功，保持 type = 1
@@ -659,9 +659,8 @@ namespace CommonCls
         public bool SetGamma(ref float value, MyCamera cam)
         {
             var range = new MyCamera.MVCC_FLOATVALUE();
-            CheckSdkResult(cam, "Gamma.GetRange", value.ToString(), cam.MV_CC_GetGamma_NET(ref range));
+            if (!CheckSdkResult(cam, "Gamma.GetRange", value.ToString(), cam.MV_CC_GetGamma_NET(ref range))) return false;
             float adjusted = Clamp(value, range.fMin, range.fMax);
-            SetEnumValueChecked(cam, "GammaAuto", 0);
             if (!CheckSdkResult(cam, "Gamma", adjusted.ToString(), cam.MV_CC_SetGamma_NET(adjusted))) return false;
             value = adjusted;
             return true;
@@ -775,7 +774,6 @@ namespace CommonCls
             bool success = true;
             success &= SetExposure(ref param.iExposeTime, cam);
             success &= SetGain(ref param.dGain, cam);
-            success &= SetSharpness(ref param.iSharp, cam);
             success &= SetGamma(ref param.dGamma, cam);
             success &= SetPixelFormat(ref param.iMonoType, cam);
             success &= SetBrightness(ref param.iBrightness, cam);
@@ -823,35 +821,44 @@ namespace CommonCls
         /// <summary>
         /// 批量获取相机参数。
         /// </summary>
-        public bool GetCamParam(CameraParam param, MyCamera cam)
+        public bool GetCamParam(ref CameraParam param, MyCamera cam,
+            out bool autoExposure, out bool gammaReadable)
         {
-            int ret = MyCamera.MV_OK;
-            var intVal = new MyCamera.MVCC_INTVALUE();
+            autoExposure = false;
+            gammaReadable = false;
+            CameraParam local = param;
             var floatVal = new MyCamera.MVCC_FLOATVALUE();
+            var intVal = new MyCamera.MVCC_INTVALUE();
+            var enumVal = new MyCamera.MVCC_ENUMVALUE();
 
-            ret += cam.MV_CC_GetExposureTime_NET(ref floatVal);
-            param.iExposeTime = floatVal.fCurValue;
+            if (!CheckSdkResult(cam, "ExposureTime.Read", "read", cam.MV_CC_GetExposureTime_NET(ref floatVal))) return false;
+            local.iExposeTime = floatVal.fCurValue;
+            if (!CheckSdkResult(cam, "ExposureAuto.Read", "read", cam.MV_CC_GetEnumValue_NET("ExposureAuto", ref enumVal))) return false;
+            autoExposure = enumVal.nCurValue != 0;
+            if (!CheckSdkResult(cam, "Gain.Read", "read", cam.MV_CC_GetGain_NET(ref floatVal))) return false;
+            local.dGain = floatVal.fCurValue;
+            if (!CheckSdkResult(cam, "Width.Read", "read", cam.MV_CC_GetWidth_NET(ref intVal))) return false;
+            local.iWidth = intVal.nCurValue;
+            if (!CheckSdkResult(cam, "Height.Read", "read", cam.MV_CC_GetHeight_NET(ref intVal))) return false;
+            local.iHeight = intVal.nCurValue;
+            if (!CheckSdkResult(cam, "OffsetX.Read", "read", cam.MV_CC_GetIntValue_NET("OffsetX", ref intVal))) return false;
+            uint offsetX = intVal.nCurValue;
+            if (!CheckSdkResult(cam, "OffsetY.Read", "read", cam.MV_CC_GetIntValue_NET("OffsetY", ref intVal))) return false;
+            local.iROI = new uint[] { offsetX, intVal.nCurValue, local.iWidth, local.iHeight };
+            if (GetPixelFormat(ref local.iMonoType, cam) != MyCamera.MV_OK) return false;
 
-            ret += cam.MV_CC_GetGain_NET(ref floatVal);
-            param.dGain = floatVal.fCurValue;
-
-            ret += cam.MV_CC_GetGamma_NET(ref floatVal);
-            param.dGamma = floatVal.fCurValue;
-
-            ret += cam.MV_CC_GetBrightness_NET(ref intVal);
-            param.iBrightness = intVal.nCurValue;
-
-            ret += cam.MV_CC_GetSharpness_NET(ref intVal);
-            param.iSharp = intVal.nCurValue;
-
-            ret += cam.MV_CC_GetWidth_NET(ref intVal);
-            param.iWidth = intVal.nCurValue;
-
-            ret += cam.MV_CC_GetHeight_NET(ref intVal);
-            param.iHeight = intVal.nCurValue;
-
-            ret += GetPixelFormat(ref param.iMonoType, cam);
-            return ret == MyCamera.MV_OK;
+            // Gamma 可选；不可读时不伪造数值，也不把已连接设备改判为断开。
+            var access = MyCamera.MV_XML_AccessMode.AM_Undefined;
+            int accessRet = cam.MV_XML_GetNodeAccessMode_NET("Gamma", ref access);
+            if (accessRet != MyCamera.MV_OK ||
+                (access == MyCamera.MV_XML_AccessMode.AM_RO || access == MyCamera.MV_XML_AccessMode.AM_RW))
+            {
+                gammaReadable = CheckSdkResult(cam, "Gamma.Read", "read", cam.MV_CC_GetGamma_NET(ref floatVal));
+                if (gammaReadable) local.dGamma = floatVal.fCurValue;
+            }
+            // iBrightness 为项目光源亮度；锐度停用。两者均不由相机读取覆盖。
+            param = local;
+            return true;
         }
 
         /// <summary>
@@ -873,14 +880,24 @@ namespace CommonCls
         {
             var enumVal = new MyCamera.MVCC_ENUMVALUE();
             int ret = cam.MV_CC_GetPixelFormat_NET(ref enumVal);
-            uint curVal = enumVal.nCurValue;
-            if (curVal == (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8)
-                format = 0;
-            else if (curVal == (uint)MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed)
-                format = 1;
-            else
-                format = 0;
-            return ret;
+            if (!CheckSdkResult(cam, "PixelFormat.Read", "read", ret)) return ret;
+            switch ((MyCamera.MvGvspPixelType)enumVal.nCurValue)
+            {
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_Mono8:
+                    format = 0;
+                    return MyCamera.MV_OK;
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BGR8_Packed:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_RGB8_Packed:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerRG8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGB8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerGR8:
+                case MyCamera.MvGvspPixelType.PixelType_Gvsp_BayerBG8:
+                    format = 1;
+                    return MyCamera.MV_OK;
+                default:
+                    CameraDiagnostic?.Invoke($"cameraIndex={Array.IndexOf(_cameraArray, cam)}, node=PixelFormat.Read, 不支持当前格式=0x{enumVal.nCurValue:X8}，保留设备格式未写入");
+                    return MyCamera.MV_E_SUPPORT;
+            }
         }
         // 获取参数
         public void GetParam(ref string gain, ref string exposure, MyCamera cam)

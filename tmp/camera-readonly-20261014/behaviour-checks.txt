@@ -1,0 +1,43 @@
+PASS read succeeds
+PASS read performs zero SDK writes
+PASS actual values returned by ref
+PASS auto mode preserved and BayerRG8 is color
+PASS actual ROI with separate array
+PASS light and sharpness untouched
+PASS failed ExposureTime read leaves caller untouched
+PASS failed ExposureAuto read leaves caller untouched
+PASS failed Gain read leaves caller untouched
+PASS failed Width read leaves caller untouched
+PASS failed Height read leaves caller untouched
+PASS failed OffsetX read leaves caller untouched
+PASS failed OffsetY read leaves caller untouched
+PASS failed PixelFormat read leaves caller untouched
+PASS unavailable gamma does not block connection or fake value
+PASS real gamma read failure reported independently
+PASS unsupported pixel format retained on device
+PASS pixel classification 1
+PASS pixel classification 2
+PASS pixel classification 3
+PASS pixel classification 4
+PASS pixel classification 5
+PASS pixel classification 6
+PASS pixel classification 7
+PASS candidate/fallback succeeds without failure event 2
+PASS candidate/fallback succeeds without failure event 3
+PASS candidate/fallback succeeds without failure event 4
+PASS candidate/fallback succeeds without failure event 5
+PASS candidate/fallback succeeds without failure event 6
+PASS candidate/fallback succeeds without failure event 7
+PASS candidate/fallback succeeds without failure event 1
+PASS all candidates and fallback fail: one actual failure
+PASS manual gamma writes only Gamma
+PASS gamma range read failure never writes zero
+PASS manual gamma write failure retained
+PASS UI preserves exposure below old design minimum
+PASS UI preserves exposure above old design maximum
+PASS manual disconnect releases connection and pauses reconnect
+PASS paused automatic reconnect performs no device calls
+PASS manual connection resumes and connects both jobs
+PASS disconnect cannot release during active reconnect
+PASS failed disconnect retains manual pause and unlocks lifecycle
+42 executable behaviour checks passed

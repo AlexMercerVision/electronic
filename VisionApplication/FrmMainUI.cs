@@ -105,6 +105,9 @@ namespace VisionApplication
         private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(30); // 重试间隔
         private readonly object _cameraConnectionSync = new object();
         private bool _cameraConnectionInProgress;
+        private volatile bool _cameraManuallyDisconnected;
+        private readonly bool[] _cameraAutoExposure = new bool[maxCameraNum];
+        private readonly bool[] _cameraGammaReadable = new bool[maxCameraNum];
 
         // 7. 字段 - 状态标志
         private uint cameraNum = 0;                             // 实际搜索到的相机数量
@@ -194,6 +197,7 @@ namespace VisionApplication
         {            
             CheckForIllegalCrossThreadCalls = false;
             InitializeComponent();
+            DisableUnusedCameraControls();
             hIKVisionCamera.CameraDiagnostic += detail => LogCameraConnection("相机SDK", false, detail);
             InitializeIOFeedbackMenu();
             tabControl1.TabPages.Remove(tabPageBase); // 主界面不显示未使用的模板匹配参数页
@@ -1531,6 +1535,7 @@ namespace VisionApplication
 
                     if (rts.cs.iStatus[cameraIndex] == 3)
                     {
+                        if (!ReadCamParam(cameraIndex)) return false;
                         LogCameraConnection(operation, true,
                             $"设备已连接，保留现有句柄: Job{jobIndex}, cameraIndex={cameraIndex}, serial={currentSerial}");
                         return true;
@@ -1570,16 +1575,17 @@ namespace VisionApplication
                 }
 
                 createdNewConnection = !connected;
-                bool configured = SetCamParam(cameraIndex);
+                bool configured = ReadCamParam(cameraIndex);
                 if (!configured)
                 {
                     SyncCameraStatus(cameraIndex, 0);
                     ReleaseNewCameraAfterFailure(cameraIndex, createdNewConnection, operation);
                     LogCameraConnection(operation, false,
-                        $"参数恢复失败 cameraIndex={cameraIndex}, serial={currentSerial}");
+                        $"参数读取失败 cameraIndex={cameraIndex}, serial={currentSerial}");
                     return false;
                 }
 
+                if (cup.p_CD.triggleCam == cameraIndex) SetTrigger(cameraIndex);
                 MyCamera.MVCC_INTVALUE payloadParam = new MyCamera.MVCC_INTVALUE();
                 int payloadRet = camera2[cameraIndex].MV_CC_GetIntValue_NET("PayloadSize", ref payloadParam);
                 if (payloadRet != MyCamera.MV_OK || payloadParam.nCurValue == 0)
@@ -1651,6 +1657,8 @@ namespace VisionApplication
                     LogCameraConnection(operation, false, "已有连接操作正在进行，忽略本次重复进入");
                     return false;
                 }
+                if (operation == "自动重连" && _cameraManuallyDisconnected) return false;
+                if (operation == "手动连接") _cameraManuallyDisconnected = false;
                 _cameraConnectionInProgress = true;
             }
 
@@ -1962,14 +1970,15 @@ namespace VisionApplication
                         continue;
                     }
 
-                    // 5. 一次性设置所有相机参数（包括 ROI、分辨率、曝光、增益、锐度、伽马等）
-                    if (!SetCamParam(iCamInd))
+                    // 5. 只读取当前设备成像参数，不恢复项目保存值。
+                    if (!ReadCamParam(iCamInd))
                     {
                     //    cup.p_CD.bListProcess[ind] = false;
                         bStatusChanged = true;
                         continue;
                     }
                     
+                    if (cup.p_CD.triggleCam == iCamInd) SetTrigger(iCamInd);
                     // 6. 获取 PayloadSize（图像数据量）
                     MyCamera.MVCC_INTVALUE stParam = new MyCamera.MVCC_INTVALUE();
                     int ret = camera2[iCamInd].MV_CC_GetIntValue_NET("PayloadSize", ref stParam);
@@ -2071,9 +2080,9 @@ namespace VisionApplication
         }
     
         //断开相机
-        private void StopDevice()
+        private bool StopDevice()
         {
-            if (!StopGrab()) return;
+            if (!StopGrab()) return false;
             // 关闭海康相机
             if (chooseHIK)
             {
@@ -2088,12 +2097,25 @@ namespace VisionApplication
                     }
 
                     // 销毁所有相机连接
-                    hIKVisionCamera.MultiDestroyCamera();
+                    bool released = true;
+                    for (int i = 0; i < maxCameraNum; i++)
+                    {
+                        int stopRet, closeRet, destroyRet;
+                        hIKVisionCamera.ReleaseCamera(i, out stopRet, out closeRet, out destroyRet);
+                        // 未采集时 Stop 可返回调用顺序错误；断开以 Close/Destroy 真实结果为准。
+                        if ((closeRet != int.MinValue && closeRet != MyCamera.MV_OK) ||
+                            (destroyRet != int.MinValue && destroyRet != MyCamera.MV_OK))
+                        {
+                            released = false;
+                            LogCameraConnection("断开相机", false, $"cameraIndex={i}, Stop=0x{unchecked((uint)stopRet):X8}, Close=0x{unchecked((uint)closeRet):X8}, Destroy=0x{unchecked((uint)destroyRet):X8}");
+                        }
+                    }
+                    if (!released) return false;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"关闭相机失败：{ex.Message}，请重启程序！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    LogCameraConnection("断开相机", false, $"exception={ex}");
+                    return false;
                 }
             }
 
@@ -2105,6 +2127,7 @@ namespace VisionApplication
             {
                 acqFIFO.FreeAllBuffers();
             }
+            return true;
         }
         //停止采集
         private bool StopGrab()
@@ -2130,72 +2153,56 @@ namespace VisionApplication
             for (int i = 0; i < rts.cs.iStatus.Length; i++)
                 rts.cs.iStatus[i] = 0;         
         }
-        private void CloseCam()
+        private bool CloseCam()
         {
-            if (!StopGrab()) return;
-            StopDevice();
+            if (!StopDevice()) return false;
             CloseCamStatus();
+            return true;
         }
  
-        private bool SetCamParam(int iCamIndex)
+        private bool ReadCamParam(int iCamIndex)
         {
-            string serial = cup.p_Cam != null && iCamIndex >= 0 && iCamIndex < cup.p_Cam.Length
-                ? cup.p_Cam[iCamIndex].strCamName : string.Empty;
-            string stage = "Validate";
             try
             {
                 if (iCamIndex < 0 || iCamIndex >= maxCameraNum || cup.p_Cam == null ||
                     iCamIndex >= cup.p_Cam.Length || !chooseHIK || camera2 == null ||
                     iCamIndex >= camera2.Length || camera2[iCamIndex] == null)
                 {
-                    LogCameraConnection("参数恢复", false, $"cameraIndex={iCamIndex}, serial={serial}, node={stage}, 相机对象或索引无效，未调用SDK");
+                    LogCameraConnection("读取相机参数", false, $"cameraIndex={iCamIndex}, 相机对象或索引无效，未调用SDK");
                     return false;
                 }
-
-                // CameraParam 是结构体；ROI 数组也必须复制，全部恢复成功才提交。
                 CameraParam local = cup.p_Cam[iCamIndex];
-                local.iROI = local.iROI == null ? null : (uint[])local.iROI.Clone();
-                MyCamera camera = camera2[iCamIndex];
-                string gainshow = null, exposureshow = null;
-                stage = "ExposureTime";
-                hIKVisionCamera.SetParam(local.dGain, local.iExposeTime, ref gainshow, ref exposureshow, camera);
-                stage = "PixelFormat";
-                if (!hIKVisionCamera.SetPixelFormat(ref local.iMonoType, camera)) return false;
-                stage = "Sharpness";
-                if (!hIKVisionCamera.SetSharpness(ref local.iSharp, camera, skipUnavailable: true)) return false;
-                stage = "Gamma";
-                if (!hIKVisionCamera.SetGamma(ref local.dGamma, camera)) return false;
-                stage = "Resolution";
-                uint width = local.iWidth, height = local.iHeight;
-                if (!hIKVisionCamera.SetResolution(ref width, ref height, camera)) return false;
-                uint[] roi = local.iROI;
-                if (roi == null || roi.Length < 4)
-                    roi = new uint[] { 0, 0, width, height };
-                stage = "ROI.Width";
-                if (!hIKVisionCamera.SetIntValueChecked(camera, "Width", roi[2])) return false;
-                stage = "ROI.Height";
-                if (!hIKVisionCamera.SetIntValueChecked(camera, "Height", roi[3])) return false;
-                stage = "ROI.OffsetX";
-                if (!hIKVisionCamera.SetIntValueChecked(camera, "OffsetX", roi[0])) return false;
-                stage = "ROI.OffsetY";
-                if (!hIKVisionCamera.SetIntValueChecked(camera, "OffsetY", roi[1])) return false;
-                stage = "Trigger";
-                if (cup.p_CD.triggleCam == iCamIndex) SetTrigger(iCamIndex);
-                stage = "AcquisitionState.ReadBack";
-                string runtimeState;
-                GetCameraRuntimeState(iCamIndex, out runtimeState);
-                local.iROI = roi;
-                local.iWidth = roi[2];
-                local.iHeight = roi[3];
+                bool autoExposure, gammaReadable;
+                if (!hIKVisionCamera.GetCamParam(ref local, camera2[iCamIndex], out autoExposure, out gammaReadable)) return false;
                 cup.p_Cam[iCamIndex] = local;
+                _cameraAutoExposure[iCamIndex] = autoExposure;
+                _cameraGammaReadable[iCamIndex] = gammaReadable;
+                UpdateCameraParamCache(iCamIndex);
+                if (IsHandleCreated && InvokeRequired)
+                    BeginInvoke(new Action(() => { if (icamSelectInd == iCamIndex) UpdateCamParamToUI(); }));
+                else if (icamSelectInd == iCamIndex)
+                    UpdateCamParamToUI();
                 return true;
             }
             catch (Exception ex)
             {
-                LogCameraConnection("参数恢复", false,
-                    $"cameraIndex={iCamIndex}, serial={serial}, node={stage}, exception={ex}");
+                LogCameraConnection("读取相机参数", false, $"cameraIndex={iCamIndex}, exception={ex}");
                 return false;
             }
+        }
+
+        private void DisableUnusedCameraControls()
+        {
+            chkGamma_Enable.CheckedChanged -= chkGamma_Enable_CheckedChanged;
+            chkGamma_Enable.Click -= chkAutoExposure_Click;
+            chkGamma_UserMode.CheckedChanged -= chkGamma_UserMode_CheckedChanged;
+            chkGamma_UserMode.Click -= chkAutoExposure_Click;
+            chkGamma_Enable.Visible = chkGamma_UserMode.Visible = false;
+            chkGamma_Enable.Enabled = chkGamma_UserMode.Enabled = false;
+            tbSharp.ValueChanged -= tbSharp_ValueChanged;
+            nudSharp.ValueChanged -= nudSharp_ValueChanged;
+            label39.Visible = tbSharp.Visible = nudSharp.Visible = false;
+            tbSharp.Enabled = nudSharp.Enabled = false;
         }
 
         public bool SetTrigger(int iCamIndex)
@@ -4245,11 +4252,27 @@ namespace VisionApplication
                 //   MessageBox.Show("当前任务没有结束，不能执行该操作");
                 return;
             }
-            CloseCam();
-            rts.initStatus.bCamInit = false;
-            operLog.strOperEvent = "断开相机";
-            operLog.iEventStatus = 0;
-            AddLog();
+            lock (_cameraConnectionSync)
+            {
+                if (_cameraConnectionInProgress)
+                {
+                    LogCameraConnection("断开相机", false, "相机连接操作尚未结束");
+                    return;
+                }
+                _cameraManuallyDisconnected = true;
+                _cameraConnectionInProgress = true;
+            }
+            try
+            {
+                if (!CloseCam()) return;
+                rts.initStatus.bCamInit = false;
+                rts.initStatus.bCamPrepared = false;
+                LogCameraConnection("断开相机", true, "设备连接已释放，等待手动连接");
+            }
+            finally
+            {
+                lock (_cameraConnectionSync) _cameraConnectionInProgress = false;
+            }
         }
 
         private void toolBt_RuntimeSet_Click(object sender, EventArgs e)
@@ -5871,8 +5894,8 @@ namespace VisionApplication
                     iCamFailNum++;
             }
 
-            // 自动重连（仅在启用且从相机采集时）
-            if (cup.p_RTSP.bAutoConnCam)
+            // 自动重连（主动断开后等待手动连接）
+            if (cup.p_RTSP.bAutoConnCam && !_cameraManuallyDisconnected)
             {
                 for (int i = 0; i < maxJobNum; i++)
                 {
@@ -8038,41 +8061,7 @@ namespace VisionApplication
         /// </summary>
         private void chkGamma_Enable_CheckedChanged(object sender, EventArgs e)
         {
-            if (icamSelectInd < 0 || camera2 == null || camera2[icamSelectInd] == null)
-                return;
-
-            bool bEnable = chkGamma_Enable.Checked;   // true=开启 Gamma，false=关闭
-
-            // 部分相机需要在停止采集状态下修改 GammaEnable
-            bool wasGrabbing = false;
-          //  if (hIKVisionCamera.IsGrabbing(icamSelectInd))  // 假设有该方法，若没有则直接调用 StopGrabbing
-            {
-                wasGrabbing = true;
-                hIKVisionCamera.StopGrabbing(icamSelectInd);
-            }
-
-            bool bSuccess = hIKVisionCamera.SetGammaEnable(bEnable, camera2[icamSelectInd]);
-
-            if (wasGrabbing)
-                hIKVisionCamera.StartGrabbing(icamSelectInd);
-
-            if (bSuccess)
-            {
-                // 更新 UI 状态：当 Gamma 禁用时，用户模式复选框和 Gamma 值调节控件应不可用
-                chkGamma_UserMode.Enabled = bEnable;
-                tbGamma.Enabled = (bEnable && chkGamma_UserMode.Checked);
-                nudGamma.Enabled = (bEnable && chkGamma_UserMode.Checked);
-
-                operLog.iEventStatus = 0;
-                operLog.strOperEvent = $"Gamma {(bEnable ? "开启" : "关闭")}";
-            }
-            else
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "设置 Gamma 使能";
-                operLog.strFailReason = "调用相机接口失败";
-            }
-            AddLog();
+            // 新增 Gamma 使能/模式功能停用，不调用相机SDK。
         }
 
         /// <summary>
@@ -8081,67 +8070,7 @@ namespace VisionApplication
         /// </summary>
         private void chkGamma_UserMode_CheckedChanged(object sender, EventArgs e)
         {
-            if (icamSelectInd < 0 || camera2 == null || camera2[icamSelectInd] == null)
-                return;
-
-            // 只有 Gamma 使能开启时，才允许切换模式
-            if (!chkGamma_Enable.Checked)
-            {
-                // 若 Gamma 未启用，提示用户先启用 Gamma
-                chkGamma_UserMode.Checked = false;
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "切换 Gamma 模式";
-                operLog.strFailReason = "请先启用 Gamma 校正";
-                AddLog();
-                return;
-            }
-
-            bool isUserMode = chkGamma_UserMode.Checked;
-            int mode = isUserMode ? 0 : 1;   // 0=User, 1=sRGB
-
-            // 停止采集（部分相机要求）
-            bool wasGrabbing = false;
-        //    if (hIKVisionCamera.IsGrabbing(icamSelectInd))
-            {
-                wasGrabbing = true;
-                hIKVisionCamera.StopGrabbing(icamSelectInd);
-            }
-
-            bool bSuccess = hIKVisionCamera.SetGammaSelector(mode, camera2[icamSelectInd]);
-
-            if (wasGrabbing)
-                hIKVisionCamera.StartGrabbing(icamSelectInd);
-
-            if (bSuccess)
-            {
-                // 更新 Gamma 值控件的可用性：User 模式下可调，sRGB 模式下不可调
-                tbGamma.Enabled = isUserMode;
-                nudGamma.Enabled = isUserMode;
-
-                // 如果切换到 User 模式，需要将界面上当前的 Gamma 值重新写入相机
-                if (isUserMode)
-                {
-                    // 确保 Gamma 使能仍然为开启（代码前面已经检查）
-                    float gammaVal = (float)cup.p_Cam[icamSelectInd].dGamma;
-                    // 再次写入一次（保证相机值与界面一致）
-                    hIKVisionCamera.SetGamma(ref gammaVal, camera2[icamSelectInd]);
-                    // 更新显示控件
-                    tbGamma.Value = (int)(gammaVal * 10);
-                    nudGamma.Value = (decimal)gammaVal;
-                }
-
-                operLog.iEventStatus = 0;
-                operLog.strOperEvent = $"Gamma 模式切换至 {(isUserMode ? "User (可调)" : "sRGB")}";
-            }
-            else
-            {
-                // 若设置失败，恢复复选框状态
-                chkGamma_UserMode.Checked = !isUserMode;
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = "切换 Gamma 模式";
-                operLog.strFailReason = "调用相机接口失败";
-            }
-            AddLog();
+            // 新增 Gamma 使能/模式功能停用，不调用相机SDK。
         }
 
         private void timerIOOut_Tick(object sender, EventArgs e)

@@ -1,0 +1,57 @@
+{
+  "Assemblies": [
+    {
+      "File": "CommonCls.dll",
+      "Identity": "CommonCls, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "References": []
+    },
+    {
+      "File": "xbVP_Control.dll",
+      "Identity": "xbVP_Control, Version=1.0.9783.32590, Culture=neutral, PublicKeyToken=null",
+      "References": [
+        {
+          "Name": "CommonCls",
+          "Version": "1.0.0.0"
+        }
+      ]
+    },
+    {
+      "File": "激光除胶.exe",
+      "Identity": "激光除胶, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "References": [
+        {
+          "Name": "CommonCls",
+          "Version": "1.0.0.0"
+        },
+        {
+          "Name": "xbVP_Control",
+          "Version": "1.0.9783.32590"
+        }
+      ]
+    }
+  ],
+  "BclVersions": [
+    {
+      "File": "System.Buffers.dll",
+      "Version": "4.0.3.0"
+    },
+    {
+      "File": "System.Runtime.CompilerServices.Unsafe.dll",
+      "Version": "6.0.0.0"
+    },
+    {
+      "File": "System.Memory.dll",
+      "Version": "4.0.1.2"
+    },
+    {
+      "File": "System.Numerics.Vectors.dll",
+      "Version": "4.1.4.0"
+    }
+  ],
+  "ReferenceVersionsMatch": true,
+  "BindingRedirectsMatch": true,
+  "PreservedFiles": 304,
+  "PublicBinFiles": 276,
+  "PublicBinChanged": 0,
+  "PublicBinAdded": 0
+}

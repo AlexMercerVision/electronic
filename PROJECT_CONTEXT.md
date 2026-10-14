@@ -91,3 +91,12 @@
 - 验证产物位于 tmp/startup-sharpness-20261014。提取实际方法的假 SDK/历史状态检查 17 项通过；真实 VisionBasedLaser.sln 全部 11 项目 Debug/x64 完整 Build 退出码0、0错误、83警告。沙箱内首次停在 BJJCZ 的 x86 资源宿主启动，取消后经批准在沙箱外完成相同配置 Build；未修改项目引用、工程或目标平台，输出/中间目录隔离，引用搜索指向同批构建产物。
 - 全部 11 个编译器命令确认 CommonCls/xbVP_Control 引用来自本轮 build；主程序和 VisionControl 引用的 CommonCls=1.0.0.0，主程序引用的 xbVP_Control=1.0.9783.28265 与本轮 DLL 一致；四项基础依赖版本符合 AGENTS.md。公共 bin 274 文件哈希无变化、无新增，工程、AcqFIFO、VisionControlExtention 和 Designer 哈希保留。
 - 实机只读节点检查 EnumDevices=0x00000000、设备数0，未取得两台相机真实节点状态，未启动主程序或验证新产物采集；不能声称现场故障已修复。配套产物仍须整体使用本轮 CommonCls.dll、激光除胶.exe、xbVP_Control.dll 及对应 PDB，不覆盖配置/模型/VPP；现场需确认光源启动无提前诊断失败、双路冷启动/热连接和持续预览，以及可用锐度节点实际写入结果。
+
+## 连接只读同步、停用锐度及 Gamma 扩展控件（2026-10-14）
+
+- 用户明确要求：连接时保留 MVS 当前成像设置，只读取并同步；主动曝光、增益、Gamma 数值和光源操作保留；锐度及新增 Gamma“使能/用户”停用。彩色候选流程保留，任一候选或原有 Mono8 回退成功即成功，中间失败不产生 SDK 失败事件，全部失败才报告。
+- 业务修改限定 CommonCls/HIKDeviceSource.cs、VisionApplication/FrmMainUI.cs、VisionApplication/FrmMainUIExtention.cs。启动、两个手动连接入口及自动重连改用 ReadCamParam；已在线设备点击连接也只读同步，不重建句柄。读取曝光/自动曝光状态、增益、可读 Gamma、实际宽高/偏移及 PixelFormat；参数结构体通过 ref 返回，必需读取失败不提交部分结果，ROI 使用新数组。Mono8、BGR8/RGB8、四种 Bayer8 按现有采集入口分类，不支持的格式明确失败且不写设备回退。光源 iBrightness 和历史锐度字段不由相机读取覆盖。PayloadSize 分配路径保留，既有采集/触发业务调用保持独立，不恢复成像参数。
+- Gamma“使能/用户”及锐度控件在普通代码中隐藏、禁用、解绑事件，事件方法停用；批量设置移除锐度，参数获取不读锐度。主动 Gamma 数值写入去掉无条件 GammaAuto，范围读取失败不写入零值；真实数值写入失败保留。原曝光/增益/Gamma/光源 UI 操作方法与修改前一致，UI 同步由事件屏蔽保护，允许显示超出旧设计范围的真实参数。
+- 主动断开保留预览退出保护及设备/缓冲释放，Close/Destroy 失败不记录成功；运行态标志暂停自动重连，下一次手动连接解除，不修改保存的自动重连配置。连接/断开共用已有操作互斥状态，拒绝释放尚在连接中的句柄。
+- 验证及产物：tmp/camera-readonly-20261014。真实 VisionBasedLaser.sln 全部11项目 Debug/x64 完整 Build 退出码0，最终完整 Build 0错误、16既有警告（首次全量构建83警告）；沙箱首次停在 BJJCZ x86 资源宿主，取消后经批准沙箱外完成同配置 Build。输出/中间目录隔离，所有编译器的 CommonCls/xbVP_Control 引用来自本轮 build；CommonCls=1.0.0.0，xbVP_Control=1.0.9783.32590，主程序实际引用版本一致，四项基础依赖及 bindingRedirect 符合约束。公共 bin 276文件哈希无变化、无新增，工程、Designer、AcqFIFO、VisionControlExtention 保留。
+- 提取本轮实际方法的42项假 SDK/WinForms数值/连接入口行为检查通过，覆盖零 SDK 写入读取、必需节点失败不污染参数、可选 Gamma、不支持格式、候选/回退成功无失败事件、全部失败上报、主动 Gamma 失败、手动断开暂停及恢复自动重连；静态核对调用链和原调参/光源方法保留。未启动主程序、未连接真实相机、未验证实机参数前后、双路持续预览或光源物理输出；不能声称现场效果已验证。配套程序/PDB已打包，未部署到公共bin。
