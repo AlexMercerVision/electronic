@@ -7103,9 +7103,9 @@ namespace VisionApplication
                 // 1. 判断 IO 主动上报
                 if (_rxBuffer.Count >= 4 &&
                     _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x45 &&
-                    _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01)
+                    _rxBuffer[2] == 0x09 && _rxBuffer[3] == 0x03)
                 {
-                    packLen = 10;
+                    packLen = 14;
                     diOffset = 4;
                     bIOInput = true;
                 }
