@@ -27,7 +27,7 @@ namespace BJJCZ_BaseDevelop
             {
                 if (!createdNew)
                 {
-                    MessageBox.Show("激光除胶程序已经在运行，不能重复打开。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(FrmMainUI.ApplicationName + "程序已经在运行，不能重复打开。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 

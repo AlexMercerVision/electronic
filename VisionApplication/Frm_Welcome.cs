@@ -17,6 +17,8 @@ namespace VisionApplication
         public Frm_Welcome()
         {
             InitializeComponent();
+            Text = FrmMainUI.ApplicationName;
+            label1.Text = FrmMainUI.ApplicationName;
             Control.CheckForIllegalCrossThreadCalls = false;
         }
 

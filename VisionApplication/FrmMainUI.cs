@@ -40,6 +40,7 @@ namespace VisionApplication
     {
         #region       
         // 1. 常量
+        internal const string ApplicationName = "电极帽缺陷检测";
         private const int maxCameraNum = 2;                     // 最大支持的相机数量（工位数量）
         private const int maxJobNum = maxCameraNum;
         private const int ioFeedbackJobCount = 2;               // 当前COM3控制器只接收Job0、Job1结果
@@ -168,6 +169,8 @@ namespace VisionApplication
         private readonly bool[] ioFeedbackReady = new bool[ioFeedbackJobCount];
         private readonly bool[] ioFeedbackStarted = new bool[ioFeedbackJobCount];
         private readonly bool[] ioFeedbackParticipating = new bool[ioFeedbackJobCount];
+        private readonly long[] ioFeedbackSingleJobCycles = new long[ioFeedbackJobCount];
+        private readonly bool[] ioFeedbackSingleJobOutputInProgress = new bool[ioFeedbackJobCount];
         private bool ioFeedbackCycleActive = false;
         private bool ioFeedbackOutputInProgress = false;
         private int manualSingleRunActive = 0;
@@ -197,6 +200,7 @@ namespace VisionApplication
         {            
             CheckForIllegalCrossThreadCalls = false;
             InitializeComponent();
+            Text = ApplicationName;
             DisableUnusedCameraControls();
             hIKVisionCamera.CameraDiagnostic += detail => LogCameraConnection("相机SDK", false, detail);
             InitializeIOFeedbackMenu();
@@ -373,10 +377,10 @@ namespace VisionApplication
                     //  toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
                     if (cup.p_VPPRTP.bVisionInfer)
                     {
-                        this.Text = "电极帽检测   " + strVPPFile;
+                        this.Text = ApplicationName + "   " + strVPPFile;
                     }
                     else
-                        this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+                        this.Text = ApplicationName + "   " + cup.p_DL.modelPath;
 
                 }
                 catch (Exception ex)
@@ -2709,6 +2713,22 @@ namespace VisionApplication
 
             lock (ioFeedbackSync)
             {
+                if (singleJobCycle)
+                {
+                    if (ioFeedbackCycleActive || ioFeedbackSingleJobCycles[jobIndex] != 0)
+                    {
+                        errorMessage = $"Job{jobIndex}的IO反馈尚未结束";
+                        return false;
+                    }
+                    cycleId = ++ioFeedbackCycleId;
+                    ioFeedbackSingleJobCycles[jobIndex] = cycleId;
+                    return true;
+                }
+                if (ioFeedbackSingleJobCycles.Any(activeCycle => activeCycle != 0))
+                {
+                    errorMessage = "单工位IO反馈尚未结束";
+                    return false;
+                }
                 if (!ioFeedbackCycleActive)
                 {
                     bool anyParticipant = false;
@@ -2768,10 +2788,35 @@ namespace VisionApplication
             byte outputBitmap = 0;
             string prepareError = string.Empty;
             bool shouldSend = false;
+            bool singleJobCycle = false;
 
             lock (ioFeedbackSync)
             {
-                if (!ioFeedbackCycleActive || cycleId <= 0 || cycleId != ioFeedbackCycleId)
+                if (cycleId > 0 && ioFeedbackSingleJobCycles[jobIndex] == cycleId)
+                {
+                    singleJobCycle = true;
+                    if (ioFeedbackSingleJobOutputInProgress[jobIndex])
+                    {
+                        prepareError = $"Job{jobIndex}的IO反馈批次{cycleId}正在输出";
+                    }
+                    else
+                    {
+                        bool[] results = new bool[ioFeedbackJobCount];
+                        bool[] participants = new bool[ioFeedbackJobCount];
+                        results[jobIndex] = isOk;
+                        participants[jobIndex] = true;
+                        if (TryBuildIOOutputBitmap(results, participants, out outputBitmap, out prepareError))
+                        {
+                            ioFeedbackSingleJobOutputInProgress[jobIndex] = true;
+                            shouldSend = true;
+                        }
+                        else
+                        {
+                            ioFeedbackSingleJobCycles[jobIndex] = 0;
+                        }
+                    }
+                }
+                else if (!ioFeedbackCycleActive || cycleId <= 0 || cycleId != ioFeedbackCycleId)
                 {
                     prepareError = $"Job{jobIndex}提交了已失效的IO反馈批次{cycleId}，当前批次为" +
                         (ioFeedbackCycleActive ? ioFeedbackCycleId.ToString() : "无");
@@ -2842,7 +2887,12 @@ namespace VisionApplication
             {
                 lock (ioFeedbackSync)
                 {
-                    if (ioFeedbackCycleActive && ioFeedbackCycleId == cycleId)
+                    if (singleJobCycle && ioFeedbackSingleJobCycles[jobIndex] == cycleId)
+                    {
+                        ioFeedbackSingleJobCycles[jobIndex] = 0;
+                        ioFeedbackSingleJobOutputInProgress[jobIndex] = false;
+                    }
+                    else if (!singleJobCycle && ioFeedbackCycleActive && ioFeedbackCycleId == cycleId)
                         ResetIOFeedbackCycleNoLock();
                 }
             }
@@ -2929,24 +2979,15 @@ namespace VisionApplication
 
             lock (ioFeedbackSync)
             {
+                if (ioFeedbackSingleJobCycles[jobIndex] != 0)
+                {
+                    reason = $"Job{jobIndex}的IO反馈尚未结束";
+                    return false;
+                }
                 if (!ioFeedbackCycleActive)
                     return true;
-                if (ioFeedbackOutputInProgress)
-                {
-                    reason = $"IO反馈批次{ioFeedbackCycleId}正在输出";
-                    return false;
-                }
-                if (!ioFeedbackParticipating[jobIndex])
-                {
-                    reason = $"Job{jobIndex}不属于IO反馈批次{ioFeedbackCycleId}";
-                    return false;
-                }
-                if (ioFeedbackStarted[jobIndex])
-                {
-                    reason = $"Job{jobIndex}已进入IO反馈批次{ioFeedbackCycleId}，正在运行或等待另一工位";
-                    return false;
-                }
-                return true;
+                reason = $"IO组合反馈批次{ioFeedbackCycleId}尚未结束";
+                return false;
             }
         }
 
@@ -2955,10 +2996,22 @@ namespace VisionApplication
             long abortedCycleId = 0;
             lock (ioFeedbackSync)
             {
-                if (!ioFeedbackCycleActive || cycleId <= 0 || ioFeedbackCycleId != cycleId || ioFeedbackOutputInProgress)
+                if (cycleId <= 0 || failedJobIndex < 0 || failedJobIndex >= ioFeedbackJobCount)
                     return;
-                abortedCycleId = ioFeedbackCycleId;
-                ResetIOFeedbackCycleNoLock();
+                if (ioFeedbackSingleJobCycles[failedJobIndex] == cycleId)
+                {
+                    if (ioFeedbackSingleJobOutputInProgress[failedJobIndex])
+                        return;
+                    abortedCycleId = cycleId;
+                    ioFeedbackSingleJobCycles[failedJobIndex] = 0;
+                }
+                else
+                {
+                    if (!ioFeedbackCycleActive || ioFeedbackCycleId != cycleId || ioFeedbackOutputInProgress)
+                        return;
+                    abortedCycleId = ioFeedbackCycleId;
+                    ResetIOFeedbackCycleNoLock();
+                }
             }
             WriteIOFeedbackLog(-1, "IO反馈批次取消",
                 $"批次{abortedCycleId}因Job{failedJobIndex}失败而清除：{reason}");
@@ -2980,7 +3033,11 @@ namespace VisionApplication
         private void ResetIOFeedbackCycle(string reason)
         {
             lock (ioFeedbackSync)
+            {
                 ResetIOFeedbackCycleNoLock();
+                Array.Clear(ioFeedbackSingleJobCycles, 0, ioFeedbackSingleJobCycles.Length);
+                Array.Clear(ioFeedbackSingleJobOutputInProgress, 0, ioFeedbackSingleJobOutputInProgress.Length);
+            }
             if (!string.IsNullOrEmpty(reason))
                 WriteIOFeedbackLog(0, "IO反馈批次复位", reason);
         }
@@ -6560,6 +6617,8 @@ namespace VisionApplication
         {
             if (i < 0 || i >= sPortAll.Length || cup.p_SD.serInd == null || i >= cup.p_SD.serInd.Length)
                 return false;
+            if (i == 3 && !cup.p_SD.bUsed[3])
+                return false;
 
             List<string> availablePorts = GetSortedPorts();
             int configIndex = cup.p_SD.serInd[i];
@@ -6571,7 +6630,26 @@ namespace VisionApplication
             }
 
             serialConfigErrorLogged[i] = false;
-            return OpenSerialPort(sPortAll[i], portName);
+            if (i == 3 && sPortAll[i] == null)
+                sPortAll[i] = new SerialPort();
+            bool opened = OpenSerialPort(sPortAll[i], portName);
+            if (i == 3)
+                RegisterIOReceive();
+            return opened;
+        }
+
+        private void RegisterIOReceive()
+        {
+            SerialPort ioPort = sPortAll[3];
+            if (sPortCy != null)
+                sPortCy.DataReceived -= PortGetCylinder;
+            sPortCy = ioPort;
+            csd._sPortCy = ioPort;
+            if (ioPort == null)
+                return;
+            ioPort.DataReceived -= PortGetCylinder;
+            if (cup.p_SD.bUsed[3] && ioPort.IsOpen)
+                ioPort.DataReceived += PortGetCylinder;
         }
 
         private void LogInvalidSerialConfigurationOnce(int serialSlot, int configIndex, int availableCount)
@@ -6659,6 +6737,7 @@ namespace VisionApplication
             {
                 sPortAll[i] = new SerialPort();
             }
+            RegisterIOReceive();
 
             // 获取可用串口列表
             List<string> availablePorts = GetSortedPorts();
@@ -6726,17 +6805,12 @@ namespace VisionApplication
             if (sPortAll[0] != null) sPortMain = sPortAll[0];
             if (sPortAll[1] != null) sPortSub[0] = sPortAll[1];
             if (sPortAll[2] != null) sPortSub[1] = sPortAll[2];
-            if (sPortAll[3] != null) sPortCy = sPortAll[3];
 
             csd._sPort = sPortMain;
             csd._sPortSub = sPortSub;
-            csd._sPortCy = sPortCy;
 
             // 注册数据接收事件
-            if (sPortCy != null && sPortCy.IsOpen)
-            {
-                sPortCy.DataReceived += new SerialDataReceivedEventHandler(PortGetCylinder);
-            }
+            RegisterIOReceive();
 
             rts.initStatus.bSerInit = (openedCount > 0);
 
@@ -6990,21 +7064,25 @@ namespace VisionApplication
         // 串口接收缓存（用于处理粘包/拆包）
         private readonly List<byte> _rxBuffer = new List<byte>();
         private readonly object _lockBuffer = new object();
+        private byte lastIOInputState;
         // 修改后的串口数据接收事件
         private void PortGetCylinder(object sender, SerialDataReceivedEventArgs e)
         {           
+            SerialPort ioPort = sender as SerialPort;
+            if (ioPort == null || !ReferenceEquals(ioPort, sPortCy) || !cup.p_SD.bUsed[3] || !ioPort.IsOpen)
+                return;
             // 获取接收缓冲区长度
             Thread.Sleep(60);
             // 1. 读取所有可用数据
-            int bytesToRead = sPortCy.BytesToRead;
+            int bytesToRead = ioPort.BytesToRead;
             if (bytesToRead == 0) return;
             byte[] temp = new byte[bytesToRead];
-            sPortCy.Read(temp, 0, bytesToRead);
+            int bytesRead = ioPort.Read(temp, 0, bytesToRead);
 
             // 2. 追加到缓存，并加锁防止多线程冲突
             lock (_lockBuffer)
             {
-                _rxBuffer.AddRange(temp);
+                _rxBuffer.AddRange(temp.Take(bytesRead));
                 ProcessSerialBuffer();   // 尝试解析缓存中的完整包
             }
         }
@@ -7013,13 +7091,13 @@ namespace VisionApplication
         /// 从缓存中循环解析完整的数据包，直到缓存不足一个包为止。
         /// </summary>
         /// 
-        private int packLen = 25;
         private void ProcessSerialBuffer()
         {
             while (_rxBuffer.Count >= 6)  // 最小包长为6（查询反馈）
             {
                 // ---- 每次循环重新判断当前包类型 ----
                 int packLen = 0;
+                int diOffset = -1;
                 bool bIOInput = false;
 
                 // 1. 判断 IO 主动上报
@@ -7028,6 +7106,7 @@ namespace VisionApplication
                     _rxBuffer[2] == 0x05 && _rxBuffer[3] == 0x01)
                 {
                     packLen = 10;
+                    diOffset = 4;
                     bIOInput = true;
                 }
                 else if (_rxBuffer.Count >= 5 &&
@@ -7035,6 +7114,7 @@ namespace VisionApplication
                          _rxBuffer[2] == 0x01 && _rxBuffer[3] == 0x00 && _rxBuffer[4] == 0x01)
                 {
                     packLen = 25;
+                    diOffset = 5;
                     bIOInput = true;
                 }
                 else if (_rxBuffer.Count >= 8 && _rxBuffer[0] == 0x01 && _rxBuffer[1] == 0x0F)
@@ -7070,7 +7150,7 @@ namespace VisionApplication
                 // 根据类型分发处理
                 if (bIOInput)
                 {
-                    ProcessActiveReport(packet);
+                    ProcessActiveReport(packet, packLen, diOffset);
                 }
                 else if (packLen == 8)  // 设置输出反馈
                 {
@@ -7085,8 +7165,13 @@ namespace VisionApplication
         }
 
         // 处理主动上报包（原主动上报逻辑，但改为收集多个触发类型）
-        private void ProcessActiveReport(byte[] packet)
+        private void ProcessActiveReport(byte[] packet, int packetLength, int diOffset)
         {
+            if (packet == null || packet.Length != packetLength || diOffset < 0 || diOffset >= packetLength)
+                return;
+            byte diByte = packet[diOffset];
+            byte risingInputs = (byte)(diByte & ~lastIOInputState);
+            lastIOInputState = diByte;
             if (!rts.onLS.bTrigg)
                 return;
 
@@ -7097,13 +7182,12 @@ namespace VisionApplication
 
             // 收集所有触发的类型
             List<int> triggerTypes = new List<int>();
-            byte diByte = packet[packLen==25?5:4];   // DI状态字节
 
             // A面触发
             if (cup.p_IOPP.APlane > 0)
             {
                 byte mask = (byte)(1 << (cup.p_IOPP.APlane - 1));
-                if ((diByte & mask) == mask)
+                if ((risingInputs & mask) == mask)
                 {
                     SetFaceTriggerIndicator(0, true);
                     triggerTypes.Add(1);
@@ -7114,7 +7198,7 @@ namespace VisionApplication
             if (cup.p_IOPP.BPlane > 0)
             {
                 byte mask = (byte)(1 << (cup.p_IOPP.BPlane - 1));
-                if ((diByte & mask) == mask)
+                if ((risingInputs & mask) == mask)
                 {
                     SetFaceTriggerIndicator(1, true);
                     triggerTypes.Add(2);
@@ -7147,7 +7231,7 @@ namespace VisionApplication
                     Thread.Sleep(20);
                 }
 
-                if (!timerIOIn.Enabled)
+                if (timerIOIn != null && !timerIOIn.Enabled)
                     timerIOIn.Start();
             }
         }
@@ -8255,10 +8339,10 @@ namespace VisionApplication
             toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
             if(cup.p_VPPRTP.bVisionInfer)
             {
-                this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                this.Text = ApplicationName + "   " + cup.p_Paf.strVPPFilePath;
             }
             else
-                this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+                this.Text = ApplicationName + "   " + cup.p_DL.modelPath;
             try
             {
                 // 4. 加载 PMA 工具（两个工位的 .vpp 文件）
@@ -8476,13 +8560,12 @@ namespace VisionApplication
                 cup.p_DL.modelPath = rootDir;
                 strEngineerName = Path.GetFileName(cup.p_DL.modelPath);
                 toolStripStatus_Engineer.Text = "机种:" + strEngineerName;
-               // this.Text = "电极帽检测   " + cup.p_DL.modelPath;
                 if (cup.p_VPPRTP.bVisionInfer)
                 {
-                    this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                    this.Text = ApplicationName + "   " + cup.p_Paf.strVPPFilePath;
                 }
                 else
-                    this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+                    this.Text = ApplicationName + "   " + cup.p_DL.modelPath;
 
             }
             catch (Exception ex)
@@ -8969,10 +9052,10 @@ namespace VisionApplication
 
                 if (cup.p_VPPRTP.bVisionInfer)
                 {
-                    this.Text = "电极帽检测   " + cup.p_Paf.strVPPFilePath;
+                    this.Text = ApplicationName + "   " + cup.p_Paf.strVPPFilePath;
                 }
                 else
-                    this.Text = "电极帽检测   " + cup.p_DL.modelPath;
+                    this.Text = ApplicationName + "   " + cup.p_DL.modelPath;
 
             }
 

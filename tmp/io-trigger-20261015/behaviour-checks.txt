@@ -1,0 +1,53 @@
+PASS 10-byte DI reads offset 4
+PASS held high does not retrigger
+PASS low then high rearms
+PASS B rising while A remains high only triggers B
+PASS 25-byte DI reads offset 5
+PASS split report waits for complete packet
+PASS split report preserves both input bits
+PASS mixed coalesced frame lengths remain local
+PASS old high input does not trigger on automatic enable
+PASS fresh pulse triggers after automatic enable
+PASS mismatched packet metadata rejected
+PASS initial open failure has no receive registration
+PASS IO reconnect registers and shares exact serial object
+PASS repeated reconnect keeps one subscription
+PASS reconnected serial reaches real parser
+PASS replacement detaches old serial callback
+PASS disabled IO never registers or reconnects
+PASS partial SerialPort.Read appends only actual bytes
+PASS A alone emits Y1 and clear without B
+PASS A can start next cycle and emit NG Y2
+PASS B alone emits Y3 and clear without A
+PASS same face duplicate cycle rejected
+PASS independent simultaneous faces do not block each other
+PASS dual-face cycle waits for second result
+PASS dual-face cycle combines only its two results
+PASS sync run with one enabled face only waits for that face
+PASS A failure does not cancel B independent output
+PASS stale result and cancel cannot affect next cycle
+PASS send failure releases single-face batch
+PASS single-face retries after send failure
+PASS invalid output mapping releases cycle without writing
+PASS combined run cannot consume independent cycle
+PASS independent run cannot consume combined cycle
+PASS all combined OK/NG mappings False/False
+PASS all combined OK/NG mappings False/True
+PASS all combined OK/NG mappings True/False
+PASS all combined OK/NG mappings True/True
+PASS actual UI single-face runner emits A output without 24V
+PASS actual UI B runner emits B output independently
+PASS actual UI sync runner emits combined A+B output without 24V
+PASS actual UI sync runner rearms for next single click
+PASS rejected batch releases auto reservation and trigger flags
+PASS failure before vision entry releases reservation and IO batch
+PASS vision start failure rearms without output
+PASS face can run successfully after start failure
+PASS disabled face rejected before reservation
+PASS vision timeout releases run and IO state without output
+PASS next trigger accepted after vision timeout
+PASS invalid measurement result still cancels output
+PASS actual external runner does not repeat held high input
+PASS actual external runner completes two separate pulses
+PASS both external inputs run and output their own faces
+TOTAL 52 checks passed

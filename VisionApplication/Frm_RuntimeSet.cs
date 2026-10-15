@@ -127,6 +127,7 @@ namespace VisionApplication
         {
             Application.EnableVisualStyles();
             InitializeComponent();
+            RemoveLaserMarkPathControls();
         //    SetTitleBarColor(Color.Blue); // 蓝色标题栏
             ReadUserParam();
             iType = 1;
@@ -134,8 +135,16 @@ namespace VisionApplication
         public Frm_RuntimeSet(CUserParam cup)
         {
             InitializeComponent();
+            RemoveLaserMarkPathControls();
            // SetTitleBarColor(Color.FromArgb(0, 0, 255, 200)); // 蓝色标题栏
             this.cup = cup;
+        }
+        private void RemoveLaserMarkPathControls()
+        {
+            btManuMarkFile.Click -= btPathChoose_Click;
+            label54.Dispose();
+            tbManuMarkFilePath.Dispose();
+            btManuMarkFile.Dispose();
         }
         private void ReadUserParam()
         {
@@ -474,9 +483,6 @@ namespace VisionApplication
                 case "btMarkPic":                               //待标注图片路径
                      path.SelectedPath = tbMarkPicPath.Text;
                     break;
-                case "btManuMarkFile":                              //
-                     path.SelectedPath = tbManuMarkFilePath.Text;
-                    break;
                 case "btAutoMarkFile":                           //
                      path.SelectedPath =tbAutoMarkPath.Text;
                     break;
@@ -521,12 +527,6 @@ namespace VisionApplication
                     case "btMarkPic":
                         tbMarkPicPath.Text = path.SelectedPath;
                         break;
-                    case "btManuMarkFile":
-                        tbManuMarkFilePath.Text = path.SelectedPath;
-                        break;
-                  /*  case "btAutoMarkFile":
-                        tbManuMarkFilePath.Text = path.SelectedPath;
-                        break;*/
                     case "btErrMark":
                         tbAutoMarkPath.Text = path.SelectedPath;
                         break;
@@ -953,7 +953,6 @@ namespace VisionApplication
                 cup.p_Paf.strErrPath = tbContErrPath.Text;
                 cup.p_Paf.MarkPicPath = tbMarkPicPath.Text;
                 cup.p_Paf.AutoMarkPath = tbAutoMarkPath.Text;
-                cup.p_Paf.ManuMarkPath = tbManuMarkFilePath.Text;
                 cup.p_Paf.strExportPath = tbExportPath.Text;
 
                 cup.p_Paf.strExportPath = tb9PointCalibFile.Text;
@@ -1590,7 +1589,6 @@ namespace VisionApplication
                 tbPlayback.Text = cup.p_Paf.strPlaybackPath;
                 tbContErrPath.Text = cup.p_Paf.strErrPath;
                 tbMarkPicPath.Text = cup.p_Paf.MarkPicPath;
-                tbManuMarkFilePath.Text = cup.p_Paf.ManuMarkPath;
                 tbAutoMarkPath.Text = cup.p_Paf.AutoMarkPath;
                 tbExportPath.Text = cup.p_Paf.strExportPath;
                 tbFatherPath.Text = Path.GetDirectoryName(cup.p_Paf.strConSavePath);

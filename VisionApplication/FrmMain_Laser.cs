@@ -1503,6 +1503,16 @@ namespace VisionApplication
                 return false;
             }
 
+            if (cup.p_CD.bListProcess == null || faceIndex >= cup.p_CD.bListProcess.Length ||
+                !cup.p_CD.bListProcess[faceIndex])
+            {
+                operLog.iEventStatus = -1;
+                operLog.strOperEvent = operEvent;
+                operLog.strFailReason = "当前工位未启用";
+                AddLog();
+                return false;
+            }
+
             if (cup.p_VPPRTP.bAcqFromCam && (!rts.initStatus.bCamInit || !rts.initStatus.bCamPrepared))
             {
                 operLog.iEventStatus = -1;
@@ -1615,7 +1625,11 @@ namespace VisionApplication
             lock (_autoTriggerSync)
             {
                 if (faceIndex >= 0 && faceIndex < maxCameraNum)
+                {
                     _autoTriggerVisionReservedByJob[faceIndex] = false;
+                    if (!_visionRunningByJob[faceIndex])
+                        _ioTriggerActiveByJob[faceIndex] = false;
+                }
                 UpdateMainVisionTaskFinishedFlag();
             }
         }
@@ -4978,19 +4992,10 @@ namespace VisionApplication
         /// 单个工位的一次运行（视觉检测 + 激光标刻）
         /// </summary>
         /// <param name="faceIndex">工位索引：0 = A面，1 = B面</param>
-        private async Task RunOneTimeForFace(int faceIndex, bool singleJobIOCycle = false)
+        private async Task RunOneTimeForFace(int faceIndex, bool singleJobIOCycle = true)
         {
             string ioFeedbackReason;
-            long ioFeedbackCycleToken;
-            if (!TryBeginIOFeedbackRun(faceIndex, singleJobIOCycle,
-                out ioFeedbackCycleToken, out ioFeedbackReason))
-            {
-                operLog.iEventStatus = -1;
-                operLog.strOperEvent = $"工位{faceIndex + 1}运行";
-                operLog.strFailReason = ioFeedbackReason;
-                AddLog();
-                return;
-            }
+            long ioFeedbackCycleToken = 0;
 
             bool reservationReleased = false;
             bool visionBusyEntered = false;
@@ -5000,6 +5005,15 @@ namespace VisionApplication
 
             try
             {
+                if (!TryBeginIOFeedbackRun(faceIndex, singleJobIOCycle,
+                    out ioFeedbackCycleToken, out ioFeedbackReason))
+                {
+                    operLog.iEventStatus = -1;
+                    operLog.strOperEvent = $"工位{faceIndex + 1}运行";
+                    operLog.strFailReason = ioFeedbackReason;
+                    AddLog();
+                    return;
+                }
                 vpWin.ClearRDRecord(faceIndex);
 
                 // ★★★ 关键修改：不再修改 vpWin._iJobIndex，所有操作直接使用 faceIndex ★★★
@@ -5104,7 +5118,8 @@ namespace VisionApplication
                 if (!reservationReleased)
                     ReleaseAutoTriggerReservation(faceIndex);
 
-                FinishFaceVisionRun(faceIndex);
+                if (visionBusyEntered)
+                    FinishFaceVisionRun(faceIndex);
 
                 // ★★★ 移除 RestoreVisionExecutionContext(previousVisionJobIndex) ★★★
                 // 不再恢复 vpWin._iJobIndex，因为我们从未修改它

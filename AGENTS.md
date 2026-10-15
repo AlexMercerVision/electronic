@@ -13,7 +13,7 @@
 - 最终验证使用实际 `VisionBasedLaser.sln`、Debug/x64、真实项目引用，完整 Build 启动项目及依赖。单项目 Build、Compile 或隔离桩仅是中间验证。
 - 可隔离输出，但不得替换工程引用、遗漏项目或用旧 DLL 代替本轮源码。构建前核对覆盖范围，未经允许不得覆盖公共 `bin`、配置、模型、VPP 等运行文件。
 - `CommonCls`、`VisionControl`、`VisionApplication` 共用根目录 `bin`；禁止手工复制 DLL 解决依赖冲突，未专项统一前不要单独构建 `ClientTools.csproj`。
-- 基础依赖统一为下表；修改后核对公共 `bin` 实际 AssemblyVersion、`激光除胶.exe.config`，分别验证三项目并完成解决方案 Build。
+- 基础依赖统一为下表；修改后核对公共 `bin` 实际 AssemblyVersion、启动程序对应的 `.exe.config`（当前为 `电极帽缺陷检测.exe.config`），分别验证三项目并完成解决方案 Build。
 
 | 依赖 | 包版本 | AssemblyVersion |
 | --- | --- | --- |

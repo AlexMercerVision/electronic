@@ -9,7 +9,8 @@
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>VisionApplication</RootNamespace>
-    <AssemblyName>激光除胶</AssemblyName>
+    <AssemblyName>电极帽缺陷检测</AssemblyName>
+    <ProductName>电极帽缺陷检测</ProductName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
