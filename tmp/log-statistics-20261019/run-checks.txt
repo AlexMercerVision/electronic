@@ -1,0 +1,1 @@
+Actual extracted detection entry/completion methods: 21 checks passed

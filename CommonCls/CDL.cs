@@ -110,20 +110,7 @@ namespace CommonCls
 
         private static void WriteInitDLLog(string message)
         {
-            try
-            {
-                string dir = "UserData";
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-
-                string logPath = Path.Combine(dir, "dl_init_debug.log");
-                File.AppendAllText(
-                    logPath,
-                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message + Environment.NewLine);
-            }
-            catch
-            {
-            }
+            RuntimeLog.Model(message);
         }
 
         private static string FormatFileList(List<FileInfo> files)
@@ -435,16 +422,30 @@ namespace CommonCls
         // 灰度图推理
         public bool det_infer_img_ByteGray(byte[] grayData, int width, int height, float fThreshold, float fThresholdPS, ref DLResult dlR)
         {
+            bool inferenceSucceeded;
+            return det_infer_img_ByteGray(grayData, width, height, fThreshold, fThresholdPS, ref dlR, out inferenceSucceeded);
+        }
+
+        public bool det_infer_img_ByteGray(byte[] grayData, int width, int height, float fThreshold, float fThresholdPS, ref DLResult dlR, out bool inferenceSucceeded)
+        {
+            inferenceSucceeded = false;
             float[] resultlist = new float[600];
-            IntPtr results = FloatToIntptr(resultlist);
+            GCHandle resultHandle = GCHandle.Alloc(resultlist, GCHandleType.Pinned);
+            IntPtr results = resultHandle.AddrOfPinnedObject();
             int[] boxesInfo = new int[1];
             byte[] labellist = new byte[1000];
             bool bSure = false;
 
             try
             {
+                if (!has_model_init || grayData == null || width <= 0 || height <= 0 ||
+                    grayData.Length < checked(width * height))
+                    throw new InvalidOperationException("推理模型或本轮图像无效");
                 byte[] bgrData = ConvertGrayToBGR(grayData, width, height);
-                Det_ModelPredict(bgrData, width, height, 3, results, boxesInfo, ref labellist[0]);
+                int returnCode = Det_ModelPredict(bgrData, width, height, 3, results, boxesInfo, ref labellist[0]);
+                if (returnCode != 0) throw new InvalidOperationException("Det_ModelPredict returnCode=" + returnCode);
+                if (boxesInfo[0] < 0 || boxesInfo[0] > resultlist.Length / 6)
+                    throw new InvalidOperationException("推理框数量无效: " + boxesInfo[0]);
 
                 string strGet = Encoding.Default.GetString(labellist, 0, labellist.Length);
                 string[] predict_Label_List = strGet.Split(' ');
@@ -478,11 +479,16 @@ namespace CommonCls
                     }
                     bSure = true;
                 }
+                inferenceSucceeded = true;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"灰度图推理错误: {e.Message}");
+                RuntimeLog.Model("[Infer] failed: " + e);
                 return false;
+            }
+            finally
+            {
+                if (resultHandle.IsAllocated) resultHandle.Free();
             }
             return bSure;
         }
@@ -491,17 +497,31 @@ namespace CommonCls
         // 彩色图推理
         public bool det_infer_img_ByteColor(byte[] bgrData, int width, int height, float fThreshold, float fThresholdPS, ref DLResult dlR)
         {
+            bool inferenceSucceeded;
+            return det_infer_img_ByteColor(bgrData, width, height, fThreshold, fThresholdPS, ref dlR, out inferenceSucceeded);
+        }
+
+        public bool det_infer_img_ByteColor(byte[] bgrData, int width, int height, float fThreshold, float fThresholdPS, ref DLResult dlR, out bool inferenceSucceeded)
+        {
+            inferenceSucceeded = false;
             float[] resultlist = new float[600];
-            IntPtr results = FloatToIntptr(resultlist);
+            GCHandle resultHandle = GCHandle.Alloc(resultlist, GCHandleType.Pinned);
+            IntPtr results = resultHandle.AddrOfPinnedObject();
             int[] boxesInfo = new int[1];
             byte[] labellist = new byte[1000];
             bool bSure = false;
 
             try
             {
+                if (!has_model_init || bgrData == null || width <= 0 || height <= 0 ||
+                    bgrData.Length < checked(width * height * 3))
+                    throw new InvalidOperationException("推理模型或本轮图像无效");
                 lock (bInfering)
                 {
-                    Det_ModelPredict(bgrData, width, height, 3, results, boxesInfo, ref labellist[0]);
+                    int returnCode = Det_ModelPredict(bgrData, width, height, 3, results, boxesInfo, ref labellist[0]);
+                    if (returnCode != 0) throw new InvalidOperationException("Det_ModelPredict returnCode=" + returnCode);
+                    if (boxesInfo[0] < 0 || boxesInfo[0] > resultlist.Length / 6)
+                        throw new InvalidOperationException("推理框数量无效: " + boxesInfo[0]);
                 }
 
 
@@ -530,11 +550,16 @@ namespace CommonCls
                     }
                     bSure = true;
                 }
+                inferenceSucceeded = true;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"彩色图推理错误: {e.Message}");
+                RuntimeLog.Model("[Infer] failed: " + e);
                 return false;
+            }
+            finally
+            {
+                if (resultHandle.IsAllocated) resultHandle.Free();
             }
             return bSure;
         }

@@ -530,16 +530,20 @@ namespace VisionControl
         private void DLInfer(int jobIndex)
         {
             int cameraIndex = cup.p_CD.camInd[jobIndex];
+            bool inferenceSucceeded = false;
             DL_result[jobIndex].AL_Rect.Clear();
             DL_result[jobIndex].AL_score.Clear();
             DL_result[jobIndex].AL_Type.Clear();
             DL_result[jobIndex].Al_bDiff.Clear();
 
-            // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            // bSureCheck[jobIndex] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex], out inferenceSucceeded);
             if(cup.p_Cam[cameraIndex].iMonoType==0 && acqFIFO.bImgSrcData[cameraIndex]!=null)  //灰度图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci8gAcq[cameraIndex].Width, acqFIFO.ci8gAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+                bSureCheck[jobIndex] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci8gAcq[cameraIndex].Width, acqFIFO.ci8gAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex], out inferenceSucceeded);
             else if(acqFIFO.bImgSrcData[cameraIndex] != null) //彩色图推理
-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci24ColorAcq[cameraIndex].Width, acqFIFO.ci24ColorAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+                bSureCheck[jobIndex] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci24ColorAcq[cameraIndex].Width, acqFIFO.ci24ColorAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex], out inferenceSucceeded);
+
+            if (!inferenceSucceeded)
+                throw new InvalidOperationException($"Job{jobIndex}本轮深度推理失败，详见Model日志");
 
             if (DL_result[jobIndex].AL_Rect.Count > 0)
             {
@@ -561,16 +565,20 @@ namespace VisionControl
         private void DLInferOffLine(int jobIndex)
         {
             int cameraIndex = cup.p_CD.camInd[jobIndex];
+            bool inferenceSucceeded = false;
             DL_result[jobIndex].AL_Rect.Clear();
             DL_result[jobIndex].AL_score.Clear();
             DL_result[jobIndex].AL_Type.Clear();
             DL_result[jobIndex].Al_bDiff.Clear();
 
-            // bSureCheck[0] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+            // bSureCheck[jobIndex] = cdl.det_infer_img_En(acqFIFO.hObjFXA[0, 0], ci8gAcq[jobIndex].Width, ci8gAcq[jobIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex], out inferenceSucceeded);
             if (cup.p_Cam[cameraIndex].iMonoType == 0 && acqFIFO.bImgSrcData[cameraIndex] != null)
-                bSureCheck[0] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci8gAcq[cameraIndex].Width, acqFIFO.ci8gAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+                bSureCheck[jobIndex] = cdl.det_infer_img_ByteGray(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci8gAcq[cameraIndex].Width, acqFIFO.ci8gAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex], out inferenceSucceeded);
             else if (acqFIFO.bImgSrcData[cameraIndex] != null)
-                bSureCheck[0] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci24ColorAcq[cameraIndex].Width, acqFIFO.ci24ColorAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex]);
+                bSureCheck[jobIndex] = cdl.det_infer_img_ByteColor(acqFIFO.bImgSrcData[cameraIndex], acqFIFO.ci24ColorAcq[cameraIndex].Width, acqFIFO.ci24ColorAcq[cameraIndex].Height, cup.p_DL.fThreshold, cup.p_DL.fThreshold, ref DL_result[jobIndex], out inferenceSucceeded);
+
+            if (!inferenceSucceeded)
+                throw new InvalidOperationException($"Job{jobIndex}本轮深度推理失败，详见Model日志");
 
             if (DL_result[jobIndex].AL_Rect.Count > 0)
             {
@@ -628,7 +636,27 @@ namespace VisionControl
             PreviewStatusChanged?.Invoke(jobIndex, cameraIndex, status, message);
         }
 
-        int iDeepInferTime = 0;
+        private readonly DetectionStatistics detectionStatistics = new DetectionStatistics();
+        public event Action<int> DetectionStatisticsChanged;
+        public DetStat[] GetDetectionStatistics() => detectionStatistics.Snapshot();
+        public long GetDetectionRunToken(int jobIndex) => detectionStatistics.Token(jobIndex);
+        public bool ResetDetectionStatistics(int jobIndex)
+        {
+            for (int job = 0; job < maxJobNum; job++)
+                if (IsJobBusy(job)) return false;
+            return detectionStatistics.Reset(jobIndex);
+        }
+        public void FailDetectionStatistics(int jobIndex, long token)
+        {
+            CompleteDetectionStatistics(jobIndex, token, false, false);
+        }
+        private void CompleteDetectionStatistics(int jobIndex, long token, bool valid, bool ok)
+        {
+            if (!detectionStatistics.Finish(jobIndex, token, valid, ok)) return;
+            // Statistics and logging listeners may never turn a completed detection into a failure.
+            try { DetectionStatisticsChanged?.Invoke(jobIndex); }
+            catch { }
+        }
       //  public string strErrReson = "";
 
         //每通道独立执行运行
@@ -677,13 +705,15 @@ namespace VisionControl
                 return false;
             }
             
-            iDeepInferTime++; 
+
             return true;
         }
 
         public bool RunOneTime(int jobIndex)
         {
             bool vppCompletionStarted = false;
+            bool runStarted = false;
+            long statisticsToken = 0;
             try
             {  
                 if (jobIndex >= 0)
@@ -698,6 +728,9 @@ namespace VisionControl
                         vppCompletionStarted = true;
                     }
                     
+                    if (cup.p_VPPRTP.bVisionInfer || cup.p_VPPRTP.bDeepInfer)
+                        statisticsToken = detectionStatistics.Begin(jobIndex, !SkipImageUpdateForCurrentRun);
+
                     //2026年4月12日 修改了采集图像函数
                     if (cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFormat(bRecord, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) ||
                         !cup.p_VPPRTP.bAcqFromCam && acqFIFO.GrabOneFrameCogFromFileWithSrcData(iFileIndex, cup.p_CD.bListProcess[jobIndex], jobIndex, cup.p_CD.camInd[jobIndex]) >=0)
@@ -712,6 +745,8 @@ namespace VisionControl
                             else
                                 DLInferOffLine(jobIndex);
                             pmaRes[jobIndex].bLocated = true;
+                            CompleteDetectionStatistics(jobIndex, statisticsToken, true, pmaRes[jobIndex].bOk);
+                            SetJobBusy(jobIndex, false);
                             // ★★★ 关键：深度推理已完成，立即设置完成标志 ★★★
                             _bRunOneTimeFinished[jobIndex] = 2;
                         }
@@ -735,7 +770,7 @@ namespace VisionControl
                         return false;
                     }
                 }
-                 
+                runStarted = true;
             }
             catch (Cognex.VisionPro.Exceptions.CogNotStoppedException ex)
             {
@@ -760,6 +795,14 @@ namespace VisionControl
                 if (vppCompletionStarted)
                     AbortVppJobCompletion(jobIndex);
                 return false;
+            }
+            finally
+            {
+                if (!runStarted && statisticsToken > 0)
+                {
+                    CompleteDetectionStatistics(jobIndex, statisticsToken, false, false);
+                    if (!vppCompletionStarted) SetJobBusy(jobIndex, false);
+                }
             }
             return true; 
         }
@@ -2935,30 +2978,17 @@ namespace VisionControl
             if (runningLive)
                 return null;
             string[] strStatus = new string[12];
-            if (cup.p_VPPRTP.bDeepInfer)
-            {
-                strStatus[0] = iDeepInferTime.ToString();
-                return strStatus;
-            }
-            else
+            DetStat current = detectionStatistics.Snapshot()[i];
+            strStatus[0] = current.iTotal.ToString();
+            strStatus[1] = current.iOKNum.ToString();
+            strStatus[2] = current.iOKPer.ToString("0.0");
+            strStatus[3] = current.iNGNum.ToString();
+            strStatus[4] = current.iWarningNum.ToString();
+            strStatus[5] = current.iErrNum.ToString();
+            for (int field = 6; field < strStatus.Length; field++) strStatus[field] = "0";
+            if (cup.p_VPPRTP.bVisionInfer)
             {
                 j = mJM.Job(i);
-                strStatus[0] = (j.TotalJobIterations).ToString();
-                //  strStatus[1] = j.TotalVisionToolAccepts.ToString();
-                strStatus[1] = (j.TotalJobIterations - iReject).ToString();
-                string percentStr = "0";
-                if (j.TotalJobIterations > 0)
-                {
-                    double p = (j.TotalJobIterations - iReject) * 100.0 / (j.TotalJobIterations);
-                    percentStr = p.ToString("0.0");
-                }
-
-                strStatus[2] = percentStr;
-                //  strStatus[3] = j.TotalVisionToolRejects.ToString();
-                strStatus[3] = iReject.ToString();
-                strStatus[4] = j.TotalVisionToolWarnings.ToString();
-                strStatus[5] = j.TotalVisionToolErrors.ToString();
-
                 strStatus[6] = j.TotalAcquisitions.ToString();
                 strStatus[7] = j.TotalAcquisitionErrors.ToString();
                 strStatus[8] = j.TotalAcquisitionOverruns.ToString();
@@ -3373,7 +3403,7 @@ namespace VisionControl
                         }
                     }
                     if (stopForFreeFailure) break;
-                    if ((DateTime.Now - lastReport).TotalSeconds >= 5)
+                    if ((DateTime.Now - lastReport).TotalSeconds >= 10)
                     {
                         lastReport = DateTime.Now;
                         OnPreviewStatus(wsInd, iCamIdx, 2,

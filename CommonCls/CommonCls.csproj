@@ -177,6 +177,7 @@
     </Compile>
     <Compile Include="CSerialDef.cs" />
     <Compile Include="CUserParam.cs" />
+    <Compile Include="RuntimeLog.cs" />
     <Compile Include="HIKDeviceSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Protect.cs" />

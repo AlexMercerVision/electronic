@@ -1,0 +1,87 @@
+{
+  "dtLastAcq": "0001-01-01T00:00:00",
+  "dtLastDet": "0001-01-01T00:00:00",
+  "cs": {
+    "camNum": 0,
+    "iStatus": null
+  },
+  "iSerStatus": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "iEventStatus": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "iModelRole": -1,
+  "iTaskType": -1,
+  "detS": {
+    "iTotal": 4000,
+    "iOKNum": 2000,
+    "iOKPer": 50.0,
+    "iNGNum": 2000,
+    "iWarningNum": 0,
+    "iErrNum": 0
+  },
+  "statisticsVersion": 2,
+  "detByJob": [
+    {
+      "iTotal": 2000,
+      "iOKNum": 1000,
+      "iOKPer": 50.0,
+      "iNGNum": 1000,
+      "iWarningNum": 0,
+      "iErrNum": 0
+    },
+    {
+      "iTotal": 2000,
+      "iOKNum": 1000,
+      "iOKPer": 50.0,
+      "iNGNum": 1000,
+      "iWarningNum": 0,
+      "iErrNum": 0
+    }
+  ],
+  "legacyDetS": null,
+  "acqS": {
+    "iTotal": 0,
+    "iLossNum": 0,
+    "iErrNum": 0
+  },
+  "onLS": {
+    "bRecord": false,
+    "bAcqFromCam": false,
+    "bSaveRes": false,
+    "bTrigg": false,
+    "bLock": false,
+    "bVisionInfer": false,
+    "bDeepInfer": false,
+    "bFXRestruct": false,
+    "iFeedbackType": 0
+  },
+  "driveS": -1,
+  "initStatus": {
+    "bUserParamFileInit": false,
+    "bModelRoleCert": false,
+    "bCamInit": false,
+    "bCamPrepared": false,
+    "strCamInit": null,
+    "bSerInit": false,
+    "bLocalFileExist": false,
+    "bIDBFileExist": false,
+    "bDLModelPathExist": false,
+    "bVPPFileExist": false,
+    "bDLModelInit": false,
+    "bVPPInit": false,
+    "iVPPStatus": 0,
+    "bLocalFileRegular": false,
+    "bJCZ": 0
+  },
+  "iIsRunning": 0
+}

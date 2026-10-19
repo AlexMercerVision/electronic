@@ -1,0 +1,205 @@
+{
+  "ApplicationName": "电极帽缺陷检测",
+  "Description": "电极帽缺陷检测",
+  "ProductName": "电极帽缺陷检测",
+  "DeploymentNameMatches": true,
+  "Solution": "VisionBasedLaser.sln",
+  "Configuration": "Debug/x64",
+  "CompiledProjects": [
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/PipeChanel.dll",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/CommonCls.dll",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/xbVP_Control.dll",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/电极帽缺陷检测.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll",
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\xbVP_Control.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/ParamSet.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/LS_UartAssist.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/PerMang.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/CamDebug.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/BJJCZ_Server.exe",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/xbDet.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/MarkManager.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll",
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\xbVP_Control.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/PipeChanel.dll",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/CommonCls.dll",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/xbVP_Control.dll",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/电极帽缺陷检测.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll",
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\xbVP_Control.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/ParamSet.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/LS_UartAssist.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/PerMang.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/CamDebug.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/BJJCZ_Server.exe",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/xbDet.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:/jieyawenjian/VB_Det/tmp/log-statistics-20261019/obj-final/MarkManager.exe",
+      "ProjectReferences": [
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\CommonCls.dll",
+        "E:\\jieyawenjian\\VB_Det\\tmp\\log-statistics-20261019\\build-final\\xbVP_Control.dll"
+      ]
+    }
+  ],
+  "Assemblies": [
+    {
+      "File": "CommonCls.dll",
+      "Name": "CommonCls",
+      "Version": "1.0.0.0",
+      "References": []
+    },
+    {
+      "File": "xbVP_Control.dll",
+      "Name": "xbVP_Control",
+      "Version": "1.0.9788.35038",
+      "References": [
+        {
+          "Name": "CommonCls",
+          "Version": "1.0.0.0"
+        }
+      ]
+    },
+    {
+      "File": "PipeChanel.dll",
+      "Name": "PipeChanel",
+      "Version": "1.0.0.0",
+      "References": []
+    },
+    {
+      "File": "电极帽缺陷检测.exe",
+      "Name": "电极帽缺陷检测",
+      "Version": "1.0.0.0",
+      "References": [
+        {
+          "Name": "CommonCls",
+          "Version": "1.0.0.0"
+        },
+        {
+          "Name": "xbVP_Control",
+          "Version": "1.0.9788.35038"
+        },
+        {
+          "Name": "PipeChanel",
+          "Version": "1.0.0.0"
+        }
+      ]
+    }
+  ],
+  "Dependencies": [
+    {
+      "File": "System.Memory.dll",
+      "BuildVersion": "4.0.1.2",
+      "PublicBinVersion": "4.0.1.2"
+    },
+    {
+      "File": "System.Numerics.Vectors.dll",
+      "BuildVersion": "4.1.4.0",
+      "PublicBinVersion": "4.1.4.0"
+    },
+    {
+      "File": "System.Buffers.dll",
+      "BuildVersion": "4.0.3.0",
+      "PublicBinVersion": "4.0.3.0"
+    },
+    {
+      "File": "System.Runtime.CompilerServices.Unsafe.dll",
+      "BuildVersion": "6.0.0.0",
+      "PublicBinVersion": "6.0.0.0"
+    }
+  ],
+  "BindingRedirectsMatch": true,
+  "PublicBinFiles": 264,
+  "PublicBinChanged": 0,
+  "PublicBinAdded": 0,
+  "PreservedFiles": 307
+}

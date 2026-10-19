@@ -5001,6 +5001,7 @@ namespace VisionApplication
             bool visionBusyEntered = false;
             bool visionOk = false;
             bool runSucceeded = false;
+            long statisticsRunToken = 0;
             DateTime startTime = DateTime.Now;   // 记录开始时间
 
             try
@@ -5028,6 +5029,7 @@ namespace VisionApplication
                     // 执行视觉检测（同步等待）
                     if (vpWin.RunOneTimeSplite(faceIndex))
                     {
+                        statisticsRunToken = vpWin.GetDetectionRunToken(faceIndex);
                         int maxWait = cup.p_RTSP.runTimeOut / 10;
                         int count = 0;
                         while (vpWin._bRunOneTimeFinished[faceIndex] != 2 && count < maxWait)
@@ -5111,6 +5113,8 @@ namespace VisionApplication
             }
             finally
             {
+                if (!visionOk && statisticsRunToken > 0)
+                    vpWin.FailDetectionStatistics(faceIndex, statisticsRunToken);
                 if (!runSucceeded)
                     AbortIOFeedbackCycle(faceIndex, ioFeedbackCycleToken, "视觉检测未成功完成");
 

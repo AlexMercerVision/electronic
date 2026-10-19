@@ -1,0 +1,7 @@
+{
+  "Checks": 43,
+  "UiProducerMilliseconds": 7,
+  "FailedDiskProducerMilliseconds": 4,
+  "SaturatedProducerMilliseconds": 13,
+  "DroppedRecords": 8904
+}

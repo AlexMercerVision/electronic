@@ -8,6 +8,7 @@ using MvCamCtrl.NET;  // 海康相机
 using PipeChanel;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Data;
  
@@ -54,7 +55,13 @@ namespace VisionApplication
         // 3. 字段 - 核心业务对象
         private CUserParam cup = new CUserParam();              // 用户配置参数
         private FileOper fo = new FileOper();                   // 文件操作辅助类
-        private OperLog operLog = new OperLog();                // 操作日志记录对象
+        // Each producer assembles its own record; A/B callbacks cannot overwrite each other's fields.
+        private readonly ThreadLocal<OperLog[]> operationLogs = new ThreadLocal<OperLog[]>(() => new OperLog[1]);
+        private ref OperLog operLog => ref operationLogs.Value[0];
+        private string logUserName = "";
+        private readonly ConcurrentQueue<OperLog> pendingUiLogs = new ConcurrentQueue<OperLog>();
+        private int pendingUiLogCount, logUiScheduled;
+        private bool closingAfterLogDrain, logDrainInProgress;
         private DetectionResult dr = new DetectionResult();    // 视觉检测结果
         private CSerialDef csd = new CSerialDef();              // 串口通信辅助类
         private SerialPort sPortMain = new SerialPort();        // 主光源串口
@@ -123,7 +130,10 @@ namespace VisionApplication
         private AlignImParam[] alImParam = new AlignImParam[2];    // 图像对齐参数
         private CDL cdl = new CDL();                            // 深度学习推理类
         private ResultInfo strResInfo = new ResultInfo();       // 结果信息
-        private DetStat detStat = new DetStat();                // 检测统计
+        private readonly object detectionStatisticsSync = new object();
+        private DetStat[] detectionStatisticsBase = new DetStat[2];
+        private bool statisticsDirty;
+        private DateTime lastStatisticsSave = DateTime.MinValue;
 
         // 8. 字段 - PMAlign编辑
         private bool bPMAEdit = false;                          // PMAlign编辑模式标志
@@ -223,6 +233,7 @@ namespace VisionApplication
         {
             try
             {
+                RuntimeLog.Configure(cup.p_Paf.strLogPath);
                 bool bStatus = FileOper.SaveUserParam(cup);
                 if (bStatus)
                     operLog.iEventStatus = 0;
@@ -287,22 +298,9 @@ namespace VisionApplication
 
         private static void WriteStartupLog(string message)
         {
-            try
-            {
-                string logDir = "UserData";
-                if (!Directory.Exists(logDir))
-                    Directory.CreateDirectory(logDir);
-
-                string logPath = Path.Combine(logDir, "dl_init_debug.log");
-                File.AppendAllText(
-                    logPath,
-                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message + Environment.NewLine);
-            }
-            catch
-            {
-            }
+            RuntimeLog.Model(message);
         }
-        
+
         private void LoadVPFile(bool bReLoad)  //2025年10月4日  修改
         {
             string strVPPFile = "";
@@ -461,6 +459,8 @@ namespace VisionApplication
                 vpWin.SetAcqFIFO(acqFIFO);
                 vpWin.JobResultReady -= OnJobResultReady;
                 vpWin.JobResultReady += OnJobResultReady;
+                vpWin.DetectionStatisticsChanged -= OnDetectionStatisticsChanged;
+                vpWin.DetectionStatisticsChanged += OnDetectionStatisticsChanged;
                 vpWin.PreviewStatusChanged -= OnPreviewStatusFromVP;
                 vpWin.PreviewStatusChanged += OnPreviewStatusFromVP;
                 vpWin.InitBG();
@@ -503,23 +503,6 @@ namespace VisionApplication
 
         private void ShowPreviewStatusOnUi(int jobIndex, int cameraIndex, int status, string message)
         {
-            if (IsDisposed)
-                return;
-
-            if (InvokeRequired)
-            {
-                try
-                {
-                    BeginInvoke(new Action<int, int, int, string>(ShowPreviewStatusOnUi),
-                        jobIndex, cameraIndex, status, message);
-                }
-                catch (InvalidOperationException)
-                {
-                    // 窗体关闭过程中不再写入界面日志。
-                }
-                return;
-            }
-
             operLog.iEventStatus = status;
             operLog.strOperEvent = $"实时预览-工位{jobIndex + 1}/相机{cameraIndex + 1}";
             operLog.strFailReason = message;
@@ -787,11 +770,23 @@ namespace VisionApplication
             {
                 bUserParamInit = false;
             }
-            string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
-            fo.ReadRunTimeStatus(strPath, ref rts);
+            ReplaceDrive();
+            RuntimeLog.Configure(cup.p_Paf.strLogPath);
+            string strPath = Path.Combine(cup.p_Paf.strLogPath, "Runtime", "RTS_0000.txt");
+            // Read-only compatibility; no historical file is moved, overwritten or deleted.
+            if (!fo.ReadRunTimeStatus(strPath, ref rts))
+                fo.ReadRunTimeStatus(Path.Combine(cup.p_Paf.strLogPath, "RTS_0000.txt"), ref rts);
+            if (rts.statisticsVersion != 2 || rts.detByJob == null || rts.detByJob.Length != maxJobNum)
+            {
+                if (!rts.legacyDetS.HasValue) rts.legacyDetS = rts.detS;
+                rts.detByJob = new DetStat[maxJobNum];
+                rts.detS = new DetStat();
+                rts.statisticsVersion = 2;
+            }
+            detectionStatisticsBase = (DetStat[])rts.detByJob.Clone();
             rts.initStatus.bSerInit = false; // 本轮串口状态由 InitSerial 重新确认，不能沿用历史连接状态。
             rts.initStatus.bUserParamFileInit = bUserParamInit;
-            detStat = rts.detS;
+            statisticsDirty = true;
             
 
         }
@@ -1439,24 +1434,9 @@ namespace VisionApplication
             AddLog();
         }
 
-        private readonly object _cameraDiagnosticLogSync = new object();
         private void WriteCameraDiagnostic(string operation, int status, string detail)
         {
-            try
-            {
-                string directory = cup.p_Paf.strLogPath;
-                if (string.IsNullOrEmpty(directory)) return;
-                lock (_cameraDiagnosticLogSync)
-                {
-                    Directory.CreateDirectory(directory);
-                    File.AppendAllText(Path.Combine(directory, $"CameraLog_{DateTime.Now:yyyyMMdd}.txt"),
-                        $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {operation} | status={status} | {detail}{Environment.NewLine}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"相机诊断日志写入失败: {ex}");
-            }
+            RuntimeLog.Camera(operation, status, detail);
         }
 
         /// <summary>
@@ -3108,123 +3088,71 @@ namespace VisionApplication
         }
          
         //  DateTime dtOperLog = new DateTime();
-        private string _lastLogHash = "";  // 记录最后一条日志的哈希值
         private void AddLog()
         {
-            // 1. 如果在非 UI 线程，则同步切换到 UI 线程
-            if (this.InvokeRequired)
+            OperLog record = operLog;
+            operLog.strFailReason = null; // Do not carry the previous operation's detail into the next record.
+            record.dtOperTime = DateTime.Now;
+            record.strUserName = Volatile.Read(ref logUserName);
+            RuntimeLog.Operation(record);
+            if (RuntimeLog.StatusText(record.iEventStatus) != "执行正常")
             {
-                this.Invoke(new Action(AddLog));
-                return;
-            }
-
-            // 2. 更新 UI 表格（直接操作，不检查重复）
-            try
-            {
-                // 限制行数最多 20 行（可选）
-                if (dgvLog.RowCount > 20)
-                    dgvLog.Rows.RemoveAt(19);
-                operLog.dtOperTime = DateTime.Now;
-                int ind = 0;
-                dgvLog.Rows.Insert(0, 1);
-
-                dgvLog.Rows[ind].Cells[0].Value = operLog.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss");
-                dgvLog.Rows[ind].Cells[1].Value = operLog.strOperEvent;
-
-                switch (operLog.iEventStatus)
-                {
-                    case 0:
-                    case 2:
-                    case 9:
-                    case 10:
-                        dgvLog.Rows[ind].Cells[2].Value = "执行正常";
-                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Black;
-                        break;
-                    case -1:
-                        dgvLog.Rows[ind].Cells[2].Value = "执行失败";
-                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                        break;
-                    case -2:
-                        dgvLog.Rows[ind].Cells[2].Value = "执行正常";
-                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                        break;
-                    case 1:
-                        dgvLog.Rows[ind].Cells[2].Value = "执行超时";
-                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                        break;
-                    default:
-                        dgvLog.Rows[ind].Cells[2].Value = "执行异常";
-                        dgvLog.Rows[ind].DefaultCellStyle.ForeColor = Color.Red;
-                        break;
-                }
-
-                dgvLog.Rows[ind].Cells[4].Value = operLog.strUserName;
-
-                if (operLog.iEventStatus < 0 || operLog.iEventStatus == 1 ||
-                    operLog.iEventStatus == 2 || operLog.iEventStatus == 9)
-                {
-                    dgvLog.Rows[ind].Cells[3].Value = operLog.strFailReason;
-                }
-            }
-            catch (Exception ex)
-            {
-                // 忽略 UI 更新异常，不影响主程序
-                System.Diagnostics.Debug.WriteLine($"更新日志表格失败: {ex.Message}");
-            }
-
-            // 3. 写入文件（简单捕获异常，不因文件写入失败影响日志功能）
-            // 判断是否为错误日志（状态为"执行失败"、"执行超时"、"执行异常"等）
-            string status = (dgvLog.Rows[0].Cells[2].Value?.ToString() ?? "");
-            bool isError = status != "执行正常" && !string.IsNullOrEmpty(status);
-
-            if (isError)
-            {
-                string errorLine = $"{operLog.dtOperTime:yyyy-MM-dd HH:mm:ss} | {operLog.strOperEvent} | {status} | {operLog.strFailReason}";
-
+                string line = $"{record.dtOperTime:yyyy-MM-dd HH:mm:ss} | {record.strOperEvent} | {RuntimeLog.StatusText(record.iEventStatus)} | {record.strFailReason}";
                 lock (_errorLogLock)
                 {
-                    // 1. 写入文件（追加）
+                    _recentErrorLogs.Add(line);
+                    if (_recentErrorLogs.Count > 20) _recentErrorLogs.RemoveAt(0);
+                }
+            }
+            // Bounded UI queue; neither disk latency nor a busy UI can hold the producer.
+            if (Interlocked.Increment(ref pendingUiLogCount) > 128)
+            {
+                Interlocked.Decrement(ref pendingUiLogCount);
+                return;
+            }
+            pendingUiLogs.Enqueue(record);
+            ScheduleLogUi();
+        }
+
+        private void ScheduleLogUi()
+        {
+            if (IsDisposed || !IsHandleCreated || Interlocked.CompareExchange(ref logUiScheduled, 1, 0) != 0) return;
+            try { BeginInvoke(new Action(DrainLogUi)); }
+            catch (InvalidOperationException) { Interlocked.Exchange(ref logUiScheduled, 0); }
+        }
+
+        private void DrainLogUi()
+        {
+            try
+            {
+                OperLog record;
+                int count = 0;
+                while (count++ < 20 && pendingUiLogs.TryDequeue(out record))
+                {
+                    Interlocked.Decrement(ref pendingUiLogCount);
                     try
                     {
-                        string logDir = cup.p_Paf.strLogPath;
-                        if (!string.IsNullOrEmpty(logDir))
-                        {
-                            if (!Directory.Exists(logDir))
-                                Directory.CreateDirectory(logDir);
-                            string errorLogFile = Path.Combine(logDir, $"ErrorLog_{DateTime.Now:yyyyMMdd}.txt");
-                            File.AppendAllText(errorLogFile, errorLine + Environment.NewLine);
-                        }
+                        while (dgvLog.RowCount >= 20) dgvLog.Rows.RemoveAt(dgvLog.RowCount - 1);
+                        dgvLog.Rows.Insert(0, 1);
+                        var row = dgvLog.Rows[0];
+                        row.Cells[0].Value = record.dtOperTime.ToString("yyyy-MM-dd HH:mm:ss");
+                        row.Cells[1].Value = record.strOperEvent;
+                        row.Cells[2].Value = RuntimeLog.StatusText(record.iEventStatus);
+                        row.Cells[3].Value = record.strFailReason;
+                        row.Cells[4].Value = record.strUserName;
+                        row.DefaultCellStyle.ForeColor = record.iEventStatus == -2 ||
+                            RuntimeLog.StatusText(record.iEventStatus) != "执行正常" ? Color.Red : Color.Black;
                     }
-                    catch (Exception ex)
-                    {
-                        // 避免写入错误日志时再触发异常导致死循环
-                        System.Diagnostics.Debug.WriteLine($"写入错误日志失败: {ex.Message}");
-                    }
-
-                    // 2. 更新内存缓存（最近20条）
-                    _recentErrorLogs.Add(errorLine);
-                    if (_recentErrorLogs.Count > 20)
-                        _recentErrorLogs.RemoveAt(0);
+                    catch { /* A disposed/busy log grid cannot affect detection or file logging. */ }
                 }
             }
-
-            /* try
+            finally
             {
-                string logDir = cup.p_Paf.strLogPath;
-                if (!string.IsNullOrEmpty(logDir))
-                {
-                    if (!Directory.Exists(logDir))
-                        Directory.CreateDirectory(logDir);
-                    string logFile = Path.Combine(logDir, "Oper_" + DateTime.Now.ToString("yyyyMMdd") + ".txt");
-                    fo.WriteOperLog(logFile, operLog);
-                }
+                Interlocked.Exchange(ref logUiScheduled, 0);
+                if (!pendingUiLogs.IsEmpty) ScheduleLogUi();
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"写日志文件失败: {ex.Message}");
-            }*/
         }
-       
+
         #endregion  自定义操作区
 
         #region  状态变化性事件
@@ -3528,8 +3456,10 @@ namespace VisionApplication
         }
 
      
-        private void FrmMainUI_FormClosing(object sender, FormClosingEventArgs e)
+        private async void FrmMainUI_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if (closingAfterLogDrain) return;
+            if (logDrainInProgress) { e.Cancel = true; return; }
            
             SaveUserParam();
 
@@ -3543,8 +3473,7 @@ namespace VisionApplication
 
             //  _parentCheckTimer?.Stop();
             //    _parentCheckTimer?.Dispose();
-            string strPath = cup.p_Paf.strLogPath + "\\RTS_0000.txt";
-            fo.SaveRunTimeStatus(strPath, rts);
+            QueueStatisticsSnapshot(true);
 
             //      CloseLaser();
             for (int i = 0; i < MaxLaserCards; i++)
@@ -3587,10 +3516,14 @@ namespace VisionApplication
             GC.Collect();
             GC.WaitForPendingFinalizers();
            
-            if (Debugger.IsAttached == false) // 非调试环境
-            {
-                Environment.Exit(0);
-            }
+            // Let the UI message loop run while the background writer drains, with a bounded exit wait.
+            e.Cancel = true;
+            logDrainInProgress = true;
+            QueueStatisticsSnapshot(true);
+            await Task.Run(() => RuntimeLog.Shutdown(1500));
+            closingAfterLogDrain = true;
+            Close();
+            if (!Debugger.IsAttached) Environment.Exit(0);
 
         }
 
@@ -4271,11 +4204,8 @@ namespace VisionApplication
         }
         private void button_ResetStatistics_Click(object sender, EventArgs e)
         {
-            iAcquisitionsTimes = 0;
-            iErrAcquisitionsTimes = 0;
-            iErrExecuteTimes = 0;
-            vpWin.ResetStatisticsForJobClick();
-            UpdateStatisticsForJob(0);
+            if (iJobIndex < 0 || iJobIndex >= maxJobNum) return;
+            ResetDetectionStatistics(iJobIndex);
         }
 
         private void menuCam_OpenCloseDev_Click(object sender, EventArgs e)
@@ -4473,8 +4403,7 @@ namespace VisionApplication
 
         private void button_ResetStatisticsForAllJobs_Click(object sender, EventArgs e)
         {
-            vpWin.ResetStatisticsForAllJobsClick();
-            UpdateStatisticsForJob(0);
+            ResetDetectionStatistics(-1);
         }
 
         private void SetShowType(int iShowType)
@@ -4628,7 +4557,7 @@ namespace VisionApplication
             {
                 rts.iModelRole = Math.Max(login.iModelRole, rts.iModelRole);
                 //   rts.iModelRole = iModelRole;
-                operLog.strUserName = login.strID;
+                Volatile.Write(ref logUserName, login.strID);
                 operLog.strOperEvent = "用户登录";
                 if (rts.iModelRole > 0)
                 {
@@ -4975,7 +4904,7 @@ namespace VisionApplication
                 rts.iModelRole = 0;
                 btFunSet.Visible = false;
             }
-            operLog.strUserName = "";
+            Volatile.Write(ref logUserName, "");
             operLog.strOperEvent = "用户注销";
             operLog.iEventStatus = 0;
 
@@ -5818,7 +5747,9 @@ namespace VisionApplication
 
        
         private void timer1_Tick(object sender, EventArgs e)
-        {          
+        {
+            ScheduleLogUi();
+            QueueStatisticsSnapshot(false);
             if (iProcess < 100)
                 return;
 
@@ -6592,60 +6523,66 @@ namespace VisionApplication
 
         #region   
         
+        private void OnDetectionStatisticsChanged(int jobIndex)
+        {
+            lock (detectionStatisticsSync)
+            {
+                RefreshDetectionStatistics();
+                rts.dtLastDet = DateTime.Now;
+                statisticsDirty = true;
+            }
+        }
+
+        private void RefreshDetectionStatistics()
+        {
+            if (vpWin == null) return;
+            DetStat[] current = vpWin.GetDetectionStatistics();
+            for (int job = 0; job < maxJobNum; job++)
+                rts.detByJob[job] = DetectionStatistics.Add(detectionStatisticsBase[job], current[job]);
+            rts.detS = DetectionStatistics.Add(rts.detByJob[0], rts.detByJob[1]);
+        }
+
+        private void QueueStatisticsSnapshot(bool force)
+        {
+            lock (detectionStatisticsSync)
+            {
+                if (!force && (!statisticsDirty || (DateTime.Now - lastStatisticsSave).TotalSeconds < 30)) return;
+                RefreshDetectionStatistics();
+                string path = Path.Combine(cup.p_Paf.strLogPath, "Runtime", "RTS_0000.txt");
+                if (fo.SaveRunTimeStatus(path, rts))
+                {
+                    statisticsDirty = false;
+                    lastStatisticsSave = DateTime.Now;
+                }
+            }
+        }
+
         private void UpdateStatisticsForJob(int i)
         {
-            // don't update statistics when showing live video
-            /**/
+            if (vpWin == null || i < 0 || i >= maxJobNum) return;
             strStatus = vpWin.RetStatisticsForJob(i);
-            toolStripStatus_ExcuteTimes.Text = "执行次数：" + strStatus[0]+"/"+rts.detS.iTotal;
-            
-            /*textBox_JobN_TotalIterations.Text = strStatus[0];
-            textBox_JobN_TotalAccept.Text = strStatus[1];
-            textBox_JobN_TotalReject.Text = (Int32.Parse(strStatus[6]) + iAcquisitionsTimes).ToString();
-*/
-            /* textBox_JobN_TotalAccept_Percent.Text = strStatus[2];
-             textBox_JobN_TotalReject.Text = strStatus[3];
-             textBox_JobN_TotalWarning.Text = strStatus[4];
-             textBox_JobN_TotalError.Text = (Int32.Parse(strStatus[5]) + iErrExecuteTimes).ToString();*/ // strStatus[5];
-
-            /*   textBox_JobN_TotalAcquisitions.Text = (Int32.Parse(strStatus[6])+ iAcquisitionsTimes).ToString();
-               textBox_JobN_TotalAcquisitionErrors.Text = (Int32.Parse(strStatus[7]) + iErrAcquisitionsTimes).ToString();  
-               textBox_JobN_TotalAcquisitionOverruns.Text = strStatus[8];*/
-
-            /* textBox_JobN_Throughput.Text = strStatus[9];
-             textBox_JobN_MinThroughput.Text = strStatus[10];
-             textBox_JobN_MaxThroughput.Text = strStatus[11];*/
-
-          //  toolStripStatus_inferTime.Text = "推理时间：" + vpWin.cost_milliseconds;
-
-            rts.detS.iTotal  = detStat.iTotal+ Int32.Parse(strStatus[0]);
-
-            if (!cup.p_VPPRTP.bVisionInfer)
-                return;
-            rts.detS.iOKNum  = detStat.iTotal + Int32.Parse(strStatus[1]);
-            rts.detS.iOKPer  = float.Parse(strStatus[2]);
-            rts.detS.iNGNum  = detStat.iTotal + Int32.Parse(strStatus[3]);
-            rts.detS.iWarningNum  = detStat.iTotal +  Int32.Parse(strStatus[4]);
-            //   rts.detS.iErrNum = Int32.Parse(textBox_JobN_TotalError.Text);
-
-            /* */
-
+            if (strStatus == null) return;
+            lock (detectionStatisticsSync)
+            {
+                RefreshDetectionStatistics();
+                toolStripStatus_ExcuteTimes.Text = "执行次数：" + strStatus[0] + "/" + rts.detS.iTotal;
+            }
         }
-        //更新统计数据
-        private void UpdateStatic()
+
+        private void ResetDetectionStatistics(int jobIndex)
         {
-            rts.detS.iTotal += Int32.Parse(strStatus[0]);
-            rts.detS.iOKNum += Int32.Parse(strStatus[1]);
-            rts.detS.iOKPer = float.Parse(strStatus[2]);
-            rts.detS.iNGNum += Int32.Parse(strStatus[3]);
-            rts.detS.iWarningNum = +Int32.Parse(strStatus[4]);
-         //   rts.detS.iErrNum = +Int32.Parse(textBox_JobN_TotalError.Text);
-
-            rts.acqS.iTotal += Int32.Parse(strStatus[6]) + iAcquisitionsTimes;
-            rts.acqS.iLossNum += Int32.Parse(strStatus[7]) + iErrAcquisitionsTimes;
-            rts.acqS.iTotal += Int32.Parse(strStatus[8]);
-
+            if (vpWin == null || !vpWin.bMainTaskFinished || !vpWin.ResetDetectionStatistics(jobIndex)) return;
+            lock (detectionStatisticsSync)
+            {
+                if (jobIndex == -1) detectionStatisticsBase = new DetStat[maxJobNum];
+                else detectionStatisticsBase[jobIndex] = new DetStat();
+                RefreshDetectionStatistics();
+                statisticsDirty = true;
+            }
+            QueueStatisticsSnapshot(true);
+            UpdateStatisticsForJob(jobIndex < 0 ? 0 : jobIndex);
         }
+
         private void ViewChange()
         {
             // 各子区域根据菜单项 Checked 状态控制折叠/展开
@@ -8770,7 +8707,7 @@ namespace VisionApplication
           //  ApplyLightBrightness(iJobIndex);
         }
 
-        private void menu_View_ErrLog_Click(object sender, EventArgs e)
+        private async void menu_View_ErrLog_Click(object sender, EventArgs e)
         {
             List<string> errorList;
 
@@ -8779,7 +8716,7 @@ namespace VisionApplication
                 // 如果内存缓存为空，尝试从文件加载最近20条
                 if (_recentErrorLogs.Count == 0)
                 {
-                    errorList = LoadRecentErrorsFromFile();
+                    errorList = null;
                 }
                 else
                 {
@@ -8787,6 +8724,8 @@ namespace VisionApplication
                 }
             }
 
+            if (errorList == null) errorList = await Task.Run(() => LoadRecentErrorsFromFile());
+            if (IsDisposed) return;
             if (errorList.Count == 0)
             {
                 MessageBox.Show("暂无错误日志记录。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -8807,7 +8746,7 @@ namespace VisionApplication
             List<string> lines = new List<string>();
             try
             {
-                string logDir = cup.p_Paf.strLogPath;
+                string logDir = Path.Combine(cup.p_Paf.strLogPath, "Error");
                 if (string.IsNullOrEmpty(logDir) || !Directory.Exists(logDir))
                     return lines;
 
@@ -9216,6 +9155,7 @@ namespace VisionApplication
                 vpWin._bRunOneTimeFinished[legacyJobIndex] = 0;
                 if (vpWin.RunOneTimeSplite(legacyJobIndex))
                 {
+                    long statisticsRunToken = vpWin.GetDetectionRunToken(legacyJobIndex);
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 10;
 
@@ -9227,6 +9167,7 @@ namespace VisionApplication
                     }
 
                     bool legacyRunCompleted = vpWin._bRunOneTimeFinished[legacyJobIndex] == 2;
+                    if (!legacyRunCompleted) vpWin.FailDetectionStatistics(legacyJobIndex, statisticsRunToken);
                     vpWin._bRunOneTimeFinished[legacyJobIndex] = 2;  // 强制结束
                     pmaRes[legacyJobIndex] = vpWin._PMARes[legacyJobIndex];
                     if (legacyRunCompleted)
@@ -9380,6 +9321,7 @@ namespace VisionApplication
                         continue;
                     }
 
+                    long statisticsRunToken = vpWin.GetDetectionRunToken(jobIndex);
                     // 等待该工位完成（轮询直到 _bRunOneTimeFinished 变为 2 或超时）
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5; // 假设 runTimeOut 单位为毫秒
@@ -9392,6 +9334,7 @@ namespace VisionApplication
 
                     if (vpWin._bRunOneTimeFinished[jobIndex] != 2)
                     {
+                        vpWin.FailDetectionStatistics(jobIndex, statisticsRunToken);
                         // 超时处理：强制结束并记录
                         vpWin._bRunOneTimeFinished[jobIndex] = 2;
                         operLog.iEventStatus = -1;
@@ -9518,6 +9461,7 @@ namespace VisionApplication
 
                 if (vpWin.RunOneTime(selectedJobIndex))
                 {
+                    long statisticsRunToken = vpWin.GetDetectionRunToken(selectedJobIndex);
                     int count = 0;
                     int maxTimes = cup.p_RTSP.runTimeOut / 5;
                     //2025年10月8日 此处条件不完全正确，待修改
@@ -9531,6 +9475,7 @@ namespace VisionApplication
 
                     }*/
                     bool continuousRunCompleted = vpWin._bRunOneTimeFinished[selectedJobIndex] == 2;
+                    if (!continuousRunCompleted) vpWin.FailDetectionStatistics(selectedJobIndex, statisticsRunToken);
                     vpWin._bRunOneTimeFinished[selectedJobIndex] = 2;  //强制结束
                     pmaRes[selectedJobIndex] = vpWin._PMARes[selectedJobIndex];
                     if (continuousRunCompleted)

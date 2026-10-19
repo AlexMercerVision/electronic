@@ -773,6 +773,7 @@ namespace VisionControl
 
         private void TryCompleteVppJob(int jobIndex)
         {
+            long statisticsToken = GetDetectionRunToken(jobIndex);
             lock (vppJobCompletionLock)
             {
                 if (!vppJobCompletionPending[jobIndex] ||
@@ -802,6 +803,8 @@ namespace VisionControl
                         DirectShowImage(jobIndex);
                     }
                 }
+                CompleteDetectionStatistics(jobIndex, statisticsToken,
+                    IsVppJobResultValid(jobIndex), pmaRes[jobIndex].bOk);
                 JobResultReady?.Invoke(jobIndex);
             }
             catch (Exception ex)
@@ -809,6 +812,7 @@ namespace VisionControl
                 vppJobResultValid[jobIndex] = false;
                 pmaRes[jobIndex].bOk = false;
                 pmaRes[jobIndex].dPMAScore = 0;
+                CompleteDetectionStatistics(jobIndex, statisticsToken, false, false);
                 strErrInfo[jobIndex] = $"jobIndex={jobIndex} 本轮结果显示/通知失败: {ex}";
                 OnVisionError(jobIndex, strErrInfo[jobIndex]);
             }

@@ -827,6 +827,65 @@ namespace CommonCls
         public int iErrNum;
     }
 
+    // Counters are independent of UI refreshes and Cognex's resettable iteration counters.
+    public sealed class DetectionStatistics
+    {
+        private readonly object sync = new object();
+        private readonly DetStat[] jobs = new DetStat[2];
+        private readonly long[] tokens = new long[2];
+        private readonly bool[] pending = new bool[2], enabled = new bool[2];
+        public long Begin(int jobIndex, bool count)
+        {
+            lock (sync)
+            {
+                tokens[jobIndex]++;
+                pending[jobIndex] = true;
+                enabled[jobIndex] = count;
+                return tokens[jobIndex];
+            }
+        }
+        public long Token(int jobIndex) { lock (sync) return tokens[jobIndex]; }
+        public bool Finish(int jobIndex, long token, bool valid, bool ok, bool warning = false)
+        {
+            lock (sync)
+            {
+                if (jobIndex < 0 || jobIndex >= 2 || !pending[jobIndex] || tokens[jobIndex] != token) return false;
+                pending[jobIndex] = false;
+                if (!enabled[jobIndex]) return false;
+                if (valid)
+                {
+                    jobs[jobIndex].iTotal++;
+                    if (ok) jobs[jobIndex].iOKNum++; else jobs[jobIndex].iNGNum++;
+                    if (warning) jobs[jobIndex].iWarningNum++;
+                }
+                else jobs[jobIndex].iErrNum++;
+                jobs[jobIndex].iOKPer = jobs[jobIndex].iTotal == 0 ? 0 :
+                    jobs[jobIndex].iOKNum * 100f / jobs[jobIndex].iTotal;
+                return true;
+            }
+        }
+        public DetStat[] Snapshot() { lock (sync) return (DetStat[])jobs.Clone(); }
+        public bool Reset(int jobIndex)
+        {
+            lock (sync)
+            {
+                if (pending[0] || pending[1]) return false;
+                if (jobIndex == -1) { jobs[0] = new DetStat(); jobs[1] = new DetStat(); }
+                else if (jobIndex >= 0 && jobIndex < 2) jobs[jobIndex] = new DetStat();
+                else return false;
+                return true;
+            }
+        }
+        public static DetStat Add(DetStat a, DetStat b)
+        {
+            DetStat result = new DetStat { iTotal = a.iTotal + b.iTotal, iOKNum = a.iOKNum + b.iOKNum,
+                iNGNum = a.iNGNum + b.iNGNum, iErrNum = a.iErrNum + b.iErrNum,
+                iWarningNum = a.iWarningNum + b.iWarningNum };
+            result.iOKPer = result.iTotal == 0 ? 0 : result.iOKNum * 100f / result.iTotal;
+            return result;
+        }
+    }
+
     [Serializable]
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AcqStat
@@ -874,6 +933,9 @@ namespace CommonCls
         public int iModelRole;
         public int iTaskType;
         public DetStat detS;
+        public int statisticsVersion;
+        public DetStat[] detByJob;
+        public DetStat? legacyDetS;
         public AcqStat acqS;
         public OnLineStatus onLS;
         public int driveS;
@@ -1307,8 +1369,7 @@ namespace CommonCls
             try
             {
                 string json = JsonConvert.SerializeObject(rts, jsonSettings);
-                File.WriteAllText(path, json);
-                return true;
+                return RuntimeLog.SaveSnapshot(path, json);
             }
             catch
             {
@@ -1323,7 +1384,9 @@ namespace CommonCls
                 if (File.Exists(strRunTimeStatus))
                 {
                     string json = File.ReadAllText(strRunTimeStatus);
-                    rts = JsonConvert.DeserializeObject<RunTimeStatus>(json, jsonSettings);
+                    RunTimeStatus loaded = JsonConvert.DeserializeObject<RunTimeStatus>(json, jsonSettings);
+                    if (loaded == null) return false;
+                    rts = loaded;
                     return true;
                 }
                 return false;
@@ -1338,19 +1401,9 @@ namespace CommonCls
         {
             try
             {
-                FileStream fs;
-                if (!File.Exists(strPath))
-                    fs = new FileStream(strPath, FileMode.Create);
-                else
-                    fs = new FileStream(strPath, FileMode.Append);
-                using (fs)
-                {
-                    using (StreamWriter sw = new StreamWriter(fs))
-                    {
-                        sw.WriteLine("{0} {1} {2} {3}", operLog.dtOperTime, operLog.strOperEvent, operLog.iEventStatus, operLog.strUserName);
-                    }
-                }
-                return true;
+                return RuntimeLog.AppendFile(strPath,
+                    string.Format("{0} {1} {2} {3} {4}", operLog.dtOperTime, operLog.strOperEvent,
+                        operLog.iEventStatus, operLog.strUserName, operLog.strFailReason));
             }
             catch
             {

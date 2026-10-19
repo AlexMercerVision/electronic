@@ -1,0 +1,23 @@
+[model_infer] model.yml: target 640x640, is_scale true, 4 class names
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+W1019 19:25:37.782747 26948 gpu_resources.cc:116] Please NOTE: device: 0, GPU Compute Capability: 12.0, Driver API Version: 13.4, Runtime API Version: 12.8
+[model_infer] InitModel OK (GPU, device 0)
+W1019 19:25:38.572839 26948 gpu_resources.cc:245] WARNING: device: 0. The installed Paddle is compiled with CUDNN 9.12, but CUDNN version in your machine is 9.8, which may cause serious incompatible bug. Please recompile or reinstall Paddle with compatible CUDNN version.
+[model_infer] graph outputs (2):
+[model_infer]   matrix_nms_0.tmp_0  float32 [0,6]   <- boxes
+[model_infer]   matrix_nms_0.tmp_2  int32 [1]   <- count
+[model_infer] using boxes='matrix_nms_0.tmp_0' count='matrix_nms_0.tmp_2'
+{
+  "UseGPU": true,
+  "GPUId": 0,
+  "Width": 3072,
+  "Height": 2048,
+  "ColorSuccess": true,
+  "ColorRawZeroBoxes": true,
+  "ColorMilliseconds": 2950,
+  "GraySuccess": true,
+  "GrayRawZeroBoxes": true,
+  "GrayMilliseconds": 54,
+  "UninitializedRejected": true,
+  "ShortFrameRejected": true
+}

@@ -1,0 +1,23 @@
+
+File               Version
+----               -------
+CommonCls.dll      1.0.0.0
+xbVP_Control.dll   1.0.9788.35038
+PipeChanel.dll     1.0.0.0
+电极帽缺陷检测.exe 1.0.0.0
+
+
+File                                       BuildVersion PublicBinVersion
+----                                       ------------ ----------------
+System.Memory.dll                          4.0.1.2      4.0.1.2
+System.Numerics.Vectors.dll                4.1.4.0      4.1.4.0
+System.Buffers.dll                         4.0.3.0      4.0.3.0
+System.Runtime.CompilerServices.Unsafe.dll 6.0.0.0      6.0.0.0
+
+File properties and generated manifests use 电极帽缺陷检测; all 11 projects compiled with matching references; 264 public bin files unchanged.
+
+    84 个警告
+    0 个错误
+
+已用时间 00:00:05.50
+
