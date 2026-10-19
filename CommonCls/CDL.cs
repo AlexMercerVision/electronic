@@ -254,32 +254,44 @@ namespace CommonCls
             return 0;
         }
         // 用于启动时执行一次推理任务，第一次推理比较慢，在软件正式启动前执行  2024年7月22日
-        public bool det_infer_img()
+        public bool det_infer_img(int width, int height)
         {
-            float[] resultlist = new float[600];
-            IntPtr results = FloatToIntptr(resultlist);
-            int[] boxesInfo = new int[1]; // 10 boundingbox
-            byte[] labellist = new byte[1000];
-            bool bSure = false;
-            // int raise_ex_flag = 0;
+            Stopwatch watch = Stopwatch.StartNew();
+            GCHandle resultHandle = default(GCHandle);
             try
             {
-                Mat matRGBImg = new Mat(@"C:\Program Files\Cognex\VisionPro\Images\smiley.bmp");
+                if (!has_model_init)
+                    throw new InvalidOperationException("深度推理模型尚未初始化");
+                if (width <= 0 || height <= 0)
+                    throw new ArgumentOutOfRangeException("width/height", "预热图像尺寸必须大于0");
 
-                byte[] bRGBData = new byte[matRGBImg.Total() * 3];
-                Marshal.Copy(matRGBImg.Data, bRGBData, 0, bRGBData.Length);
-
-                Det_ModelPredict(bRGBData, matRGBImg.Width, matRGBImg.Height, 3, results, boxesInfo, ref labellist[0]);
-
+                // 使用内存BGR图像预热，不依赖外部图片，不提交检测结果。
+                byte[] bgrData = new byte[checked(width * height * 3)];
+                float[] resultlist = new float[600];
+                int[] boxesInfo = new int[1];
+                byte[] labellist = new byte[1000];
+                resultHandle = GCHandle.Alloc(resultlist, GCHandleType.Pinned);
+                WriteInitDLLog($"[Warmup] start; width={width}; height={height}; useGPU={dlParam.bUseGPU}; gpuID={dlParam.gpuID}");
+                int ret;
+                lock (bInfering)
+                {
+                    ret = Det_ModelPredict(bgrData, width, height, 3,
+                        resultHandle.AddrOfPinnedObject(), boxesInfo, ref labellist[0]);
+                }
+                bool success = ret == 0;
+                WriteInitDLLog($"[Warmup] {(success ? "success" : "failed")}; returnCode={ret}; boxes={boxesInfo[0]}; elapsedMs={watch.ElapsedMilliseconds}");
+                return success;
             }
             catch (Exception e)
             {
-                // raise_ex_flag = 1;
+                WriteInitDLLog($"[Warmup] failed; width={width}; height={height}; elapsedMs={watch.ElapsedMilliseconds}; exception={e}");
                 return false;
-
             }
-
-            return bSure;
+            finally
+            {
+                if (resultHandle.IsAllocated)
+                    resultHandle.Free();
+            }
         }
 
         //用于检查深度学习模型中文件是否齐全

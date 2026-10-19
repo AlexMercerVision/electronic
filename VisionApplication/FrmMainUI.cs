@@ -608,6 +608,49 @@ namespace VisionApplication
             AddLog();
             return iRet;
         }
+        private void WarmupDL()
+        {
+            string failReason = "未找到已启用且相机映射、图像尺寸有效的Job0/Job1";
+            for (int jobIndex = 0; jobIndex < maxJobNum; jobIndex++)
+            {
+                if (cup.p_CD.bListProcess == null || jobIndex >= cup.p_CD.bListProcess.Length)
+                {
+                    WriteStartupLog($"[Warmup] skip; jobIndex={jobIndex}; 工位启用状态数组无效");
+                    continue;
+                }
+                if (!cup.p_CD.bListProcess[jobIndex])
+                    continue;
+
+                int cameraIndex = cup.p_CD.camInd != null && jobIndex < cup.p_CD.camInd.Length
+                    ? cup.p_CD.camInd[jobIndex] : -1;
+                if (cameraIndex < 0 || cameraIndex >= maxCameraNum || cup.p_Cam == null || cameraIndex >= cup.p_Cam.Length)
+                {
+                    WriteStartupLog($"[Warmup] skip; jobIndex={jobIndex}; cameraIndex={cameraIndex}; 相机映射无效");
+                    continue;
+                }
+                uint width = cup.p_Cam[cameraIndex].iWidth;
+                uint height = cup.p_Cam[cameraIndex].iHeight;
+                if (width == 0 || height == 0 || width > int.MaxValue || height > int.MaxValue ||
+                    (long)width * height > int.MaxValue / 3)
+                {
+                    WriteStartupLog($"[Warmup] skip; jobIndex={jobIndex}; cameraIndex={cameraIndex}; 图像尺寸无效: {width}x{height}");
+                    continue;
+                }
+
+                WriteStartupLog($"[Warmup] selected; jobIndex={jobIndex}; cameraIndex={cameraIndex}; width={width}; height={height}");
+                bool success = cdl.det_infer_img((int)width, (int)height);
+                operLog.strOperEvent = "启动推理预热";
+                operLog.iEventStatus = success ? 0 : -1;
+                operLog.strFailReason = success ? "" : $"jobIndex={jobIndex}, cameraIndex={cameraIndex}，预热失败，详见UserData/dl_init_debug.log";
+                AddLog();
+                return;
+            }
+            WriteStartupLog("[Warmup] skipped; " + failReason);
+            operLog.strOperEvent = "启动推理预热";
+            operLog.iEventStatus = -1;
+            operLog.strFailReason = failReason;
+            AddLog();
+        }
         //工程拷贝后可能存在盘符不一致情况，修改路径盘符
         private void ReplaceDrive()
         {
@@ -3381,6 +3424,13 @@ namespace VisionApplication
                 fw.SetProgress(50, "正在搜索并初始化相机");
                 SearchCam();   // 搜搜相机数量                //
                 InitCam();      //
+
+                if (cup.p_VPPRTP.bDeepInfer && rts.initStatus.bDLModelInit)
+                {
+                    iProcess = 55;
+                    fw.SetProgress(55, "正在预热深度推理");
+                    WarmupDL();
+                }
 
                 iProcess = 60;
                 fw.SetProgress(60, "正在搜索并初始化串口");

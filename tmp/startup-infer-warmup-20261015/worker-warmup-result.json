@@ -1,0 +1,18 @@
+﻿{
+    "Assembly":  "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll",
+    "NativeLibrary":  "E:\\jieyawenjian\\VB_Det\\bin\\model_infer.dll",
+    "ModelPath":  "D:\\data\\inference_model",
+    "UseGPU":  true,
+    "GPUId":  0,
+    "Width":  3072,
+    "Height":  2048,
+    "FirstSuccess":  true,
+    "FirstMs":  2228,
+    "RepeatSuccess":  true,
+    "RepeatMs":  57,
+    "RepeatOnWorkerThread":  true,
+    "WorkerInferenceMs":  46,
+    "UninitializedRejected":  true,
+    "ZeroSizeRejected":  true,
+    "OverflowRejected":  true
+}

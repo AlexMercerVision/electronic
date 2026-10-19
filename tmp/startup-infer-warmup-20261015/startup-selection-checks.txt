@@ -1,0 +1,14 @@
+PASS Job0 uses mapped Cam1 and calls once
+PASS Disabled Job0 selects Job1 Cam0
+PASS Invalid Job0 mapping isolates and selects Job1
+PASS Reserved physical camera rejected
+PASS Zero-size camera skipped
+PASS Byte-count overflow skipped
+PASS UInt dimension overflow skipped
+PASS Missing cameras rejected
+PASS Missing mapping array rejected
+PASS Missing enable array rejected
+PASS Short enable and mapping arrays rejected
+PASS Reserved Job2 never used
+PASS Inference failure stays failed without retry
+13 startup selection checks passed; hardware and UI methods are not invoked.

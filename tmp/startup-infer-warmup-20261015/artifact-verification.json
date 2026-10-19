@@ -1,0 +1,141 @@
+﻿{
+    "ApplicationName":  "电极帽缺陷检测",
+    "Description":  "电极帽缺陷检测",
+    "ProductName":  "电极帽缺陷检测",
+    "DeploymentNameMatches":  true,
+    "Solution":  "VisionBasedLaser.sln",
+    "Configuration":  "Debug/x64",
+    "CompiledProjects":  [
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/CommonCls.dll",
+                                 "ProjectReferences":  [
+
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/xbVP_Control.dll",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/电极帽缺陷检测.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll",
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\xbVP_Control.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/ParamSet.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/LS_UartAssist.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/PerMang.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/CamDebug.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/BJJCZ_Server.exe",
+                                 "ProjectReferences":  [
+
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/PipeChanel.dll",
+                                 "ProjectReferences":  [
+
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/xbDet.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll"
+                                                       ]
+                             },
+                             {
+                                 "Output":  "E:/jieyawenjian/VB_Det/tmp/startup-infer-warmup-20261015/obj/MarkManager.exe",
+                                 "ProjectReferences":  [
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\CommonCls.dll",
+                                                           "E:\\jieyawenjian\\VB_Det\\tmp\\startup-infer-warmup-20261015\\build\\xbVP_Control.dll"
+                                                       ]
+                             }
+                         ],
+    "Assemblies":  [
+                       {
+                           "File":  "CommonCls.dll",
+                           "Name":  "CommonCls",
+                           "Version":  "1.0.0.0",
+                           "References":  [
+
+                                          ]
+                       },
+                       {
+                           "File":  "xbVP_Control.dll",
+                           "Name":  "xbVP_Control",
+                           "Version":  "1.0.9784.34759",
+                           "References":  [
+                                              {
+                                                  "Name":  "CommonCls",
+                                                  "Version":  "1.0.0.0"
+                                              }
+                                          ]
+                       },
+                       {
+                           "File":  "电极帽缺陷检测.exe",
+                           "Name":  "电极帽缺陷检测",
+                           "Version":  "1.0.0.0",
+                           "References":  [
+                                              {
+                                                  "Name":  "CommonCls",
+                                                  "Version":  "1.0.0.0"
+                                              },
+                                              {
+                                                  "Name":  "xbVP_Control",
+                                                  "Version":  "1.0.9784.34759"
+                                              }
+                                          ]
+                       }
+                   ],
+    "Dependencies":  [
+                         {
+                             "File":  "System.Memory.dll",
+                             "BuildVersion":  "4.0.1.2",
+                             "PublicBinVersion":  "4.0.1.2"
+                         },
+                         {
+                             "File":  "System.Runtime.CompilerServices.Unsafe.dll",
+                             "BuildVersion":  "6.0.0.0",
+                             "PublicBinVersion":  "6.0.0.0"
+                         },
+                         {
+                             "File":  "System.Numerics.Vectors.dll",
+                             "BuildVersion":  "4.1.4.0",
+                             "PublicBinVersion":  "4.1.4.0"
+                         },
+                         {
+                             "File":  "System.Buffers.dll",
+                             "BuildVersion":  "4.0.3.0",
+                             "PublicBinVersion":  "4.0.3.0"
+                         }
+                     ],
+    "BindingRedirectsMatch":  true,
+    "PublicBinFiles":  276,
+    "PublicBinChanged":  0,
+    "PublicBinAdded":  0,
+    "PreservedFiles":  2830
+}
