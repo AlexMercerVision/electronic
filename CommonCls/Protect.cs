@@ -384,6 +384,22 @@ namespace CommonCls
                  try
                  {
                      NetworkInterface[] networks = NetworkInterface.GetAllNetworkInterfaces();
+                     if (PasswordFileFound && PasswordFileValid)
+                     {
+                         string authorizedCid = GetCID();
+                         if (!string.IsNullOrEmpty(authorizedCid))
+                         {
+                             // 已授权网卡优先，避免虚拟网卡或枚举顺序变化影响机器绑定。
+                             foreach (NetworkInterface network in networks)
+                             {
+                                 if (network.NetworkInterfaceType == NetworkInterfaceType.Ethernet &&
+                                     network.GetPhysicalAddress().ToString() == authorizedCid)
+                                 {
+                                     return authorizedCid;
+                                 }
+                             }
+                         }
+                     }
                      foreach (NetworkInterface network in networks)
                      {
                          if (network.NetworkInterfaceType == NetworkInterfaceType.Ethernet)

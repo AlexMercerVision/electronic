@@ -1,0 +1,47 @@
+﻿{
+    "Solution":  "VisionBasedLaser.sln",
+    "Configuration":  "Debug/x64",
+    "CompiledProjectCount":  11,
+    "ProjectVersions":  {
+                            "PipeChanel":  "1.0.0.0",
+                            "xbVP_Control":  "1.0.9788.22853",
+                            "CommonCls":  "1.0.0.0"
+                        },
+    "CompilerReferencesFromThisBuild":  true,
+    "Dependencies":  [
+                         {
+                             "Name":  "System.Memory",
+                             "PublicVersion":  "4.0.1.2",
+                             "GeneratedVersion":  "4.0.1.2"
+                         },
+                         {
+                             "Name":  "System.Runtime.CompilerServices.Unsafe",
+                             "PublicVersion":  "6.0.0.0",
+                             "GeneratedVersion":  "6.0.0.0"
+                         },
+                         {
+                             "Name":  "System.Buffers",
+                             "PublicVersion":  "4.0.3.0",
+                             "GeneratedVersion":  "4.0.3.0"
+                         },
+                         {
+                             "Name":  "System.Numerics.Vectors",
+                             "PublicVersion":  "4.1.4.0",
+                             "GeneratedVersion":  "4.1.4.0"
+                         }
+                     ],
+    "BindingRedirectsMatch":  true,
+    "RealMachine":  {
+                        "AuthorizationFileValid":  true,
+                        "BoundAdapterPresent":  true,
+                        "LegacyFirstAdapterMatchesCid":  true,
+                        "NewSelectionMatchesCid":  true,
+                        "MatchingAdapterCount":  1
+                    },
+    "UnregisteredInvalidAndNoMatchFallbacksVerified":  true,
+    "AuthorizationFileUnchanged":  true,
+    "PublicBinFilesUnchanged":  264,
+    "PreservedFiles":  1678,
+    "MainApplicationStarted":  false,
+    "DeployedToPublicBin":  false
+}

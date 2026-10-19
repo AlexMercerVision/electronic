@@ -1,0 +1,17 @@
+PASS virtual-before-bound
+PASS bound-before-virtual
+PASS bound-last-of-three
+PASS wifi-is-not-ethernet
+PASS wifi-before-real-bound
+PASS missing-file-keeps-original-selection
+PASS invalid-file-keeps-original-selection
+PASS unregistered-keeps-original-selection
+PASS missing-cid-keeps-original-selection
+PASS empty-cid-keeps-original-selection
+PASS different-machine-does-not-return-stored-cid
+PASS removed-bound-nic-does-not-return-stored-cid
+PASS case-comparison-unchanged
+PASS no-adapters
+PASS wifi-only
+PASS enumeration-failure-unchanged
+TOTAL 16 passed; old code reproduces the virtual-first regression.
