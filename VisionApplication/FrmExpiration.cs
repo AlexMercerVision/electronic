@@ -28,7 +28,7 @@ namespace VisionApplication
         {
           
             InitializeComponent();
-            mPasswordFile = new Protect("authentication.txt");
+            mPasswordFile = Protect.LoadOrCreate(ApplicationPaths.AuthorizationFile);
             RoleCheck();
         }
         //日期验证
@@ -56,7 +56,7 @@ namespace VisionApplication
             string strEnableMAC = mPasswordFile.GetCID();
 
          //   int iModelRole = -1;
-            if (strMAC == strEnableMAC || strMAC == authorizationManagerMac || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85")  //E4:5E:37:62:A1:3D   00FFCF3A6322
+            if (Protect.IsValidMachineCode(strMAC) && (strMAC == strEnableMAC || strMAC == authorizationManagerMac || strMAC == "207BD2D2CA3E" || strMAC == "00E04C782532" || strMAC == "00FFCF3A6322" || strMAC == "8C32233F2B85"))  //E4:5E:37:62:A1:3D   00FFCF3A6322
             { 
                 DateVerify(iModelRole);
                 if (strMAC == authorizationManagerMac || strMAC == "00E04C782532" || strMAC == "207BD2D2CA3E" || strMAC == "00FFCF3A632" || strMAC == "8C32233F2B85")   //授权端/调试专用功能
@@ -143,6 +143,11 @@ namespace VisionApplication
         //获取机器码，用户可执行此操作，获取机器码
         private void bt_GetCID_Click(object sender, EventArgs e)
         {
+            if (!Protect.IsValidMachineCode(mPasswordFile.GetMacAddress()))
+            {
+                MessageBox.Show("未找到有效网卡机器码，请检查网卡驱动后重试。");
+                return;
+            }
             txtCID.Text=mPasswordFile.GetCIDEncode();
 
         }
@@ -172,11 +177,13 @@ namespace VisionApplication
             DateTime dt = dTPicker_DeadLIne.Value;
             bReg=  mPasswordFile.Regist(txt_RegCode.Text.Trim(),ref dt);
             if (!bReg)
-                MessageBox.Show("注册失败");
+                MessageBox.Show(mPasswordFile.RegistrationError, "注册失败");
             else
             {
                 dTPicker_DeadLIne.Value = dt;
                 MessageBox.Show("注册成功");
+                DialogResult = DialogResult.OK;
+                Close();
             }
         }
 

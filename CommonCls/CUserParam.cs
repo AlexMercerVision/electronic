@@ -204,7 +204,11 @@ namespace CommonCls
     public struct SerDistrParam
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public int[] serInd;
+        public int[] serInd; // Legacy cache only; never used to reopen a device.
+        [OptionalField]
+        public string[] portNames;
+        [OptionalField]
+        public string[] deviceIds;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
         public bool[] bUsed;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
@@ -417,9 +421,9 @@ namespace CommonCls
             p_CD.bListProcess = new bool[maxCameraNum];
             for (int i = 0; i < maxCameraNum; i++)
             {
-                p_CD.camInd[i] = i;
+                p_CD.camInd[i] = -1;
                 p_CD.camSerial[i] = string.Empty;
-                p_CD.bListProcess[i] = true;
+                p_CD.bListProcess[i] = false;
             }
             p_CD.triggleCam = 1;
             p_CD.triggleMode = 1;
@@ -446,13 +450,17 @@ namespace CommonCls
 
         public void InitPathAndFile()
         {
-            p_Paf.strVPPFilePath = @".\VPP\MDT.vpp";
-            p_Paf.strSigSavePath = "SigSave\\";
-            p_Paf.strConSavePath = "contSave\\";
-            p_Paf.strResSavePath = "\\data\\万华测试3\\20220807\\";
-            p_Paf.strPlaybackPath = @"\data\万华测试3\20220807\";
-            p_Paf.strErrPath = @"\result\";
-            p_Paf.ManuMarkPath = @"..\..\EZDModel";
+            p_Paf.strVPPFilePath = ApplicationPaths.DefaultVppPath;
+            p_Paf.strSigSavePath = ApplicationPaths.Data("Images", "Single");
+            p_Paf.strConSavePath = ApplicationPaths.Data("Images", "Continuous");
+            p_Paf.strLogPath = ApplicationPaths.Data("Logs");
+            p_Paf.strResSavePath = ApplicationPaths.WorkingDataDirectory;
+            p_Paf.strPlaybackPath = ApplicationPaths.Data("Images", "Playback");
+            p_Paf.strErrPath = ApplicationPaths.Data("Images", "Error");
+            p_Paf.strExportPath = ApplicationPaths.Data("Export");
+            p_Paf.MarkPicPath = ApplicationPaths.Data("Annotations", "Images");
+            p_Paf.AutoMarkPath = ApplicationPaths.Data("Annotations", "Auto");
+            p_Paf.ManuMarkPath = ApplicationPaths.Data("Annotations", "Manual");
         }
 
         public void InitFXParam()
@@ -536,14 +544,14 @@ namespace CommonCls
             p_VPPRTP.bUseFX = true;
             p_VPPRTP.bAcqFromCam = false;
             p_VPPRTP.bAcqFromIDB = false;
-            p_VPPRTP.bRecord = true;
+            p_VPPRTP.bRecord = false;
             p_VPPRTP.bSaveRes = true;
             p_VPPRTP.bRemarkResult = true;
             p_VPPRTP.bRemarkArea = true;
             p_VPPRTP.iLayoutType = 3;
             p_VPPRTP.bUseWeakCrack = false;
             p_VPPRTP.iXBType = 0;
-            p_VPPRTP.iFeedbackType = 1;
+            p_VPPRTP.iFeedbackType = 0;
             p_VPPRTP.bDeepInfer = false;
             p_VPPRTP.bVisionInfer = true;
             p_VPPRTP.bFXRestruct = true;
@@ -587,11 +595,13 @@ namespace CommonCls
         {
             p_SD.serInd = new int[4];
             p_SD.bUsed = new bool[4];
+            p_SD.portNames = new string[4];
+            p_SD.deviceIds = new string[4];
             p_SD.stationCardMap = new int[2];
             for (int i = 0; i < 4; i++)
             {
-                p_SD.serInd[i] = i;
-                p_SD.bUsed[i] = true;
+                p_SD.serInd[i] = -1;
+                p_SD.bUsed[i] = false;
             }
             p_SD.stationCardMap[0] = 0;
             p_SD.stationCardMap[1] = 1;
@@ -611,7 +621,7 @@ namespace CommonCls
             p_DL.fThresholdPoszGrey = 0.8f;
             p_DL.gpuID = 0;
             p_DL.modelType = "paddlex";
-            p_DL.modelPath = @"H:\st\xb\XBmodel\infer\inference_model";
+            p_DL.modelPath = ApplicationPaths.DefaultModelDirectory;
             p_DL.fThresholdCrack = 1.0f;
             p_DL.fThresholdPosz = 1.4f;
             p_DL.fIoUTh = 0.35f;
@@ -734,11 +744,11 @@ namespace CommonCls
 
         public void InitRTSParam()
         {
-            p_RTSP.bAutoConnCam = true;
-            p_RTSP.bAutoConnSerial = true;
-            p_RTSP.bAutoConnJCZ = true;
-            p_RTSP.bAutoConnMotionCard = true;
-            p_RTSP.bAutoRunVPP = true;
+            p_RTSP.bAutoConnCam = false;
+            p_RTSP.bAutoConnSerial = false;
+            p_RTSP.bAutoConnJCZ = false;
+            p_RTSP.bAutoConnMotionCard = false;
+            p_RTSP.bAutoRunVPP = false;
             p_RTSP.bUpdateImage = true;
             p_RTSP.bUpdateRecord = true;
             p_RTSP.bUpdateLog = true;
@@ -986,7 +996,10 @@ namespace CommonCls
 
         private static string SerializeToJson(CUserParam obj)
         {          
-            return JsonConvert.SerializeObject(obj, jsonSettings);
+            var json = Newtonsoft.Json.Linq.JObject.Parse(JsonConvert.SerializeObject(obj, jsonSettings));
+            // Runtime uses an absolute path; installed model references stay relocatable on disk.
+            json["p_DL"]["modelPath"] = ApplicationPaths.PortableModelPath(obj.p_DL.modelPath);
+            return json.ToString(Formatting.Indented);
         }
 
         private static CUserParam DeserializeFromJson(string json)
@@ -995,134 +1008,66 @@ namespace CommonCls
         }
         #endregion
 
-        #region 旧版二进制文件迁移（一次性）
-        public static void MigrateOldBinaryIfNeeded()
-        {
-            string oldPath = "UserData\\serUserParam.dat";
-            string newPath = "UserData\\serUserParam.json";
-            if (File.Exists(oldPath) && !File.Exists(newPath))
-            {
-                try
-                {
-                    using (FileStream fs = new FileStream(oldPath, FileMode.Open))
-                    {
-                        BinaryFormatter bf = new BinaryFormatter();
-                        CUserParam oldCup = bf.Deserialize(fs) as CUserParam;
-                        if (oldCup != null)
-                        {
-                            // 执行兼容性检查，补全缺失字段
-                            CheckParamCompatibility(oldCup);
-                            // 保存为 JSON 格式
-                            SaveUserParam(oldCup);
-                        }
-                        else
-                        {
-                            // 反序列化得到 null，创建全新参数并保存
-                            SaveUserParam(new CUserParam());
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // 迁移失败（如旧文件格式不兼容），创建全新参数保存为 JSON
-                    SaveUserParam(new CUserParam());
-                }
-            }
-        }
-        #endregion
+        // No automatic import from the installation directory or legacy DAT files on a new PC.
+        private readonly string userDataDirectory;
+        private static readonly object userParamWriteSync = new object();
+        public string LastUserParamError { get; private set; }
 
-        #region 读取和保存用户参数
+        public FileOper() : this(ApplicationPaths.UserDataDirectory) { }
+        public FileOper(string directory)
+        {
+            userDataDirectory = Path.GetFullPath(directory);
+        }
+
         public bool ReadUserParam(ref CUserParam cup)
         {
-            string jsonPath = "UserData\\serUserParam.json";
-            MigrateOldBinaryIfNeeded();
-
-            try
-            {
-                if (File.Exists(jsonPath))
-                {
-                    string json = File.ReadAllText(jsonPath);
-                    cup = DeserializeFromJson(json);
-                    CheckParamCompatibility(cup);
-                    return true;
-                }
-                else
-                {
-                    cup = new CUserParam();
-                    SaveUserParam(cup);
-                    return false;
-                }
-            }
-            catch (Exception)
-            {
-                cup = new CUserParam();
-                SaveUserParam(cup);
-                return false;
-            }
+            string path = Path.Combine(userDataDirectory, "serUserParam.json");
+            LastUserParamError = "";
+            if (File.Exists(path)) return ReadUserParam(path, ref cup);
+            cup = new CUserParam();
+            if (!SaveUserParam(cup, userDataDirectory))
+                LastUserParamError = "无法创建新机参数，请检查数据目录写入权限：" + path;
+            return false; // New parameters still require manual device assignment.
         }
 
         public bool ReadUserParam(string strUserParam, ref CUserParam cup)
         {
+            LastUserParamError = "";
             try
             {
-                if (File.Exists(strUserParam))
-                {
-                    string json = File.ReadAllText(strUserParam);
-                    cup = DeserializeFromJson(json);
-                    CheckParamCompatibility(cup);
-                    return true;
-                }
-                else
-                {
-                    SaveUserParam(cup);
-                    return false;
-                }
+                CUserParam loaded = DeserializeFromJson(File.ReadAllText(strUserParam));
+                if (loaded == null) throw new InvalidDataException("用户参数为空");
+                CheckParamCompatibility(loaded);
+                ApplicationPaths.Normalize(loaded);
+                cup = loaded;
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
-                cup = new CUserParam();
-                SaveUserParam(cup);
+                // Leave the original file and caller's parameters intact on invalid JSON or IO failure.
+                LastUserParamError = "读取参数失败：" + strUserParam + Environment.NewLine + ex;
                 return false;
             }
         }
 
         public static bool SaveUserParam(CUserParam cup)
         {
-            try
-            {
-                string dir = "UserData";
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-                string jsonPath = Path.Combine(dir, "serUserParam.json");
-                string json = SerializeToJson(cup);
-                File.WriteAllText(jsonPath, json);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return SaveUserParam(cup, ApplicationPaths.UserDataDirectory);
         }
 
-        public static bool SaveUserParam(CUserParam cup,string dir)
+        public static bool SaveUserParam(CUserParam cup, string dir)
         {
             try
             {
-               // string dir = "UserData";
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-                string jsonPath = Path.Combine(dir, "serUserParam.json");
-                string json = SerializeToJson(cup);
-                File.WriteAllText(jsonPath, json);
+                lock (userParamWriteSync)
+                {
+                    ApplicationPaths.Normalize(cup);
+                    ApplicationPaths.WriteTextAtomic(Path.Combine(dir, "serUserParam.json"), SerializeToJson(cup));
+                }
                 return true;
             }
-            catch (Exception)
-            {
-                return false;
-            }
+            catch (Exception) { return false; }
         }
-
-        #endregion
 
         #region 兼容性检查（原 CheckParam 方法，改为静态）
         private static void CheckParamCompatibility(CUserParam cup)
@@ -1222,6 +1167,7 @@ namespace CommonCls
             // 串口参数兼容
             if (cup.p_SD.serInd == null || cup.p_SD.BaudRate == 0)
                 cup.p_SD = cupTmp.p_SD;
+            SerialPortBinding.EnsureArrays(ref cup.p_SD);
             if (cup.p_SD.stationCardMap == null || cup.p_SD.stationCardMap.Length < 2)
                 cup.p_SD.stationCardMap = cupTmp.p_SD.stationCardMap;
             for (int i = 0; i < cup.p_SD.stationCardMap.Length && i < 2; i++)
@@ -1300,7 +1246,7 @@ namespace CommonCls
 
             // 标注路径兼容
             if (string.IsNullOrEmpty(cup.p_Paf.ManuMarkPath))
-                cup.p_Paf.ManuMarkPath = @"..\..\EZDModel";
+                cup.p_Paf.ManuMarkPath = ApplicationPaths.Data("Annotations", "Manual");
             if (string.IsNullOrEmpty(cup.p_Paf.LaserTemplateFileA))
                 cup.p_Paf.LaserTemplateFileA = "route0.ezd";
             if (string.IsNullOrEmpty(cup.p_Paf.LaserTemplateFileB))

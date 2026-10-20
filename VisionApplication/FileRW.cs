@@ -19,7 +19,8 @@ namespace VisionApplication
         //保存密码
         public void WritePssWrd(bool bRem,string strAcc,string strPss)
         { 
-            string strPath = System.Environment.CurrentDirectory + "\\pwd";
+            string strPath = CommonCls.ApplicationPaths.Data("UserData", "pwd");
+            Directory.CreateDirectory(Path.GetDirectoryName(strPath));
             FileStream fs = new FileStream(strPath, FileMode.Create, FileAccess.Write);
             BinaryWriter br = new BinaryWriter(fs);
             br.Write(bRem);
@@ -32,7 +33,7 @@ namespace VisionApplication
         //保存密码
         public void WritePssWrd(ref bool bRem, ref string strAcc, ref string strPss)
         {
-            string strPath = System.Environment.CurrentDirectory + "\\pwd";
+            string strPath = CommonCls.ApplicationPaths.Data("UserData", "pwd");
             FileStream fs = new FileStream(strPath, FileMode.Open, FileAccess.Read);
             BinaryReader br = new BinaryReader(fs);
             bRem = br.ReadBoolean();

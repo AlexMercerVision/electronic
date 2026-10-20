@@ -71,6 +71,7 @@ namespace VisionApplication
         private Label lblJob1NgOut;
 
         string[] strPortName;
+        private List<SerialDeviceInfo> serialDevices = new List<SerialDeviceInfo>();
         FileOper fo = new FileOper();
         int iType = 0;
 
@@ -170,123 +171,71 @@ namespace VisionApplication
         /// </summary>
         private List<string> GetAvailableSerialPorts()
         {
-            string[] ports = SerialPort.GetPortNames();
-            var sortedPorts = new List<string>();
-
-            try
-            {
-                var comNumbers = new List<int>();
-                foreach (string port in ports)
-                {
-                    if (port.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int comNumber;
-                        if (int.TryParse(port.Substring(3), out comNumber))
-                        {
-                            comNumbers.Add(comNumber);
-                        }
-                    }
-                }
-
-                comNumbers.Sort();
-
-                foreach (int num in comNumbers)
-                {
-                    sortedPorts.Add("COM" + num);
-                }
-            }
-            catch
-            {
-                sortedPorts = new List<string>(ports);
-                sortedPorts.Sort();
-            }
-
-            return sortedPorts;
+            serialDevices = SerialPortBinding.Enumerate();
+            return serialDevices.Select(device => device.PortName).ToList();
         }
 
-        /// <summary>
-        /// 刷新UI中的串口选择控件
-        /// </summary>
+        private ComboBox SerialCombo(int slot)
+        {
+            return (ComboBox)Controls.Find("cbxPortName" + (slot + 1), true)[0];
+        }
+
+        private void PopulateSerialChoices(bool preserveSelection)
+        {
+            SerialPortBinding.EnsureArrays(ref cup.p_SD);
+            strPortName = GetAvailableSerialPorts().ToArray();
+            for (int slot = 0; slot < 4; slot++)
+            {
+                ComboBox combo = SerialCombo(slot);
+                SerialDeviceInfo previous = preserveSelection ? combo.SelectedItem as SerialDeviceInfo : null;
+                string name = previous != null ? previous.PortName : cup.p_SD.portNames[slot];
+                string identity = previous != null ? previous.DeviceId : cup.p_SD.deviceIds[slot];
+                combo.Items.Clear();
+                combo.Items.Add(new SerialDeviceInfo());
+                foreach (var device in serialDevices) combo.Items.Add(device);
+                var matches = serialDevices.Where(device => !string.IsNullOrEmpty(identity)
+                    ? string.Equals(device.DeviceId, identity, StringComparison.OrdinalIgnoreCase)
+                    : !string.IsNullOrEmpty(name) && string.Equals(device.PortName, name, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count == 1) combo.SelectedItem = matches[0];
+                else if (!string.IsNullOrEmpty(name) || !string.IsNullOrEmpty(identity))
+                {
+                    var missing = new SerialDeviceInfo { PortName = name, DeviceId = identity,
+                        Description = "原绑定设备未连接或无法唯一确认" };
+                    combo.Items.Add(missing);
+                    combo.SelectedItem = missing;
+                }
+                else combo.SelectedIndex = 0;
+            }
+        }
+
         private void RefreshSerialPortComboBoxes()
         {
-            List<string> ports = GetAvailableSerialPorts();
-
-            // 保存当前选中项
-            string[] selectedItems = new string[4];
-            if (cbxPortName1 != null) selectedItems[0] = cbxPortName1.Text;
-            if (cbxPortName2 != null) selectedItems[1] = cbxPortName2.Text;
-            if (cbxPortName3 != null) selectedItems[2] = cbxPortName3.Text;
-            if (cbxPortName4 != null) selectedItems[3] = cbxPortName4.Text;
-
-            // 刷新列表
-            if (cbxPortName1 != null)
-            {
-                cbxPortName1.Items.Clear();
-                foreach (string port in ports)
-                    cbxPortName1.Items.Add(port);
-                if (cbxPortName1.Items.Contains(selectedItems[0]))
-                    cbxPortName1.Text = selectedItems[0];
-                else if (cbxPortName1.Items.Count > 0)
-                    cbxPortName1.SelectedIndex = 0;
-            }
-
-            if (cbxPortName2 != null)
-            {
-                cbxPortName2.Items.Clear();
-                foreach (string port in ports)
-                    cbxPortName2.Items.Add(port);
-                if (cbxPortName2.Items.Contains(selectedItems[1]))
-                    cbxPortName2.Text = selectedItems[1];
-                else if (cbxPortName2.Items.Count > 0)
-                    cbxPortName2.SelectedIndex = 0;
-            }
-
-            if (cbxPortName3 != null)
-            {
-                cbxPortName3.Items.Clear();
-                foreach (string port in ports)
-                    cbxPortName3.Items.Add(port);
-                if (cbxPortName3.Items.Contains(selectedItems[2]))
-                    cbxPortName3.Text = selectedItems[2];
-                else if (cbxPortName3.Items.Count > 0)
-                    cbxPortName3.SelectedIndex = 0;
-            }
-
-            if (cbxPortName4 != null)
-            {
-                cbxPortName4.Items.Clear();
-                foreach (string port in ports)
-                    cbxPortName4.Items.Add(port);
-                if (cbxPortName4.Items.Contains(selectedItems[3]))
-                    cbxPortName4.Text = selectedItems[3];
-                else if (cbxPortName4.Items.Count > 0)
-                    cbxPortName4.SelectedIndex = 0;
-            }
+            PopulateSerialChoices(true);
         }
 
-        /// <summary>
-        /// 获取指定索引的串口名称（用于配置保存）
-        /// </summary>
-        private int GetPortIndex(string portName)
-        {
-            List<string> ports = GetAvailableSerialPorts();
-            return ports.IndexOf(portName);
-        }
-
-        /// <summary>
-        /// 验证串口配置是否有效
-        /// </summary>
         private bool ValidateSerialConfiguration()
         {
-            List<string> ports = GetAvailableSerialPorts();
-
-            if (ports.Count == 0)
+            SerDistrParam candidate = cup.p_SD;
+            candidate.portNames = new string[4];
+            candidate.deviceIds = new string[4];
+            candidate.bUsed = new bool[4];
+            for (int slot = 0; slot < 4; slot++)
             {
-                MessageBox.Show("未检测到任何可用的串口设备，请检查硬件连接。", "警告",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                var selected = SerialCombo(slot).SelectedItem as SerialDeviceInfo;
+                candidate.portNames[slot] = selected?.PortName;
+                candidate.deviceIds[slot] = selected?.DeviceId;
+                candidate.bUsed[slot] = ((CheckBox)Controls.Find("chkSerUsed" + (slot + 1), true)[0]).Checked;
+            }
+            var available = SerialPortBinding.Enumerate();
+            for (int slot = 0; slot < 4; slot++)
+            {
+                if (!candidate.bUsed[slot]) continue;
+                SerialDeviceInfo device;
+                string reason;
+                if (SerialPortBinding.TryResolve(candidate, slot, available, out device, out reason)) continue;
+                MessageBox.Show($"串口槽{slot + 1}：{reason}", "串口分配", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
-
             return true;
         }
 
@@ -418,6 +367,8 @@ namespace VisionApplication
 
         private void btOK_Click(object sender, EventArgs e)
         {
+            DialogResult = DialogResult.None;
+            if (!ValidateSerialConfiguration()) return;
             if (!ValidateCameraAssignParam())
                 return;
 
@@ -435,11 +386,16 @@ namespace VisionApplication
 
             if(iType==1)
             {
-                FileOper.SaveUserParam(cup);
+                if (!FileOper.SaveUserParam(cup))
+                {
+                    MessageBox.Show("参数保存失败，请检查数据目录写入权限。", "保存参数");
+                    return;
+                }
+                DialogResult = DialogResult.OK;
                 this.Close();
 
             }
-            
+            else DialogResult = DialogResult.OK;
         }
 
        
@@ -917,8 +873,11 @@ namespace VisionApplication
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    if (strPortName.Length > 0)
-                        cup.p_SD.serInd[i] = ((ComboBox)this.Controls.Find("cbxPortName" + (i + 1).ToString(), true)[0]).SelectedIndex;
+                    SerialPortBinding.EnsureArrays(ref cup.p_SD);
+                    var selected = SerialCombo(i).SelectedItem as SerialDeviceInfo;
+                    cup.p_SD.portNames[i] = selected?.PortName ?? "";
+                    cup.p_SD.deviceIds[i] = selected?.DeviceId ?? "";
+                    cup.p_SD.serInd[i] = Array.IndexOf(strPortName, cup.p_SD.portNames[i]);
 
                     cup.p_SD.bUsed[i] = ((CheckBox)this.Controls.Find("chkSerUsed" + (i + 1).ToString(), true)[0]).Checked;
                 }
@@ -1401,7 +1360,8 @@ namespace VisionApplication
                 }
                 txtLineSelfPrefix.Text = cup.p_LI.strLinePrefix;
 
-                string strLineScene = "Scene\\" + cup.p_LI.strLineScence;
+                string strLineScene = ApplicationPaths.Data("Scene", Path.GetFileName(cup.p_LI.strLineScence));
+                if (!File.Exists(strLineScene)) strLineScene = ApplicationPaths.Resource("Scene", Path.GetFileName(cup.p_LI.strLineScence));
                 if (File.Exists(strLineScene))
                 {
                     picScene.Image = Image.FromFile(strLineScene);
@@ -1528,21 +1488,9 @@ namespace VisionApplication
             //串口分配
             try
             {
-                for (int i = 0; i < strPortName.Length; i++)
-                {
-                    cbxPortName1.Items.Add(strPortName[i]);
-                    cbxPortName2.Items.Add(strPortName[i]);
-                    cbxPortName3.Items.Add(strPortName[i]);
-                    cbxPortName4.Items.Add(strPortName[i]);
-                }
+                PopulateSerialChoices(false);
                 for (int i = 0; i < 4; i++)
-                {
-                    if (cup.p_SD.serInd[i] < strPortName.Length)
-                        ((ComboBox)this.Controls.Find("cbxPortName" + (i + 1).ToString(), true)[0]).SelectedIndex = cup.p_SD.serInd[i];
-                    else if (strPortName.Length > 0)
-                        ((ComboBox)this.Controls.Find("cbxPortName" + (i + 1).ToString(), true)[0]).SelectedIndex = 0;
-                    ((CheckBox)this.Controls.Find("chkSerUsed" + (i + 1).ToString(), true)[0]).Checked = cup.p_SD.bUsed[i];
-                }
+                    ((CheckBox)Controls.Find("chkSerUsed" + (i + 1), true)[0]).Checked = cup.p_SD.bUsed[i];
                 cbxBaudRate1.Text = cup.p_SD.BaudRate.ToString();
                 cbxDataBit.Text = cup.p_SD.DataBits.ToString();
                 cbxParity1.Text = Enum.GetName(typeof(Parity), cup.p_SD.parity);
@@ -1764,7 +1712,8 @@ namespace VisionApplication
             try
             {
 
-                FileStream fs = new FileStream("UserData\\serRecordList.dat", FileMode.Create);
+                Directory.CreateDirectory(ApplicationPaths.UserDataDirectory);
+                FileStream fs = new FileStream(Path.Combine(ApplicationPaths.UserDataDirectory, "serRecordList.dat"), FileMode.Create);
 
                 BinaryFormatter bf = new BinaryFormatter();
                 bf.Serialize(fs, cup.p_SRN);
@@ -1787,9 +1736,9 @@ namespace VisionApplication
             {
                 //      SaveUserParam(cup);
                 //   operLog.strOperEvent = "读取配置参数";
-                if (File.Exists("UserData\\serRecordList.dat"))
+                if (File.Exists(Path.Combine(ApplicationPaths.UserDataDirectory, "serRecordList.dat")))
                 {
-                    fs = new FileStream("UserData\\serRecordList.dat", FileMode.Open);
+                    fs = new FileStream(Path.Combine(ApplicationPaths.UserDataDirectory, "serRecordList.dat"), FileMode.Open);
                     BinaryFormatter bf = new BinaryFormatter();
                     cup.p_SRN =(SubRecordsName) bf.Deserialize(fs)  ;
                     fs.Close();
@@ -2360,7 +2309,8 @@ namespace VisionApplication
                     picScene.Image.Dispose();
                     picScene.Image = null;
                 }
-                File.Copy(selectedFilePath, "Scene\\" + cup.p_LI.strLineScence,true);
+                Directory.CreateDirectory(ApplicationPaths.Data("Scene"));
+                File.Copy(selectedFilePath, ApplicationPaths.Data("Scene", Path.GetFileName(cup.p_LI.strLineScence)), true);
 
                 // 例如，将图片显示在PictureBox中  
                 picScene.Image = Image.FromFile(selectedFilePath);

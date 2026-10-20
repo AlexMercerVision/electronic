@@ -72,7 +72,7 @@ namespace CommonCls
             if (_classNames == null || _classNames.Count == 0)
             {
                 var fileOper = new FileOper();
-                _classNames = fileOper.ReadRemarkImageFile("data\\predefined_classes.txt");
+                _classNames = fileOper.ReadRemarkImageFile(Path.Combine(ApplicationPaths.WorkingDataDirectory, "predefined_classes.txt"));
                 if (_classNames == null || _classNames.Count == 0)
                 {
                     _classNames = new List<string> { "liewen", "posz", "liewenWP", "poszWP", "flaking" };
@@ -180,7 +180,8 @@ namespace CommonCls
         {
             try
             {
-                File.WriteAllLines("data\\predefined_classes.txt", classNames);
+                Directory.CreateDirectory(ApplicationPaths.WorkingDataDirectory);
+                File.WriteAllLines(Path.Combine(ApplicationPaths.WorkingDataDirectory, "predefined_classes.txt"), classNames);
             }
             catch (Exception ex)
             {

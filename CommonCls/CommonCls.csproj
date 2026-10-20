@@ -176,6 +176,8 @@
       <DependentUpon>ClsList.cs</DependentUpon>
     </Compile>
     <Compile Include="CSerialDef.cs" />
+    <Compile Include="ApplicationPaths.cs" />
+    <Compile Include="SerialPortBinding.cs" />
     <Compile Include="CUserParam.cs" />
     <Compile Include="RuntimeLog.cs" />
     <Compile Include="HIKDeviceSource.cs" />

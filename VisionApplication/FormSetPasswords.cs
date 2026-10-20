@@ -293,7 +293,7 @@ namespace VisionApplication
       this.textBox_AdministratorPassword.Text = mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Administrator);
       this.textBox_AdministratorConfirm.Text = this.textBox_AdministratorPassword.Text;
 
-      this.textBox_OperaterPassword.Text = mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Administrator);
+      this.textBox_OperaterPassword.Text = mPasswordFile.GetPasswordForAccessLevel(AccessLevel.Operator);
       this.textBox_OperaterPasswordConfirm.Text = this.textBox_OperaterPassword.Text;
 
             EnableOk();
@@ -329,11 +329,20 @@ namespace VisionApplication
 
     private void button_Ok_Click(object sender, System.EventArgs e)
     {
+      var levels = new[] { AccessLevel.Operator, AccessLevel.Administrator, AccessLevel.Supervisor };
+      string[] previous = new string[levels.Length];
+      for (int i = 0; i < levels.Length; i++) previous[i] = mPasswordFile.GetPasswordForAccessLevel(levels[i]);
       mPasswordFile.SetPasswordForAccessLevel(AccessLevel.Supervisor, this.textBox_SupervisorPassword.Text);
       mPasswordFile.SetPasswordForAccessLevel(AccessLevel.Administrator, this.textBox_AdministratorPassword.Text);
       mPasswordFile.SetPasswordForAccessLevel(AccessLevel.Operator, this.textBox_OperaterPassword.Text); 
             // writes a password file only if needed  textBox_OperaterPassword
-       mPasswordFile.WritePasswordFile();
+       try { mPasswordFile.WritePasswordFile(); }
+       catch (Exception ex)
+       {
+           for (int i = 0; i < levels.Length; i++) mPasswordFile.SetPasswordForAccessLevel(levels[i], previous[i]);
+           DialogResult = DialogResult.None;
+           MessageBox.Show("ÃÜÂë±£´æÊ§°Ü£º" + ex.Message, "ÃÜÂëÉèÖÃ");
+       }
     }
   }
 }

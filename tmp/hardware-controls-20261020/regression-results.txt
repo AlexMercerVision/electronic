@@ -1,0 +1,58 @@
+PASS resolve shared lights / independent IO slot 0
+PASS resolve shared lights / independent IO slot 1
+PASS resolve shared lights / independent IO slot 2
+PASS resolve shared lights / independent IO slot 3
+PASS reject IO conflict from slot 0
+PASS reject IO conflict from slot 1
+PASS reject IO conflict from slot 2
+PASS reject IO conflict from slot 3
+PASS identity follows changed COM
+PASS missing identity never falls back to name
+PASS ambiguous identity rejected
+PASS legacy index cannot bind a port
+PASS manual connection test uses new default
+PASS manual connection populates camera list without InitCam
+PASS list maps swapped physical camera to Job0
+PASS no serial disables light controls
+PASS refresh preserves selected Job1
+PASS enumeration reorder preserves selected job
+PASS shared COM can be opened starting from B slot
+PASS both slots share one physical open
+PASS connecting alias never closes or reopens owner
+PASS connected serial and selected camera enable all light controls
+PASS list and light UI refresh issue zero serial commands
+PASS two faces share controller channel state
+PASS shared controller initialized once using first enabled slot
+PASS successful initialization synchronizes alias settings
+PASS B changes CH2 while preserving other physical channels
+PASS shared brightness persists in both slot settings
+PASS A turns off CH1 preserving B CH2
+PASS B sees same CH1 switch state and turns it back on
+PASS refresh never flips light output
+PASS failed switch write retains successful state
+PASS failed brightness write never saves new values
+PASS light sync switches all physical channels
+PASS IO has distinct physical object
+PASS disconnect shared serials succeeds
+PASS disconnect disposes each physical port once and clears aliases
+PASS disconnect disables light UI
+PASS reconnect creates a fresh shared owner
+PASS reconnect refresh restores light controls
+PASS reconnect transport and UI do not send light commands
+PASS no enabled jobs clears list and disables light
+PASS distinct light controllers retain independent objects and state
+PASS distinct controllers retain own channel values
+PASS two alias slots count as one fallback controller
+PASS open failure returned
+PASS failed open never enables light
+PASS enumerated cameras without enabled jobs never start
+PASS null camera array never reaches SDK
+PASS empty camera array never reaches SDK
+PASS missing camera object never reaches SDK
+PASS unprepared buffer never reaches SDK
+PASS only enabled mapped ready camera starts
+PASS invalid second job does not stop healthy camera
+PASS one start failure preserves other camera
+PASS out of range physical index skipped
+PASS missing status array skipped
+TOTAL 57 passed

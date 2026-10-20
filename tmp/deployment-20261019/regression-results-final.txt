@@ -1,0 +1,64 @@
+PASS default LD.vpp
+PASS installed model and GPU retained
+PASS no inherited camera identity
+PASS new machine cameras disabled
+PASS new machine serial slots disabled
+PASS no automatic hardware or output
+PASS writable log directory
+PASS relative model resolves against installation
+PASS relative VPP resolves against workspace
+PASS relative logs resolve against machine data
+PASS explicit external model preserved
+PASS drive-relative path rejected
+PASS first read creates unconfigured machine settings
+PASS no legacy DAT imported
+PASS installed model saved as portable reference
+PASS first file references only LD
+PASS configuration roundtrip from foreign working directory
+PASS atomic configuration update
+PASS previous settings retained as backup
+PASS existing machine settings preserved
+PASS broken configuration does not replace caller state
+PASS broken configuration not overwritten
+PASS configuration write failure reported
+PASS no temporary configuration files left
+PASS only LD seeded into writable workspace
+PASS no historical VPP or workstation configuration copied
+PASS updates preserve customer VPP
+PASS hardware identity follows changed COM number
+PASS missing identity never falls back to another COM
+PASS manual COM name independent of enumeration order
+PASS enumeration reorder preserves binding
+PASS missing manual COM rejected
+PASS legacy index never used to open a port
+PASS duplicate enabled bindings rejected for light and IO
+PASS disabled duplicate does not occupy a port
+PASS ambiguous hardware identity rejected
+PASS disabled slot never resolves for opening
+PASS legacy slot requires explicit reassignment
+PASS first authorization created unbound
+PASS no inherited entitlement or login passwords
+PASS old authorization seed ignored
+PASS existing authorization not reseeded
+PASS other-machine registration rejected without altering authorization
+PASS malformed registration codes rejected without throwing
+PASS missing machine identity rejected
+PASS expired registration rejected
+PASS authorization write failure rejects registration
+PASS failed registration restores in-memory and on-disk entitlement
+PASS valid local registration saved
+PASS machine and date authorization roundtrip
+PASS valid license remains valid after reopen
+PASS new license dates independent of regional settings
+PASS corrupt authorization handled without overwriting
+PASS new serial UI slot 1 remains unassigned
+PASS new serial UI slot 2 remains unassigned
+PASS new serial UI slot 3 remains unassigned
+PASS new serial UI slot 4 remains unassigned
+PASS legacy UI does not preselect first available port
+PASS first password dialog requires nonempty passwords
+PASS password confirmation enables saving
+PASS initial passwords persist with authorization
+PASS foreign working-directory files untouched
+PASS actual main automatic save returns while invalid configuration is blocked
+TOTAL 63

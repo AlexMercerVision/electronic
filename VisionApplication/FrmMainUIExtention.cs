@@ -291,18 +291,21 @@ namespace VisionApplication
             // 兼容旧配置：工位原来对应的前三个光源槽已启用时优先沿用。
             if (jobIndex < lightControllerSlotCount && jobIndex < cup.p_SD.bUsed.Length &&
                 cup.p_SD.bUsed[jobIndex])
-                return jobIndex;
+                return GetSharedLightControllerSlot(jobIndex);
 
             List<int> enabledSlots = new List<int>();
             int slotCount = Math.Min(lightControllerSlotCount, cup.p_SD.bUsed.Length);
             for (int slot = 0; slot < slotCount; slot++)
             {
                 if (cup.p_SD.bUsed[slot])
-                    enabledSlots.Add(slot);
+                {
+                    int controllerSlot = GetSharedLightControllerSlot(slot);
+                    if (!enabledSlots.Contains(controllerSlot)) enabledSlots.Add(controllerSlot);
+                }
             }
 
             if (enabledSlots.Count == 1)
-                return enabledSlots[0];
+                return GetSharedLightControllerSlot(enabledSlots[0]);
 
             if (enabledSlots.Count == 0)
             {
@@ -314,6 +317,16 @@ namespace VisionApplication
                 failureReason = $"[Light] ambiguous light-controller slots: {slots}, job={jobIndex}";
             }
             return -1;
+        }
+
+        private int GetSharedLightControllerSlot(int slot)
+        {
+            SerialPort port = sPortAll[slot];
+            if (port != null)
+                for (int other = 0; other < slot; other++)
+                    if (cup.p_SD.bUsed[other] && ReferenceEquals(sPortAll[other], port))
+                        return other;
+            return slot;
         }
 
         private SerialPort GetLightPortForJob(int jobIndex)
@@ -379,6 +392,16 @@ namespace VisionApplication
             indent[2] = ch2;
             indent[3] = ch3;
             indent[4] = ch4;
+            // 共用控制器的槽保存同一份通道值，避免下次禁用主槽后恢复旧亮度。
+            for (int slot = 0; slot < lightControllerSlotCount; slot++)
+            {
+                if (slot == controllerSlot || !cup.p_SD.bUsed[slot] ||
+                    GetSharedLightControllerSlot(slot) != controllerSlot)
+                    continue;
+                int[] sharedValues = GetLightValuesStorage(slot);
+                if (sharedValues != null && sharedValues.Length >= 5)
+                    Array.Copy(indent, 1, sharedValues, 1, lightChannelCount);
+            }
             return true;
         }
 
@@ -622,6 +645,7 @@ namespace VisionApplication
                 if (!SendAllChannelsCommand(jobIndex, ch1, ch2, ch3, ch4, "INIT"))
                     continue;
 
+                SaveLightValues(jobIndex, ch1, ch2, ch3, ch4);
                 lightOnStates[controllerSlot, 0] = ch1 > 0;
                 lightOnStates[controllerSlot, 1] = ch2 > 0;
                 lightOnStates[controllerSlot, 2] = ch3 > 0;

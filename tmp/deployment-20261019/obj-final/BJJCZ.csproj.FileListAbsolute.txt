@@ -1,0 +1,13 @@
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\build-final\BJJCZ_Server.exe.config
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\build-final\BJJCZ_Server.exe
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\build-final\BJJCZ_Server.pdb
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ.csproj.AssemblyReference.cache
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ_BaseDevelop.FrmHatch.resources
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ_BaseDevelop.FrmLaserPen.resources
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ_BaseDevelop.JCZServer.resources
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ_BaseDevelop.Properties.Resources.resources
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ.csproj.GenerateResource.cache
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ.csproj.CoreCompileInputs.cache
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ.csproj.Up2Date
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ_Server.exe
+E:\jieyawenjian\VB_Det\tmp\deployment-20261019\obj-final\BJJCZ_Server.pdb

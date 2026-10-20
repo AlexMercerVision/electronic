@@ -1,0 +1,7 @@
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\build-delivery\PipeChanel.dll
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\build-delivery\PipeChanel.pdb
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\obj-delivery\PipeChanel.csproj.AssemblyReference.cache
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\obj-delivery\PipeChanel.csproj.CoreCompileInputs.cache
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\obj-delivery\PipeChanel.csproj.Up2Date
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\obj-delivery\PipeChanel.dll
+E:\jieyawenjian\VB_Det\tmp\hardware-controls-20261020\obj-delivery\PipeChanel.pdb

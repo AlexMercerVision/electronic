@@ -33,7 +33,15 @@ namespace BJJCZ_BaseDevelop
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                FrmMainUI FMUI = new FrmMainUI();
+                FrmMainUI FMUI;
+                try { FMUI = new FrmMainUI(); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("启动初始化失败，请检查软件资源及数据目录写入权限。\n数据目录："
+                        + CommonCls.ApplicationPaths.DataDirectory + "\n" + ex, FrmMainUI.ApplicationName,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
                 Application.Run(FMUI);
             }
 

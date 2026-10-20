@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections;
 using System.Collections.Specialized;
 using System.IO;
+using System.Globalization;
 using System.Management;
 
 using System.Net.NetworkInformation;
@@ -24,7 +25,7 @@ namespace CommonCls
 
         public Protect(string fname)
         {
-            mFilename = fname;
+            mFilename = Path.GetFullPath(fname);
             mFound = false;
             mIsValid = false;
             mDefaultPasswords = new StringDictionary();
@@ -36,6 +37,28 @@ namespace CommonCls
                 mFound = true;
                 ReadPasswordFile();
             }
+        }
+
+        public static Protect LoadOrCreate(string path)
+        {
+            var file = new Protect(path);
+            if (File.Exists(path)) return file;
+            // No machine binding, valid term or preset login passwords are copied from another PC.
+            file.SetCID("");
+            file.SetDate(DateType.DeadLine, new DateTime(2000, 1, 1));
+            file.SetDate(DateType.LastLog, new DateTime(2000, 1, 1));
+            try { file.WritePasswordFile(false); }
+            catch (IOException) { if (!File.Exists(path)) throw; }
+            return new Protect(path);
+        }
+
+        public bool HasConfiguredPasswords => Enum.GetValues(typeof(AccessLevel)).Cast<AccessLevel>()
+            .All(level => !string.IsNullOrWhiteSpace(GetPasswordForAccessLevel(level)));
+        public string RegistrationError { get; private set; }
+        public static bool IsValidMachineCode(string code)
+        {
+            return !string.IsNullOrEmpty(code) && code.Length == 12 && code != "000000000000"
+                && code.All(character => Uri.IsHexDigit(character));
         }
 
         public bool PasswordFileFound
@@ -76,7 +99,7 @@ namespace CommonCls
         //设置期限
         public void SetDate(DateType dtType, DateTime dt)
         {
-            mLoadedPasswords[dtType.ToString()] = dt.ToString();
+            mLoadedPasswords[dtType.ToString()] = dt.ToString("O", CultureInfo.InvariantCulture);
         }
         //设置机器码
         public void SetCID( string strCID)
@@ -87,17 +110,13 @@ namespace CommonCls
         //获取期限
         public DateTime GetDate(DateType dtType)
         {
-            DateTime dt = DateTime.Now;
-            try
-            {
-                dt = DateTime.Parse(mLoadedPasswords[dtType.ToString()]);
-            }
-            catch
-            {
-
-            }
-            return dt;
+            DateTime value;
+            string text = mLoadedPasswords[dtType.ToString()];
+            if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out value)
+                || DateTime.TryParse(text, out value)) return value;
+            return new DateTime(2000, 1, 1);
         }
+
         //获取机器码
         public string GetCID()
         {
@@ -109,70 +128,30 @@ namespace CommonCls
         {
             mIsValid = false;
             mLoadedPasswords.Clear();
-
-            StringDictionary filePasswords = new StringDictionary();
-
-            // read _filename and fill _loadedPasswords
-            ArrayList fileLines = new ArrayList();
-            string line;
             try
             {
-                using (StreamReader sr = new StreamReader(mFilename))
+                string[] lines = File.ReadAllLines(mFilename);
+                int version;
+                if (lines.Length == 0 || !lines[0].StartsWith("Version ")
+                    || !int.TryParse(lines[0].Substring(8), out version) || version != 1) return;
+                var loaded = new StringDictionary();
+                for (int index = 1; index < lines.Length; index++)
                 {
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        fileLines.Add(line);
-                    }
+                    byte[] bytes;
+                    string key, value;
+                    if (!ExtractBytesFromString(lines[index], out bytes)) return;
+                    DoXOrDecode(bytes);
+                    if (!Decode(bytes, out key, out value)) return;
+                    loaded.Add(key, value);
                 }
+                mLoadedPasswords = loaded;
+                mIsValid = true;
             }
             catch (Exception)
             {
-                return;
+                mLoadedPasswords.Clear();
+                mIsValid = false;
             }
-
-            // first line is "Version x"
-            if (fileLines.Count < 1)
-                return;
-            line = (string)fileLines[0];
-            if (!line.StartsWith("Version "))
-                return;
-            line = line.Substring(8);
-
-            int ver = -1;
-            try
-            {
-                ver = int.Parse(line);
-            }
-            catch (Exception) { return; }
-
-            // only version 1 supported at this time
-            if (ver != 1)
-                return;
-
-            // next lines are password lines
-            for (int i = 1; i < fileLines.Count; ++i)
-            {
-                // line to bytes
-                byte[] bytes;
-                if (!ExtractBytesFromString((string)fileLines[i], out bytes))
-                    return;
-
-                // doxor
-                this.DoXOrDecode(bytes);
-
-                // decode accesslevel & password
-                AccessLevel level;
-                string pass;
-                string key;
-                if (!this.Decode(bytes, out key, out pass))
-                    return;
-
-                // put in table
-                filePasswords.Add(key, pass);
-            }
-
-            mIsValid = true;
-            this.mLoadedPasswords = filePasswords;
         }
 
         private void AddString(byte[] bytes, ref int i, string s)
@@ -198,7 +177,7 @@ namespace CommonCls
         private bool RemoveString(byte[] bytes, ref int i, out string s)
         {
             s = "";
-            while (i < bytes.Length)
+            while (i + 1 < bytes.Length)
             {
                 byte low = bytes[i];
                 ++i;
@@ -315,6 +294,7 @@ namespace CommonCls
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(str) || str.Length % 2 != 0) { bytes = null; return false; }
                 bytes = new byte[str.Length / 2];
 
                 for (int i = 0; i < str.Length; i += 2)
@@ -334,34 +314,20 @@ namespace CommonCls
 
         public void WritePasswordFile()
         {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string fname = appData + "\\GearDet\\authentication.txt";
-            if (this.mFound)
-                fname = this.mFilename;
+            WritePasswordFile(true);
+        }
 
-            // check if passwords are same as default - if same as default and we
-            // don't have a file open, then don't write a file
-            if (!this.mFound && LoadedPasswordsSameAsDefault())
-                return;
-
-            string fileContents = "";
-            fileContents += "Version 1" + System.Environment.NewLine;
-
-            foreach (System.Collections.DictionaryEntry de in this.mLoadedPasswords)
+        private void WritePasswordFile(bool overwrite)
+        {
+            string contents = "Version 1" + Environment.NewLine;
+            foreach (System.Collections.DictionaryEntry entry in mLoadedPasswords)
             {
-                byte[] bytes = Encode(de.Key.ToString(), de.Value.ToString());
-                AddBytesToString(bytes, ref fileContents);
-                fileContents += System.Environment.NewLine;
+                byte[] bytes = Encode(entry.Key.ToString(), entry.Value.ToString());
+                AddBytesToString(bytes, ref contents);
+                contents += Environment.NewLine;
             }
-
-            using (StreamWriter sw = new StreamWriter(fname))
-            {
-                sw.Write(fileContents);
-            }
-
-            // tbd - or read password file in again
+            ApplicationPaths.WriteTextAtomic(mFilename, contents, overwrite);
             mFound = true;
-            mFilename = fname;
             mIsValid = true;
         }
 
@@ -379,45 +345,25 @@ namespace CommonCls
         }
 
        
-          public string GetMacAddress()
-             {
-                 try
-                 {
-                     NetworkInterface[] networks = NetworkInterface.GetAllNetworkInterfaces();
-                     if (PasswordFileFound && PasswordFileValid)
-                     {
-                         string authorizedCid = GetCID();
-                         if (!string.IsNullOrEmpty(authorizedCid))
-                         {
-                             // 已授权网卡优先，避免虚拟网卡或枚举顺序变化影响机器绑定。
-                             foreach (NetworkInterface network in networks)
-                             {
-                                 if (network.NetworkInterfaceType == NetworkInterfaceType.Ethernet &&
-                                     network.GetPhysicalAddress().ToString() == authorizedCid)
-                                 {
-                                     return authorizedCid;
-                                 }
-                             }
-                         }
-                     }
-                     foreach (NetworkInterface network in networks)
-                     {
-                         if (network.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
-                         {
-                             return network.GetPhysicalAddress().ToString();
-                         }
-                     }
-                     return string.Empty;
-                 }
-                 catch
-                 {
-                     return "unknow";
-                 }
-                 finally
-                 {
-                 }
-             }
-       
+        public string GetMacAddress()
+        {
+            try
+            {
+                var networks = NetworkInterface.GetAllNetworkInterfaces().Where(network =>
+                    network.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                    network.NetworkInterfaceType == NetworkInterfaceType.Wireless80211).ToList();
+                string bound = PasswordFileFound && PasswordFileValid ? GetCID() : "";
+                if (IsValidMachineCode(bound) && networks.Any(network =>
+                    string.Equals(network.GetPhysicalAddress().ToString(), bound, StringComparison.OrdinalIgnoreCase)))
+                    return bound;
+                return networks.OrderBy(network => network.NetworkInterfaceType == NetworkInterfaceType.Ethernet ? 0 : 1)
+                    .ThenBy(network => network.Id, StringComparer.Ordinal)
+                    .Select(network => network.GetPhysicalAddress().ToString())
+                    .FirstOrDefault(IsValidMachineCode) ?? "";
+            }
+            catch { return ""; }
+        }
+
         public string GetCIDEncode()
         {
             string cid = GetMacAddress();
@@ -441,39 +387,48 @@ namespace CommonCls
 
         public string GetCIDandDTEncode(string strCID, DateTime dt)
         { 
-            byte[] bytes = Encode(strCID, dt.ToString());
+            byte[] bytes = Encode(strCID, dt.ToString("O", CultureInfo.InvariantCulture));
             string strCIDandDTEncode = "";
             AddBytesToString(bytes, ref strCIDandDTEncode);
             return strCIDandDTEncode;
         }
-        public bool Regist(string strCode,ref DateTime dt)
+        public bool Regist(string strCode, ref DateTime dt)
         {
+            RegistrationError = "注册码格式有误";
             byte[] bytes;
-            if (!ExtractBytesFromString(strCode, out bytes))
+            string machine, date;
+            if (!ExtractBytesFromString(strCode, out bytes)) return false;
+            DoXOrDecode(bytes);
+            if (!Decode(bytes, out machine, out date)) return false;
+            if (!IsValidMachineCode(machine) || !string.Equals(machine, GetMacAddress(), StringComparison.OrdinalIgnoreCase))
+            {
+                RegistrationError = "注册码不属于本机，请使用本机机器码重新申请";
                 return false;
-
-            // doxor
-            this.DoXOrDecode(bytes);
- 
-            string pass;
-            string key;
-            if (!this.Decode(bytes, out key, out pass))
+            }
+            DateTime deadline;
+            if ((!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out deadline)
+                && !DateTime.TryParse(date, out deadline)) || deadline < DateTime.Now)
+            {
+                RegistrationError = "注册码期限无效或已过期";
                 return false;
-            
+            }
+            var previous = new StringDictionary();
+            foreach (DictionaryEntry entry in mLoadedPasswords) previous.Add((string)entry.Key, (string)entry.Value);
             try
             {
-                dt = DateTime.Parse(pass);
-                if (dt < DateTime.Now)
-                    return false;
+                SetCID(machine.ToUpperInvariant());
+                SetDate(DateType.DeadLine, deadline);
+                WritePasswordFile();
+                dt = deadline;
+                RegistrationError = "";
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
+                mLoadedPasswords = previous;
+                RegistrationError = "授权保存失败：" + ex.Message;
                 return false;
             }
-            SetCID(key);
-            SetDate(DateType.DeadLine, dt);
-            WritePasswordFile();
-            return true;
         }
 
         private Byte[] EncodeCID(string pass)
