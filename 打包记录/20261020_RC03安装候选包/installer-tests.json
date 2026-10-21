@@ -1,0 +1,40 @@
+[
+  {
+    "Phase": "strict-missing-dependency",
+    "ExitCode": 7,
+    "Log": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC03安装候选包\\strict-missing-dependency.log"
+  },
+  {
+    "Phase": "install",
+    "ExitCode": 0,
+    "Log": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC03安装候选包\\install.log"
+  },
+  {
+    "Phase": "start-menu-shortcut",
+    "Target": "C:\\Program Files\\ElectrodeDet\\Launch.cmd",
+    "WorkingDirectory": "C:\\Program Files\\ElectrodeDet\\App"
+  },
+  {
+    "Phase": "desktop-shortcut",
+    "Target": "C:\\Program Files\\ElectrodeDet\\Launch.cmd",
+    "WorkingDirectory": "C:\\Program Files\\ElectrodeDet\\App"
+  },
+  {
+    "Phase": "missing-cuda-path-rejected",
+    "ExitCode": 1
+  },
+  {
+    "Phase": "upgrade",
+    "ExitCode": 0,
+    "Log": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC03安装候选包\\upgrade.log"
+  },
+  {
+    "Phase": "data-preserved-after-upgrade",
+    "ProtectedExistingFiles": 11
+  },
+  {
+    "Phase": "uninstall-data-preserved",
+    "ExitCode": 0,
+    "ProtectedExistingFiles": 11
+  }
+]

@@ -1,0 +1,3129 @@
+[
+  {
+    "File": "BJJCZ_Server.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\BJJCZ_Server.exe",
+    "Name": "BJJCZ_Server",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "PipeChanel",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "CamDebug.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CamDebug.exe",
+    "Name": "CamDebug",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "MvCameraControl.Net",
+        "Version": "3.4.0.1",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Blob.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Blob.Controls.dll",
+    "Name": "Cognex.VisionPro.Blob.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Blob",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Blob.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Blob.dll",
+    "Name": "Cognex.VisionPro.Blob",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageProcessing",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CalibFix.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CalibFix.Controls.dll",
+    "Name": "Cognex.VisionPro.CalibFix.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.CalibFix",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CalibFixPlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CalibFix.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CalibFix.dll",
+    "Name": "Cognex.VisionPro.CalibFix",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CalibFixPlus.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CalibFixPlus.dll",
+    "Name": "Cognex.VisionPro.CalibFixPlus",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.CalibFix",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "stdole",
+        "Version": "7.0.3300.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Caliper.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Caliper.Controls.dll",
+    "Name": "Cognex.VisionPro.Caliper.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Caliper",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Caliper.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Caliper.dll",
+    "Name": "Cognex.VisionPro.Caliper",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Controls.dll",
+    "Name": "Cognex.VisionPro.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "PresentationFramework",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xaml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "PresentationCore",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "WindowsBase",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "WindowsFormsIntegration",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Graphic",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.FGGigE",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "QWhale.Editor",
+        "Version": "1.62.4104.36377",
+        "Framework": false
+      },
+      {
+        "Name": "QWhale.Syntax",
+        "Version": "1.62.4104.36376",
+        "Framework": false
+      },
+      {
+        "Name": "QWhale.Syntax.Parsers",
+        "Version": "1.62.4104.36376",
+        "Framework": false
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageProcessing",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "QWhale.Common",
+        "Version": "1.62.4104.36375",
+        "Framework": false
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "2.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Core.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Core.dll",
+    "Name": "Cognex.VisionPro.Core",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "stdole",
+        "Version": "7.0.3300.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Runtime.Serialization.Formatters.Soap",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CorePlus.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CorePlus.dll",
+    "Name": "Cognex.VisionPro.CorePlus",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "stdole",
+        "Version": "7.0.3300.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Database.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Database.dll",
+    "Name": "Cognex.VisionPro.Database",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Display.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Display.Controls.dll",
+    "Name": "Cognex.VisionPro.Display.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.DisplayCtl",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "stdole",
+        "Version": "7.0.3300.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.dll",
+    "Name": "Cognex.VisionPro",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Design",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Runtime.Serialization.Formatters.Soap",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FG1394DCAM.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FG1394DCAM.dll",
+    "Name": "Cognex.VisionPro.FG1394DCAM",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FG8100.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FG8100.dll",
+    "Name": "Cognex.VisionPro.FG8100",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FG8100L.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FG8100L.dll",
+    "Name": "Cognex.VisionPro.FG8100L",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FGGigE.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FGGigE.dll",
+    "Name": "Cognex.VisionPro.FGGigE",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ImageFile.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ImageFile.dll",
+    "Name": "Cognex.VisionPro.ImageFile",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ImageProcessing.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ImageProcessing.dll",
+    "Name": "Cognex.VisionPro.ImageProcessing",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Inspection.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Inspection.Controls.dll",
+    "Name": "Cognex.VisionPro.Inspection.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Inspection",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Database",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Inspection.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Inspection.dll",
+    "Name": "Cognex.VisionPro.Inspection",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Database",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Interop.Core.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Interop.Core.dll",
+    "Name": "Cognex.VisionPro.Interop.Core",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "stdole",
+        "Version": "7.0.3300.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.PMAlign.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.PMAlign.Controls.dll",
+    "Name": "Cognex.VisionPro.PMAlign.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.PMAlign",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Runtime.Serialization.Formatters.Soap",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.PMAlign.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.PMAlign.dll",
+    "Name": "Cognex.VisionPro.PMAlign",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.QuickBuild.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.QuickBuild.Controls.dll",
+    "Name": "Cognex.VisionPro.QuickBuild.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Design",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.QuickBuild.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.QuickBuild.IO",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ResultsAnalysis",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.FG1394DCAM",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.DirectoryServices",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Runtime.Serialization.Formatters.Soap",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.QuickBuild.Core.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.QuickBuild.Core.dll",
+    "Name": "Cognex.VisionPro.QuickBuild.Core",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.QuickBuild.IO",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.FG8100",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.FG8100L",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.QuickBuild.IO.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.QuickBuild.IO.dll",
+    "Name": "Cognex.VisionPro.QuickBuild.IO",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ResultsAnalysis.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ResultsAnalysis.dll",
+    "Name": "Cognex.VisionPro.ResultsAnalysis",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ToolGroup.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ToolGroup.Controls.dll",
+    "Name": "Cognex.VisionPro.ToolGroup.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Inspection.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Inspection",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Database",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ToolGroup.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ToolGroup.dll",
+    "Name": "Cognex.VisionPro.ToolGroup",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.Core.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.Core.dll",
+    "Name": "Cognex.VisionPro3D.Core",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Interop.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.Display.Controls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.Display.Controls.dll",
+    "Name": "Cognex.VisionPro3D.Display.Controls",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "PresentationFramework",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xaml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Graphic",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "WindowsBase",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "PresentationCore",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "WindowsFormsIntegration",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "HelixToolkit.Wpf",
+        "Version": "2014.2.11.1",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.DisplayImpl.HOOPS",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.dll",
+    "Name": "Cognex.VisionPro3D",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.Graphic.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.Graphic.dll",
+    "Name": "Cognex.VisionPro3D.Graphic",
+    "Version": "59.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CorePlus",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro3D.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Microsoft.VisualC",
+        "Version": "10.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "CommonCls.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll",
+    "Name": "CommonCls",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "MvCameraControl.Net",
+        "Version": "3.4.0.1",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "halcondotnet",
+        "Version": "12.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageProcessing",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "OpenCvSharp",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Management",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Newtonsoft.Json",
+        "Version": "13.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "OpenCvSharp.Extensions",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "halcondotnet.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\halcondotnet.dll",
+    "Name": "halcondotnet",
+    "Version": "12.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "PresentationFramework",
+        "Version": "3.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "PresentationCore",
+        "Version": "3.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "WindowsBase",
+        "Version": "3.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "hdevenginedotnet.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\hdevenginedotnet.dll",
+    "Name": "hdevenginedotnet",
+    "Version": "12.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "halcondotnet",
+        "Version": "12.0.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "LS_UartAssist.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\LS_UartAssist.exe",
+    "Name": "LS_UartAssist",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "MarkManager.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\MarkManager.exe",
+    "Name": "MarkManager",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "MathNet.Numerics.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\MathNet.Numerics.dll",
+    "Name": "MathNet.Numerics",
+    "Version": "5.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Numerics",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Runtime.Serialization",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.ValueTuple",
+        "Version": "4.0.2.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Microsoft.Extensions.Logging.Abstractions.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Microsoft.Extensions.Logging.Abstractions.dll",
+    "Name": "Microsoft.Extensions.Logging.Abstractions",
+    "Version": "3.0.3.0",
+    "References": [
+      {
+        "Name": "netstandard",
+        "Version": "2.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "MvCameraControl.Net.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\MvCameraControl.Net.dll",
+    "Name": "MvCameraControl.Net",
+    "Version": "3.4.0.1",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "2.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "Newtonsoft.Json.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Newtonsoft.Json.dll",
+    "Name": "Newtonsoft.Json",
+    "Version": "13.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Numerics",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml.Linq",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Runtime.Serialization",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "OpenCvSharp.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\OpenCvSharp.dll",
+    "Name": "OpenCvSharp",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "netstandard",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Memory",
+        "Version": "4.0.1.1",
+        "Framework": false
+      },
+      {
+        "Name": "System.Runtime.CompilerServices.Unsafe",
+        "Version": "6.0.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "OpenCvSharp.Extensions.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\OpenCvSharp.Extensions.dll",
+    "Name": "OpenCvSharp.Extensions",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "OpenCvSharp",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "PresentationCore",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "WindowsBase",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "PresentationFramework",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "ParamSet.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\ParamSet.exe",
+    "Name": "ParamSet",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "PerMang.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\PerMang.exe",
+    "Name": "PerMang",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "PipeChanel.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\PipeChanel.dll",
+    "Name": "PipeChanel",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "stdole.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\stdole.dll",
+    "Name": "stdole",
+    "Version": "7.0.3300.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "1.0.3300.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "SunnyUI.Common.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\SunnyUI.Common.dll",
+    "Name": "SunnyUI.Common",
+    "Version": "3.3.9.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Numerics",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "SunnyUI.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\SunnyUI.dll",
+    "Name": "SunnyUI",
+    "Version": "3.3.9.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "SunnyUI.Common",
+        "Version": "3.3.9.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Web.Extensions",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Data",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Design",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "System.Buffers.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Buffers.dll",
+    "Name": "System.Buffers",
+    "Version": "4.0.3.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "System.Diagnostics.DiagnosticSource.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Diagnostics.DiagnosticSource.dll",
+    "Name": "System.Diagnostics.DiagnosticSource",
+    "Version": "4.0.3.1",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "System.Interactive.Async.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Interactive.Async.dll",
+    "Name": "System.Interactive.Async",
+    "Version": "3.2.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "System.Memory.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Memory.dll",
+    "Name": "System.Memory",
+    "Version": "4.0.1.2",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Numerics.Vectors",
+        "Version": "4.1.4.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Runtime.CompilerServices.Unsafe",
+        "Version": "4.0.4.1",
+        "Framework": false
+      },
+      {
+        "Name": "System.Buffers",
+        "Version": "4.0.3.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "System.Numerics.Vectors.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Numerics.Vectors.dll",
+    "Name": "System.Numerics.Vectors",
+    "Version": "4.1.4.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Numerics",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "System.Resources.Extensions.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Resources.Extensions.dll",
+    "Name": "System.Resources.Extensions",
+    "Version": "5.0.0.0",
+    "References": [
+      {
+        "Name": "netstandard",
+        "Version": "2.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Memory",
+        "Version": "4.0.1.1",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "System.Runtime.CompilerServices.Unsafe.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Runtime.CompilerServices.Unsafe.dll",
+    "Name": "System.Runtime.CompilerServices.Unsafe",
+    "Version": "6.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "System.ValueTuple.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.ValueTuple.dll",
+    "Name": "System.ValueTuple",
+    "Version": "4.0.2.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      }
+    ]
+  },
+  {
+    "File": "xbDet.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\xbDet.exe",
+    "Name": "xbDet",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "MvCameraControl.Net",
+        "Version": "3.4.0.1",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "halcondotnet",
+        "Version": "12.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "xbVP_Control.dll",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\xbVP_Control.dll",
+    "Name": "xbVP_Control",
+    "Version": "1.0.9789.33160",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "halcondotnet",
+        "Version": "12.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "MvCameraControl.Net",
+        "Version": "3.4.0.1",
+        "Framework": false
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.PMAlign",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CalibFix",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.QuickBuild.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ToolGroup",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Blob",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageProcessing",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Caliper",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.QuickBuild.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  },
+  {
+    "File": "电极帽缺陷检测.exe",
+    "Path": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\电极帽缺陷检测.exe",
+    "Name": "电极帽缺陷检测",
+    "Version": "1.0.0.0",
+    "References": [
+      {
+        "Name": "mscorlib",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Windows.Forms",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "CommonCls",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "MvCameraControl.Net",
+        "Version": "3.4.0.1",
+        "Framework": false
+      },
+      {
+        "Name": "System.Drawing",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Core",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.ImageFile",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.PMAlign.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Blob.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CalibFix.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Caliper.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "xbVP_Control",
+        "Version": "1.0.9789.33160",
+        "Framework": false
+      },
+      {
+        "Name": "PipeChanel",
+        "Version": "1.0.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "System.Core",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.Xml",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "System.ServiceProcess",
+        "Version": "4.0.0.0",
+        "Framework": true
+      },
+      {
+        "Name": "Cognex.VisionPro.Display.Controls",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.CalibFix",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Caliper",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.Blob",
+        "Version": "59.2.0.0",
+        "Framework": false
+      },
+      {
+        "Name": "Cognex.VisionPro.PMAlign",
+        "Version": "59.2.0.0",
+        "Framework": false
+      }
+    ]
+  }
+]

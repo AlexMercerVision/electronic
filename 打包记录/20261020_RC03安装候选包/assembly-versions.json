@@ -1,0 +1,34 @@
+[
+  {
+    "File": "E:\\jieyawenjian\\VB_Det\\bin\\System.Runtime.CompilerServices.Unsafe.dll",
+    "AssemblyVersion": "6.0.0.0"
+  },
+  {
+    "File": "E:\\jieyawenjian\\VB_Det\\bin\\System.Numerics.Vectors.dll",
+    "AssemblyVersion": "4.1.4.0"
+  },
+  {
+    "File": "E:\\jieyawenjian\\VB_Det\\bin\\System.Memory.dll",
+    "AssemblyVersion": "4.0.1.2"
+  },
+  {
+    "File": "E:\\jieyawenjian\\VB_Det\\bin\\System.Buffers.dll",
+    "AssemblyVersion": "4.0.3.0"
+  },
+  {
+    "File": "E:\\VB_Det_PACK\\20261020_50Series_RC03_Installer\\Input\\App\\System.Runtime.CompilerServices.Unsafe.dll",
+    "AssemblyVersion": "6.0.0.0"
+  },
+  {
+    "File": "E:\\VB_Det_PACK\\20261020_50Series_RC03_Installer\\Input\\App\\System.Numerics.Vectors.dll",
+    "AssemblyVersion": "4.1.4.0"
+  },
+  {
+    "File": "E:\\VB_Det_PACK\\20261020_50Series_RC03_Installer\\Input\\App\\System.Memory.dll",
+    "AssemblyVersion": "4.0.1.2"
+  },
+  {
+    "File": "E:\\VB_Det_PACK\\20261020_50Series_RC03_Installer\\Input\\App\\System.Buffers.dll",
+    "AssemblyVersion": "4.0.3.0"
+  }
+]

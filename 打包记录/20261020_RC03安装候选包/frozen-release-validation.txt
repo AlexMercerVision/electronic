@@ -1,0 +1,5 @@
+
+Batch: 20261020_50Series_RC01
+PASS: 79 release files, SHA256 match.
+Batch: 20261020_50Series_RC02
+PASS: 88 release files, SHA256 match.

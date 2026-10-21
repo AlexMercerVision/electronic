@@ -1,0 +1,326 @@
+[
+  {
+    "Source": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\Display.NvContainer\\NvMessageBus.dll",
+    "File": "NvMessageBus.dll",
+    "Bytes": 3543272,
+    "SHA256": "96D3F11EED252CA451DDBC01662428843763144045D7A8C55A7E6ABA3945EB26",
+    "Architecture": "0x8664",
+    "Imports": [
+      "RPCRT4.dll",
+      "KERNEL32.dll",
+      "SHELL32.dll",
+      "ole32.dll",
+      "ADVAPI32.dll",
+      "WS2_32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\system32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\nvapi64_impl.dll",
+    "File": "nvapi64_impl.dll",
+    "Bytes": 5681528,
+    "SHA256": "BF273CC820B7D5040FD44A25202DAB75BA7E404CA7B264379750A683F8AC76CC",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "SETUPAPI.dll",
+      "SHELL32.dll",
+      "VERSION.dll",
+      "ole32.dll",
+      "GDI32.dll",
+      "SHLWAPI.dll",
+      "WINMM.dll",
+      "ntdll.dll",
+      "api-ms-win-core-winrt-l1-1-0.dll",
+      "api-ms-win-core-winrt-error-l1-1-1.dll",
+      "OLEAUT32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\system32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\nvcuda64.dll",
+    "File": "nvcuda64.dll",
+    "Bytes": 11643112,
+    "SHA256": "2814AAD6536D88EEAB6967342A259485C46F6FB9F5041A733ECDE2DD5E699C84",
+    "Architecture": "0x8664",
+    "Imports": [
+      "VERSION.dll",
+      "KERNEL32.dll",
+      "SHLWAPI.dll",
+      "ADVAPI32.dll",
+      "bcrypt.dll",
+      "GDI32.dll",
+      "USER32.dll",
+      "ntdll.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\nvdiagclt64.dll",
+    "File": "nvdiagclt64.dll",
+    "Bytes": 872168,
+    "SHA256": "99E3E08F631EE3021ACDDE60F8352AC31D06F9E7B37DC96BD25B05D157341B70",
+    "Architecture": "0x8664",
+    "Imports": [
+      "SHELL32.dll",
+      "ole32.dll",
+      "KERNEL32.dll",
+      "ADVAPI32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\nvdxgdmal64.dll",
+    "File": "nvdxgdmal64.dll",
+    "Bytes": 714472,
+    "SHA256": "CA968D0F7B09C6BB39F2AF61268A1E60A2366D10614264C7DAA0234822407C7A",
+    "Architecture": "0x8664",
+    "Imports": [
+      "ADVAPI32.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\nvobjectloader64.dll",
+    "File": "nvobjectloader64.dll",
+    "Bytes": 15015656,
+    "SHA256": "929A335F940F9E5A50FC41C94C451B028313DB7926ABC05D3CE35C19255D5B6B",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_a3944b54ff18b284\\nvptxJitCompiler64.dll",
+    "File": "nvptxJitCompiler64.dll",
+    "Bytes": 30759656,
+    "SHA256": "5A5023133CDEDF7B42EDD328D9C8DE8EBA1770EE9E26C446249BC0B8EC3C1524",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\System32\\msvcp_win.dll",
+    "File": "msvcp_win.dll",
+    "Bytes": 657784,
+    "SHA256": "B9DACD83201E59BB74E5282D8F0DCC8C428525409B4BC458A39EB8D2A9373A9A",
+    "Architecture": "0x8664",
+    "Imports": [
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-locale-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-private-l1-1-0.dll",
+      "api-ms-win-core-synch-l1-2-0.dll",
+      "api-ms-win-core-synch-l1-1-0.dll",
+      "api-ms-win-core-rtlsupport-l1-1-0.dll",
+      "api-ms-win-core-libraryloader-l1-1-0.dll",
+      "api-ms-win-core-processthreads-l1-1-0.dll",
+      "api-ms-win-core-file-l1-1-0.dll",
+      "api-ms-win-core-file-l2-1-0.dll",
+      "api-ms-win-core-string-l1-1-0.dll",
+      "api-ms-win-core-errorhandling-l1-1-0.dll",
+      "api-ms-win-core-handle-l1-1-0.dll",
+      "api-ms-win-core-util-l1-1-0.dll",
+      "api-ms-win-core-localization-l1-2-0.dll",
+      "api-ms-win-core-heap-obsolete-l1-1-0.dll",
+      "api-ms-win-core-sysinfo-l1-2-0.dll",
+      "api-ms-win-core-threadpool-l1-2-0.dll",
+      "api-ms-win-core-profile-l1-1-0.dll",
+      "api-ms-win-core-file-l1-2-0.dll",
+      "api-ms-win-core-sysinfo-l1-1-0.dll",
+      "api-ms-win-core-registry-l1-1-0.dll",
+      "api-ms-win-core-processthreads-l1-1-1.dll",
+      "api-ms-win-core-interlocked-l1-1-0.dll",
+      "api-ms-win-core-debug-l1-1-0.dll",
+      "api-ms-win-core-delayload-l1-1-0.dll",
+      "api-ms-win-core-delayload-l1-1-1.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\SYSTEM32\\nvapi64.dll",
+    "File": "nvapi64.dll",
+    "Bytes": 574032,
+    "SHA256": "A98CFBC476B2A826804C96D28B3CE56CEF8010CB2614576D6B9D913D1B26D38D",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\SYSTEM32\\nvcuda.dll",
+    "File": "nvcuda.dll",
+    "Bytes": 4790504,
+    "SHA256": "DCA7A0C465975A95786C8A42CF0CDCFFBEF5B7306C6BAAE71A3DEC658CAE9A3D",
+    "Architecture": "0x8664",
+    "Imports": [
+      "ADVAPI32.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\SYSTEM32\\VCOMP140.DLL",
+    "File": "VCOMP140.DLL",
+    "Bytes": 213072,
+    "SHA256": "F96F3A14D88D8846F31F3AB38A490304CE7D6E4F70FAE4304C63E59C7AEA2D30",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\SYSTEM32\\VCRUNTIME140_1_CLR0400.dll",
+    "File": "VCRUNTIME140_1_CLR0400.dll",
+    "Bytes": 38944,
+    "SHA256": "CBF8CF639B66F64AF2398A5C321FB88F9F612EE664227E154FE4324D6AAD0D2A",
+    "Architecture": "0x8664",
+    "Imports": [
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "VCRUNTIME140_CLR0400.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "C:\\Windows\\SYSTEM32\\VCRUNTIME140_CLR0400.dll",
+    "File": "VCRUNTIME140_CLR0400.dll",
+    "Bytes": 98848,
+    "SHA256": "FE36A4265C680988A9B6C7FC840E28A75E7C06642FE5357263D1E519F0E3BD46",
+    "Architecture": "0x8664",
+    "Imports": [
+      "ucrtbase_clr0400.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cublas64_12.dll",
+    "File": "cublas64_12.dll",
+    "Bytes": 113712640,
+    "SHA256": "0A60A7ECBF906F7F3842826FECAF412F1587FF6269729339245A1EC224364161",
+    "Architecture": "0x8664",
+    "Imports": [
+      "cublasLt64_12.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cublasLt64_12.dll",
+    "File": "cublasLt64_12.dll",
+    "Bytes": 692441600,
+    "SHA256": "A21DDFC1C9CD090AB07D2C6AAD235AA4F15FE60FE896D5DB28ADF7A279C09EF3",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn_cnn64_9.dll",
+    "File": "cudnn_cnn64_9.dll",
+    "Bytes": 4262456,
+    "SHA256": "68C9F6BF98A5620A0BB0519C3997800EF2C7CB8979F17A60AFCF82D341629C73",
+    "Architecture": "0x8664",
+    "Imports": [
+      "cudnn_ops64_9.dll",
+      "cudnn_graph64_9.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn_engines_precompiled64_9.dll",
+    "File": "cudnn_engines_precompiled64_9.dll",
+    "Bytes": 548927544,
+    "SHA256": "59E71B3ADAE62186D3336CCBDA6D0C8B14A3A0EF21694757E2B32E84FA840152",
+    "Architecture": "0x8664",
+    "Imports": [
+      "cudnn_graph64_9.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn_engines_runtime_compiled64_9.dll",
+    "File": "cudnn_engines_runtime_compiled64_9.dll",
+    "Bytes": 25217568,
+    "SHA256": "8671C24FC0DEBBD99C3DCA57BFDF657F4C9490E2A009F641CFC2FCF7A1256180",
+    "Architecture": "0x8664",
+    "Imports": [
+      "cudnn_graph64_9.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn_graph64_9.dll",
+    "File": "cudnn_graph64_9.dll",
+    "Bytes": 2239520,
+    "SHA256": "22C21907FB2108259CB25738156F4459C12C0A001715BBB6D5AAFAC150060E85",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn_heuristic64_9.dll",
+    "File": "cudnn_heuristic64_9.dll",
+    "Bytes": 55919648,
+    "SHA256": "5378E50729665245FA5ABE89C729B782DE686675E9BD6319CDA1A3165D9492E6",
+    "Architecture": "0x8664",
+    "Imports": [
+      "cudnn_graph64_9.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn_ops64_9.dll",
+    "File": "cudnn_ops64_9.dll",
+    "Bytes": 116958752,
+    "SHA256": "080C2BB37E9D1FDD585CDD53FDBB23C0478B99610A19F8BBA512B596B1E302FE",
+    "Architecture": "0x8664",
+    "Imports": [
+      "cudnn_graph64_9.dll",
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "D:\\NVIDIAGPU\\bin\\cudnn64_9.dll",
+    "File": "cudnn64_9.dll",
+    "Bytes": 265760,
+    "SHA256": "0EDB24306DB36121137A3150AC55015AEE174D4582D5B807BD3220180A7A57DB",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ],
+    "Delivery": "External installed runtime / driver; DLL not copied"
+  },
+  {
+    "Source": "E:\\Anaconda_envs\\paddle_env\\Lib\\site-packages\\paddle\\libs\\mklml.dll",
+    "File": "mklml.dll",
+    "Bytes": 92649344,
+    "SHA256": "E2A7FD93E1534568626CFFE22676B15164A5A2B3A62F1919A55993478B45811E",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll",
+      "libiomp5md.dll"
+    ],
+    "Delivery": "App"
+  }
+]

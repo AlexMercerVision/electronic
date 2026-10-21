@@ -1,0 +1,128 @@
+{
+  "Solution": "VisionDection.sln",
+  "Configuration": "Debug/x64",
+  "Build": "PASS",
+  "CompiledProjects": [
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\PipeChanel.dll",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\CommonCls.dll",
+      "ProjectReferences": []
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\xbVP_Control.dll",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\电极帽缺陷检测.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll",
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\PipeChanel.dll",
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\xbVP_Control.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\ParamSet.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\LS_UartAssist.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\PerMang.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\CamDebug.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\BJJCZ_Server.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\PipeChanel.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\xbDet.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll"
+      ]
+    },
+    {
+      "Output": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Obj\\MarkManager.exe",
+      "ProjectReferences": [
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll",
+        "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\xbVP_Control.dll"
+      ]
+    }
+  ],
+  "Errors": 0,
+  "Warnings": 83,
+  "OwnAssemblyVersions": {
+    "电极帽缺陷检测": "1.0.0.0",
+    "CommonCls": "1.0.0.0",
+    "xbVP_Control": "1.0.9789.33160",
+    "PipeChanel": "1.0.0.0"
+  },
+  "Foundation": [
+    {
+      "Name": "System.Memory",
+      "Required": "4.0.1.2",
+      "Original": "4.0.1.2",
+      "Build": "4.0.1.2",
+      "Release": "4.0.1.2"
+    },
+    {
+      "Name": "System.Buffers",
+      "Required": "4.0.3.0",
+      "Original": "4.0.3.0",
+      "Build": "4.0.3.0",
+      "Release": "4.0.3.0"
+    },
+    {
+      "Name": "System.Numerics.Vectors",
+      "Required": "4.1.4.0",
+      "Original": "4.1.4.0",
+      "Build": "4.1.4.0",
+      "Release": "4.1.4.0"
+    },
+    {
+      "Name": "System.Runtime.CompilerServices.Unsafe",
+      "Required": "6.0.0.0",
+      "Original": "6.0.0.0",
+      "Build": "6.0.0.0",
+      "Release": "6.0.0.0"
+    }
+  ],
+  "BindingRedirects": "PASS original/build/release",
+  "SourceSnapshotFilesUnchanged": 1350,
+  "ProtectedOriginalFilesUnchanged": 347,
+  "OriginalBinFilesUnchanged": 264,
+  "OriginalBinAdded": 0,
+  "OriginalBinRemoved": 0,
+  "LD_SHA256": "84B0B16D5AA2587581BA1464709086C1541F1549B655A3EA949D87EA8A90FC86",
+  "AppFiles": 67,
+  "AppBytes": 1163059119,
+  "OpenCvConversion": "PASS copied wrapper + copied dll/x64/OpenCvSharpExtern.dll",
+  "VppDeserialize": "PASS current installed VisionPro runtime, 2 Jobs, not executed",
+  "GpuInference": "PASS RTX5060 GPU0, current CUDA12.8/cuDNN9.8, copied model, ret=0 / zero boxes",
+  "GpuWithoutPythonOrOriginalProjectPath": "PASS",
+  "CudnnMismatch": "Paddle compiled 9.12 vs installed 9.8 warning remains",
+  "MainApplicationLaunch": "NOT RUN",
+  "HardwareValidation": "NOT RUN (5070/cameras/light/IO/continuous/measurement)",
+  "Installer": "NOT CREATED",
+  "ExternalInstallerMedia": "NOT INCLUDED; see Prerequisites/REQUIRED.md"
+}

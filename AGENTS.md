@@ -8,9 +8,14 @@
 - “只分析”不得修改业务代码、配置或工程；仅可整理用户明确授权的说明文档。
 - 禁止直接修改 `*.Designer.cs`，UI 优先用设计器。
 
+## 部署与打包记录
+
+- 检查记录、分析结论和审计索引统一放项目内 `打包记录/`，不放 C 盘临时目录；入口见 [打包记录/README.md](打包记录/README.md)。发布产物继续放 `E:\VB_Det_PACK` 的独立批次，不覆盖原工程或公共运行文件，已冻结批次保留，新变更新建批次。
+- 2026-10-20 RC01、RC02冻结保留，RC03已生成原生x64软件安装候选包，默认安装到Program Files，快捷方式通过Launch.cmd为本进程锁定CUDA12.8/cuDNN9.14 CUDA12版，日志写ProgramData。本机安装/升级/卸载、数据保留及独立GPU验证完成；普通权限仅受限令牌文件检查通过，真实不同账号和5070断网整机仍待验收。外部介质尚有缺项，不能将隔离检查或允许缺项安装当作整机通过。详细现状与证据见PROJECT_CONTEXT.md。
+
 ## 构建与验证（涉及 C# 修改时）
 
-- 最终验证使用实际 `VisionBasedLaser.sln`、Debug/x64、真实项目引用，完整 Build 启动项目及依赖。单项目 Build、Compile 或隔离桩仅是中间验证。
+- 最终验证使用实际 `VisionDection.sln`（原名 `VisionBasedLaser.sln`）、Debug/x64、真实项目引用，完整 Build 启动项目及依赖。单项目 Build、Compile 或隔离桩仅是中间验证。
 - 可隔离输出，但不得替换工程引用、遗漏项目或用旧 DLL 代替本轮源码。构建前核对覆盖范围，未经允许不得覆盖公共 `bin`、配置、模型、VPP 等运行文件。
 - `CommonCls`、`VisionControl`、`VisionApplication` 共用根目录 `bin`；禁止手工复制 DLL 解决依赖冲突，未专项统一前不要单独构建 `ClientTools.csproj`。
 - 基础依赖统一为下表；修改后核对公共 `bin` 实际 AssemblyVersion、启动程序对应的 `.exe.config`（当前为 `电极帽缺陷检测.exe.config`），分别验证三项目并完成解决方案 Build。

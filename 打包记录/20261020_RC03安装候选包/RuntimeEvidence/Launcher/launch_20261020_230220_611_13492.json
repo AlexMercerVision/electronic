@@ -1,0 +1,241 @@
+﻿{
+    "Batch":  "20261020_50Series_RC03_Installer",
+    "SourceLockBatch":  "20261020_50Series_RC02",
+    "Time":  "2026-10-20T23:02:20.6123534+08:00",
+    "Mode":  "VerifyGpu",
+    "AppDirectory":  "C:\\Program Files\\ElectrodeDet\\App",
+    "CudaRoot":  "D:\\NVIDIAGPU",
+    "CudnnBin":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9",
+    "CudaToolkitVersion":  "12.8.0",
+    "CudnnVersion":  "9.14.0.64",
+    "WorkingDirectory":  "C:\\Program Files\\ElectrodeDet\\App",
+    "PathPrefix":  [
+                       "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9",
+                       "D:\\NVIDIAGPU\\bin"
+                   ],
+    "ChangesSystemEnvironment":  false,
+    "CheckedDependencies":  [
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn64_9.dll",
+                                    "SHA256":  "AB1EA87434A3E9572BD82C9C5C296B7240A2C423B6CC5F37E141067B47444C87"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_adv64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_adv64_9.dll",
+                                    "SHA256":  "608B3A258EDDBB78F0BECC0C755F6E1BA5D9D9EAD7ACB4C0E28AA4FB57A35253"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_cnn64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_cnn64_9.dll",
+                                    "SHA256":  "443323F998D50F8BE17E5C76331688B6FCBDCAF74AB2D1E93F3206A63AD6797D"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_engines_precompiled64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_engines_precompiled64_9.dll",
+                                    "SHA256":  "CD0F26AB57E7F6DF30DA595109C2444CBBE371168F22A1F1997D98B2E5D89926"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_engines_runtime_compiled64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_engines_runtime_compiled64_9.dll",
+                                    "SHA256":  "46194284BC39ECE40AD94EA214276BDDCF23154804423E1B632F57BA1133E867"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_graph64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_graph64_9.dll",
+                                    "SHA256":  "046E422AB7610464295D0B85FE4884C76D778D8632B813E95C53DEEECE2C0835"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_heuristic64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_heuristic64_9.dll",
+                                    "SHA256":  "6DF66DB088CF8FED4C93BD6F405CEEA3A9439F2B029A4A3E81BB1484A6113BEB"
+                                },
+                                {
+                                    "Root":  "CudnnBin",
+                                    "File":  "cudnn_ops64_9.dll",
+                                    "Path":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_ops64_9.dll",
+                                    "SHA256":  "3E29DB9483BA21272D9EB284D3F51D7BFEE450EAFC67BC563D7DACE7F9C85EA5"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "cublas64_12.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\cublas64_12.dll",
+                                    "SHA256":  "0A60A7ECBF906F7F3842826FECAF412F1587FF6269729339245A1EC224364161"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "cublasLt64_12.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\cublasLt64_12.dll",
+                                    "SHA256":  "A21DDFC1C9CD090AB07D2C6AAD235AA4F15FE60FE896D5DB28ADF7A279C09EF3"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "cudart64_12.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\cudart64_12.dll",
+                                    "SHA256":  "9D9B868955149875AC4EF43442AAAA8913D4A7B3E4D6DD60EE871626AA045768"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "cufft64_11.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\cufft64_11.dll",
+                                    "SHA256":  "619FCB005C8A18FFAD478FF68B7A9CD154FA170E835DCE9D41FF4FC0C0692113"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "cusolver64_11.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\cusolver64_11.dll",
+                                    "SHA256":  "AE41C92C426BC0390B25A2F362A66C81A3EF7E1211BCFBCA54ABCD1910DBA948"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "cusparse64_12.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\cusparse64_12.dll",
+                                    "SHA256":  "6D885E2BC6C7F50EED34A649491C4F44CE68EE2BA79CA9B901BDA4795B9811B1"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "nvrtc64_120_0.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\nvrtc64_120_0.dll",
+                                    "SHA256":  "EC2A860422B7D0396B45C29A1848FAECC3788041BA52F166F0FC52C1B47E8245"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "nvrtc-builtins64_128.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\nvrtc-builtins64_128.dll",
+                                    "SHA256":  "96A28201DBFFD4EFF6DC93F310417B981BF7A141D46F2839036F5DBFD83B33AE"
+                                },
+                                {
+                                    "Root":  "CudaBin",
+                                    "File":  "nvJitLink_120_0.dll",
+                                    "Path":  "D:\\NVIDIAGPU\\bin\\nvJitLink_120_0.dll",
+                                    "SHA256":  "4BC81414F0C91119061AA1207D329CEB7F94959A647F865A3C44E23FB27C7907"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "电极帽缺陷检测.exe",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\电极帽缺陷检测.exe",
+                                    "SHA256":  "80859535BBB7036FFF0FC7DCFB0AE2EE18615040E3EBE22756B527A925175857"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "CommonCls.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\CommonCls.dll",
+                                    "SHA256":  "8C6D09FC64C948CD798554625238F257BA12EB2A25787A3B87FCCCCD6BC1347B"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "xbVP_Control.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\xbVP_Control.dll",
+                                    "SHA256":  "DC5DFB36B70940948E8C5EAD18EAB7B0BDFF263AAE7FBDD1AADE6336B6CBC198"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "PipeChanel.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\PipeChanel.dll",
+                                    "SHA256":  "94CFC2D8636927E072F792BA2817978240988969AFBD44DA67930E4C862839A7"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "电极帽缺陷检测.exe.config",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\电极帽缺陷检测.exe.config",
+                                    "SHA256":  "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "System.Memory.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\System.Memory.dll",
+                                    "SHA256":  "BF3FB84664F4097F1A8A9BC71A51DCF8CF1A905D4080A4D290DA1730866E856F"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "System.Buffers.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\System.Buffers.dll",
+                                    "SHA256":  "ACCCCFBE45D9F08FFEED9916E37B33E98C65BE012CFFF6E7FA7B67210CE1FEFB"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "System.Numerics.Vectors.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\System.Numerics.Vectors.dll",
+                                    "SHA256":  "1D3EF8698281E7CF7371D1554AFEF5872B39F96C26DA772210A33DA041BA1183"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "System.Runtime.CompilerServices.Unsafe.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\System.Runtime.CompilerServices.Unsafe.dll",
+                                    "SHA256":  "37768488E8EF45729BC7D9A2677633C6450042975BB96516E186DA6CB9CD0DCF"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "model_infer.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\model_infer.dll",
+                                    "SHA256":  "DA53799BECE73628B9C8F626FEC0E0E2B5C96AE1FC0F55EA53572A0A06A3D3D6"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "paddle_inference_c.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\paddle_inference_c.dll",
+                                    "SHA256":  "86CB1207572CE01CB47D600532C956CCB0FE7CC26F5F3BC5DFAC13E6642FB300"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "phi.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\phi.dll",
+                                    "SHA256":  "57157EBB6B1C7DB602D82F262D5A903A1F64BE5A520AA39BF5F50E0D6BC3A6C9"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "common.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\common.dll",
+                                    "SHA256":  "4C87001DB04B0F31AAF1F44E4E803D79BDAB584B391BBCA300EF6D45E0A6E8B1"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "mkldnn.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\mkldnn.dll",
+                                    "SHA256":  "101A81A71A917DEAEED5269EAD3C2876823357DD8E7EC9B0841BE741E9FB270A"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "mklml.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\mklml.dll",
+                                    "SHA256":  "E2A7FD93E1534568626CFFE22676B15164A5A2B3A62F1919A55993478B45811E"
+                                },
+                                {
+                                    "Root":  "App",
+                                    "File":  "libiomp5md.dll",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\App\\libiomp5md.dll",
+                                    "SHA256":  "BC9E17190505A3BEDA7FEEDD90BA3AB7B6DC3F7CA5D980B2140C53AE459FC5AE"
+                                },
+                                {
+                                    "Root":  "Diagnostics",
+                                    "File":  "GpuProbe.exe",
+                                    "Path":  "C:\\Program Files\\ElectrodeDet\\Diagnostics\\GpuProbe.exe",
+                                    "SHA256":  "2563B5D53767950122C6910B309AE7894E49AEC1ABC2C3D2A7D7A93B195A518B"
+                                }
+                            ],
+    "Status":  "GpuVerificationPassed",
+    "ProbeLog":  "C:\\ProgramData\\ElectrodeDet\\Logs\\Launcher\\gpu_20261020_230220_611_13492.log",
+    "ModulesFile":  "C:\\ProgramData\\ElectrodeDet\\Logs\\Launcher\\gpu_20261020_230220_611_13492_modules.txt",
+    "ExitCode":  0,
+    "ActualGpuModules":  [
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_cnn64_9.dll",
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_engines_precompiled64_9.dll",
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_engines_runtime_compiled64_9.dll",
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_graph64_9.dll",
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_heuristic64_9.dll",
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_ops64_9.dll",
+                             "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn64_9.dll",
+                             "D:\\NVIDIAGPU\\bin\\cublas64_12.dll",
+                             "D:\\NVIDIAGPU\\bin\\cublasLt64_12.dll"
+                         ],
+    "RuntimeApi":  "12.8",
+    "CudnnMismatchWarning":  false,
+    "NativeInference":  "ret=0"
+}

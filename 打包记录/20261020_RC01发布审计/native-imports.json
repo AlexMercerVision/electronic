@@ -1,0 +1,383 @@
+[
+  {
+    "File": "Cognex.VisionPro.Blob.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "GDI32.dll",
+      "COMDLG32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CalibFix.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CalibFixPlus.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "GDI32.dll",
+      "COMDLG32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Caliper.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Core.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "dbghelp.dll",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "GDI32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.CorePlus.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "MSVCP100.dll",
+      "dbghelp.dll",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FG1394DCAM.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FG8100.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FG8100L.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.FGGigE.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ImageFile.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.ImageProcessing.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "MSVCP100.dll",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.Interop.Core.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro.PMAlign.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "OLEAUT32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.Core.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "MSVCP100.dll",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "imagehlp.dll",
+      "GDI32.dll",
+      "COMDLG32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "KERNEL32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "GDI32.dll",
+      "COMDLG32.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "Cognex.VisionPro3D.Graphic.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "MSVCR100.dll",
+      "hoops2120_x64_vc12.dll",
+      "KERNEL32.dll",
+      "MSVCP100.dll",
+      "ATL100.DLL",
+      "USER32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "imagehlp.dll",
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "common.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ]
+  },
+  {
+    "File": "halcondotnet.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "libiomp5md.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll"
+    ]
+  },
+  {
+    "File": "mkldnn.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll",
+      "VCOMP140.DLL"
+    ]
+  },
+  {
+    "File": "mklml.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll",
+      "libiomp5md.dll"
+    ]
+  },
+  {
+    "File": "model_infer.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "paddle_inference_c.dll",
+      "KERNEL32.dll"
+    ]
+  },
+  {
+    "File": "Newtonsoft.Json.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "OpenCvSharp.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "OpenCvSharp.Extensions.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "paddle_inference_c.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "phi.dll",
+      "mkldnn.dll",
+      "common.dll",
+      "KERNEL32.dll",
+      "dbghelp.dll",
+      "bcrypt.dll"
+    ]
+  },
+  {
+    "File": "phi.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "common.dll",
+      "WS2_32.dll",
+      "mkldnn.dll",
+      "libiomp5md.dll",
+      "KERNEL32.dll",
+      "USER32.dll",
+      "dbghelp.dll"
+    ]
+  },
+  {
+    "File": "stdole.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "System.Buffers.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "System.Memory.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "System.Numerics.Vectors.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "System.Runtime.CompilerServices.Unsafe.dll",
+    "Architecture": "0x14c",
+    "Imports": [
+      "mscoree.dll"
+    ]
+  },
+  {
+    "File": "dll\\x64\\OpenCvSharpExtern.dll",
+    "Architecture": "0x8664",
+    "Imports": [
+      "KERNEL32.dll",
+      "USER32.dll",
+      "GDI32.dll",
+      "COMDLG32.dll",
+      "ADVAPI32.dll",
+      "ole32.dll",
+      "OLEAUT32.dll",
+      "MFPlat.DLL",
+      "MF.dll",
+      "MFReadWrite.dll",
+      "dxgi.dll",
+      "d3d11.dll",
+      "SHLWAPI.dll",
+      "WS2_32.dll"
+    ]
+  }
+]

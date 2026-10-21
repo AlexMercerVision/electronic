@@ -1,0 +1,1737 @@
+[
+  {
+    "Path": "D:\\data\\inference_model\\.success",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Path": "D:\\data\\inference_model\\model.pdiparams",
+    "Bytes": 217052894,
+    "SHA256": "A012FAE75AD79DDF7C767165D763CB4E36FD71D5CBADF7D17ED59A2DDB923702"
+  },
+  {
+    "Path": "D:\\data\\inference_model\\model.pdiparams.info",
+    "Bytes": 48554,
+    "SHA256": "7499ED1A1DC5E078DFB3B5920163A422A55AC27F9929DFF681F38931F672B71B"
+  },
+  {
+    "Path": "D:\\data\\inference_model\\model.pdmodel",
+    "Bytes": 4024448,
+    "SHA256": "E3BC644969601710F01D089B52E354B10FEDC7FB084804D41073ADF7EAB84BB2"
+  },
+  {
+    "Path": "D:\\data\\inference_model\\model.yml",
+    "Bytes": 1267,
+    "SHA256": "B6B09825311109D5E9369051E50B8238F16C3983B238390218D989FEFA080B97"
+  },
+  {
+    "Path": "D:\\data\\inference_model\\pipeline.yml",
+    "Bytes": 404,
+    "SHA256": "88C7FC9029C353B935041D661CE3623DD85A814B60883752F3BD16A5CEB299E1"
+  },
+  {
+    "Path": "D:\\data\\inference_model\\predefined_classes.txt",
+    "Bytes": 26,
+    "SHA256": "98F61F4A2CF2144EA5A602772C29EE35E661F228DCDB09E450A00FE3970EFF8B"
+  },
+  {
+    "Path": "D:\\data\\LD.vpp",
+    "Bytes": 161194373,
+    "SHA256": "84B0B16D5AA2587581BA1464709086C1541F1549B655A3EA949D87EA8A90FC86"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\AGENTS.md",
+    "Bytes": 4314,
+    "SHA256": "9C20BAB3B6216ED1F9DED2517DAF21ABF3D28A524363F7C355DA3599AD372F00"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\.vs\\xbDet\\FileContentIndex\\2afb0c52-eff2-46b0-b379-f5fa2b960b92.vsidx",
+    "Bytes": 151,
+    "SHA256": "E5BF96224EBB42309BA0E7E9391C12EBD8B21D232622115928FADF5701D92572"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\.vs\\xbDet\\v18\\.suo",
+    "Bytes": 4608,
+    "SHA256": "7D30760495C94F61B52FAB5EA5876DB9CA3A30B92DBB118607A7E58843698682"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\AIDll\\pthreadGC2.dll",
+    "Bytes": 185976,
+    "SHA256": "0250C506A0D79B1D0F2DCF2682BCD6F1E46F8ECC1D952B2357AB23CD463ACC02"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\AIDll\\pthreadVC2.dll",
+    "Bytes": 82944,
+    "SHA256": "0E6AF724609EF6846982EF717013426C359C455FFF324E906D8D55C8BB88D16E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\AIDll\\stdole.dll",
+    "Bytes": 25464,
+    "SHA256": "DA76CB7FF44B8560547A3E578C18F158FBBABB19B82AE41B282F47801277EF49"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\app.publish\\电极帽缺陷检测.exe",
+    "Bytes": 2449408,
+    "SHA256": "6F4611257CD6F7F2E0DAD94C1827532616FAE63509FD6467DBC8F9ACB06A4AD2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\authentication.20260927_155644.bak",
+    "Bytes": 791,
+    "SHA256": "12F94AAE053042BABCC80A5C0B9777D7062375F020F16897906551D156C994D9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\authentication.txt",
+    "Bytes": 791,
+    "SHA256": "12F94AAE053042BABCC80A5C0B9777D7062375F020F16897906551D156C994D9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\BJJCZ_BaseDevelop.vshost.exe.manifest",
+    "Bytes": 490,
+    "SHA256": "C0085EB467D2FC9C9F395047E057183B3CD1503A4087D0DB565161C13527A76F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\BJJCZ_MultiHead.exe",
+    "Bytes": 18944,
+    "SHA256": "567B91F0421FCB962B851C72C74BC971716AFEBDD545752EC199FEB3F23A0FA7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\BJJCZ_MultiHead.exe.config",
+    "Bytes": 184,
+    "SHA256": "16286566D54D81C3721F7ECF7F426D965DE364E9BE2F9E628D7363B684B6FE6A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\BJJCZ_MultiHead.pdb",
+    "Bytes": 36352,
+    "SHA256": "E58CF4547798BC04A3C0610B0BA6E7B7F4BE5D6DD4BC5B61EA09FF7D354D748B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\BJJCZ_Server.exe.config",
+    "Bytes": 163,
+    "SHA256": "6862B25736259F7BFD344E43EEA10A703885BE381EEE2A745CEB12916B01A158"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\calib\\PMATrain_0.jpg",
+    "Bytes": 8433114,
+    "SHA256": "9C1401A78130357B33E6ECF88EE01C0893A2A46039BC6668E65B586B0B142AC2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\calib\\PMATrain_1.jpg",
+    "Bytes": 9248142,
+    "SHA256": "30EEEF94FB30D4918AA29620C723DA2642BF59EE1CDFBAADFF711B7E1B97072B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CamDebug.exe",
+    "Bytes": 272896,
+    "SHA256": "EB15C9AF56A98AABB5727CD0C50EFD261E059F26463AED5BBBB56CE8DB92EB4C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CamDebug.exe.config",
+    "Bytes": 1699,
+    "SHA256": "F3B085A5417DB7BC9A6A0D4DFD49D51B0227C5A871410C82CAF592B772CA3EA4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CamDebug.pdb",
+    "Bytes": 73216,
+    "SHA256": "6A6C88C9F5E7FF6EA574EFC01B9A178554BCB69612F72B41B8904DA9BE7A966A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\cfglog.txt",
+    "Bytes": 56698,
+    "SHA256": "0F8E0C0D0AFC81665CF3BFF02E50F1F144BF4122BC5D01B8D1B9D97D735411B2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CmpJPGandXML.exe",
+    "Bytes": 174592,
+    "SHA256": "EF82299C03D7AFD2D0E2B3A0D8E261022FCEF06CF10FD9C8A5C99E083F72BD7A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Blob.Controls.dll",
+    "Bytes": 166400,
+    "SHA256": "5E6048299A60319E8499385D70E13F39C6BF527886857AABEFBF526685D72945"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Blob.dll",
+    "Bytes": 4326112,
+    "SHA256": "06EAD7BFAC03FD4F58C68182004DA01DF4E32137F70728FE6C7CDB55B4FBC89F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Blob.xml",
+    "Bytes": 307141,
+    "SHA256": "BAE16D4071811F35540DACF234B6D888BDC3C4FCC83C4B372840C19C0B57F8CB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CalibFix.Controls.dll",
+    "Bytes": 276480,
+    "SHA256": "72B8B462D8569C51006D52ADBBF47A11F5D92EE563F58E564C3C4A586D25E55B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CalibFix.dll",
+    "Bytes": 600576,
+    "SHA256": "1A20D94D59394881CF3C4FC5F8DE8E5434C9BE9FA57A3DCFF6491C6E946AEA39"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CalibFix.xml",
+    "Bytes": 447477,
+    "SHA256": "0BA6841039E002E0E513B7E1ADB39E9C83521A526E43EECD03921E3E53E82B04"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CalibFixPlus.dll",
+    "Bytes": 11384544,
+    "SHA256": "66871EA9CE5F0B0B234F2810E4A87D65795BD8FBDB4AE2AE977E95DE1ED49CF6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CalibFixPlus.xml",
+    "Bytes": 329922,
+    "SHA256": "B7F7D3DAC6A3C91F877C23E3441B7C8B6A5FB7DC48ABD2779E4940ED7F8EB563"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Caliper.Controls.dll",
+    "Bytes": 287744,
+    "SHA256": "08B74CD4EC0E83195BDDC4541221DD8A77A487A7926F6678B5F59E4E072DE0FF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Caliper.dll",
+    "Bytes": 1482976,
+    "SHA256": "DE484491238D7175AB9CB870BC36C96AEEA66C962B3F7689B36391D4189089AF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Caliper.xml",
+    "Bytes": 402688,
+    "SHA256": "F1CD116F6BA740E279B41C0396B667AED60C004476700F2387A5FAC3E9AE12FE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Controls.dll",
+    "Bytes": 2287104,
+    "SHA256": "7595597D5A1FA6930DDBC173E6B668549F10CB3DECB36D1BFAECE4026223B134"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Core.dll",
+    "Bytes": 6566624,
+    "SHA256": "A2DBD3FB25B411CDA10B8BBB4338B9148F5C2EE10DBCD278A03D7BD6C385CA8C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Core.xml",
+    "Bytes": 2980475,
+    "SHA256": "B41B711E573E774CC05D78BDBB570C339DD3FFD3E79D331E29948360FF2F3CCD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CorePlus.dll",
+    "Bytes": 3712224,
+    "SHA256": "35F45C44F08ACEEC72444D37C8196A91EFA8E08C8967629F0D2FBB91CD763BB1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.CorePlus.xml",
+    "Bytes": 87037,
+    "SHA256": "C6B035DEEE1F86461BB3CB32A22184C3A4F03676C4093B03ED0F14BAE295407F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Database.dll",
+    "Bytes": 23552,
+    "SHA256": "0F8273FF834A6E4869A71F14CB24564114284D44814DBAFF400FB640B2E2F648"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Database.xml",
+    "Bytes": 46951,
+    "SHA256": "1E763C415C976DC85964459982EBF66E84F97A4C64FF1143024E47986D1F0C6F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Display.Controls.dll",
+    "Bytes": 92160,
+    "SHA256": "DD24844A1E0AC1B24FE797BE25D0179EAA30BB06625EE4683F6AD3D0DEB41AB8"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Display.Controls.xml",
+    "Bytes": 140396,
+    "SHA256": "9CA02BBD543F0DCE8D9B31B001459EC3EF9C5CDA3FC0FA260EC2DDED34010FC1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.dll",
+    "Bytes": 308224,
+    "SHA256": "3295C247CDCD64AB8C17DF911B7CF7F2850C9ABAFA8AC193940FBCB0BEE78C60"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FG1394DCAM.dll",
+    "Bytes": 423936,
+    "SHA256": "53ED4213AC80DD7023224C597857E6A301235610C67BB1E46CD52549D88BA85C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FG1394DCAM.xml",
+    "Bytes": 103834,
+    "SHA256": "EE99680D8B3FFF25EF31FD099F1D2B770070EA1461657149993CFACA2A643410"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FG8100.dll",
+    "Bytes": 406528,
+    "SHA256": "8BB2F442120176988FC80760FD90A5FAB668CA08F5DC06D8B7B8B0B2F86F39BD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FG8100.xml",
+    "Bytes": 98619,
+    "SHA256": "1E7FC42A48483D08016991DCA3E4745A9E943AA345267A3C1BD391DB2A16C6B6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FG8100L.dll",
+    "Bytes": 408064,
+    "SHA256": "F1766F590ECEB410D5376E7475B977932CDBEEFA8518DEAC19ADAE25D143FB6B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FG8100L.xml",
+    "Bytes": 99230,
+    "SHA256": "A61ACF4B1320B556BA71AA1A5CF241F853BA0597EB1B7C9B24F73758830E698A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FGGigE.dll",
+    "Bytes": 419840,
+    "SHA256": "5CF914534FF47C4BE6669C88EB2ACED726AF125164B25FA302DCA0CC9548B7A4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.FGGigE.xml",
+    "Bytes": 98619,
+    "SHA256": "8BA0C0C98A6812CC019D26C9A2BEB882B0C59BEE27220BA63FADA44B83C2B2BB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ImageFile.dll",
+    "Bytes": 321024,
+    "SHA256": "1E201E7CB09BAD8E00BFB5A3925EA335208A85A5CEA9707FD2A4EBE7EA01A863"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ImageFile.xml",
+    "Bytes": 103795,
+    "SHA256": "DAE211B9252D3105094200FAED56FC107763014BC84D975FFC1C8515A7004268"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ImageProcessing.dll",
+    "Bytes": 3702272,
+    "SHA256": "867129B556B1F5E9168BC89615D72EF55C5D0D4FF3BF3406718EE436AF3BB82A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ImageProcessing.xml",
+    "Bytes": 789322,
+    "SHA256": "243FA75DEC968CBE25A95F777E166CD9C571A9F19F1CEDC5FD478A20F0B99689"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Inspection.Controls.dll",
+    "Bytes": 169472,
+    "SHA256": "4124FCEE2694347FC84B266C16D6BCD0A6494631661F82B8389C90FE63C4ACE3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Inspection.dll",
+    "Bytes": 62464,
+    "SHA256": "7FAF0A314753593EB52F8310D0F16C43CF4A937DE9F2356B4989BE48D909C7B6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Inspection.xml",
+    "Bytes": 131126,
+    "SHA256": "D0CCF0CCA91E50D2D906AA0B17FB59705B4AD94B0A7CC24934E7170F4213DC8E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.Interop.Core.dll",
+    "Bytes": 1107968,
+    "SHA256": "CB06A51B757D26AC5DD3F58F458D12A5549EA20FC3CAA4BD8E0645FDDF9BFEDB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.PMAlign.Controls.dll",
+    "Bytes": 510464,
+    "SHA256": "4AFCEB22782A28FFD709D676EFA3BAA0A11A570C865AE7E5F8988D9C934FEEA4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.PMAlign.dll",
+    "Bytes": 6755552,
+    "SHA256": "97026ED5DB9AE4D4C9DC329DCD47B5B14E11CA27DDBD614E06D3CD4DE07F0C39"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.PMAlign.xml",
+    "Bytes": 367173,
+    "SHA256": "0EF93B61619D97DD42F4F6DC7E1C2E53A939D194D3E495872E751D843789E28F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.QuickBuild.Controls.dll",
+    "Bytes": 1359872,
+    "SHA256": "E6168EC73A66014AF85389FC27795982D5FC2AD3C565B839EC93A424AF2A9934"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.QuickBuild.Core.dll",
+    "Bytes": 258560,
+    "SHA256": "B30865F17609D2A757E088A02151DD3E4DBDB8C6BAE71A55362852901D7694DA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.QuickBuild.Core.xml",
+    "Bytes": 270057,
+    "SHA256": "9B83F7E7A2830A49FBED972D4BACB07AEB9D92275B7DDFA6F2C0C625E6F3BF71"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.QuickBuild.IO.dll",
+    "Bytes": 125440,
+    "SHA256": "848CFA3249BE5BF13F78800C802711C1ABFD668D04DFDD0174059F1F92CE9F74"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.QuickBuild.IO.xml",
+    "Bytes": 164131,
+    "SHA256": "83A764F9536915E9CBC9A87FAEE56E8274F1AC2FB16A75F78C7871152D46F187"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ResultsAnalysis.dll",
+    "Bytes": 74752,
+    "SHA256": "A7F523782B70FAF02CCBA18F1F94F7ADD8A3C2249BC39E180A7372796AB17B63"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ResultsAnalysis.xml",
+    "Bytes": 14562,
+    "SHA256": "9A08BA0552630B0EA7C007B5FB775305CFB9F657B85467A6608E1074142DEECC"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ToolGroup.Controls.dll",
+    "Bytes": 304128,
+    "SHA256": "0EA57184985F376486B0CC976FB97E02201167CE372CC2CC24B601E57B5E94E9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ToolGroup.dll",
+    "Bytes": 77824,
+    "SHA256": "DC0C7A946B1C48D5650AD2C1A91A7E236CE77147EF439F4001B6C70AF64CCDF2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.ToolGroup.xml",
+    "Bytes": 58275,
+    "SHA256": "3569ECC2CDAB035646E6D9140BA631039E3C907ECA16DF973DC216338F0E7F38"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro.xml",
+    "Bytes": 464793,
+    "SHA256": "3905F60797907CA54FD9BC58B70AE7BF26F2AA727DF3D5FEADC7BA24158EEFF7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.Core.dll",
+    "Bytes": 10722016,
+    "SHA256": "18C7219934C253B2B75A24688CCE0524D47DFD29723D4FA13D584F7DCB5FC4E1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.Core.xml",
+    "Bytes": 438232,
+    "SHA256": "A8C5EA6FDC09A77671A6BBEE352505685A5419191E8681D7EDEF02669550D595"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.Display.Controls.dll",
+    "Bytes": 71168,
+    "SHA256": "E888EB4B6D48B785EAF5C02AB6839121669584B0206EF63CBC6AD307FC8214D5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.Display.Controls.xml",
+    "Bytes": 64919,
+    "SHA256": "0F18D82F81D2E3D3CA790930B9744CFD2C225DCF549C3CCD4E4E7F4A19E3C4AE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.dll",
+    "Bytes": 14594272,
+    "SHA256": "E393C5F5E232F2ADD4BD3BA8036C9D2DE4D994089D2DF5F8AF52B0DC1C116145"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.Graphic.dll",
+    "Bytes": 1211104,
+    "SHA256": "A3BCE0C6EB95AC99CEEECFA946192D58C9B99F45B5FBF485D466308DF615B8DF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.Graphic.xml",
+    "Bytes": 55082,
+    "SHA256": "8726FA59E14FEFAEE7B51234AE41E497DA08A9AA53DF6A19EAB5C52F5DE9E212"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Cognex.VisionPro3D.xml",
+    "Bytes": 844657,
+    "SHA256": "4B8F1BB553E5955486DE0DA8E36842732E8C62450EC196B91BADC48B71054A97"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\common.dll",
+    "Bytes": 1569280,
+    "SHA256": "4C87001DB04B0F31AAF1F44E4E803D79BDAB584B391BBCA300EF6D45E0A6E8B1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CommonCls.dll",
+    "Bytes": 139776,
+    "SHA256": "BB2D4086E942B35D729F48C86E4EA4DFBB4101A4BC86226300E31D86684C9AAA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CommonCls.dll.config",
+    "Bytes": 1256,
+    "SHA256": "D629CEF0B4EBD6DE488435AB4A49FA5ACEF6F89D43E292D3E381450153398554"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\CommonCls.pdb",
+    "Bytes": 316928,
+    "SHA256": "3C301E1A9EC4C70259B76A73DD9D4F4B01603BC6F8656229738FCC2FBECF6250"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\cublas64_10.dll",
+    "Bytes": 64257536,
+    "SHA256": "25A7FD820DD57705FE4C9FD101E7CA50CD17054338C986A09E98DD71A25B9FCA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\cublasLt64_10.dll",
+    "Bytes": 32215552,
+    "SHA256": "6CD90FA1BF8D656061E120B5DCD3A74A8B87C0EB6DFA80373FF3552420BBFB98"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\cudart64_102.dll",
+    "Bytes": 411648,
+    "SHA256": "58C34DEBB5F0E76D9AA02607DD3F68BC76BD2C6F6F40B51D559B552EEB885356"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\cudnn64_7.dll",
+    "Bytes": 456168960,
+    "SHA256": "9DC4746E18B4E2EC99481C307DC20AC6B9F7413A8863CA1DB1DC10BE67C2A0BA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Custom.ini",
+    "Bytes": 74,
+    "SHA256": "BE4796AD898284F73BF00EC315E846D36EB96FD32A8C1AC9FD118AE331A2F31B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\calib_0.jpg",
+    "Bytes": 6543765,
+    "SHA256": "3E57DDAFCCD0A46FAE60E2C95308079301339A9ED363B4EDA46D41D4CB1050C2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\FilterList.txt",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\MarkFNList.txt",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\MarkFPList.txt",
+    "Bytes": 537,
+    "SHA256": "5241BCEC2BA3E9B47416E40DD66A91A74A79B17B6BDFE635FD0AD6B1853409AD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\PMATrain_0.jpg",
+    "Bytes": 8059174,
+    "SHA256": "0AFEF80DBD59A2A4E652BB27C5231BFCB87108C27AFED89194F891DA2AB4939A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\PMATrain_1.bmp",
+    "Bytes": 19962934,
+    "SHA256": "7F4A48B5B63C86CB78446FB19D0BFE8466BA11180ABC532ADB4B03F560D23503"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\PMATrain_1.jpg",
+    "Bytes": 9175656,
+    "SHA256": "2E3A64AD123ADBF8E79E78AECD39746665CDC954AF6A63359351619D875CFB43"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\predefined_classes 1.txt",
+    "Bytes": 36,
+    "SHA256": "54C2E6A11FFB21E8B9A19088A6ECA0FE8D58F770AC24219E80A4B8C00F4CAED1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\predefined_classes.txt",
+    "Bytes": 24,
+    "SHA256": "EC7FE9623BEBB5C1FF5A40AB6AC662006CB9AA8FAAED3ADC6515E1333A081940"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\sourceBGImgA.jpg",
+    "Bytes": 238238,
+    "SHA256": "5305607EC2BD79B1D07C388012A7420005AF284ABA977EE748195A51F6A0C788"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\sourceBGImgB.jpg",
+    "Bytes": 210309,
+    "SHA256": "6EDF9D8C728FB17558A4B0F3E45C49F627C3743171DE3D8BE2A01D32A601DEE2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\calibTools\\CalibNPoint0.vpp",
+    "Bytes": 76602043,
+    "SHA256": "845D086AC2E777BF98AF57FDE7827371DB1BC3E9FA4DF5059056EF0CA8917B29"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\calibTools\\CalibNPoint1.vpp",
+    "Bytes": 38851622,
+    "SHA256": "A4E04E68841C895924F88D7FAFA6897B401B4F1EE7BB90B3B28D70A4C995FAAD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\LaserFiles\\route0.ezd",
+    "Bytes": 823775,
+    "SHA256": "FB978B5F4E12FF61D9DA5CFF90180C1CE0867D9A7CA7AD3A794BB2332E9E9BDF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\LaserFiles\\route1.ezd",
+    "Bytes": 825327,
+    "SHA256": "302BDBFC939E44A23283503D494AD0842D92715BC468C50EED85399E100EF2BD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\PMAlignTools\\PMA0.vpp",
+    "Bytes": 50356010,
+    "SHA256": "BD0E452914B5BAFA6676607ACB96386528C7F6BC60647C0146B369D272AC90C6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\PMAlignTools\\PMA1.vpp",
+    "Bytes": 31480389,
+    "SHA256": "CEC0D3FCB53DE6596DB8C13A1FF80505BC33091625C4D1E302E764CB94302C46"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\serUserParam.json",
+    "Bytes": 16670,
+    "SHA256": "A1225E9CBC8A5A5A0492602DF7C871C4A94CDB5EE2A8E6914EB215683A33F753"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\TrainImages\\sourceBGImgA.jpg",
+    "Bytes": 238238,
+    "SHA256": "5305607EC2BD79B1D07C388012A7420005AF284ABA977EE748195A51F6A0C788"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\工程1\\TrainImages\\sourceBGImgB.jpg",
+    "Bytes": 210309,
+    "SHA256": "6EDF9D8C728FB17558A4B0F3E45C49F627C3743171DE3D8BE2A01D32A601DEE2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\激光除胶机#2改2.gxw",
+    "Bytes": 1261568,
+    "SHA256": "CB6D6958568AAFCE777D0B9316137A7DA87D835E3B209A3219CDEC8C368AD1F9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\data\\激光除胶机#3改.gxw",
+    "Bytes": 1261568,
+    "SHA256": "4620C7FD13645BC926028DC3072DE142353C11B26781469A6ACBB8C3D1761389"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DataMgr.dll",
+    "Bytes": 1519616,
+    "SHA256": "E04B4430EDA442CCB089ACFDD0C20C09BE8E280C94FD610E6EDDAB3BC1F3177D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\default.ini",
+    "Bytes": 48,
+    "SHA256": "C92433C85D32BFCE1E7A0F149B9C3B2BF601756B47144423B28A2E420371203D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\dll\\x64\\opencv_videoio_ffmpeg455_64.dll",
+    "Bytes": 26239488,
+    "SHA256": "3552D34215BA2EA22CE68C54B0BEE03B857610EBC30E102F6C982B3E415A159C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\dll\\x64\\OpenCvSharpExtern.dll",
+    "Bytes": 54694912,
+    "SHA256": "60CDF2E127F3EE14CBEF59AF5358AB1DDD873505A7758E3AA97CB8F583B202C0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\dll\\x86\\opencv_videoio_ffmpeg455.dll",
+    "Bytes": 23276544,
+    "SHA256": "BCCD50770455FD533DF127ED3288D7412A19A49C0EDF7CF4AD2EE5E47670BAB5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\dll\\x86\\OpenCvSharpExtern.dll",
+    "Bytes": 38041600,
+    "SHA256": "3C984CB379131E8E5D7E5966318FF0086AFE5F0DEE634751DD21EE9F048B77A9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\.success",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\model.pdiparams",
+    "Bytes": 217052894,
+    "SHA256": "A012FAE75AD79DDF7C767165D763CB4E36FD71D5CBADF7D17ED59A2DDB923702"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\model.pdiparams.info",
+    "Bytes": 48554,
+    "SHA256": "7499ED1A1DC5E078DFB3B5920163A422A55AC27F9929DFF681F38931F672B71B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\model.pdmodel",
+    "Bytes": 4024448,
+    "SHA256": "E3BC644969601710F01D089B52E354B10FEDC7FB084804D41073ADF7EAB84BB2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\model.yml",
+    "Bytes": 1267,
+    "SHA256": "B6B09825311109D5E9369051E50B8238F16C3983B238390218D989FEFA080B97"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\pipeline.yml",
+    "Bytes": 404,
+    "SHA256": "88C7FC9029C353B935041D661CE3623DD85A814B60883752F3BD16A5CEB299E1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model\\predefined_classes.txt",
+    "Bytes": 26,
+    "SHA256": "98F61F4A2CF2144EA5A602772C29EE35E661F228DCDB09E450A00FE3970EFF8B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model.rar",
+    "Bytes": 202633859,
+    "SHA256": "D5ADB1FE42BDFDF74DD0333873EBFE2126F0270EB52D9755170625BE8EF01EA0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\.success",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\model.pdiparams",
+    "Bytes": 217052894,
+    "SHA256": "BFB3D8AA7FB2B064D1711A58F040C281944BEADD51BD03671E6B68B460EFE030"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\model.pdiparams.info",
+    "Bytes": 48554,
+    "SHA256": "7499ED1A1DC5E078DFB3B5920163A422A55AC27F9929DFF681F38931F672B71B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\model.pdmodel",
+    "Bytes": 4024541,
+    "SHA256": "1A736DBB2A329E562D04BBFE0643AF60CEBA96CA4B414DA232E08A70EC2CF7A7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\model.yml",
+    "Bytes": 1265,
+    "SHA256": "D7053B3510CF1DED1479F3A5C714752A8431D33FD6C387EE99E3E71C4162EFE6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\pipeline.yml",
+    "Bytes": 404,
+    "SHA256": "90CBE28FD0A3C60B85ACB4847885A9A4933B2E774CDFD5E89848CCD833E61570"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\DLModel\\inference_model1\\predefined_classes.txt",
+    "Bytes": 26,
+    "SHA256": "F7CBD8F5B9BEC172D5ABDD3B0D1131652E90B86515F79AA6B7C75D6E185128FE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\EZCAD.CFG",
+    "Bytes": 13393,
+    "SHA256": "EDF8E435B3BFF0A69E79E37734388FC76DB4623877A28B0E5344BC4CB3C8BC4C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\grpc_csharp_ext.x64.dll",
+    "Bytes": 12684056,
+    "SHA256": "4133225F8E65114926A1F8DFE5E1382186B4150DE393CFB9476D32CF45EE05E6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\grpc_csharp_ext.x86.dll",
+    "Bytes": 9986840,
+    "SHA256": "005602C8AE8F9B27F665CA8261CEFC3C651713D1CAA5135C3F46722D6D9FB1BA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\halcon.dll",
+    "Bytes": 54483000,
+    "SHA256": "CDC17A4D76C09E7F631A1C1E354F50CF55293305AEBD651055F34E16901D883D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\halcondotnet.dll",
+    "Bytes": 1279544,
+    "SHA256": "3FD372A0113D9CC00AAF1F837392FA8EA6B8CEB741A8352F094A182E68872B56"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\hdevenginedotnet.dll",
+    "Bytes": 54840,
+    "SHA256": "D4CC4EB3A0E33A0C6D60BCCD504B2679FACD149674B6F51B23D1E84752DE65E8"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\echarts.js",
+    "Bytes": 2407380,
+    "SHA256": "CC611F4F7149780ABD9ECD7F5495118CCA2378C7D2A078159823448423C33D99"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\echarts.min.js",
+    "Bytes": 707131,
+    "SHA256": "A28AEBD5961C57D2491BAB230DE0A6C45C0C6FA766CCBAD2BC7C6C0D3DF7E5E1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\index.html",
+    "Bytes": 20462,
+    "SHA256": "16E01311AEF0237E7FED1BAFEA7028295756AB1FF4AD3F1778E1DF48AEC46005"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\jquery.min.js",
+    "Bytes": 89476,
+    "SHA256": "F7F6A5894F1D19DDAD6FA392B2ECE2C5E578CBF7DA4EA805B6885EB6985B6E3D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\json2.js",
+    "Bytes": 16358,
+    "SHA256": "CDDD5191CA11AAAEA6DF41A66EC93CF6073E17387722625BB9288F9A413BB73A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\Newtonsoft.Json.dll",
+    "Bytes": 664576,
+    "SHA256": "E5FA1EC7205FF6CCA95EB14560E1C70D7D39E86D3A89552448147DCB89243048"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\Newtonsoft.Json.xml",
+    "Bytes": 684778,
+    "SHA256": "C8CF955C563BDD25645D88130EAE335BC5EEA5E9D5AE71628FB46D7466204847"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\numbers.png",
+    "Bytes": 4991,
+    "SHA256": "F089D6F94ACA49EFA7812AAFFF2C53BAE5DA955E292A7B9F809C4DF51074DE16"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\test.html",
+    "Bytes": 648,
+    "SHA256": "D56A6EA2D93A339EAACE8841841EE61874C96CE56A54564CDB3272AB2D6B02A3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\htmls\\新建 Microsoft Office Word 文档.docx",
+    "Bytes": 94140,
+    "SHA256": "2555ACE86D6E74F05840567F58C4687E29CFDAAD6086FAF749D453D7C48E0BC6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchArched.png",
+    "Bytes": 1689,
+    "SHA256": "1E388FAEB65E6121FC90845B96E0C125A99052AE2AFDF7C4F1AD77D3A45CBA4D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchArchedNoCross.png",
+    "Bytes": 1706,
+    "SHA256": "6B11AF2B944639E4D01F218B2A02390F86DC5F6E7F2D656D67B40480E31E64BB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchBi.png",
+    "Bytes": 1689,
+    "SHA256": "86E29C8EE1CF922DEA73F8520A191F90E351F511E7E00DC2931C2776B90E1C8E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchFo.png",
+    "Bytes": 2377,
+    "SHA256": "F79E2C6B01C1030FE9E34B8AFDC659B7A4F68C638C8A2D2F088EE34BFB65E805"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchLoop.png",
+    "Bytes": 1738,
+    "SHA256": "B38C406E4D0F022698EB1A0AED23E56CD7E9F4EF68497D32717DE4274DF7286D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchRev.png",
+    "Bytes": 1725,
+    "SHA256": "6840B30F4E0943A2F2CF76F5791A7B1D89E3EDE917CC6A01B010388B1AD28CDF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ICON\\HatchSi.png",
+    "Bytes": 1747,
+    "SHA256": "B5893A92053635F3EDA83864FD7B57B597E1BFF050D74A7D3D6789C17309C11D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ImageAcqCls.dll",
+    "Bytes": 44544,
+    "SHA256": "1561CCEBE4316607F620163A823CD854DE51EC42DF0CB0E85FB8C8EDFB7E9EC9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ImageAcqCls.pdb",
+    "Bytes": 108032,
+    "SHA256": "192B40C9F5AFCD4F6139CC9E07EC00C246415523BBF511A082A5029A5106AA58"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ImageViewer.exe",
+    "Bytes": 54272,
+    "SHA256": "F631531E5AD5275D0935CB78EBF4AF9C77F42863D1FA7B8DA76420F9F4A18DBC"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ImageViewer.exe.config",
+    "Bytes": 553,
+    "SHA256": "9E33249D43563DF004EA6A52562BB406F446E4BC2366379BCD7CB785BDF4AF77"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\ImageViewer.pdb",
+    "Bytes": 87552,
+    "SHA256": "E01FBFBC403366364AB6133A2376C8392538895B28312DDD650D4B53F0D24EB6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\JCZ\\PipeChanel.dll",
+    "Bytes": 8192,
+    "SHA256": "2335E51959693B193F07B0323E4443E2A8A1E1C8F83BB17149EBEC2644B51DD7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\JCZ\\PipeChanel.pdb",
+    "Bytes": 22016,
+    "SHA256": "79EC91C2369C299C6BD734CD81A94A7A25A66B2F79369AE71755EA0995C857A3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\JCZ\\System.Resources.Extensions.dll",
+    "Bytes": 110000,
+    "SHA256": "55C4E3855AFD3A56A8BCC81370482BB48B87ACA85BCB7D3CBC484247332C18CF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\libgrpc_csharp_ext.x64.dylib",
+    "Bytes": 11242464,
+    "SHA256": "DE12E46237717B4BABF3C80F6A366F26800BDF15EFBBBD2B8FD987101A56A94E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\libgrpc_csharp_ext.x64.so",
+    "Bytes": 8214864,
+    "SHA256": "904201B6583FC11232327FE3CBA9D6969AC9BBB155CFAF38FD7F4308FD69C820"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\libiomp5md.dll",
+    "Bytes": 1726848,
+    "SHA256": "BC9E17190505A3BEDA7FEEDD90BA3AB7B6DC3F7CA5D980B2140C53AE459FC5AE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Lmc1.dll",
+    "Bytes": 655360,
+    "SHA256": "677465887F644E4FFBCDF48AF714860179CD204B3DFFC55A5942D53978FBD5F1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\LMCMIO.dll",
+    "Bytes": 40960,
+    "SHA256": "77A4AF17DC217A007D690A0E3DC51503FD49BE5878F9F46745AA4AA9AE5CE468"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\log.txt",
+    "Bytes": 1926,
+    "SHA256": "3ACB7602E60E3182C903AB9A56B0618E4C096B8F7DB302858AB09A62F799BF46"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\log4net.dll",
+    "Bytes": 301056,
+    "SHA256": "CE6EE4FDC783A5BF905F240178AC96EAEB7EDE22FFE06A06BA179CD1A0442BD3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\LS_UartAssist.exe",
+    "Bytes": 270336,
+    "SHA256": "F5AD93FE150372F197A9909093F6D19375CDB2BB4506974D583D66F150C5396D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\LS_UartAssist.exe.config",
+    "Bytes": 1699,
+    "SHA256": "F3B085A5417DB7BC9A6A0D4DFD49D51B0227C5A871410C82CAF592B772CA3EA4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\LS_UartAssist.pdb",
+    "Bytes": 77312,
+    "SHA256": "1FE6A5718F3A616F42F7A794075D7BBAF3FC43096FDF44B66695F4B4F048062C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\mathlib.dll",
+    "Bytes": 192512,
+    "SHA256": "72A56293A8066265BE11D6D36AB58CC18CA4280133933E0BEAC5C0774940D436"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MathNet.Numerics.dll",
+    "Bytes": 1590272,
+    "SHA256": "85CBAA2C0A37B8D5517C33930027BE26C53DF056ABC89BF6E7718693720BA254"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MathNet.Numerics.xml",
+    "Bytes": 3436916,
+    "SHA256": "040474F0A0DCF7596108BF43BE350690020CEF525F22DB3CCAB9ECF324139662"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Microsoft.Extensions.Logging.Abstractions.dll",
+    "Bytes": 48720,
+    "SHA256": "E6EFD903729884E8601ED9ED1265BE166CF2210DFE5F8AC64D529BEA2B08072C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Microsoft.Extensions.Logging.Abstractions.xml",
+    "Bytes": 58464,
+    "SHA256": "4F8ADE43C93FF201ADEABF34857280A2D7CB08FF36F4FE0D241E0714F28EEB0B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\mkldnn.dll",
+    "Bytes": 47405568,
+    "SHA256": "101A81A71A917DEAEED5269EAD3C2876823357DD8E7EC9B0841BE741E9FB270A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\mklml.dll",
+    "Bytes": 92649344,
+    "SHA256": "E2A7FD93E1534568626CFFE22676B15164A5A2B3A62F1919A55993478B45811E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\model_infer.dll",
+    "Bytes": 513536,
+    "SHA256": "DA53799BECE73628B9C8F626FEC0E0E2B5C96AE1FC0F55EA53572A0A06A3D3D6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\mswlaser.ini",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MultiMarkEzd.dll",
+    "Bytes": 163840,
+    "SHA256": "9483144A86EC0CB0D48621ABB37CB5847A88C19ADDE6DD3643C0BA732675B6AB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MVAPI.dll",
+    "Bytes": 73728,
+    "SHA256": "6EA96E2382CC0409ACE887549B197AFF217E4FB8D0ED6AF735D37FA253A14F2C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MVBayerDec.dll",
+    "Bytes": 143360,
+    "SHA256": "BD18B6A6E00CD81B36DF53BD9551454AFB7461FC2972F3F627E73FF100E791D9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MvCameraControl.Net.dll",
+    "Bytes": 58880,
+    "SHA256": "A5442DF47BD66F3660540B0E2251B74E65CCD3CF0FCC728EC65F9102C79FA6C2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MvCameraControl.Net5.0.dll",
+    "Bytes": 202752,
+    "SHA256": "CCB60657D7E9903EC4E48152B315D467D753632A97CB1A5BB817A6FBE7C8E86B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MVCAPI.dll",
+    "Bytes": 368640,
+    "SHA256": "47B7223A9E7D8B86178A3DC6D8BEE858B3794F188C7A8D1DFC3F905419F1DED7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\MVParm.dll",
+    "Bytes": 49152,
+    "SHA256": "244498408329629EA1E27A7D23AABDEB9F380EA752DE5FC26AC4251628F79996"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\myelin64_1.dll",
+    "Bytes": 6535168,
+    "SHA256": "AAC0CB9B91E564B2F308D85625346348E511CD68F7AA0B4ADA5063ECF1723A44"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\NcPath.dll",
+    "Bytes": 106496,
+    "SHA256": "BD9CD10C929A6CD2B4D975587E1308FCA44E0A42BBC0BFB52D9C8863234A35BE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\netstandard.dll",
+    "Bytes": 98616,
+    "SHA256": "8BE4A2270F8B2BEA40F33F79869FDCCA34E07BB764E63B81DED49D90D2B720DD"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Newtonsoft.Json.dll",
+    "Bytes": 711952,
+    "SHA256": "E1E27AF7B07EEEDF5CE71A9255F0422816A6FC5849A483C6714E1B472044FA9D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\NullMark_00.xml",
+    "Bytes": 316,
+    "SHA256": "678BF8844A85BDF5C91059D2562EE06DDEF6BB8E23FB492606663F55563104E7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\nvinfer.dll",
+    "Bytes": 246731264,
+    "SHA256": "4B5759520748E983AAD05FB43C714BE07DEE6AF290493367C7CBE0A71238EB2A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\nvinfer_plugin.dll",
+    "Bytes": 6056448,
+    "SHA256": "87754BBC95ADF2ADC7D5FC04E715E560A65B6D4744B3DEA7A9B54323880A23F9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\nvrtc64_102_0.dll",
+    "Bytes": 15952896,
+    "SHA256": "79D9673DD7FF4DED9C9BA24A0BDB44F0309C5A2B9F9D618134A8668C7F193BD1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\opencv_world346.dll",
+    "Bytes": 79301632,
+    "SHA256": "30143F5F0DC9CDD046A5F4DB7B503998B5FD67B6F5DC41F82EE58AC90A59BDD7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\opencv_world346d.dll",
+    "Bytes": 125995520,
+    "SHA256": "2802B417E018CB204488368175C0673B07816D32E778E16830EFE7E589693D47"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\OpenCvSharp.dll",
+    "Bytes": 939008,
+    "SHA256": "3ABDE04CDB3A722B54E15F6E5B8C11329057D66942B1F5F7C34595E1D7EBD8A3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\OpenCvSharp.Extensions.dll",
+    "Bytes": 25088,
+    "SHA256": "C09B11BF8286B7A583B7AC266EF1F91A06DC9B0925BD8AD22D3B61D5A6FF1552"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\OpenCvSharp.xml",
+    "Bytes": 2001434,
+    "SHA256": "942CD7218785CA98977ABDA1C1F0324A0F83CE929F50BD433A2CBE9744AA9BA0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\options.txt",
+    "Bytes": 78,
+    "SHA256": "FBE2A52149CF2AC3E6628949927E9198A89AF5933FE8349DC51DFA1132C12353"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\paddle2onnx.dll",
+    "Bytes": 3899392,
+    "SHA256": "5B260DB5408310DA59ACA6B0A9153DA660640CCAD1715EA9777543B07C53B6B2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\paddle_inference.dll",
+    "Bytes": 103586816,
+    "SHA256": "F47E5722842EE49E1FD5CFA6B6EC2244D43225F023A62AD078BB1E7682CF1365"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\paddle_inference_c.dll",
+    "Bytes": 95514624,
+    "SHA256": "86CB1207572CE01CB47D600532C956CCB0FE7CC26F5F3BC5DFAC13E6642FB300"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\passwords.txt",
+    "Bytes": 271,
+    "SHA256": "6E9C731D42349550E10833497F33483585B08EDB9BDCD0972B0967717E8EDEE2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\PerMang.exe",
+    "Bytes": 296960,
+    "SHA256": "8580D6031ACF3E50D9871BB329071BCE35815F0CAC9C713751A62B5136AF4842"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\PerMang.exe.config",
+    "Bytes": 1885,
+    "SHA256": "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\PerMang.pdb",
+    "Bytes": 50688,
+    "SHA256": "6FE2D30D38B95479612E0E1CC637FD5A3F4CEBD853E384DA9512F8E680327499"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\phi.dll",
+    "Bytes": 405883904,
+    "SHA256": "57157EBB6B1C7DB602D82F262D5A903A1F64BE5A520AA39BF5F50E0D6BC3A6C9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\PipeChanel.dll",
+    "Bytes": 8192,
+    "SHA256": "2335E51959693B193F07B0323E4443E2A8A1E1C8F83BB17149EBEC2644B51DD7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\PipeChanel.pdb",
+    "Bytes": 22016,
+    "SHA256": "79EC91C2369C299C6BD734CD81A94A7A25A66B2F79369AE71755EA0995C857A3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\pthreadGC2.dll",
+    "Bytes": 185976,
+    "SHA256": "0250C506A0D79B1D0F2DCF2682BCD6F1E46F8ECC1D952B2357AB23CD463ACC02"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\pthreadVC2.dll",
+    "Bytes": 82944,
+    "SHA256": "0E6AF724609EF6846982EF717013426C359C455FFF324E906D8D55C8BB88D16E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\QDib.dll",
+    "Bytes": 737280,
+    "SHA256": "4FE3AD08E0C16429F66FF9AB2D7BF619483978CEB9CFE800A0D4987801895D96"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\QLib.dll",
+    "Bytes": 65536,
+    "SHA256": "0BA3CEF5B995843F5E6EA79FC3E1891C1118BCFE1F104DFF83849B427C14AFA7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Scene\\Default.jpg",
+    "Bytes": 262850,
+    "SHA256": "4A98B0D9BECA2437DB75F9C56B3F45F598E7D73228C9C62D80A02304CD12B012"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\Scene\\Scene1#.jpg",
+    "Bytes": 184615,
+    "SHA256": "17BC545EFA0E39D9B294B535355CC4B812FE1880C712845FD4FB08A937E55634"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\stdole.dll",
+    "Bytes": 16384,
+    "SHA256": "D6CDF961C6D2712FE1958815E51A30960D79FFF1E97788B7741627DBA972E8F7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\SunnyUI.Common.dll",
+    "Bytes": 177664,
+    "SHA256": "9EE94C40816B87D33F80D90206941378CE94E2B366B6351AF185EC05E5967331"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\SunnyUI.dll",
+    "Bytes": 2912768,
+    "SHA256": "5813B8905417A211AA4E8417536D54CD0E128AAA0136E49AE58A62B6406F9DDB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Buffers.dll",
+    "Bytes": 20856,
+    "SHA256": "ACCCCFBE45D9F08FFEED9916E37B33E98C65BE012CFFF6E7FA7B67210CE1FEFB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Buffers.xml",
+    "Bytes": 3481,
+    "SHA256": "2EC7FB12E11F9831E40524427F6D88A3C9FFDD56CCFA81D373467B75B479A578"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Diagnostics.DiagnosticSource.dll",
+    "Bytes": 58416,
+    "SHA256": "8AE5AA8987BA6E9697F6DBB03FA411FB7150420D3030A0842179E7874CC66779"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Diagnostics.DiagnosticSource.xml",
+    "Bytes": 6077,
+    "SHA256": "35D2B7FFA39B707AECEBF3335EA50FF7049F95350C51774BC8ED484C365C8029"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Interactive.Async.dll",
+    "Bytes": 252344,
+    "SHA256": "C3A50929E93C6C8C5AC799A596FA1131A0123EB4E9178B073994D01759DC2E1A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Interactive.Async.xml",
+    "Bytes": 4478,
+    "SHA256": "4253CB2880CA977F7F92A275140779B6E53B948AAC9CDA7D821FC3B06481749A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Linq.dll",
+    "Bytes": 23880,
+    "SHA256": "485297ECB0E9082A79B5420770130F421F9F6A6D830BAB402E5CD937E13A9F3A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Memory.dll",
+    "Bytes": 142240,
+    "SHA256": "BF3FB84664F4097F1A8A9BC71A51DCF8CF1A905D4080A4D290DA1730866E856F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Memory.xml",
+    "Bytes": 13950,
+    "SHA256": "D5714C96607EB1A9D0F90F57CA194D8A9C3EDE0656A1D1F461E78B209F054813"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Numerics.Vectors.dll",
+    "Bytes": 115856,
+    "SHA256": "1D3EF8698281E7CF7371D1554AFEF5872B39F96C26DA772210A33DA041BA1183"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Numerics.Vectors.xml",
+    "Bytes": 183484,
+    "SHA256": "AE2C3DE9AD57D7091D9F44DCDEE3F88ECCF2BA7CB43ADC9BB24769154A532DC7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Resources.Extensions.dll",
+    "Bytes": 110000,
+    "SHA256": "55C4E3855AFD3A56A8BCC81370482BB48B87ACA85BCB7D3CBC484247332C18CF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Runtime.CompilerServices.Unsafe.dll",
+    "Bytes": 18024,
+    "SHA256": "37768488E8EF45729BC7D9A2677633C6450042975BB96516E186DA6CB9CD0DCF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.Runtime.CompilerServices.Unsafe.xml",
+    "Bytes": 20529,
+    "SHA256": "39C2D4A63A186D423E9C866F4D3E9A6ACBA0103398F20BAF8B92A38744894215"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.ServiceProcess.dll",
+    "Bytes": 133984,
+    "SHA256": "8D464ADD148C985482877CE2DB8D9037A1BC5D37907552C367F3EDCE8E7909E6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.ValueTuple.dll",
+    "Bytes": 24776,
+    "SHA256": "AD95C2B972A0BDD45513E26813ECD397B9CC557E66E9FE26CE5633A695C41D1A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\System.ValueTuple.xml",
+    "Bytes": 203751,
+    "SHA256": "E4F2DAE86568C15516E349981F058B1B0DFF9D2457BCCFB375E7019644462035"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\userControl.dll",
+    "Bytes": 243712,
+    "SHA256": "069374E18CE8339524173A09CC422D120782C6019594BA479825DC8E64BFBAA3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\UserData\\camera_preview_debug.log",
+    "Bytes": 9164458,
+    "SHA256": "1FA27A54BACDB46F47D9A50C7DCD481D831944B2C7FABF84960E28495C5A2DA6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\UserData\\dl_init_debug.log",
+    "Bytes": 338042,
+    "SHA256": "9EE4E521838AEE78FB4531FC8B8E307EF3A8D569EC1FC880D5BF5F2D1B00730A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\UserData\\serRecordList.dat",
+    "Bytes": 613,
+    "SHA256": "22792567A109C0342C9CC6AEA3E5D78E1FBB9E43A9095C74B1BD048C9379827F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\UserData\\serUserParam.dat",
+    "Bytes": 6578,
+    "SHA256": "213D17F7E21343CBD765E416F150178FA298E34E79572A05C08ADA9FD76E0566"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\UserData\\serUserParam.json",
+    "Bytes": 16922,
+    "SHA256": "0628C1E6AB58229C63CE14B8B5AACDC23D2FD45DB1F613161A0E07A05B72BCB5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\VPP\\LD",
+    "Bytes": 161194596,
+    "SHA256": "1FD31EB4B2BDE422B695ECA0CABB0AAD478B379FA8CA1AB39A6218DBDAB2AD22"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\VPP\\LD.vpp",
+    "Bytes": 161194277,
+    "SHA256": "12ADD109D39538F985F08E7F943FFF51A6B0F586BDF5D78B66B4B230ACC26973"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\VPP\\Measure",
+    "Bytes": 125917964,
+    "SHA256": "DD0C5A4858292FE88AAADDC1F4FDF50EB1BBBEA2DC450F25F09D004FF7B1BE23"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\VPP\\Measure.vpp",
+    "Bytes": 125916917,
+    "SHA256": "82BF0230695B269EA79107B57F10D59FEE64210B3CD6789E1911F667D17EF03B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\VPP\\route0.ezd",
+    "Bytes": 1066272,
+    "SHA256": "52CBE1A0CB960804EB7D21A3C7432DF98134041CA5AA8F60BBC8BAE4EAB89699"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\VPP\\route1.ezd",
+    "Bytes": 697153,
+    "SHA256": "311FCB2CB159ED6C48503AA4583A799E5E9A9DFF80BB889EE2BC4FCF8FAAB59C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\xbVP_Control.dll",
+    "Bytes": 140800,
+    "SHA256": "F6BCE9D8F3AB31CF6C202D4EC7380D3A4DB5B54419E670BD3FFA9A9E5AFD9518"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\xbVP_Control.dll.config",
+    "Bytes": 1405,
+    "SHA256": "3CA98FED4B4FF3936A38D24081036F6CACF1A2C69406FA9191B106AA38A3507A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\xbVP_Control.pdb",
+    "Bytes": 237056,
+    "SHA256": "CA8E1576ADE92085B6014A3F8387ABE0FCF46DE22E9C1F73A7977297C6EC0F77"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\zlibwapi.dll",
+    "Bytes": 89088,
+    "SHA256": "CC08A78504D66EC9B932769C0AB747DB6DE91F59E14BB8DBF73F92462649A5B3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\电极帽缺陷检测.application",
+    "Bytes": 1882,
+    "SHA256": "BB3353720635C2DF1B63DF63E96BB037D5E813C84F2EC73D6E8CFDCA82211D34"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\电极帽缺陷检测.exe",
+    "Bytes": 2449408,
+    "SHA256": "6F4611257CD6F7F2E0DAD94C1827532616FAE63509FD6467DBC8F9ACB06A4AD2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\电极帽缺陷检测.exe.config",
+    "Bytes": 1885,
+    "SHA256": "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\电极帽缺陷检测.exe.manifest",
+    "Bytes": 37961,
+    "SHA256": "0D0168E725545DD5F9850CB2708C3D14732528C8D2A6264A0A76511D3281EED7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\电极帽缺陷检测.pdb",
+    "Bytes": 740864,
+    "SHA256": "81062EE677D7159E529F2C35E37E48ED9263897C2621CD7F5D4C707D05B69819"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\缺陷检测.exe",
+    "Bytes": 2419712,
+    "SHA256": "531DD346F8A486FF0EDAE49831D3B58A823F4325F0071B314272E5D19CA35E23"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\缺齿检测.application",
+    "Bytes": 1846,
+    "SHA256": "AC8FC38935DA8B45E753CE2115F3652DE90AEB6C7279D8F4A7629261D43A7DB9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\缺齿检测.exe.config",
+    "Bytes": 1699,
+    "SHA256": "F3B085A5417DB7BC9A6A0D4DFD49D51B0227C5A871410C82CAF592B772CA3EA4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\缺齿检测.exe.manifest",
+    "Bytes": 35125,
+    "SHA256": "3680028EF89CF82B990360BFD342BB6AF0EF82585B297B92D24C45EF7A20EB64"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\bin\\缺齿检测.pdb",
+    "Bytes": 445952,
+    "SHA256": "384DCF61F1F059038E41A36BFD60D5F7E142E047E1F1A67B5E9A6EDF9B2A84BA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_BaseDevelop\\Form1.Designer.cs",
+    "Bytes": 76919,
+    "SHA256": "10EBF61A03F5F1D3CA3AA47FDD8156223D17AD6AE18F00FAB253BC5D986735FB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_BaseDevelop\\FrmHatch.designer.cs",
+    "Bytes": 31331,
+    "SHA256": "F217BDA2BF26F0C5D71EA9083246774AD63AF98258C0F96BE8DFFBC0BBF07423"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_BaseDevelop\\FrmLaserPen.Designer.cs",
+    "Bytes": 34393,
+    "SHA256": "E3938FB99DA9A08DD4E6619DF79C3B5F3C205013BAF243CEF539EFAD1502C2BF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_BaseDevelop\\JCZServer.Designer.cs",
+    "Bytes": 63104,
+    "SHA256": "7FAAE4D5E91C8D7F94E5EFA2C50EF71B35736CDBF4AA07EAE594B61A11C25DFB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_BaseDevelop\\Properties\\Resources.Designer.cs",
+    "Bytes": 2890,
+    "SHA256": "EA9CC90A9597AB253E437A24FCD0CB33D895343FB18252D0C7074470EDD03289"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_BaseDevelop\\Properties\\Settings.Designer.cs",
+    "Bytes": 1118,
+    "SHA256": "B0B53B838E234DC0C3E5247B510546016F5E3604DE9F3E911D2E67D5BD4A3DF6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_MultiHead\\Form1.Designer.cs",
+    "Bytes": 10676,
+    "SHA256": "F720D0F0DA7E511B9AEAF0671EC064D15EAE351B04B1067AA88D38FCB68426A9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_MultiHead\\Properties\\Resources.Designer.cs",
+    "Bytes": 2886,
+    "SHA256": "5FC69917A216BA7CF6B5807BCEE00AA769B765C75BF580C74348B9D27B4CFA3C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\BJJCZ_MultiHead\\Properties\\Settings.Designer.cs",
+    "Bytes": 1115,
+    "SHA256": "E206E9535262B2180D815F1F1968FD046EF822DA3CB2D6C8E25261768F218744"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CamDebug\\FrmCam_Debug.designer.cs",
+    "Bytes": 38004,
+    "SHA256": "1AE49E35A5F5E364CE50FE1B538F3C98D0CF5FC175A812BB10A75260AF0FEFD0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CamDebug\\Properties\\Resources.Designer.cs",
+    "Bytes": 2848,
+    "SHA256": "5E23048678BBE458D180770547D373845C3F561DDC53D2A8D810DCABC0FDD20A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CamDebug\\Properties\\Settings.Designer.cs",
+    "Bytes": 1093,
+    "SHA256": "382464A8986C9F4EBABDF0A291B757CE7DDAD01AF103BFDBC7B1A9EEF84E84C4"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CommonCls\\ClsList.designer.cs",
+    "Bytes": 4213,
+    "SHA256": "C670EADB3A280C642AC1FD5E2A914666AFAD2F51819E3FDD56FB8AC6071BCA62"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CommonClsTest\\FrmCameraCapture .Designer.cs",
+    "Bytes": 29929,
+    "SHA256": "D053EDAF3F4AAE12AACA54DF4FDB1A33A5C4B4032944D5057FF215291688540C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CommonClsTest\\Properties\\Resources.Designer.cs",
+    "Bytes": 2858,
+    "SHA256": "CADA7473AAC19D3E09A5281AFEBB17A3D026CBC13529C046A007F0CDFA1ACB38"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\CommonClsTest\\Properties\\Settings.Designer.cs",
+    "Bytes": 1098,
+    "SHA256": "A606A06AB97DFC893DA719514EABA2BF17C9D9232EEA352277DB35E0D39802C2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ex\\FrmDL.Designer.cs",
+    "Bytes": 18757,
+    "SHA256": "3934A8605D9042F45E9FA4441A3EF02CB43BCF02E4AB8714D2C3E506A8845475"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ImageViewer\\FrmIamgeGroup.designer.cs",
+    "Bytes": 52103,
+    "SHA256": "C9C4F8A6911ABC31CEA17A5D66315B0DCB95217CAAEA1DAC80B41BDC09970615"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ImageViewer\\Properties\\Resources.Designer.cs",
+    "Bytes": 2854,
+    "SHA256": "B4593D91DF8696DB010DD4E5F75837CCCA35919AF687A5DF6E2BF802F906BD94"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ImageViewer\\Properties\\Settings.Designer.cs",
+    "Bytes": 1096,
+    "SHA256": "3C53A5A897BA743AD093192CAFE461B489F953502407FE4B1C973721C2DF3092"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\LS_UartAssist\\Form1.Designer.cs",
+    "Bytes": 1237,
+    "SHA256": "186535796A7F881C5596059C9EE8674E7779ADAEA1CA453047965077EE6BE1F3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\LS_UartAssist\\Properties\\Resources.Designer.cs",
+    "Bytes": 2858,
+    "SHA256": "6CD081FFD3883C85419B2366CA7DF5B0DF96178DE7BE15B190F36A6B9E3C8D45"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\LS_UartAssist\\Properties\\Settings.Designer.cs",
+    "Bytes": 1098,
+    "SHA256": "C98740A97A13706EEB85BADE2EE91A13AC178D9BAC9E4B5EC74F5287A27A88E1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ParamSet\\Frm_RuntimeSet.designer.cs",
+    "Bytes": 144861,
+    "SHA256": "D218E2E172FDF57440A7E68F2E51AFD91F13C94DFFD03947096879903012EA0A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ParamSet\\Properties\\Resources.Designer.cs",
+    "Bytes": 2848,
+    "SHA256": "5A30B39C1023B2712DD6BBF1A2A4C842039B7367729E3FBCA391509C65131FD5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\ParamSet\\Properties\\Settings.Designer.cs",
+    "Bytes": 1093,
+    "SHA256": "D6DB07A19FFB5A059539DBDB992C0B7A62E608883EE60B17B5AC14F79E8E8025"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\PerMang\\FrmExpiration.designer.cs",
+    "Bytes": 9466,
+    "SHA256": "7CEFBDD0DF315CB42E70E96E2DD234D6405A4932F49ECF00CB3B7D5F111B208C"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\PerMang\\Properties\\Resources.Designer.cs",
+    "Bytes": 2846,
+    "SHA256": "52E99EC84167DCC1840115AB2C0FFEEC7D73D4873814461F5012ED9216AD23E2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\PerMang\\Properties\\Settings.Designer.cs",
+    "Bytes": 1092,
+    "SHA256": "30A2135AEFD55D99D04C4B7062A05FB9CDEB0D695D2F8455B117B04CF0F893F6"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\PROJECT_CONTEXT.md",
+    "Bytes": 21317,
+    "SHA256": "C127E81CBE5C556C30359C98F64A423A1511EB761558FA5D80DD633A2EADC8A0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\tmp\\frm_Serial.designer.cs",
+    "Bytes": 31809,
+    "SHA256": "3275C2AFC273A78856F1FC7288EC42BF20CB95C6139C90370BF3DE0F869A9D4A"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\ClsList.Designer.cs",
+    "Bytes": 3982,
+    "SHA256": "9687E4F8590EB7BF8469BD998CEE2194630A7BC4ACDDDA1DDD2F8153DCDE0083"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\DataBaseEdit.Designer.cs",
+    "Bytes": 14779,
+    "SHA256": "45E623A17A26E63F52244AA434BF1BFA0607B552BEF2FB586AF4BEB3398CF5AA"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\DataBaseSelectFrm.Designer.cs",
+    "Bytes": 10158,
+    "SHA256": "9A29209F7BF653DF72AB938609F4EF2537A47F8D2582077DE2C31B99F9240983"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\DateChoose.Designer.cs",
+    "Bytes": 10149,
+    "SHA256": "2DDDBC3C806D37C3475D3237EF9032CB2D7505E05C02C1974C3F04E71A86A658"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Frm_OCRTool.designer.cs",
+    "Bytes": 41645,
+    "SHA256": "8E6773CF87A23107CD9778BF19B5902ED6448B1139FA69172A8CB109A1650E11"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Frm_RuntimeSet.Designer.cs",
+    "Bytes": 220785,
+    "SHA256": "E4F1F501E082D61207B23F66B92FA6EBAC75D051504CC23174B54625AD5EBEF7"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\frm_Serial.designer.cs",
+    "Bytes": 31809,
+    "SHA256": "758868E5C9ECA4E52747DAEA94AB2D4A8CF34CC5334D53A7B090FC3AA92B1F39"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Frm_Welcome.Designer.cs",
+    "Bytes": 9471,
+    "SHA256": "C9F5D63CCD5FD5A18BF073BCB3402D881B85DD06A75F6379CDE36019ED5129C1"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmCam_Debug.designer.cs",
+    "Bytes": 38004,
+    "SHA256": "1AE49E35A5F5E364CE50FE1B538F3C98D0CF5FC175A812BB10A75260AF0FEFD0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmCam_Set.designer.cs",
+    "Bytes": 34850,
+    "SHA256": "EE5CD744DBFB2BBD66672B8C5EED64EC5ACC912A3B2EC4ACCF58E62F7090247E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmDataClear.Designer.cs",
+    "Bytes": 20912,
+    "SHA256": "8C8C5B1584260A5A28AC4030DF62226D6ED2E038B488E7B8BC4118D12488D351"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmDL.designer.cs",
+    "Bytes": 44670,
+    "SHA256": "2A6F25B96EEEC819216355CF47AB91B117AA06F9AE6E0039833811C514202812"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmDL1.designer.cs",
+    "Bytes": 42264,
+    "SHA256": "72100DE81CF32C0DB95AA1E41A5D219BD988025BA2EF2ABE353709D870D33951"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmDLWithHDev.designer.cs",
+    "Bytes": 39777,
+    "SHA256": "B2095F02090FC937458ACAFF77CA3D6A7BD0FFDD17E720AF88D9EBE1C42FF071"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmErrorLogViewer.Designer.cs",
+    "Bytes": 2160,
+    "SHA256": "928D85B7F8BEA14BC50272A9AFF25B73170CCD0678E082715AAAF47EFC058C58"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmExpiration.Designer.cs",
+    "Bytes": 9549,
+    "SHA256": "3B55AF13B17A62A038B154C97E7BCF9317C608E6D112561AC704495FEB658C73"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmFileManager.Designer.cs",
+    "Bytes": 28528,
+    "SHA256": "03BED1B95E3962A58D75B159C8D6F315E1983AA46B21C44FD233378CBC7199E3"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmHatch.Designer.cs",
+    "Bytes": 28474,
+    "SHA256": "1F21E9A9D24D13CDE577D97994EF6078E40ECDB65C1397CA0C223A4A32F08CE2"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmIamgeGroup.designer.cs",
+    "Bytes": 51843,
+    "SHA256": "68FFE7998C5D195F31C141AD0B8F1C5A01EED940E993FF5FA9A1F3D5365E26A9"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmJCZLaserTool.Designer.cs",
+    "Bytes": 77017,
+    "SHA256": "430CC9D80FAC87E97E7E59034F8ED08A14E1E88D1765C2072DF4C86C2D74EE47"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmLabelImg.designer.cs",
+    "Bytes": 59825,
+    "SHA256": "A4CA8AAD8FAC6921FF219E756D9C944D899C72263E289DD46F6AC1BA80C59DC5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmMainUI.designer.cs",
+    "Bytes": 344961,
+    "SHA256": "746AF42433AE556C71DE178426D77C07B54E1CD9E92627C0B7A71C37D09C77DF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmManager.Designer.cs",
+    "Bytes": 56253,
+    "SHA256": "0C4F80219234B610A2685860AD895D58A7E5D17151FE368E7FD648AE444AA199"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\FrmSampleExpand.Designer.cs",
+    "Bytes": 34729,
+    "SHA256": "2A8FABCCB1EDB743E4C07A6A8E3EB5AF3BF73FD430736FB0BA8689774B67D3CF"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\JPGXML.Designer.cs",
+    "Bytes": 18856,
+    "SHA256": "784F9E6D62555E547E8A05C889B4C065752D2FB8A3D58F78DBD267049D4DE79D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Laser.Designer.cs",
+    "Bytes": 85031,
+    "SHA256": "81604C80F03CCB362563C160526C7D1861A22DC3A40061FC12DCC5E240FF515F"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\LineParam.Designer.cs",
+    "Bytes": 13657,
+    "SHA256": "E0BEED7CE6436CCB08C3E2F3A14091C335C22CC037C7D6305C92B675E4733B35"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Login.Designer.cs",
+    "Bytes": 9736,
+    "SHA256": "530B681A7B77F19792E589C7D0E7090A6B6CFF27D7E8BE91B2EF09B09EE4C2CE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\LoginSM.Designer.cs",
+    "Bytes": 8442,
+    "SHA256": "F29F4696204C8CABD7DD69964364921D2D61F096FB96DA3C729DFE90C5CFCC49"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\MultiSelectedTreeView.Designer.cs",
+    "Bytes": 1152,
+    "SHA256": "FE57872D1A4F33707935F2B2AC44ECFE9FFFF92B7A3BD5FD547855D7F10D344B"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\MultiTreeViewLine.Designer.cs",
+    "Bytes": 1226,
+    "SHA256": "731A03B8B13B5C40A855CC2A44C7AB9ED619CCCEDB7C5B9F9250AC79DB8E022E"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Properties\\bak\\Resources.Designer.cs",
+    "Bytes": 10402,
+    "SHA256": "2575EBFA72AA3D5BAAF73CC34EB4B1077CFD8D0DEF1827BF33660CD03CFB1D05"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Properties\\bak\\Settings.Designer.cs",
+    "Bytes": 1118,
+    "SHA256": "FEE6940742A9C2FF177F2614F70344FDAB268142DF7DAF089918DD985E86EDA5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Properties\\Resources.Designer.cs",
+    "Bytes": 14148,
+    "SHA256": "7E0B0B1E598FD6CA8EF4685BAB2DE416024CC04B0B9D9D9277E078F2B34A8505"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Properties\\Settings.Designer.cs",
+    "Bytes": 1118,
+    "SHA256": "FEE6940742A9C2FF177F2614F70344FDAB268142DF7DAF089918DD985E86EDA5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Resources\\Resources.Designer.cs",
+    "Bytes": 4392,
+    "SHA256": "5C2F93C666CDA408681B23D97747F84D8836C7B3B184D5C9565F965AFE8EE776"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\Resources\\Settings.Designer.cs",
+    "Bytes": 1118,
+    "SHA256": "FEE6940742A9C2FF177F2614F70344FDAB268142DF7DAF089918DD985E86EDA5"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\SqlServerManage.Designer.cs",
+    "Bytes": 25403,
+    "SHA256": "EF3CD541CBDF6E697CDCDB91438F54DC210206210486F6C08D8259809C55C6C0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\UserEdit.Designer.cs",
+    "Bytes": 22047,
+    "SHA256": "189C30DCEB7475763085A5BCA24E954FAA9917A2A66D12DA8DF981B8DA97DB4D"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionApplication\\UserManage.Designer.cs",
+    "Bytes": 9011,
+    "SHA256": "8A873FBB4EBF6053494D7A3CC6D4ED0194EFE91F3492874E96E853AFB1B86DD0"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionControl\\VisionControl.Designer.cs",
+    "Bytes": 10615,
+    "SHA256": "C716F2C144739DC265E3F7923A799E5316A72C7ACF404B3B91A2EAEE3B72FECB"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionControl\\VisionControl_Laser.Designer.cs",
+    "Bytes": 1147,
+    "SHA256": "D2CE4562B262A725AC2114932F195A45779453914C54D5C0D7F39CE2D61B98BE"
+  },
+  {
+    "Path": "E:\\jieyawenjian\\VB_Det\\VisionDection.sln",
+    "Bytes": 19510,
+    "SHA256": "87213CF4179B3C2EF595FC7565E1182E691498513146F2B69E1066D8A30F2550"
+  }
+]

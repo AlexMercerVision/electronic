@@ -211,6 +211,7 @@ namespace VisionApplication
         {            
             CheckForIllegalCrossThreadCalls = false;
             InitializeComponent();
+            dgvLog.AllowUserToAddRows = false;
             Text = ApplicationName;
             DisableUnusedCameraControls();
             hIKVisionCamera.CameraDiagnostic += detail => LogCameraConnection("相机SDK", false, detail);

@@ -1,0 +1,552 @@
+[
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\architecture.json",
+    "Destination": "20261020_cuDNN检查/architecture.json",
+    "Bytes": 1069,
+    "OriginalSHA256": "0BB050189A39CCAF1525488AD34A0FE4AC0E2CD14CEC63F78F0746B5B4C86D7D",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "0BB050189A39CCAF1525488AD34A0FE4AC0E2CD14CEC63F78F0746B5B4C86D7D",
+    "ArchivedBytes": 1069,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\baseline98-modules.txt",
+    "Destination": "20261020_cuDNN检查/baseline98-modules.txt",
+    "Bytes": 3894,
+    "OriginalSHA256": "198B21DA027E17273A6BE0A514B32E39D569ABD0FB9420A387F2EAD5A23CB4C0",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "198B21DA027E17273A6BE0A514B32E39D569ABD0FB9420A387F2EAD5A23CB4C0",
+    "ArchivedBytes": 3894,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\baseline98.log",
+    "Destination": "20261020_cuDNN检查/baseline98.log",
+    "Bytes": 875,
+    "OriginalSHA256": "7BA7F4ACD0ABA968B7EB9BC6AC4955E6C3D2A81F9F86ABC18F08F2A564864AD2",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "7BA7F4ACD0ABA968B7EB9BC6AC4955E6C3D2A81F9F86ABC18F08F2A564864AD2",
+    "ArchivedBytes": 875,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\candidate914-modules.txt",
+    "Destination": "20261020_cuDNN检查/candidate914-modules.txt",
+    "Bytes": 3983,
+    "OriginalSHA256": "3CCC96BC110A922EB4893F4903190FD904077C30DA7B3F0239AF94862465A96D",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "3CCC96BC110A922EB4893F4903190FD904077C30DA7B3F0239AF94862465A96D",
+    "ArchivedBytes": 3983,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\candidate914.log",
+    "Destination": "20261020_cuDNN检查/candidate914.log",
+    "Bytes": 602,
+    "OriginalSHA256": "C17EF96E616046821FCE8F4C43497E0E15E6E71989977883542BF58B426AAB40",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "C17EF96E616046821FCE8F4C43497E0E15E6E71989977883542BF58B426AAB40",
+    "ArchivedBytes": 602,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\compare.py",
+    "Destination": "20261020_cuDNN检查/compare.py",
+    "Bytes": 1398,
+    "OriginalSHA256": "8491AFDFCAA2523A32DC2AEB5B8EA65F7A0489EEFD66AB6C2D04E497EA2257D4",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "0A7061F6A033C465117238292813C96695647CA7B9E299C971B3A4F7F70276BD",
+    "ArchivedBytes": 1325,
+    "AdjustedAfterCopy": true
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\CudaCache\\6\\2\\c8e10680a2f7c5",
+    "Destination": "20261020_cuDNN检查/CudaCache/6/2/c8e10680a2f7c5",
+    "Bytes": 5630,
+    "OriginalSHA256": "7F73F1849041E817684E2CF319BF5D3A905CCA18513C20304935A8B91D01D028",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "7F73F1849041E817684E2CF319BF5D3A905CCA18513C20304935A8B91D01D028",
+    "ArchivedBytes": 5630,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\CudaCache\\index",
+    "Destination": "20261020_cuDNN检查/CudaCache/index",
+    "Bytes": 32,
+    "OriginalSHA256": "42FA4ADD7286D6C8A835FA2D0137404857E536C30D0979296E88CB9FB016C541",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "42FA4ADD7286D6C8A835FA2D0137404857E536C30D0979296E88CB9FB016C541",
+    "ArchivedBytes": 32,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\results.json",
+    "Destination": "20261020_cuDNN检查/results.json",
+    "Bytes": 1578,
+    "OriginalSHA256": "2ADAF633AC78F69935844D1AAAC18B6ABC69C33D47D2E2CFCA6E63D45F83AD9F",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "2ADAF633AC78F69935844D1AAAC18B6ABC69C33D47D2E2CFCA6E63D45F83AD9F",
+    "ArchivedBytes": 1578,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\cudnn-review-20261020\\分析与下一步.md",
+    "Destination": "20261020_cuDNN检查/分析与下一步.md",
+    "Bytes": 5772,
+    "OriginalSHA256": "80FA0F5F448636BA6E6BA99161EA4DA27D3447D9FC3E2A6BB7464206BA63E76E",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "80FA0F5F448636BA6E6BA99161EA4DA27D3447D9FC3E2A6BB7464206BA63E76E",
+    "ArchivedBytes": 5772,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\AppProbe.cs",
+    "Destination": "20261020_打包辅助脚本/AppProbe.cs",
+    "Bytes": 1525,
+    "OriginalSHA256": "622B9E0B084B37D0B2E92115C8A66C45C3BEEEF1C1B61A2DCC221E20C67303DA",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "622B9E0B084B37D0B2E92115C8A66C45C3BEEEF1C1B61A2DCC221E20C67303DA",
+    "ArchivedBytes": 1525,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\assembly-metadata.json",
+    "Destination": "20261020_打包辅助脚本/assembly-metadata.json",
+    "Bytes": 76270,
+    "OriginalSHA256": "C35EF1CE7E6F6290EE0B3B300EF6A42C88B5C11EC119135C5A455A1547FBCD50",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "C35EF1CE7E6F6290EE0B3B300EF6A42C88B5C11EC119135C5A455A1547FBCD50",
+    "ArchivedBytes": 76270,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\GpuProbe.cs",
+    "Destination": "20261020_打包辅助脚本/GpuProbe.cs",
+    "Bytes": 1565,
+    "OriginalSHA256": "BE271DBAC21BD5665E9CE7632BAAC7316B14F8EB1A4F92EC839A90B949AE91F9",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "BE271DBAC21BD5665E9CE7632BAAC7316B14F8EB1A4F92EC839A90B949AE91F9",
+    "ArchivedBytes": 1565,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\metadata.ps1",
+    "Destination": "20261020_打包辅助脚本/metadata.ps1",
+    "Bytes": 1202,
+    "OriginalSHA256": "031D460B199E504A53272AA635605D0F8FB6C1B1F511CF5C0C50672447E0028F",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "031D460B199E504A53272AA635605D0F8FB6C1B1F511CF5C0C50672447E0028F",
+    "ArchivedBytes": 1202,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\MetadataAudit.cs",
+    "Destination": "20261020_打包辅助脚本/MetadataAudit.cs",
+    "Bytes": 1137,
+    "OriginalSHA256": "26135FFC5CA65744F9839A3FEB73F60AA3F9F718929790F2C84D38CD98B45D5B",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "26135FFC5CA65744F9839A3FEB73F60AA3F9F718929790F2C84D38CD98B45D5B",
+    "ArchivedBytes": 1137,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\pack_collect.py",
+    "Destination": "20261020_打包辅助脚本/pack_collect.py",
+    "Bytes": 4113,
+    "OriginalSHA256": "8967140338B563CA6ED7565673211D4A3B81A5B7FA31491D94DF215C412E83A2",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "8967140338B563CA6ED7565673211D4A3B81A5B7FA31491D94DF215C412E83A2",
+    "ArchivedBytes": 4113,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\pack_environment.py",
+    "Destination": "20261020_打包辅助脚本/pack_environment.py",
+    "Bytes": 1881,
+    "OriginalSHA256": "22D94D1FE79360B442A62B467A2A6A90D60D1CDC44FB21BB6C83AAF53FC4ECB2",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "22D94D1FE79360B442A62B467A2A6A90D60D1CDC44FB21BB6C83AAF53FC4ECB2",
+    "ArchivedBytes": 1881,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\pack_finalize.py",
+    "Destination": "20261020_打包辅助脚本/pack_finalize.py",
+    "Bytes": 17284,
+    "OriginalSHA256": "725464E2F9A7DC977FEFDE4C8CB89C4AF5F268BCB9AA53DD4B034B2164A1140F",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "725464E2F9A7DC977FEFDE4C8CB89C4AF5F268BCB9AA53DD4B034B2164A1140F",
+    "ArchivedBytes": 17284,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\pack_snapshot.py",
+    "Destination": "20261020_打包辅助脚本/pack_snapshot.py",
+    "Bytes": 3788,
+    "OriginalSHA256": "23C03B63B5979B4A08687637627D590DF441C17AD886714BCB602E5D450FDE0B",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "23C03B63B5979B4A08687637627D590DF441C17AD886714BCB602E5D450FDE0B",
+    "ArchivedBytes": 3788,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\pe_metadata.py",
+    "Destination": "20261020_打包辅助脚本/pe_metadata.py",
+    "Bytes": 3886,
+    "OriginalSHA256": "66B65A3E70430CBCB7E2FF3CDA956BA02EEA708E477B48F24B9964FF3BE74EAC",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "66B65A3E70430CBCB7E2FF3CDA956BA02EEA708E477B48F24B9964FF3BE74EAC",
+    "ArchivedBytes": 3886,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "C:\\Users\\Administrator\\.codex\\visualizations\\2026\\10\\19\\01a1543f-7db8-7a71-a919-21ab6265c473\\Rebuild-Snapshot.ps1",
+    "Destination": "20261020_打包辅助脚本/Rebuild-Snapshot.ps1",
+    "Bytes": 1279,
+    "OriginalSHA256": "BA8B57CEDA0353372D0906EF69419AA8580F9FD8D1DAAE26A6DD57C256388FAF",
+    "Operation": "Move from C after SHA256 verification",
+    "ArchivedSHA256": "BA8B57CEDA0353372D0906EF69419AA8580F9FD8D1DAAE26A6DD57C256388FAF",
+    "ArchivedBytes": 1279,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\AppProbe.cs",
+    "Destination": "20261020_RC01发布审计/AppProbe.cs",
+    "Bytes": 1525,
+    "OriginalSHA256": "622B9E0B084B37D0B2E92115C8A66C45C3BEEEF1C1B61A2DCC221E20C67303DA",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "622B9E0B084B37D0B2E92115C8A66C45C3BEEEF1C1B61A2DCC221E20C67303DA",
+    "ArchivedBytes": 1525,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\AppProbe.exe",
+    "Destination": "20261020_RC01发布审计/AppProbe.exe",
+    "Bytes": 6656,
+    "OriginalSHA256": "46BE4BB992D33B25091826E6ECA85043898672C37949C3AA17E0998266AC3EDB",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "46BE4BB992D33B25091826E6ECA85043898672C37949C3AA17E0998266AC3EDB",
+    "ArchivedBytes": 6656,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\AppProbe.exe.config",
+    "Destination": "20261020_RC01发布审计/AppProbe.exe.config",
+    "Bytes": 1885,
+    "OriginalSHA256": "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133",
+    "ArchivedBytes": 1885,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\assembly-metadata.json",
+    "Destination": "20261020_RC01发布审计/assembly-metadata.json",
+    "Bytes": 76246,
+    "OriginalSHA256": "88296B24966A1A25923862C3B5BDB0BBAA34CC712886B2886F642AB9DC823D03",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "88296B24966A1A25923862C3B5BDB0BBAA34CC712886B2886F642AB9DC823D03",
+    "ArchivedBytes": 76246,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\batch.json",
+    "Destination": "20261020_RC01发布审计/batch.json",
+    "Bytes": 778,
+    "OriginalSHA256": "A12E39114B78E830982ED933F8CDE2FAF337BED8D8E5773459BE7D8A026EE1DC",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "A12E39114B78E830982ED933F8CDE2FAF337BED8D8E5773459BE7D8A026EE1DC",
+    "ArchivedBytes": 778,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\gpu-loaded-modules-isolated.txt",
+    "Destination": "20261020_RC01发布审计/gpu-loaded-modules-isolated.txt",
+    "Bytes": 3787,
+    "OriginalSHA256": "BDAC6DEFC797607321A76BB18A125AD3FFB37AEBBCB29E0660B2562A7F395F73",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "BDAC6DEFC797607321A76BB18A125AD3FFB37AEBBCB29E0660B2562A7F395F73",
+    "ArchivedBytes": 3787,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\gpu-loaded-modules.txt",
+    "Destination": "20261020_RC01发布审计/gpu-loaded-modules.txt",
+    "Bytes": 3932,
+    "OriginalSHA256": "BDBC5EB97D7BAF34CF58556E4DC154572CCF383FA53466484C1FB5763246F848",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "BDBC5EB97D7BAF34CF58556E4DC154572CCF383FA53466484C1FB5763246F848",
+    "ArchivedBytes": 3932,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\gpu-probe-isolated.log",
+    "Destination": "20261020_RC01发布审计/gpu-probe-isolated.log",
+    "Bytes": 874,
+    "OriginalSHA256": "25A9B1B0DBB6D176FF3606A364AC526B3DCA250DCB578AF54053B79B45709746",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "25A9B1B0DBB6D176FF3606A364AC526B3DCA250DCB578AF54053B79B45709746",
+    "ArchivedBytes": 874,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\gpu-probe.log",
+    "Destination": "20261020_RC01发布审计/gpu-probe.log",
+    "Bytes": 875,
+    "OriginalSHA256": "2D89F8FD34E0C454A021995BD9A07ECF4A9EE0FD0FAEB57228209B1E30048A0A",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "2D89F8FD34E0C454A021995BD9A07ECF4A9EE0FD0FAEB57228209B1E30048A0A",
+    "ArchivedBytes": 875,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\gpu-runtime-lock.json",
+    "Destination": "20261020_RC01发布审计/gpu-runtime-lock.json",
+    "Bytes": 11205,
+    "OriginalSHA256": "4E1C50C2117C9AE15B6676B78E90FF5A96FB560ADC30E4C1EA65200B27562503",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "4E1C50C2117C9AE15B6676B78E90FF5A96FB560ADC30E4C1EA65200B27562503",
+    "ArchivedBytes": 11205,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\GpuProbe.cs",
+    "Destination": "20261020_RC01发布审计/GpuProbe.cs",
+    "Bytes": 1565,
+    "OriginalSHA256": "BE271DBAC21BD5665E9CE7632BAAC7316B14F8EB1A4F92EC839A90B949AE91F9",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "BE271DBAC21BD5665E9CE7632BAAC7316B14F8EB1A4F92EC839A90B949AE91F9",
+    "ArchivedBytes": 1565,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\GpuProbe.exe",
+    "Destination": "20261020_RC01发布审计/GpuProbe.exe",
+    "Bytes": 5632,
+    "OriginalSHA256": "2563B5D53767950122C6910B309AE7894E49AEC1ABC2C3D2A7D7A93B195A518B",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "2563B5D53767950122C6910B309AE7894E49AEC1ABC2C3D2A7D7A93B195A518B",
+    "ArchivedBytes": 5632,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\managed-closure.json",
+    "Destination": "20261020_RC01发布审计/managed-closure.json",
+    "Bytes": 74247,
+    "OriginalSHA256": "F1A3B21226366AF7C2AD09AF0FAA937AAE554B482898425478358CE34C5A91D7",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "F1A3B21226366AF7C2AD09AF0FAA937AAE554B482898425478358CE34C5A91D7",
+    "ArchivedBytes": 74247,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\native-imports.json",
+    "Destination": "20261020_RC01发布审计/native-imports.json",
+    "Bytes": 7540,
+    "OriginalSHA256": "FF65C26FB0495A9CB36982A64BB94E01A25EF14D1D2117C90EB0B4523447644D",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "FF65C26FB0495A9CB36982A64BB94E01A25EF14D1D2117C90EB0B4523447644D",
+    "ArchivedBytes": 7540,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\opencv-loaded-modules.txt",
+    "Destination": "20261020_RC01发布审计/opencv-loaded-modules.txt",
+    "Bytes": 2874,
+    "OriginalSHA256": "F1073C523D1C8EFABA5A6C33DAC7423A89DEBBEE5C9FF23CCD3B6E774EF64824",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "F1073C523D1C8EFABA5A6C33DAC7423A89DEBBEE5C9FF23CCD3B6E774EF64824",
+    "ArchivedBytes": 2874,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\opencv-probe.log",
+    "Destination": "20261020_RC01发布审计/opencv-probe.log",
+    "Bytes": 28,
+    "OriginalSHA256": "539501AA3971AFA72C6CB94053C650955D124541EC60AEFC0ABF6AD6C6FEF149",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "539501AA3971AFA72C6CB94053C650955D124541EC60AEFC0ABF6AD6C6FEF149",
+    "ArchivedBytes": 28,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\original-before.json",
+    "Destination": "20261020_RC01发布审计/original-before.json",
+    "Bytes": 65552,
+    "OriginalSHA256": "AACD070F082187007514910E6CD11521827EF45BCF5260A4803E4584DC24515F",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "AACD070F082187007514910E6CD11521827EF45BCF5260A4803E4584DC24515F",
+    "ArchivedBytes": 65552,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\pack_collect.py",
+    "Destination": "20261020_RC01发布审计/pack_collect.py",
+    "Bytes": 4113,
+    "OriginalSHA256": "8967140338B563CA6ED7565673211D4A3B81A5B7FA31491D94DF215C412E83A2",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "8967140338B563CA6ED7565673211D4A3B81A5B7FA31491D94DF215C412E83A2",
+    "ArchivedBytes": 4113,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\pack_environment.py",
+    "Destination": "20261020_RC01发布审计/pack_environment.py",
+    "Bytes": 1881,
+    "OriginalSHA256": "22D94D1FE79360B442A62B467A2A6A90D60D1CDC44FB21BB6C83AAF53FC4ECB2",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "22D94D1FE79360B442A62B467A2A6A90D60D1CDC44FB21BB6C83AAF53FC4ECB2",
+    "ArchivedBytes": 1881,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\pack_finalize.py",
+    "Destination": "20261020_RC01发布审计/pack_finalize.py",
+    "Bytes": 17284,
+    "OriginalSHA256": "725464E2F9A7DC977FEFDE4C8CB89C4AF5F268BCB9AA53DD4B034B2164A1140F",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "725464E2F9A7DC977FEFDE4C8CB89C4AF5F268BCB9AA53DD4B034B2164A1140F",
+    "ArchivedBytes": 17284,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\pack_snapshot.py",
+    "Destination": "20261020_RC01发布审计/pack_snapshot.py",
+    "Bytes": 3788,
+    "OriginalSHA256": "23C03B63B5979B4A08687637627D590DF441C17AD886714BCB602E5D450FDE0B",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "23C03B63B5979B4A08687637627D590DF441C17AD886714BCB602E5D450FDE0B",
+    "ArchivedBytes": 3788,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\payload-provenance.json",
+    "Destination": "20261020_RC01发布审计/payload-provenance.json",
+    "Bytes": 21516,
+    "OriginalSHA256": "C5A3FF5C5C5BC6EB37B054BAF7F9693901D8B1ABE0A5722730E17C892153AF0A",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "C5A3FF5C5C5BC6EB37B054BAF7F9693901D8B1ABE0A5722730E17C892153AF0A",
+    "ArchivedBytes": 21516,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\pe_metadata.py",
+    "Destination": "20261020_RC01发布审计/pe_metadata.py",
+    "Bytes": 3886,
+    "OriginalSHA256": "66B65A3E70430CBCB7E2FF3CDA956BA02EEA708E477B48F24B9964FF3BE74EAC",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "66B65A3E70430CBCB7E2FF3CDA956BA02EEA708E477B48F24B9964FF3BE74EAC",
+    "ArchivedBytes": 3886,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\Rebuild-Snapshot.ps1",
+    "Destination": "20261020_RC01发布审计/Rebuild-Snapshot.ps1",
+    "Bytes": 1279,
+    "OriginalSHA256": "BA8B57CEDA0353372D0906EF69419AA8580F9FD8D1DAAE26A6DD57C256388FAF",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "BA8B57CEDA0353372D0906EF69419AA8580F9FD8D1DAAE26A6DD57C256388FAF",
+    "ArchivedBytes": 1279,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\solution-build.log",
+    "Destination": "20261020_RC01发布审计/solution-build.log",
+    "Bytes": 11422308,
+    "OriginalSHA256": "723F3C6895634DBB06610EFDDF2F472794CAA9AB0BFE9FBD282CAACC3245330B",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "723F3C6895634DBB06610EFDDF2F472794CAA9AB0BFE9FBD282CAACC3245330B",
+    "ArchivedBytes": 11422308,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\source-snapshot-manifest.json",
+    "Destination": "20261020_RC01发布审计/source-snapshot-manifest.json",
+    "Bytes": 397748,
+    "OriginalSHA256": "51D08A31515AC3BB9C63FBDF38EDC70DB8A6B6E82141F6A479CD2CB79CA44198",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "51D08A31515AC3BB9C63FBDF38EDC70DB8A6B6E82141F6A479CD2CB79CA44198",
+    "ArchivedBytes": 397748,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\source-state.txt",
+    "Destination": "20261020_RC01发布审计/source-state.txt",
+    "Bytes": 47,
+    "OriginalSHA256": "66BCA834A75D4DA6C41DACD11FCCB4916C885FA1CDC6F96EA94B01840326C5A2",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "66BCA834A75D4DA6C41DACD11FCCB4916C885FA1CDC6F96EA94B01840326C5A2",
+    "ArchivedBytes": 47,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\verification.json",
+    "Destination": "20261020_RC01发布审计/verification.json",
+    "Bytes": 4631,
+    "OriginalSHA256": "F2D772BF9578AB6E3551770B0B88C2BCE56220CB75BCDD771182128CA0CF7102",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "F2D772BF9578AB6E3551770B0B88C2BCE56220CB75BCDD771182128CA0CF7102",
+    "ArchivedBytes": 4631,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\vpp-loaded-modules.txt",
+    "Destination": "20261020_RC01发布审计/vpp-loaded-modules.txt",
+    "Bytes": 5353,
+    "OriginalSHA256": "5C965417D4A16A991EF9E69A23525617A9FE4C7FF50E244A3AA2B2B627D8BA50",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "5C965417D4A16A991EF9E69A23525617A9FE4C7FF50E244A3AA2B2B627D8BA50",
+    "ArchivedBytes": 5353,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\04_Audit\\vpp-probe.log",
+    "Destination": "20261020_RC01发布审计/vpp-probe.log",
+    "Bytes": 63,
+    "OriginalSHA256": "250DB9C2F53DDFE238E4980FC6BADACD3A4503AFA4D85B70CB3C22DD554E6053",
+    "Operation": "Copy audit; frozen release original retained",
+    "ArchivedSHA256": "250DB9C2F53DDFE238E4980FC6BADACD3A4503AFA4D85B70CB3C22DD554E6053",
+    "ArchivedBytes": 63,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\tmp\\deployment-20261019\\DELIVERY.md",
+    "Destination": "部署首步验证摘要/deployment-20261019/DELIVERY.md",
+    "Bytes": 7369,
+    "OriginalSHA256": "D0B5BDF1BA5F39AE91C9ABE401B643957039A86F9BF38EB823755BBB65617C63",
+    "Operation": "Copy historical deployment evidence",
+    "ArchivedSHA256": "D0B5BDF1BA5F39AE91C9ABE401B643957039A86F9BF38EB823755BBB65617C63",
+    "ArchivedBytes": 7369,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\tmp\\deployment-20261019\\artifact-verification.json",
+    "Destination": "部署首步验证摘要/deployment-20261019/artifact-verification.json",
+    "Bytes": 4404,
+    "OriginalSHA256": "4DC1302B565F4D0FBC79D4B52F2980A2F2FD55E3C35847A28E240A297E2DB1E3",
+    "Operation": "Copy historical deployment evidence",
+    "ArchivedSHA256": "4DC1302B565F4D0FBC79D4B52F2980A2F2FD55E3C35847A28E240A297E2DB1E3",
+    "ArchivedBytes": 4404,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\tmp\\hardware-controls-20261020\\DELIVERY.md",
+    "Destination": "部署首步验证摘要/hardware-controls-20261020/DELIVERY.md",
+    "Bytes": 7808,
+    "OriginalSHA256": "36D6C2F7CF9B2158BF600A54765E928BB3CF81897E6F2C020981B40B2CD61E53",
+    "Operation": "Copy historical deployment evidence",
+    "ArchivedSHA256": "36D6C2F7CF9B2158BF600A54765E928BB3CF81897E6F2C020981B40B2CD61E53",
+    "ArchivedBytes": 7808,
+    "AdjustedAfterCopy": false
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\tmp\\hardware-controls-20261020\\artifact-verification.json",
+    "Destination": "部署首步验证摘要/hardware-controls-20261020/artifact-verification.json",
+    "Bytes": 4614,
+    "OriginalSHA256": "08E0D30800E1DD00EA0409DE4C892BEDB78D7EDB474771BEDD2016076544C453",
+    "Operation": "Copy historical deployment evidence",
+    "ArchivedSHA256": "08E0D30800E1DD00EA0409DE4C892BEDB78D7EDB474771BEDD2016076544C453",
+    "ArchivedBytes": 4614,
+    "AdjustedAfterCopy": false
+  }
+]

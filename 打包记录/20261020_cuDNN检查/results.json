@@ -1,0 +1,42 @@
+[
+  {
+    "Case": "baseline98",
+    "ExitCode": 0,
+    "ElapsedSeconds": 6.37,
+    "WarningMismatch": true,
+    "NativeSuccess": true,
+    "CudnnModules": [
+      "D:\\NVIDIAGPU\\bin\\cudnn_cnn64_9.dll",
+      "D:\\NVIDIAGPU\\bin\\cudnn_engines_precompiled64_9.dll",
+      "D:\\NVIDIAGPU\\bin\\cudnn_engines_runtime_compiled64_9.dll",
+      "D:\\NVIDIAGPU\\bin\\cudnn_graph64_9.dll",
+      "D:\\NVIDIAGPU\\bin\\cudnn_heuristic64_9.dll",
+      "D:\\NVIDIAGPU\\bin\\cudnn_ops64_9.dll",
+      "D:\\NVIDIAGPU\\bin\\cudnn64_9.dll"
+    ],
+    "CudaModules": [
+      "D:\\NVIDIAGPU\\bin\\cublas64_12.dll",
+      "D:\\NVIDIAGPU\\bin\\cublasLt64_12.dll"
+    ]
+  },
+  {
+    "Case": "candidate914",
+    "ExitCode": 0,
+    "ElapsedSeconds": 4.72,
+    "WarningMismatch": false,
+    "NativeSuccess": true,
+    "CudnnModules": [
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_cnn64_9.dll",
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_engines_precompiled64_9.dll",
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_engines_runtime_compiled64_9.dll",
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_graph64_9.dll",
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_heuristic64_9.dll",
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn_ops64_9.dll",
+      "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9\\cudnn64_9.dll"
+    ],
+    "CudaModules": [
+      "D:\\NVIDIAGPU\\bin\\cublas64_12.dll",
+      "D:\\NVIDIAGPU\\bin\\cublasLt64_12.dll"
+    ]
+  }
+]

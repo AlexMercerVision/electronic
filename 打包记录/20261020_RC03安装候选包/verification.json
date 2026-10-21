@@ -1,0 +1,80 @@
+{
+  "Batch": "20261020_50Series_RC03_Installer",
+  "Delivery": "E:\\VB_Det_PACK\\20261020_50Series_RC03_Installer\\离线交付",
+  "Setup": {
+    "File": "E:\\VB_Det_PACK\\20261020_50Series_RC03_Installer\\Output\\电极帽缺陷检测_Setup.exe",
+    "Bytes": 468145414,
+    "SHA256": "EE9AF21DC2C88175B8FDA2AA9179A3ABAF55628A13CC5E3A0F15A46A4FBDCAFB",
+    "Signature": "NotSigned"
+  },
+  "DeliveryFiles": 110,
+  "DeliveryBytes": 7204448784.0,
+  "ProtectedSourceAndBinFiles": 466,
+  "SourceAndBinUnchanged": true,
+  "BusinessBuild": "No C# business changes/rebuild. RC02 same-build App67 retained; origin: VisionDection.sln Debug/x64 full 11-project build, 0 errors/83 existing warnings.",
+  "Boundaries": [
+    "No full main application or hardware test this round",
+    "Separate ordinary account and 5070 offline acceptance pending",
+    "HALCON12, serial adapter driver and GPU target driver pending; MVS installer runtime match pending",
+    "Setup unsigned; candidate only"
+  ],
+  "InstallerTests": [
+    {
+      "Phase": "strict-missing-dependency",
+      "ExitCode": 7,
+      "Log": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC03安装候选包\\strict-missing-dependency.log"
+    },
+    {
+      "Phase": "install",
+      "ExitCode": 0,
+      "Log": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC03安装候选包\\install.log"
+    },
+    {
+      "Phase": "start-menu-shortcut",
+      "Target": "C:\\Program Files\\ElectrodeDet\\Launch.cmd",
+      "WorkingDirectory": "C:\\Program Files\\ElectrodeDet\\App"
+    },
+    {
+      "Phase": "desktop-shortcut",
+      "Target": "C:\\Program Files\\ElectrodeDet\\Launch.cmd",
+      "WorkingDirectory": "C:\\Program Files\\ElectrodeDet\\App"
+    },
+    {
+      "Phase": "missing-cuda-path-rejected",
+      "ExitCode": 1
+    },
+    {
+      "Phase": "upgrade",
+      "ExitCode": 0,
+      "Log": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC03安装候选包\\upgrade.log"
+    },
+    {
+      "Phase": "data-preserved-after-upgrade",
+      "ProtectedExistingFiles": 11
+    },
+    {
+      "Phase": "uninstall-data-preserved",
+      "ExitCode": 0,
+      "ProtectedExistingFiles": 11
+    }
+  ],
+  "RestrictedTokenFilesystemTest": {
+    "AdministratorsEnabled": false,
+    "Integrity": "Medium",
+    "InstallDirectoryWriteDenied": true,
+    "ApplicationRead": "Passed",
+    "ProgramDataLogWrite": "Passed",
+    "Boundary": "Restricted-token impersonation filesystem test; separate-user process and full application remain unverified."
+  },
+  "FrozenRC01FilesVerified": 79,
+  "FrozenRC02FilesVerified": 88,
+  "GpuDiagnostic": {
+    "Status": "GpuVerificationPassed",
+    "RuntimeApi": "12.8",
+    "CudnnVersion": "9.14.0.64",
+    "NativeInference": "ret=0",
+    "CudaRoot": "D:\\NVIDIAGPU",
+    "CudnnBin": "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9",
+    "Boundary": "Build host RTX5060; independent memory-image probe, no full application/device acceptance"
+  }
+}

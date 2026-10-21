@@ -1,0 +1,35 @@
+[
+  {
+    "Case": "reject-cuDNN98",
+    "ExitCode": 1,
+    "Expected": "Reject before starting any application",
+    "PASS": true,
+    "Seconds": 0.22
+  },
+  {
+    "Case": "reject-CUDA13-cuDNN",
+    "ExitCode": 1,
+    "Expected": "Reject before starting any application",
+    "PASS": true,
+    "Seconds": 0.24
+  },
+  {
+    "Case": "reject-missing-CUDA",
+    "ExitCode": 1,
+    "Expected": "Reject before starting any application",
+    "PASS": true,
+    "Seconds": 0.21
+  },
+  {
+    "Case": "Launch.cmd GPU fresh process 1",
+    "ExitCode": 0,
+    "PASS": true,
+    "Seconds": 11.41
+  },
+  {
+    "Case": "Launch.cmd GPU fresh process 2",
+    "ExitCode": 0,
+    "PASS": true,
+    "Seconds": 11.07
+  }
+]

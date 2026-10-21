@@ -1,0 +1,91 @@
+﻿{
+    "Batch":  "20261020_50Series_RC03_Installer",
+    "Time":  "2026-10-20T23:03:37.6737762+08:00",
+    "Is64BitProcess":  true,
+    "Paths":  {
+                  "CudaRoot":  "D:\\NVIDIAGPU",
+                  "CudnnBin":  "C:\\Program Files\\NVIDIA\\CUDNN\\v9.14\\bin\\12.9"
+              },
+    "Findings":  [
+                     {
+                         "Name":  ".NET Framework \u003e=4.7.2",
+                         "Passed":  true,
+                         "Evidence":  "533509"
+                     },
+                     {
+                         "Name":  "msvcr100.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\msvcr100.dll"
+                     },
+                     {
+                         "Name":  "msvcp100.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\msvcp100.dll"
+                     },
+                     {
+                         "Name":  "atl100.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\atl100.dll"
+                     },
+                     {
+                         "Name":  "msvcr120.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\msvcr120.dll"
+                     },
+                     {
+                         "Name":  "msvcp120.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\msvcp120.dll"
+                     },
+                     {
+                         "Name":  "vcruntime140.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\vcruntime140.dll"
+                     },
+                     {
+                         "Name":  "vcruntime140_1.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\vcruntime140_1.dll"
+                     },
+                     {
+                         "Name":  "msvcp140.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\msvcp140.dll"
+                     },
+                     {
+                         "Name":  "vcomp140.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\vcomp140.dll"
+                     },
+                     {
+                         "Name":  "MFPlat.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\MFPlat.dll"
+                     },
+                     {
+                         "Name":  "MVS native 4.8.0.3 on PATH",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Program Files (x86)\\Common Files\\MVS\\Runtime\\Win64_x64\\MvCameraControl.dll"
+                     },
+                     {
+                         "Name":  "VisionPro Core 59.2 registered GAC",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\Microsoft.NET\\assembly\\GAC_64\\Cognex.VisionPro.Core\\v4.0_59.2.0.0__ef0f902af9dee505\\Cognex.VisionPro.Core.dll"
+                     },
+                     {
+                         "Name":  "HALCON 12 native on PATH",
+                         "Passed":  false,
+                         "Evidence":  ""
+                     },
+                     {
+                         "Name":  "NVIDIA x64 driver nvcuda.dll",
+                         "Passed":  true,
+                         "Evidence":  "C:\\Windows\\System32\\nvcuda.dll"
+                     }
+                 ],
+    "Missing":  [
+                    "HALCON 12 native on PATH"
+                ],
+    "AllowMissingDependencies":  true,
+    "Boundary":  "File/registration precheck only; SDK licenses, device drivers, GPU architecture, inference and physical IO require acceptance."
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "File": "E:\\百度网盘下载\\vp9.0\\DISK1\\setup.exe",
+    "Status": "Valid",
+    "Signer": "CN=Cognex Corporation, O=Cognex Corporation, L=Natick, S=Massachusetts, C=US"
+  },
+  {
+    "File": "E:\\百度网盘下载\\vp9.0\\DISK1\\Cognex VisionPro x64 (R) 9.0 CR2.msi",
+    "Status": "Valid",
+    "Signer": "CN=Cognex Corporation, O=Cognex Corporation, L=Natick, S=Massachusetts, C=US"
+  },
+  {
+    "File": "E:\\百度网盘下载\\vp9.0\\DISK1\\ISSetupPrerequisites\\{93A18296-3BF5-4F9D-BCDB-789FC6DC41B7}\\vcredist_x64.exe",
+    "Status": "Valid",
+    "Signer": "CN=Microsoft Corporation, OU=MOPR, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+  },
+  {
+    "File": "E:\\百度网盘下载\\vp9.0\\DISK1\\ISSetupPrerequisites\\{D5538F3C-D9E4-45B9-966E-F628E5B7050C}\\vcredist_x64.exe",
+    "Status": "Valid",
+    "Signer": "CN=Microsoft Corporation, OU=MOPR, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+  }
+]

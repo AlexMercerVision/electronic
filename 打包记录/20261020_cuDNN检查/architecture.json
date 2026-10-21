@@ -1,0 +1,43 @@
+[
+  {
+    "File": "phi.dll",
+    "Check": "--list-elf",
+    "ExitCode": 0,
+    "SMs": [
+      "sm_120"
+    ],
+    "FirstLines": [
+      "ELF file    1: phi.1.sm_120.cubin",
+      "ELF file    2: phi.2.sm_120.cubin"
+    ]
+  },
+  {
+    "File": "phi.dll",
+    "Check": "--list-ptx",
+    "ExitCode": 0,
+    "SMs": [],
+    "FirstLines": [
+      "cuobjdump info    : No PTX file found to extract from 'E:\\VB_Det_PACK\\20261020_50Series_RC01\\03_Release\\App\\phi.dll'. You may try with -all option."
+    ]
+  },
+  {
+    "File": "paddle_inference_c.dll",
+    "Check": "--list-elf",
+    "ExitCode": 0,
+    "SMs": [
+      "sm_120"
+    ],
+    "FirstLines": [
+      "ELF file    1: paddle_inference_c.1.sm_120.cubin"
+    ]
+  },
+  {
+    "File": "paddle_inference_c.dll",
+    "Check": "--list-ptx",
+    "ExitCode": 0,
+    "SMs": [],
+    "FirstLines": [
+      "cuobjdump info    : No PTX file found to extract from 'E:\\VB_Det_PACK\\20261020_50Series_RC01\\03_Release\\App\\paddle_inference_c.dll'. You may try with -all option."
+    ]
+  }
+]

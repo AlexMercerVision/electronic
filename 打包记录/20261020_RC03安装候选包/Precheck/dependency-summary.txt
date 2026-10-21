@@ -1,0 +1,4 @@
+﻿ElectrodeDet RC03 dependency check
+Missing: HALCON 12 native on PATH
+Install matching vendor media from Prerequisites, then rerun Setup.
+File/registration precheck only; SDK licenses, device drivers, GPU architecture, inference and physical IO require acceptance.

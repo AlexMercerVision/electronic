@@ -1,0 +1,21 @@
+{
+  "Batch": "E:\\VB_Det_PACK\\20261020_50Series_RC01",
+  "Original": "E:\\jieyawenjian\\VB_Det",
+  "Solution": "VisionDection.sln",
+  "Configuration": "Debug/x64",
+  "Projects": [
+    "VisionApplication\\VisionApplication.csproj",
+    "VisionControl\\VisionControl.csproj",
+    "CommonCls\\CommonCls.csproj",
+    "VisionApplication\\ParamSet.csproj",
+    "VisionApplication\\LS_UartAssist.csproj",
+    "VisionApplication\\PerMang.csproj",
+    "VisionApplication\\CamDebug.csproj",
+    "BJJCZ_BaseDevelop\\BJJCZ.csproj",
+    "PipeChanel\\PipeChanel.csproj",
+    "VisionApplication\\xbDet.csproj",
+    "VisionApplication\\MarkManager.csproj"
+  ],
+  "VPP": "D:\\data\\LD.vpp",
+  "VppSHA256": "84B0B16D5AA2587581BA1464709086C1541F1549B655A3EA949D87EA8A90FC86"
+}

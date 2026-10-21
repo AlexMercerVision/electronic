@@ -1,0 +1,471 @@
+[
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.dll",
+    "Destination": "Cognex.VisionPro.dll",
+    "Bytes": 308224,
+    "SHA256": "3295C247CDCD64AB8C17DF911B7CF7F2850C9ABAFA8AC193940FBCB0BEE78C60",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Blob.dll",
+    "Destination": "Cognex.VisionPro.Blob.dll",
+    "Bytes": 4326112,
+    "SHA256": "06EAD7BFAC03FD4F58C68182004DA01DF4E32137F70728FE6C7CDB55B4FBC89F",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Blob.Controls.dll",
+    "Destination": "Cognex.VisionPro.Blob.Controls.dll",
+    "Bytes": 166400,
+    "SHA256": "5E6048299A60319E8499385D70E13F39C6BF527886857AABEFBF526685D72945",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CalibFix.dll",
+    "Destination": "Cognex.VisionPro.CalibFix.dll",
+    "Bytes": 600576,
+    "SHA256": "1A20D94D59394881CF3C4FC5F8DE8E5434C9BE9FA57A3DCFF6491C6E946AEA39",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CalibFix.Controls.dll",
+    "Destination": "Cognex.VisionPro.CalibFix.Controls.dll",
+    "Bytes": 276480,
+    "SHA256": "72B8B462D8569C51006D52ADBBF47A11F5D92EE563F58E564C3C4A586D25E55B",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CalibFixPlus.dll",
+    "Destination": "Cognex.VisionPro.CalibFixPlus.dll",
+    "Bytes": 11384544,
+    "SHA256": "66871EA9CE5F0B0B234F2810E4A87D65795BD8FBDB4AE2AE977E95DE1ED49CF6",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Caliper.dll",
+    "Destination": "Cognex.VisionPro.Caliper.dll",
+    "Bytes": 1482976,
+    "SHA256": "DE484491238D7175AB9CB870BC36C96AEEA66C962B3F7689B36391D4189089AF",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Caliper.Controls.dll",
+    "Destination": "Cognex.VisionPro.Caliper.Controls.dll",
+    "Bytes": 287744,
+    "SHA256": "08B74CD4EC0E83195BDDC4541221DD8A77A487A7926F6678B5F59E4E072DE0FF",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Controls.dll",
+    "Destination": "Cognex.VisionPro.Controls.dll",
+    "Bytes": 2287104,
+    "SHA256": "7595597D5A1FA6930DDBC173E6B668549F10CB3DECB36D1BFAECE4026223B134",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Core.dll",
+    "Destination": "Cognex.VisionPro.Core.dll",
+    "Bytes": 6566624,
+    "SHA256": "A2DBD3FB25B411CDA10B8BBB4338B9148F5C2EE10DBCD278A03D7BD6C385CA8C",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.CorePlus.dll",
+    "Destination": "Cognex.VisionPro.CorePlus.dll",
+    "Bytes": 3712224,
+    "SHA256": "35F45C44F08ACEEC72444D37C8196A91EFA8E08C8967629F0D2FBB91CD763BB1",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Database.dll",
+    "Destination": "Cognex.VisionPro.Database.dll",
+    "Bytes": 23552,
+    "SHA256": "0F8273FF834A6E4869A71F14CB24564114284D44814DBAFF400FB640B2E2F648",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Display.Controls.dll",
+    "Destination": "Cognex.VisionPro.Display.Controls.dll",
+    "Bytes": 92160,
+    "SHA256": "DD24844A1E0AC1B24FE797BE25D0179EAA30BB06625EE4683F6AD3D0DEB41AB8",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FG1394DCAM.dll",
+    "Destination": "Cognex.VisionPro.FG1394DCAM.dll",
+    "Bytes": 423936,
+    "SHA256": "53ED4213AC80DD7023224C597857E6A301235610C67BB1E46CD52549D88BA85C",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FG8100.dll",
+    "Destination": "Cognex.VisionPro.FG8100.dll",
+    "Bytes": 406528,
+    "SHA256": "8BB2F442120176988FC80760FD90A5FAB668CA08F5DC06D8B7B8B0B2F86F39BD",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FG8100L.dll",
+    "Destination": "Cognex.VisionPro.FG8100L.dll",
+    "Bytes": 408064,
+    "SHA256": "F1766F590ECEB410D5376E7475B977932CDBEEFA8518DEAC19ADAE25D143FB6B",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.FGGigE.dll",
+    "Destination": "Cognex.VisionPro.FGGigE.dll",
+    "Bytes": 419840,
+    "SHA256": "5CF914534FF47C4BE6669C88EB2ACED726AF125164B25FA302DCA0CC9548B7A4",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ImageFile.dll",
+    "Destination": "Cognex.VisionPro.ImageFile.dll",
+    "Bytes": 321024,
+    "SHA256": "1E201E7CB09BAD8E00BFB5A3925EA335208A85A5CEA9707FD2A4EBE7EA01A863",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ImageProcessing.dll",
+    "Destination": "Cognex.VisionPro.ImageProcessing.dll",
+    "Bytes": 3702272,
+    "SHA256": "867129B556B1F5E9168BC89615D72EF55C5D0D4FF3BF3406718EE436AF3BB82A",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Inspection.dll",
+    "Destination": "Cognex.VisionPro.Inspection.dll",
+    "Bytes": 62464,
+    "SHA256": "7FAF0A314753593EB52F8310D0F16C43CF4A937DE9F2356B4989BE48D909C7B6",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Inspection.Controls.dll",
+    "Destination": "Cognex.VisionPro.Inspection.Controls.dll",
+    "Bytes": 169472,
+    "SHA256": "4124FCEE2694347FC84B266C16D6BCD0A6494631661F82B8389C90FE63C4ACE3",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.Interop.Core.dll",
+    "Destination": "Cognex.VisionPro.Interop.Core.dll",
+    "Bytes": 1107968,
+    "SHA256": "CB06A51B757D26AC5DD3F58F458D12A5549EA20FC3CAA4BD8E0645FDDF9BFEDB",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.PMAlign.dll",
+    "Destination": "Cognex.VisionPro.PMAlign.dll",
+    "Bytes": 6755552,
+    "SHA256": "97026ED5DB9AE4D4C9DC329DCD47B5B14E11CA27DDBD614E06D3CD4DE07F0C39",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.PMAlign.Controls.dll",
+    "Destination": "Cognex.VisionPro.PMAlign.Controls.dll",
+    "Bytes": 510464,
+    "SHA256": "4AFCEB22782A28FFD709D676EFA3BAA0A11A570C865AE7E5F8988D9C934FEEA4",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.QuickBuild.Controls.dll",
+    "Destination": "Cognex.VisionPro.QuickBuild.Controls.dll",
+    "Bytes": 1359872,
+    "SHA256": "E6168EC73A66014AF85389FC27795982D5FC2AD3C565B839EC93A424AF2A9934",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.QuickBuild.Core.dll",
+    "Destination": "Cognex.VisionPro.QuickBuild.Core.dll",
+    "Bytes": 258560,
+    "SHA256": "B30865F17609D2A757E088A02151DD3E4DBDB8C6BAE71A55362852901D7694DA",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.QuickBuild.IO.dll",
+    "Destination": "Cognex.VisionPro.QuickBuild.IO.dll",
+    "Bytes": 125440,
+    "SHA256": "848CFA3249BE5BF13F78800C802711C1ABFD668D04DFDD0174059F1F92CE9F74",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ResultsAnalysis.dll",
+    "Destination": "Cognex.VisionPro.ResultsAnalysis.dll",
+    "Bytes": 74752,
+    "SHA256": "A7F523782B70FAF02CCBA18F1F94F7ADD8A3C2249BC39E180A7372796AB17B63",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ToolGroup.dll",
+    "Destination": "Cognex.VisionPro.ToolGroup.dll",
+    "Bytes": 77824,
+    "SHA256": "DC0C7A946B1C48D5650AD2C1A91A7E236CE77147EF439F4001B6C70AF64CCDF2",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro.ToolGroup.Controls.dll",
+    "Destination": "Cognex.VisionPro.ToolGroup.Controls.dll",
+    "Bytes": 304128,
+    "SHA256": "0EA57184985F376486B0CC976FB97E02201167CE372CC2CC24B601E57B5E94E9",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.dll",
+    "Destination": "Cognex.VisionPro3D.dll",
+    "Bytes": 14594272,
+    "SHA256": "E393C5F5E232F2ADD4BD3BA8036C9D2DE4D994089D2DF5F8AF52B0DC1C116145",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.Core.dll",
+    "Destination": "Cognex.VisionPro3D.Core.dll",
+    "Bytes": 10722016,
+    "SHA256": "18C7219934C253B2B75A24688CCE0524D47DFD29723D4FA13D584F7DCB5FC4E1",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.Display.Controls.dll",
+    "Destination": "Cognex.VisionPro3D.Display.Controls.dll",
+    "Bytes": 71168,
+    "SHA256": "E888EB4B6D48B785EAF5C02AB6839121669584B0206EF63CBC6AD307FC8214D5",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Cognex.VisionPro3D.Graphic.dll",
+    "Destination": "Cognex.VisionPro3D.Graphic.dll",
+    "Bytes": 1211104,
+    "SHA256": "A3BCE0C6EB95AC99CEEECFA946192D58C9B99F45B5FBF485D466308DF615B8DF",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\CommonCls.dll",
+    "Destination": "CommonCls.dll",
+    "Bytes": 139776,
+    "SHA256": "8C6D09FC64C948CD798554625238F257BA12EB2A25787A3B87FCCCCD6BC1347B",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\MvCameraControl.Net.dll",
+    "Destination": "MvCameraControl.Net.dll",
+    "Bytes": 58880,
+    "SHA256": "A5442DF47BD66F3660540B0E2251B74E65CCD3CF0FCC728EC65F9102C79FA6C2",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\Newtonsoft.Json.dll",
+    "Destination": "Newtonsoft.Json.dll",
+    "Bytes": 711952,
+    "SHA256": "E1E27AF7B07EEEDF5CE71A9255F0422816A6FC5849A483C6714E1B472044FA9D",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\OpenCvSharp.dll",
+    "Destination": "OpenCvSharp.dll",
+    "Bytes": 939008,
+    "SHA256": "3ABDE04CDB3A722B54E15F6E5B8C11329057D66942B1F5F7C34595E1D7EBD8A3",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\OpenCvSharp.Extensions.dll",
+    "Destination": "OpenCvSharp.Extensions.dll",
+    "Bytes": 25088,
+    "SHA256": "C09B11BF8286B7A583B7AC266EF1F91A06DC9B0925BD8AD22D3B61D5A6FF1552",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\PipeChanel.dll",
+    "Destination": "PipeChanel.dll",
+    "Bytes": 7680,
+    "SHA256": "94CFC2D8636927E072F792BA2817978240988969AFBD44DA67930E4C862839A7",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Buffers.dll",
+    "Destination": "System.Buffers.dll",
+    "Bytes": 20856,
+    "SHA256": "ACCCCFBE45D9F08FFEED9916E37B33E98C65BE012CFFF6E7FA7B67210CE1FEFB",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Memory.dll",
+    "Destination": "System.Memory.dll",
+    "Bytes": 142240,
+    "SHA256": "BF3FB84664F4097F1A8A9BC71A51DCF8CF1A905D4080A4D290DA1730866E856F",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Numerics.Vectors.dll",
+    "Destination": "System.Numerics.Vectors.dll",
+    "Bytes": 115856,
+    "SHA256": "1D3EF8698281E7CF7371D1554AFEF5872B39F96C26DA772210A33DA041BA1183",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Resources.Extensions.dll",
+    "Destination": "System.Resources.Extensions.dll",
+    "Bytes": 110000,
+    "SHA256": "55C4E3855AFD3A56A8BCC81370482BB48B87ACA85BCB7D3CBC484247332C18CF",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\System.Runtime.CompilerServices.Unsafe.dll",
+    "Destination": "System.Runtime.CompilerServices.Unsafe.dll",
+    "Bytes": 18024,
+    "SHA256": "37768488E8EF45729BC7D9A2677633C6450042975BB96516E186DA6CB9CD0DCF",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\halcondotnet.dll",
+    "Destination": "halcondotnet.dll",
+    "Bytes": 1279544,
+    "SHA256": "3FD372A0113D9CC00AAF1F837392FA8EA6B8CEB741A8352F094A182E68872B56",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\stdole.dll",
+    "Destination": "stdole.dll",
+    "Bytes": 16384,
+    "SHA256": "D6CDF961C6D2712FE1958815E51A30960D79FFF1E97788B7741627DBA972E8F7",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\xbVP_Control.dll",
+    "Destination": "xbVP_Control.dll",
+    "Bytes": 140800,
+    "SHA256": "DC5DFB36B70940948E8C5EAD18EAB7B0BDFF263AAE7FBDD1AADE6336B6CBC198",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\电极帽缺陷检测.exe",
+    "Destination": "电极帽缺陷检测.exe",
+    "Bytes": 2449408,
+    "SHA256": "80859535BBB7036FFF0FC7DCFB0AE2EE18615040E3EBE22756B527A925175857",
+    "Reason": "Build output / managed or VPP dependency"
+  },
+  {
+    "Source": "E:\\VB_Det_PACK\\20261020_50Series_RC01\\02_Build\\Output\\电极帽缺陷检测.exe.config",
+    "Destination": "电极帽缺陷检测.exe.config",
+    "Bytes": 1885,
+    "SHA256": "89E6A1307E22B908688861F05D89F13B0C7FF5300663B5742D323D5FEF774133",
+    "Reason": "Build-generated runtime configuration"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\model_infer.dll",
+    "Destination": "model_infer.dll",
+    "Bytes": 513536,
+    "SHA256": "DA53799BECE73628B9C8F626FEC0E0E2B5C96AE1FC0F55EA53572A0A06A3D3D6",
+    "Reason": "Current model native PE import closure"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\paddle_inference_c.dll",
+    "Destination": "paddle_inference_c.dll",
+    "Bytes": 95514624,
+    "SHA256": "86CB1207572CE01CB47D600532C956CCB0FE7CC26F5F3BC5DFAC13E6642FB300",
+    "Reason": "Current model native PE import closure"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\phi.dll",
+    "Destination": "phi.dll",
+    "Bytes": 405883904,
+    "SHA256": "57157EBB6B1C7DB602D82F262D5A903A1F64BE5A520AA39BF5F50E0D6BC3A6C9",
+    "Reason": "Current model native PE import closure"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\common.dll",
+    "Destination": "common.dll",
+    "Bytes": 1569280,
+    "SHA256": "4C87001DB04B0F31AAF1F44E4E803D79BDAB584B391BBCA300EF6D45E0A6E8B1",
+    "Reason": "Current model native PE import closure"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\mkldnn.dll",
+    "Destination": "mkldnn.dll",
+    "Bytes": 47405568,
+    "SHA256": "101A81A71A917DEAEED5269EAD3C2876823357DD8E7EC9B0841BE741E9FB270A",
+    "Reason": "Current model native PE import closure"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\libiomp5md.dll",
+    "Destination": "libiomp5md.dll",
+    "Bytes": 1726848,
+    "SHA256": "BC9E17190505A3BEDA7FEEDD90BA3AB7B6DC3F7CA5D980B2140C53AE459FC5AE",
+    "Reason": "Current model native PE import closure"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\dll\\x64\\OpenCvSharpExtern.dll",
+    "Destination": "dll/x64/OpenCvSharpExtern.dll",
+    "Bytes": 54694912,
+    "SHA256": "60CDF2E127F3EE14CBEF59AF5358AB1DDD873505A7758E3AA97CB8F583B202C0",
+    "Reason": "Exact existing OpenCvSharp wrapper native backend"
+  },
+  {
+    "Source": "D:\\data\\LD.vpp",
+    "Destination": "VPP/LD.vpp",
+    "Bytes": 161194373,
+    "SHA256": "84B0B16D5AA2587581BA1464709086C1541F1549B655A3EA949D87EA8A90FC86",
+    "Reason": "User-selected actual-running VPP (sole version)"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\.success",
+    "Destination": "Assets/Models/Default/inference_model/.success",
+    "Bytes": 0,
+    "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\model.pdiparams",
+    "Destination": "Assets/Models/Default/inference_model/model.pdiparams",
+    "Bytes": 217052894,
+    "SHA256": "A012FAE75AD79DDF7C767165D763CB4E36FD71D5CBADF7D17ED59A2DDB923702",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\model.pdiparams.info",
+    "Destination": "Assets/Models/Default/inference_model/model.pdiparams.info",
+    "Bytes": 48554,
+    "SHA256": "7499ED1A1DC5E078DFB3B5920163A422A55AC27F9929DFF681F38931F672B71B",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\model.pdmodel",
+    "Destination": "Assets/Models/Default/inference_model/model.pdmodel",
+    "Bytes": 4024448,
+    "SHA256": "E3BC644969601710F01D089B52E354B10FEDC7FB084804D41073ADF7EAB84BB2",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\model.yml",
+    "Destination": "Assets/Models/Default/inference_model/model.yml",
+    "Bytes": 1267,
+    "SHA256": "B6B09825311109D5E9369051E50B8238F16C3983B238390218D989FEFA080B97",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\pipeline.yml",
+    "Destination": "Assets/Models/Default/inference_model/pipeline.yml",
+    "Bytes": 404,
+    "SHA256": "88C7FC9029C353B935041D661CE3623DD85A814B60883752F3BD16A5CEB299E1",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "D:\\data\\inference_model\\predefined_classes.txt",
+    "Destination": "Assets/Models/Default/inference_model/predefined_classes.txt",
+    "Bytes": 26,
+    "SHA256": "98F61F4A2CF2144EA5A602772C29EE35E661F228DCDB09E450A00FE3970EFF8B",
+    "Reason": "Actual-running model"
+  },
+  {
+    "Source": "E:\\jieyawenjian\\VB_Det\\bin\\NullMark_00.xml",
+    "Destination": "NullMark_00.xml",
+    "Bytes": 316,
+    "SHA256": "678BF8844A85BDF5C91059D2562EE06DDEF6BB8E23FB492606663F55563104E7",
+    "Reason": "CDL XML annotation template, data fields overwritten by code"
+  },
+  {
+    "Source": "E:\\Anaconda_envs\\paddle_env\\Lib\\site-packages\\paddle\\libs\\mklml.dll",
+    "Destination": "mklml.dll",
+    "Bytes": 92649344,
+    "SHA256": "E2A7FD93E1534568626CFFE22676B15164A5A2B3A62F1919A55993478B45811E",
+    "Reason": "Actually loaded by current GPU native inference; removes Python environment dependency"
+  }
+]

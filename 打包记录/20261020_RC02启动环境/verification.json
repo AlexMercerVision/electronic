@@ -1,0 +1,46 @@
+﻿{
+  "Batch": "20261020_50Series_RC02",
+  "ApplicationSourceBatch": "E:\\VB_Det_PACK\\20261020_50Series_RC01",
+  "ApplicationFilesIdenticalToRC01": 67,
+  "SourceCodeChanged": false,
+  "NewBuildExecuted": false,
+  "BuildEvidence": "Unchanged RC01 VisionDection.sln Debug/x64 full 11-project Build, 0 errors / 83 existing warnings",
+  "OwnAssemblyVersions": {
+    "电极帽缺陷检测": "1.0.0.0",
+    "CommonCls": "1.0.0.0",
+    "xbVP_Control": "1.0.9789.33160",
+    "PipeChanel": "1.0.0.0"
+  },
+  "FoundationAssemblyVersions": {
+    "System.Memory": "4.0.1.2",
+    "System.Buffers": "4.0.3.0",
+    "System.Numerics.Vectors": "4.1.4.0",
+    "System.Runtime.CompilerServices.Unsafe": "6.0.0.0"
+  },
+  "BindingRedirectsMatch": true,
+  "RC01FilesUnchanged": 1695,
+  "OriginalBinFilesUnchanged": 264,
+  "RuntimeLockFiles": 34,
+  "ExternalGPUFiles": 17,
+  "CudaToolkit": "12.8.0",
+  "Cudnn": "9.14.0.64 CUDA12 build",
+  "DedicatedEntry": "03_Release/Launch.cmd",
+  "WorkingDirectory": "03_Release/App",
+  "FinalEntryGpuIndependentRunsPassed": 2,
+  "ActualGpuModulesPerRun": 9,
+  "ActualCudaRuntimeAPI": "12.8",
+  "CudnnMismatchWarning": false,
+  "NegativeCasesPassed": [
+    "cuDNN9.8",
+    "cuDNN9.14 CUDA13 branch",
+    "missing CUDA directory"
+  ],
+  "MainApplicationStartedByAgent": false,
+  "RealImageAccuracyAndHardware": "Not tested in this step; user will run main application",
+  "LaunchLogDirectory": "E:\\VB_Det_PACK\\20261020_50Series_RC02\\06_RunLogs",
+  "ChecksRecordDirectory": "E:\\jieyawenjian\\VB_Det\\打包记录\\20261020_RC02启动环境",
+  "RuntimeUsesExistingMachineConfigAndAuthorization": true,
+  "InstallerCreated": false,
+  "ExternalInstallerMediaIncluded": false,
+  "ReleaseManifestEntries": 88
+}

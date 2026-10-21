@@ -1,0 +1,7 @@
+{
+  "Method": "CreateRestrictedToken + CreateProcessAsUser",
+  "ExitCode": "0xC0000142",
+  "Meaning": "Child process failed during Windows initialization before executing PowerShell script",
+  "Alternative": "Restricted token impersonation directly checks filesystem permissions",
+  "Boundary": "Separate real ordinary-user launch and GPU execution unverified"
+}

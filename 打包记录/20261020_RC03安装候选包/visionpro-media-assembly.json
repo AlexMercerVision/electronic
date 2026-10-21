@@ -1,0 +1,18 @@
+[
+  {
+    "ProcessorArchitecture": "X86",
+    "Component": "GAC.Core.dll.50DDBF40_7ABC_4242_A09E_72560E82027D",
+    "Version": "59.2.0.0",
+    "PublicKeyToken": "EF0F902AF9DEE505",
+    "Name": "Cognex.VisionPro.Core",
+    "Culture": "neutral"
+  },
+  {
+    "ProcessorArchitecture": "Amd64",
+    "Component": "GAC.Core.dll.32304502_F9E5_4FFA_8A29_29386B9D9DE3",
+    "Version": "59.2.0.0",
+    "PublicKeyToken": "EF0F902AF9DEE505",
+    "Name": "Cognex.VisionPro.Core",
+    "Culture": "neutral"
+  }
+]
